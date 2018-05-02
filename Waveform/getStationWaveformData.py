@@ -1,16 +1,14 @@
 
 import os
 import sys
-import platform
 
-WINDOWS = (platform.system() == 'Windows')
 
-# add local directories to import path  
+# add local directories to import path
 
-sys.path.append ('../tools/') 
-sys.path.append ('../Common/')                              
-           
-from optparse import OptionParser 
+sys.path.append ('../tools/')
+sys.path.append ('../Common/')
+
+from optparse import OptionParser
 
 import fnmatch
 import fileinput
@@ -20,23 +18,21 @@ import multiprocessing
 import time
 import subprocess
 
-import getpass                          
+import getpass
 from   os  import stat
 
 import datetime
 import signal
 
 import urllib
-from   ConfigParser import SafeConfigParser   
+from   ConfigParser import SafeConfigParser
 
 import obspy.core
-from   obspy.arclink.client import Client 
+from obspy.clients.arclink    import Client
 from   obspy.core.util      import NamedTemporaryFile
 from   obspy.core           import Stream, read
-from   obspy.mseed.core     import isMSEED
-
-if not WINDOWS :
-   from   pwd  import getpwuid   
+from   obspy.io.mseed.core     import _is_mseed as isMSEED
+from   pwd  import getpwuid
 
 import config
 
@@ -60,7 +56,7 @@ import DataDir
 import Server
 
 # -------------------------------------------------------------------------------------------------
-          
+
 logger = logging.getLogger('event_station_diff')
 logger.setLevel (logging.DEBUG)
 
@@ -87,11 +83,11 @@ def saveUrl (station, url) :
 
     return # ???
 
-    if Globals.isDebug :  
+    if Globals.isDebug :
        file = Server.UrlFileName ('data_url')
 
        if url == None : Basic.writeTextFile (file, list (' \n'))
-       else :   
+       else :
           lines = []
           lines.append (station + ' : ' + url + '\n')
 
@@ -101,18 +97,18 @@ def saveUrl (station, url) :
 # ------------------------------------------------------------------------------------------------
 
 def make_time (begin_time,duration):
-   
-    b_time_1     = obspy.core.utcdatetime.UTCDateTime (begin_time,iso8601=True) 
-    geofon_begin = b_time_1.formatArcLink()
+
+    b_time_1     = obspy.core.utcdatetime.UTCDateTime (begin_time,iso8601=True)
+    geofon_begin = b_time_1.format_arclink()
 
     e_time      = b_time_1 + float(duration) * 60
-    geofon_end  = e_time.formatArcLink()
-    
-    b_time_iris = obspy.core.utcdatetime.UTCDateTime (begin_time,iso8601=True) 
-    iris_begin  = b_time_iris.formatIRISWebService()
+    geofon_end  = e_time.format_arclink()
+
+    b_time_iris = obspy.core.utcdatetime.UTCDateTime (begin_time,iso8601=True)
+    iris_begin  = b_time_iris.format_iris_web_service()
 
     e_time_iris = b_time_iris + float(duration) * 60
-    iris_end    = e_time_iris.formatIRISWebService()
+    iris_end    = e_time_iris.format_iris_web_service()
 
     dict_time = {'g_begin':geofon_begin, 'g_end':geofon_end,
                  'i_begin':iris_begin,   'i_end':iris_end,
@@ -125,7 +121,7 @@ def make_time (begin_time,duration):
 def keyfolder2List (p):
 
     Logfile.red ('Parsing KEYFILE Structure')
-    
+
     stationfilespath=p
     L = []
 
@@ -154,7 +150,7 @@ def keyfolder2List (p):
 
         if options.stationversion == 'all':  K.append(i)
         if options.stationversion == '':     Logfile.add ('set station method')
-        
+
     Logfile.red ('FOUND: --> ' + str(len(K)) + ' KEYFILES')
 
     return K
@@ -165,7 +161,7 @@ def sdsList(p):
 
     L = []
     Logfile.red ('Parsing SDS Structure')
-    
+
     for root,dirs,files in os.walk(p):
         for i in files:
             line = str.split(i,'.')
@@ -174,7 +170,7 @@ def sdsList(p):
 
     L_sauber = list(set(L))
 
-    Logfile.red ('FOUND: --> ' + str (len (L_sauber)) + ' STATIONS')   
+    Logfile.red ('FOUND: --> ' + str (len (L_sauber)) + ' STATIONS')
     return L_sauber
 
 # -------------------------------------------------------------------------------------------------
@@ -235,11 +231,11 @@ def multiplex (filename):
 
                 if i == 0:
                     s1 = trace.stats.starttime
-                    e1 = obspy.core.utcdatetime.UTCDateTime (year=s1.year, month=s1.month, day=s1.day,hour = 23, 
+                    e1 = obspy.core.utcdatetime.UTCDateTime (year=s1.year, month=s1.month, day=s1.day,hour = 23,
                                                              minute=59,second=59, microsecond=999999)
                 else:
                     s1 = trace.stats.starttime+mult
-                    s1 = obspy.core.utcdatetime.UTCDateTime (year=s1.year, month=s1.month, day=s1.day,hour = 0, 
+                    s1 = obspy.core.utcdatetime.UTCDateTime (year=s1.year, month=s1.month, day=s1.day,hour = 0,
                                                              minute=0, microsecond=00)
                     e1 = obspy.core.utcdatetime.UTCDateTime (year=s1.year, month=s1.month, day=s1.day,hour = 23,
                                                              minute=59,second=59, microsecond=999999)
@@ -253,26 +249,26 @@ def multiplex (filename):
                 tr        = trace.slice  (s1, e1)
                 tr.write (filepath,format='MSEED',reclen=512)
                 print s1,' to ',e1,jd,finalname,filepath
-        #endif        
+        #endif
     #endfor
 
     #hs+
     #  "remove" unused channels
     #
-    channels  = []                                                          
+    channels  = []
 
     for trace in st : channels.append (trace.stats.channel)      # get all channels from trace list
 
     channnels = sorted (channels)
     group     = [['BHE','BHN','BHZ'], ['BH1','BH2','BHZ'], ['HHE','HHN','HHZ']]  # use only these
     used      = []
-    
+
     for chn in channels :                                                     # build channel sets
         if len (used) > 0 : break
 
         for i in range(3) :
-            if chn in group[i] :  
-               used = group[i]        # use this set 
+            if chn in group[i] :
+               used = group[i]        # use this set
                break;
     #endfor
 
@@ -293,14 +289,14 @@ def multiplex (filename):
 
            for file in files :
                Basic.writeTextFile (os.path.join (dir,file), line)
-               #Logfile.add (file) 
+               #Logfile.add (file)
     #endfor
     #hs-
-       
+
 # -------------------------------------------------------------------------------------------------
 
 def proof_file_v3 (filename,component):
-    
+
     if len(filename) == 0 : return 0          #hs
 
     print 'PROOF FILE V3 ',filename
@@ -311,12 +307,12 @@ def proof_file_v3 (filename,component):
     savename   = '{n}.{s}.{l}.ms'.format (n=t.stats.network, s=t.stats.station,l=t.stats.location)
 
     filename.write (savename, format='MSEED', reclen=512)
-          
+
     try:
        st = read (savename)
 
        for i in st : streamList.append (i.stats.channel)
- 
+
        print 'CHANNEL: ',len(streamList),len(component)
 
        if len (set(streamList)) == len(component) :
@@ -325,14 +321,14 @@ def proof_file_v3 (filename,component):
           multiplex (savename)                       #hs
           size = os.path.getsize (savename)
 
-       else:                                          
+       else:
           #size = 0                                  #hs
           multiplex (savename)                       #hs
           size = os.path.getsize (savename)          #hs
 
     except :
        size = 0
-       Logfile.exception ('proof_file_v3')           
+       Logfile.exception ('proof_file_v3')
 
     os.remove (savename)
     return size
@@ -340,7 +336,7 @@ def proof_file_v3 (filename,component):
 # -------------------------------------------------------------------------------------------------
 
 def make_arcObspyrequest (station,begin,end,channel,loc,pwdkeys):
-    
+
     print 'INOBSPY ',pwdkeys,type(pwdkeys)
     print 'Obspy ARCLINKREQUEST FOR STATION '
 
@@ -353,7 +349,7 @@ def make_arcObspyrequest (station,begin,end,channel,loc,pwdkeys):
     client = Client (user=_mail,dcid_keys=pwdkeys,timeout = 120)      #hs
 
     st     = Stream ()
-    
+
     #for i in channel:
     #    try :    st += client.getWaveform (rstation[0], rstation[1], loc, i, begin, end)
     #    except : continue         # ArclinkException : No data available
@@ -362,22 +358,22 @@ def make_arcObspyrequest (station,begin,end,channel,loc,pwdkeys):
     try :    st += client.getWaveform (rstation[0], rstation[1], loc, '*', begin, end)  #hs v2
     except : return 0
 
-    print 'INOBS ',rstation,channel    
+    print 'INOBS ',rstation,channel
     streamList = []
 
-    for i in st : 
+    for i in st :
         streamList.append (i.stats.channel)
-    
+
     #if len (set (streamList)) == len (channel) : size = proof_file_v3 (st, channel) #hs
     #else:                                        size = 0                           #hs
-    
+
     size = proof_file_v3 (st, channel)            #hs
     return size
 
 # -------------------------------------------------------------------------------------------------------------------------------
 
 def make_irisrequest (station,begin,end,channel,loc):
-    
+
         print 'IRISREQUEST FOR STATION ' , station
 
         net,sta = station.split('_')
@@ -398,7 +394,7 @@ def make_irisrequest (station,begin,end,channel,loc):
 
             u     = ('%s%s')%(url,parameter)
             saveUrl (station, u)
-        
+
             #data = urllib.urlopen(u).read()                          #hs
             try :    data = urllib.urlopen(u).read()                  #hs
             except : continue
@@ -415,13 +411,13 @@ def make_irisrequest (station,begin,end,channel,loc):
 
             tf.close()
             os.remove(tf.name)
-            break                                                #hs v2 
+            break                                                #hs v2
 
 #       if t == True:     size = proof_file_v3 (st,channel)      #hs
         if len(st) > 0 :  size = proof_file_v3 (st,channel)      #hs
         else:             size = 0
 
-        print 'SIZE: ----> ',size  
+        print 'SIZE: ----> ',size
         return size
 
 # -------------------------------------------------------------------------------------------------------------------------------
@@ -435,7 +431,7 @@ def write_statistic (year,day):
     fobjm = open (os.path.join(os.getcwd(),'missing-station-'+str(year)+'-'+str(day)+'.dat'),'w')
     fobjm.write  ('\n'.join(MISS))
     fobjm.close  ()
-    
+
     fobja = open (os.path.join(os.getcwd(),'available-station-'+str(year)+'-'+str(day)+'.dat'),'w')
     fobja.write  ('\n'.join(S))
     fobja.close  ()
@@ -444,16 +440,16 @@ def write_statistic (year,day):
 # -------------------------------------------------------------------------------------------------------------------------------
 
 def make_meta(evpath):
-    
+
     #d = obspy.core.utcdatetime.UTCDateTime(stime)
     #jd = "%03d" % d.julday
     #cmd='python ev_meta_mt4.py -p '+_mseed_search_folder+' -y '+str(d.year)+' -d '+str(jd)
     #write_statistic(d.year,jd)
     #print cmd
-    
+
     evpath = evpath.split('/')[-1]
     logger.info('\033[31mNEXT PROCESSING STEP: \n\n 1) python arraytool.py getmeta {evdirectory} \n\n\033[0m'.format(evdirectory=evpath))
-    
+
     #p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     #p.wait()
     #os.system(cmd)
@@ -462,11 +458,11 @@ def make_meta(evpath):
 # -------------------------------------------------------------------------------------------------------------------------------
 
 def stationRequest_old (station,timeDict,counter,pwdkeys,maxstation):
-    
+
         for i in _loc:
             for j in _channel:
                 print 'loc, channel = ', i,j
-               
+
                 size = make_irisrequest(station,timeDict['i_begin'],timeDict['i_end'],j,i)
 
                 if size != 0: print  'DATA FROM IRIS FOR STATION'; return
@@ -480,16 +476,16 @@ def stationRequest_old (station,timeDict,counter,pwdkeys,maxstation):
                 #endif
 
                 print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n'
-            #endfor   
-        #endfor       
+            #endfor
+        #endfor
 
 
 NO_DATA_FLAG = 'NO DATA FROM WEBDC OR IRIS FOR STATION'
 
 def stationRequest (station, timeDict, counter, pwdkeys, maxstation):
-    
+
         isIris = KeyFile.isIRIS (options.keyfolder, fullName = station)
-        
+
         for i in _loc:
            j = '*'
            print 'loc, channel = ', i,j
@@ -505,8 +501,8 @@ def stationRequest (station, timeDict, counter, pwdkeys, maxstation):
                     return
 
            except : return Logfile.exception ('stationRequest')
-        #endfor       
- 
+        #endfor
+
         print NO_DATA_FLAG
 
 # -------------------------------------------------------------------------------------------------
@@ -543,7 +539,7 @@ def checkNoData (station, traceback) :              # ??? :  Erst mal Notbehelf
         #               ZeroDivisionError: float division by zero
 
         if 'trace.stats.sampling_rate' in line :
-           err = 'Sampling rate is zero'; 
+           err = 'Sampling rate is zero';
            ret = True
            break
 
@@ -573,7 +569,6 @@ def checkProcessError (station, nErrors, lines, execTime) :   # ??? execTime
 
     if sta == None : site = None
     else :           site = sta.site + ' (' + sta.provider + ')'
-
     for lineNr in range (len (lines)) :
        line  = lines [lineNr]
        isEnd = False
@@ -581,12 +576,12 @@ def checkProcessError (station, nErrors, lines, execTime) :   # ??? execTime
 
        # UserWarning: MAX_REQUESTS exceeded - breaking current request loop
 
-       if 'MAX_REQUESTS' in line : 
+       if 'MAX_REQUESTS' in line :
           errCode = Server.RETRY_IT
           s =  'UserWarning: MAX_REQUESTS exceeded - breaking current request loop'
           s += ' (' + str(nErrors) + ')'
           #isEnd = True
- 
+
        elif 'deprecated' in line : s = ' '             # ignore ObsPyDeprecation Warning   #15.7.2016
 
        elif Logfile.MSG_TOKEN         in line :  s = line
@@ -663,7 +658,7 @@ def checkProcessError (station, nErrors, lines, execTime) :   # ??? execTime
 
 def initWaitingList (parameter) :
 
-    K       = keyfolder2List (parameter.keyfolder) 
+    K       = keyfolder2List (parameter.keyfolder)
     S       = sdsList        (parameter.sdsfolder)
     MISS    = cmpSdsKey (K,S)
     MISS    = list (set (MISS))
@@ -684,7 +679,7 @@ def init (isClient) :
     if not isClient :
        if not Logfile.init (startMsg = VERSION_STRING) : return False
 
-    return Globals.init () 
+    return Globals.init ()
 
 # --------------------------------------------------------------------------------------------------
 
@@ -695,11 +690,11 @@ def checkConfigFile (conf) :
     keyfilefolder = ConfigFile.keyfilefolder
     duration      = ConfigFile.duration
 
-    keyList = [mail, pwd, keyfilefolder, duration]  
+    keyList = [mail, pwd, keyfilefolder, duration]
     return ConfigFile.checkKeys (conf, keyList)
 
 # --------------------------------------------------------------------------------------------------
-    
+
 SERVER_NAME = 'data'
 
 def startIrisServer (stations) :
@@ -712,7 +707,7 @@ def startIrisServer (stations) :
 
 
 def startGeofonServer (stations) :
-          
+
     ctrl = Server.ServerCtrl (nRetries = 2, nParallel=10, waitTime=1.0, printStat=False)
     srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
     srv.control = ctrl
@@ -722,10 +717,10 @@ def startGeofonServer (stations) :
 
 # -------------------------------------------------------------------------------------------------
 #
-#   Client routine 
+#   Client routine
 #
 class WaveformClient (Server.ClientBase) :
-    
+
     def __init__ (self, options, pwdkeys) :
         Server.ClientBase.__init__ (self, options.station)
 
@@ -753,7 +748,7 @@ def run_parallel (options, pwdDict) :
 
        keyfileDir = os.path.join (Globals.EventDir(), options.keyfolder)
 
-       if not Basic.checkExistsDir (keyfileDir) : 
+       if not Basic.checkExistsDir (keyfileDir) :
           return False                                 # Cannot find directory
 
        #   Build station list
@@ -773,7 +768,7 @@ def run_parallel (options, pwdDict) :
        saveUrl (' ', None)        # init debug service
        network = options.network
 
-       mask       = KeyFile.getIrisMask (None, stations=stationList) 
+       mask       = KeyFile.getIrisMask (None, stations=stationList)
        irisList   = Basic.selectStrings (stationList, mask)
        geofonList = Basic.selectStrings (stationList, Basic.Not (mask))
 
@@ -781,34 +776,34 @@ def run_parallel (options, pwdDict) :
           if not startIrisServer (irisList) :
              return True                             # aborted with ctrl c
        #endif
-  
+
        if not network or network == 'geofon' :
           if not startGeofonServer (geofonList) :
              return True                             # aborted with ctrl c
-      #endif  
+      #endif
 
        if network and network != 'iris' and network != 'geofon' :
           if not KeyFile.isNetwork (network) :
-             return Logfile.error ('Illegal network name <' + network + '>', 
+             return Logfile.error ('Illegal network name <' + network + '>',
                                    'Network not found in directory ' + Globals.KeyfileFolder())
 
           list2 = DataTypes.selectNetwork (irisList, network)     # search in iris list
 
           if len(list2) > 0 :
              startIrisServer (list2)
-             return True                         
-         
+             return True
+
           list2 = DataTypes.selectNetwork (geofonList, network)   # search in geofon list
 
           if len(list2) > 0 :
              startGeofonServer (list2)
-             return True                         
+             return True
        #endif
 
 #hs- ----------------------------------------------------------------------------------------------
 
 def main (args):
-    
+
     parser = OptionParser (usage="\npython %prog -t 2009-12-31T12:23:34 -d 5 -m SDS -k key -s all/acq")
 
     parser.add_option ("-t","--time",      type="string", dest="time",      help="time")
@@ -841,23 +836,23 @@ def MainProc () :
     checkConfigFile (Conf)
 
     _mail = Conf['mail']
-    
+
     pwdDict = {}
 
     for i in Conf['pwd'].split(','):
         pwdDict[i.split(':')[0]]=i.split(':')[1]
 
     #print pwdDict
-    
+
     options.time           = Origin ['time']
     options.duration       = int (Conf['duration'])
     options.sdsfolder      = os.path.join (options.eventpath,'data')
     options.keyfolder      = os.path.join (options.eventpath, Conf['keyfilefolder'])
     options.stationversion = 'all'
-    
+
     _key_search_folder   = options.keyfolder
     _mseed_search_folder = options.sdsfolder
-    
+
     channel1 = ['BHE','BHN','BHZ']
     channel2 = ['BH1','BH2','BHZ']
     channel3 = ['HHE','HHN','HHZ']
@@ -866,7 +861,7 @@ def MainProc () :
     _loc     = ['--','10','00','11']
 
     run_parallel (options, pwdDict)
-                                         
+
     if not options.station :                          # server
        Logfile.showLabel ('Programm finished')
 

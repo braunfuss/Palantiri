@@ -1,15 +1,10 @@
 
 import platform
 
-WINDOWS = (platform.system() == 'Windows')
-
+import obspy
 import  obspy.core
-#from   obspy.taup.taup            import locations2degrees
-#from    obspy.core.util            import locations2degrees
-#from   obspy.core.util.geodetics  import gps2DistAzimuth    
 from obspy.geodetics import locations2degrees
-from  obspy.taup.tau              import TauPyModel
-import  obspy.taup
+from obspy.taup import TauPyModel
 
 import  Basic
 

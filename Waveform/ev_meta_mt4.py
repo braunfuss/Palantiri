@@ -2,13 +2,11 @@
 
 import os
 import sys
-import platform
 
-WINDOWS = (platform.system() == 'Windows')
 
-# add local directories to import path    
+# add local directories to import path
 
-sys.path.append ('../tools/')                     
+sys.path.append ('../tools/')
 sys.path.append ('../Common/')
 
 from   optparse import OptionParser
@@ -18,7 +16,7 @@ import locale
 import logging
 import multiprocessing
 import time
-import getpass        
+import getpass
 import signal
 import itertools
 
@@ -26,7 +24,7 @@ from   ConfigParser import SafeConfigParser
 from   lxml         import etree
 
 import obspy.core
-from   obspy.arclink import Client
+from obspy.clients.arclink    import Client
 
 import cPickle as pickle
 
@@ -46,8 +44,8 @@ import KeyFile                     # Class KeyFile
 import DataDir
 import Server                      # Routines for server implementation
 import WebDC
-from   Version  import  VERSION_STRING             
- 
+from   Version  import  VERSION_STRING
+
 options = None
 
 # -------------------------------------------------------------------------------------------------
@@ -84,16 +82,16 @@ def parseMetaInfoFile (metafilepath):
             MetaL.append (Station (net,sta,loc,comp,lat,lon,ele,dip,azi,gain,inst))
 
         Logfile.add (str (len(MetaL)) + ' ENTRIES IN METAFILE FOUND')
-  
+
     except:
-        Logfile.add ('METAFILE NOT READABLE', metafilepath) 
-            
+        Logfile.add ('METAFILE NOT READABLE', metafilepath)
+
     return MetaL
 
 # -------------------------------------------------------------------------------------------------
 
 def parseSDS (p):
-    
+
     Logfile.add  (' ')
     Logfile.red  ('Parsing SDS STRUCTURE ')
 
@@ -126,11 +124,11 @@ def cmpMeta (MetaList, SDSList):
     SList = []
     MList = []
     Miss  = []
-    
+
     for i in SDSList:
         snameSDS = i.net+'.'+i.sta+'.'+i.loc+'.'+i.comp
         SList.append (snameSDS)
-    
+
     for j in MetaList :
         if j.loc == '--' : j.loc = ''
 
@@ -159,13 +157,13 @@ def cmpMeta (MetaList, SDSList):
 # -------------------------------------------------------------------------------------------------
 
 def makeTime (sdsyear,sdsday):
-    
+
     t_begin = obspy.core.utcdatetime.UTCDateTime(year=int(sdsyear), julday=int(sdsday),iso8601=True)
     t_end = t_begin + 23 * 60
-    
+
     iris_begin = t_begin.formatIRISWebService()
     iris_end   = t_end.formatIRISWebService()
-    
+
     geofon_begin = t_begin.formatArcLink()
     geofon_end = t_end.formatArcLink()
 
@@ -179,7 +177,7 @@ def getMetaInfo(filename):
     Logfile.red ('PARSING METAINFOFILE %s' % (filename))
     locale.setlocale(locale.LC_ALL, 'C')
     meta_dict = {}
-    
+
     sp  = Parser(filename)
     d   = sp.stations
     t   = d[0]
@@ -189,7 +187,7 @@ def getMetaInfo(filename):
     ele = locale.format('%.2f',t[1].elevation,1)
     dip = locale.format('%.2f',t[1].dip,1)
     azi = locale.format('%.2f',t[1].azimuth,1)
-    
+
     if gain == 0 : meta_dict = {}
     else:          meta_dict = {'lat':lat,'lon':lon,'ele':ele,'dip':dip,'azi':azi,'gain':gain}
 
@@ -199,22 +197,22 @@ def getMetaInfo(filename):
 #hs : ersetzt durch getArclinkInst_2 ()
 
 def getArclinkInst (station,usermail,pwdkeys):
-    
+
     inst = 'no_instrument_available'
 
     #if station.loc == '' : station.loc='--'
-    
+
     sn = station.net+'.'+station.sta+'.'+station.loc+'.'+station.comp
     print 'SN ',sn
 
     client = Client (user=usermail,dcid_keys=pwdkeys)
     inv    = client.getInventory (station.net, station.sta, station.loc, station.comp, instruments=True)
     print 'INV: ',inv
-   
+
     try:
         stats = inv[sn]
         print 'STATS ',stats
-    
+
         t    = stats[0]
         z    = t['paz']
         inst = z['name']
@@ -222,7 +220,7 @@ def getArclinkInst (station,usermail,pwdkeys):
 
     except:
         inst = 'no_instrument_available'
-    
+
     return inst
 
 # -------------------------------------------------------------------------------------------------
@@ -232,11 +230,11 @@ def getFromKeyFile (sta) :
 
     file = KeyFile.KeyFileObj (dirName=None, net=sta.net, station=sta.sta)
     sta1 = file.read()
-          
-    if sta1 == None : 
+
+    if sta1 == None :
        print 'No keyfile'
        return station
- 
+
     sta2     = sta
     sta2.lon = sta1.lon
     sta2.lat = sta1.lat
@@ -256,14 +254,14 @@ def getArclinkInst_2 (station, usermail, pwdkeys):
     sta2.gain = -1
     sta2.dip  = -1
     sta2.azi  = -1
-    sta2.inst = 'no_instrument_available' 
+    sta2.inst = 'no_instrument_available'
 
     loc = station.loc
 
     if loc == '00' or loc == '01' or loc == '10' or loc == '11' :     # no entry for this loc
        print 'Use key file'
        return getFromKeyFile (sta2)
-    
+
     loc    = ''
 
     client = Client (user=usermail, dcid_keys=pwdkeys)
@@ -281,7 +279,7 @@ def getArclinkInst_2 (station, usermail, pwdkeys):
        return None
 
     if Globals.isDebug :               #    save inventory
-     
+
        file    = Server.InventoryFileName (station, '.txt')
        fp      = open (file, 'w')
        lines   = []
@@ -297,16 +295,16 @@ def getArclinkInst_2 (station, usermail, pwdkeys):
     sta2.lon = inv1 ['longitude']
     sta2.lat = inv1 ['latitude']
     sta2.ele = inv1 ['elevation']
-  
+
     key  = station.net + '.' + station.sta + '.' + loc + '.' + station.comp
-    inv1 = inv [key]   
+    inv1 = inv [key]
 
     z  = inv1 [0]
     z1 = z ['paz']
 
     if 'gain' in z1 : sta2.gain = z1 ['gain']
-    
-    if 'name' in z1 : 
+
+    if 'name' in z1 :
        inst      = z1 ['name']
        sta2.inst = inst.replace(' ','_')
 
@@ -317,24 +315,24 @@ def getArclinkInst_2 (station, usermail, pwdkeys):
 # -------------------------------------------------------------------------------------------------
 
 def arclinkRequest_sc (station,begin,end):
-    
+
     sname = station.net+'.'+station.sta+'.'+station.loc+'.'+station.comp
     print 'STARTING ARCLINK REQUEST FOR STATION ' + sname
-    
+
     dt = obspy.core.utcdatetime.UTCDateTime(begin)
     et = obspy.core.utcdatetime.UTCDateTime(end)
-    
+
     reqfile = 'ARC-'+sname+'-'+station.loc+'.txt'
     fname   = os.path.join(os.getcwd(),reqfile)
     fobj    = open (fname,'w')
 
     if station.loc == '--' : station.loc = ''
-    
+
     content = str(dt.formatArcLink())+' '+str(et.formatArcLink())+' '+station.net+' '+station.sta+' '+station.comp+' '+station.loc+'\n'
     Logfile.add ('%s %s %s' % (sname, str(dt.formatArcLink()) ,str(et.formatArcLink())))
     fobj.write(content)
     fobj.close()
-    
+
     output = sname+'-ARCLINK.dataless'
     cmd    = ''
     email  = 'ehlert@geo.uni-potsdam.de'
@@ -348,15 +346,15 @@ def arclinkRequest_sc (station,begin,end):
     os.system(cmd)
     info = ''
 
-    try: 
-        mdict = getMetaInfo (output) 
+    try:
+        mdict = getMetaInfo (output)
         inst  = getArclinkInst(station)
 
         if station.loc == '' : station.loc = '--'
 
         info = '{0:3}{1:6}{2:3}{3:4}{4:12}{5:12}{6:10}{7:10}{8:10}{9:20}{10:50}'.format (station.net.strip(),station.sta.strip(), \
         station.loc.strip(), station.comp.strip(), \
-        mdict['lat'], mdict['lon'], mdict['ele'], mdict['dip'],  mdict['azi'], mdict['gain'], inst)  
+        mdict['lat'], mdict['lon'], mdict['ele'], mdict['dip'],  mdict['azi'], mdict['gain'], inst)
 
         #print 'ARCLINK METAINFO FOR STATION %s' % (info)
         os.remove (output)
@@ -364,7 +362,7 @@ def arclinkRequest_sc (station,begin,end):
 
     except:
         print 'NO ARCLINK METAINFO FOR STATION'
-    
+
     try:
         os.remove(reqfile)
         os.remove(output)
@@ -376,11 +374,11 @@ def arclinkRequest_sc (station,begin,end):
 # -------------------------------------------------------------------------------------------------
 
 def arclink_Request_obspy (station, begin, end, usermail, pwdkeys):
-    
+
     sname = station.net+'.'+station.sta+'.'+station.loc+'.'+station.comp
     print 'STARTING ARCLINK REQUEST FOR STATION ' + sname
-    
-    output = sname + '-ARCLINK.dataless' 
+
+    output = sname + '-ARCLINK.dataless'
     client = Client (user=usermail,dcid_keys=pwdkeys,debug=False)
     info   = ''
 
@@ -390,7 +388,7 @@ def arclink_Request_obspy (station, begin, end, usermail, pwdkeys):
     else:
         try:
 #           client.saveResponse (output, station.net, station.sta, station.loc, station.comp, begin, end) #hs
-      
+
 #           mdict = getMetaInfo (output)                                  #hs
 #           inst  = getArclinkInst   (station, usermail, pwdkeys)         #hs
             sta2  = getArclinkInst_2 (station, usermail, pwdkeys)         #hs
@@ -404,7 +402,7 @@ def arclink_Request_obspy (station, begin, end, usermail, pwdkeys):
                                 station.comp.strip(),
 #           mdict['lat'], mdict['lon'], mdict['ele'], mdict['dip'], mdict['azi'], mdict['gain'],inst)      #hs
             str (sta2.lat),  str (sta2.lon), str (sta2.ele), str (sta2.dip), str (sta2.azi),               #hs \
-            str (sta2.gain), str (sta2.inst))                                                              #hs                          
+            str (sta2.gain), str (sta2.inst))                                                              #hs
 
             #logfile.red ('ARCLINK METAINFO FOR STATION %s' % (info))
 #           os.remove   (output)                        #hs
@@ -435,13 +433,13 @@ def xmlValue (token, line) :
     return s2[0]
 
 
-def xmlString (token, line, default='???') : 
-   
-    if not token in line : return default  
+def xmlString (token, line, default='???') :
+
+    if not token in line : return default
     else :                 return xmlValue (token, line)
 
-def xmlFloat  (token, line, default=-1) :   
-   
+def xmlFloat  (token, line, default=-1) :
+
     if not token in line : return default
     else :                 return float (xmlValue (token, line))
 
@@ -450,7 +448,7 @@ def xmlFloat  (token, line, default=-1) :
 def extractIrisData (station, xmlFileData) :
 
     if Globals.isDebug :               #    save xml file
-     
+
        file    = Server.xmlFileName (station, '.xml')
        fp      = open (file, 'w')
        fp.write (xmlFileData)
@@ -461,7 +459,7 @@ def extractIrisData (station, xmlFileData) :
     #
     lines = xmlFileData.split ('\n')
 
-    lat  = -1; lon = -1; ele = -1; dip = -1; azi = -1; gain = -1                            
+    lat  = -1; lon = -1; ele = -1; dip = -1; azi = -1; gain = -1
     inst = '???'
 
     for i in range (len(lines)) :
@@ -475,7 +473,7 @@ def extractIrisData (station, xmlFileData) :
        if '<InstrumentSensitivity>' in s : gain = xmlFloat  ('<Value>', lines[i+1])
        if '<Sensor>'                in s : inst = xmlString ('<Type>',  lines[i+1])
     #endfor
-      
+
     sta = Station (station.net, station.sta, station.loc, station.comp,lat,lon,ele,dip,azi,gain,inst)
     return sta
 
@@ -497,12 +495,12 @@ def irisParams (station, begin, end) :
 # -------------------------------------------------------------------------------------------------
 
 def irisRequest (station,begin,end):
-    
+
     if station.loc == '' : station.loc='--'
 #hs+
 #   url = 'http://www.iris.edu/ws/station/query?net=' + \
-#   station.net+'&sta='+station.sta+'&loc='+station.loc+'&cha='+station.comp+'&starttime='+begin+'&endtime='+end + '&level=resp'  
-    
+#   station.net+'&sta='+station.sta+'&loc='+station.loc+'&cha='+station.comp+'&starttime='+begin+'&endtime='+end + '&level=resp'
+
     url = 'http://service.iris.edu/fdsnws/station/1/query?' + irisParams (station,begin,end)
 #hs-
 
@@ -510,7 +508,7 @@ def irisRequest (station,begin,end):
 
     try:
 #       f    = urllib.urlopen (url)               #hs+
-#       doc  = etree.parse (f)                    
+#       doc  = etree.parse (f)
 #       root = doc.getroot()
 #
 #       lat=''
@@ -520,7 +518,7 @@ def irisRequest (station,begin,end):
 #       azi=''
 #       gain=''
 #       inst=''
-#                                                 
+#
 #       for child in root:
 #          for a in child:
 #              for b in a:
@@ -539,27 +537,27 @@ def irisRequest (station,begin,end):
 
         xmlFileData = urllib.urlopen (url).read()
 
-        if len (xmlFileData) == 0 : 
-           return ''    
+        if len (xmlFileData) == 0 :
+           return ''
 
         sta2 = extractIrisData (station, xmlFileData)         # sta2 is of type Station
 
         lat  = str (sta2.lat); lon = str (sta2.lon);  ele  = str (sta2.ele)
         dip  = str (sta2.dip); azi = str (sta2.azi);  gain = str (sta2.gain)
         inst = str (sta2.inst)                                                   #hs-
-        
+
         inst = inst.replace(' ','_')
 
         if gain != '' :
            gain = float (gain)
            locale.setlocale(locale.LC_ALL,'C')
            x = locale.format('%.2f',gain,1)
-                     
+
         meta = '{0:3}{1:6}{2:3}{3:4}{4:12}{5:12}{6:10}{7:10}{8:10}{9:20}{10:50}'.format (station.net.strip(), \
         station.sta.strip(),station.loc.strip(),station.comp.strip(),lat.strip(),lon.strip(),ele.strip(),     \
         dip.strip(),azi.strip(),x.strip(),inst.strip())
-               
-        print IRIS_META 
+
+        print IRIS_META
 
     except:
         print 'Exception'
@@ -569,13 +567,13 @@ def irisRequest (station,begin,end):
 # -------------------------------------------------------------------------------------------------
 
 def makeRequest_old (i, time_d, flag, usermail, pwdkeys):
-        
-        sname = i.net+'.'+i.sta+'.'+i.loc+'.'+i.comp       
+
+        sname = i.net+'.'+i.sta+'.'+i.loc+'.'+i.comp
         meta  = irisRequest (i, time_d['i_begin'], time_d['i_end'])
 
-        if meta == '' :  
+        if meta == '' :
            meta = arclink_Request_obspy (i,time_d['go_begin'],time_d['go_end'], usermail, pwdkeys)
- 
+
         serializeMeta (meta,flag)
 
         if meta != '' :
@@ -584,7 +582,7 @@ def makeRequest_old (i, time_d, flag, usermail, pwdkeys):
 
 
 def makeRequest (i, time_d, flag, usermail, pwdkeys):
-        
+
     sname  = i.net+'.'+i.sta+'.'+i.loc+'.'+i.comp
     p      = KeyFile.getProvider (net=i.net, station=i.sta)
     meta   = ''
@@ -594,7 +592,7 @@ def makeRequest (i, time_d, flag, usermail, pwdkeys):
     try :
        if   p == KeyFile.PROV_IRIS :    meta = irisRequest (i, t1, t2)
 
-       elif p == KeyFile.PROV_WEB_DC :  
+       elif p == KeyFile.PROV_WEB_DC :
           try :    meta = arclink_Request_obspy (i, t1, t2, usermail, pwdkeys)
           except : meta = ''
 
@@ -611,9 +609,9 @@ def makeRequest (i, time_d, flag, usermail, pwdkeys):
              except : meta = ''
 
     except : meta = ''
-     
+
     if meta != '' :
-       print '#meta = ' 
+       print '#meta = '
        print meta
 
 # -------------------------------------------------------------------------------------------------
@@ -626,14 +624,14 @@ def writeList (L,PreList,numproc,metafilepath):
 
     fobj  = open (os.path.join (os.getcwd(),fname),'w')
     WLIST = []
-    
+
     for j in PreList:
         if j.loc == '' : j.loc = '--'
 
         form = '{0:3}{1:6}{2:3}{3:4}{4:12}{5:12}{6:10}{7:10}{8:10}{9:20}{10:50}'
         meta = form.format (j.net,j.sta,j.loc,j.comp,j.lat,j.lon,j.ele,j.dip,j.azi,j.gain,j.inst)
         WLIST.append(meta)
- 
+
     for i in L : WLIST.append(i)
 
     WLIST = sorted(WLIST)
@@ -654,7 +652,7 @@ def globalConf():
             cDict[name]=value
 
     return cDict
-  
+
 # -------------------------------------------------------------------------------------------------
 
 g_LastStation = None
@@ -673,21 +671,21 @@ def checkProcessError (stationName, nErrors, lines, execTime) :   # ??? execTime
 
        # UserWarning: MAX_REQUESTS exceeded - breaking current request loop
 
-       if 'MAX_REQUESTS' in line : 
+       if 'MAX_REQUESTS' in line :
           errCode = Server.RETRY_IT
 
           s =  'UserWarning: MAX_REQUESTS exceeded - breaking current request loop'
           s += ' (' + str(nErrors) + ')'
           #isEnd = True
- 
+
        elif 'deprecated' in line : s = ' '             # ignore ObsPyDeprecation Warning   #15.7.2016
 
        elif Logfile.MSG_TOKEN in line :  s = line
        elif 'python'  in line :          s = line
 
-       elif ARCLINK_META in line or IRIS_META in line : 
+       elif ARCLINK_META in line or IRIS_META in line :
           name = DataTypes.toNetAndStation (stationName)
- 
+
           if g_LastStation == None or g_LastStation != name :
              g_LastStation = name
              s = KeyFile.getSite (stationName)
@@ -714,12 +712,12 @@ def checkProcessError (stationName, nErrors, lines, execTime) :   # ??? execTime
               sn.append (lines [lineNr+i])
           #endfor
 
-          if Server.checkIsTimeOut (station, sn) :       # Traceback shows timeout
+          if Server.checkIsTimeOut (stationName, sn) :       # Traceback shows timeout
              Logfile.error ('Retry access later')
              errCode = Server.RETRY_IT
 
           else :                                         # Traceback --> log
-             Server.printLines (station, sn, onlyErrorLog=True)
+             Server.printLines (stationName, sn, onlyErrorLog=True)
 
           isEnd = True
        #endif
@@ -746,11 +744,11 @@ def writeMetaInfo (metaInfo) :
 
 # -------------------------------------------------------------------------------------------------
 
-def buildStationList (options) :      
+def buildStationList (options) :
 
     metafile  = ('metainfo-%s-%s.meta') % (options.year, options.day)
     metaf     = os.path.join (options.path, metafile)
-   
+
     time_d = makeTime (options.year, options.day)
     SDS    = parseSDS (options.path)
 
@@ -764,7 +762,7 @@ def buildStationList (options) :
 
     if not old : SDS_2 = SDS
     else :
-       selection = ['BHE','BHN','BHZ', 'BH1','BH2','BHZ', 'HHE','HHN','HHZ']    # use only this     
+       selection = ['BHE','BHN','BHZ', 'BH1','BH2','BHZ', 'HHE','HHN','HHZ']    # use only this
        mask      = Basic.stringsEndsWith (names, selection)
 
        SDS_2 = []
@@ -772,22 +770,22 @@ def buildStationList (options) :
        for i in range (len (mask)) :
            if mask[i] : SDS_2.append (SDS[i])
     #endif
-    
+
     #
     #
     META   = parseMetaInfoFile (metaf)
     D      = cmpMeta (META, SDS_2)
-    
+
     waiting = []
     n       = len (D)
 
-    #if Globals.isDebug : 
+    #if Globals.isDebug :
     #   if n > 200 : n = 200
 
     for i in range (n) :  waiting.append (D[i].fullName())
 
     return waiting
-       
+
 # -------------------------------------------------------------------------------------------------
 
 def init (isClient) :
@@ -807,16 +805,16 @@ def checkConfigFile (conf) :
     pwd           = ConfigFile.pwd
     keyfilefolder = ConfigFile.keyfilefolder
 
-    keyList = [mail, pwd, keyfilefolder]   
+    keyList = [mail, pwd, keyfilefolder]
     return ConfigFile.checkKeys (conf, keyList)
 
 # -------------------------------------------------------------------------------------------------
-    
+
 SERVER_NAME = 'meta'
 
 def startIrisServer (stations, args) :
 
-    ctrl = Server.ServerCtrl (nRetries = 4, nParallel=10, waitTime=0.1, printStat=False)    
+    ctrl = Server.ServerCtrl (nRetries = 4, nParallel=10, waitTime=0.1, printStat=False)
     srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
    #if WINDOWS : srv.control.ClientProc = MainProc
 
@@ -824,8 +822,8 @@ def startIrisServer (stations, args) :
 
 
 def startGeofonServer (stations, args) :
-          
-    ctrl = Server.ServerCtrl (nRetries = 4, nParallel=4, waitTime=0.5, printStat=False)    
+
+    ctrl = Server.ServerCtrl (nRetries = 4, nParallel=4, waitTime=0.5, printStat=False)
     srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
    #if WINDOWS : srv.control.ClientProc = MainProc
 
@@ -836,7 +834,7 @@ def startGeofonServer (stations, args) :
 def startServer (stationList, options) :
 
      network    = options.network
-     mask       = KeyFile.getIrisMask (None, stations=stationList) 
+     mask       = KeyFile.getIrisMask (None, stations=stationList)
      irisList   = Basic.selectStrings (stationList, mask)
      geofonList = Basic.selectStrings (stationList, Basic.Not (mask))
 
@@ -844,15 +842,15 @@ def startServer (stationList, options) :
      args = Server.joinClientArgs ([Conf ['pwd'], Conf ['mail']])
 
      if not network or network == 'iris' :
-        if len (irisList) == 0 : 
+        if len (irisList) == 0 :
            Logfile.add ('All iris entries set')
 
         else :
            if not startIrisServer (irisList, args) :
               return True                              # aborted with ctrl c
- 
+
      if not network or network == 'geofon' :
-        if len (irisList) == 0 : 
+        if len (irisList) == 0 :
            Logfile.add ('All geofon entries set')
 
         else :
@@ -867,26 +865,26 @@ def startServer (stationList, options) :
 
         if len(list2) > 0 :
            startIrisServer (list2, args)
-           return True                      
-         
+           return True
+
         list2 = DataTypes.selectNetwork (geofonList, network)
 
         if len(list2) > 0 :
            startGeofonServer (list2, args)
-           return True  
+           return True
 
-        Logfile.add ('All network enties set')             
+        Logfile.add ('All network enties set')
      #endif
 
      return False       # nothing done
 
 # --------------------------------------------------------------------------------------------------
 #
-#   Client routine 
+#   Client routine
 #
 
 class MetaDataClient (Server.ClientBase) :
-    
+
     def __init__ (self, options) :
 
         self.options = options
@@ -898,7 +896,7 @@ class MetaDataClient (Server.ClientBase) :
     def _run (self) :          # called from ClientBase
 
        #Conf    = globalConf()
-       #pwd     = Conf ['pwd']   
+       #pwd     = Conf ['pwd']
        #mail    = Conf ['mail']
         pwd     = self.args[1]
         mail    = self.args[2]
@@ -920,8 +918,8 @@ class MetaDataClient (Server.ClientBase) :
 def run_parallel (options) :
 
     if options.station :                                     # Client part
-       Globals.setEventDir (options.path)       
-       
+       Globals.setEventDir (options.path)
+
        if not init (True) : return False
 
        clt = MetaDataClient (options)
@@ -932,7 +930,7 @@ def run_parallel (options) :
        Globals.setEventDir  (options.path)
 
        if not init (False) : return False
-        
+
        checkConfigFile (Globals.ConfigDict)
 
        #   Build station list
@@ -947,8 +945,8 @@ def run_parallel (options) :
           #
           if not startServer (stationList, options) :
              msg = 'Program finished'
-          
-          else : 
+
+          else :
              writeMetaInfo (g_MetaInfo)
              buildStationList (options)
 
@@ -956,9 +954,9 @@ def run_parallel (options) :
              else :           msg = 'Program finished - All stations found'
        #endif
 
-       Logfile.showLabel (msg)     
+       Logfile.showLabel (msg)
     #endif server
-   
+
 # -------------------------------------------------------------------------------------------------
 #  Aufruf : python  tools/ev_meta_mt4.py  -f  <event dir>
 #
@@ -978,7 +976,5 @@ def MainProc () :
     run_parallel (options)
 
 if __name__ == "__main__":
-    
+
     MainProc ()
-
-

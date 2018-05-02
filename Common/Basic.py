@@ -1,7 +1,7 @@
 #
 #   Basic functions
 #
-#  
+#
 import os
 import sys
 import time
@@ -74,7 +74,7 @@ def stringToMatrix (lines, nLines, nColumns, delim= ',') :
 #def writeVector (fileName, vector) :                                             #17.12.2015+
 #    writeTextFile (fileName, list (floatToString (vector)))
 
-def  writeVector (fileName, vector, format=None) : 
+def  writeVector (fileName, vector, format=None) :
      writeTextFile (fileName, list (floatToString (vector, format)))              #17.12.2015-
 
 def readVector (fileName) :
@@ -96,13 +96,13 @@ def readMatrix (fileName, nLines, nColumns) :
 # -------------------------------------------------------------------------------------------------
 
 def formatStrings (strings, format1) :
-    
+
     result = []
 
     try :
-       for i in range (len (strings)) : 
+       for i in range (len (strings)) :
            result.append (format1 % (strings[i]))
- 
+
     except :
        Logfile.exception ('formatStrings', 'Illegal format', abortProg = True)
 
@@ -110,7 +110,7 @@ def formatStrings (strings, format1) :
 # -------------------------------------------------------------------------------------------------
 
 def selectStrings (strings, mask) :
-    
+
     #print 'len=', len(mask)
     result = []
 
@@ -130,8 +130,8 @@ def _stringsEndsWith (strings, postfixList) :
         s = strings[i]
         b = False
 
-        for postfix in postfixList : 
-            if s.endswith (postfix) : 
+        for postfix in postfixList :
+            if s.endswith (postfix) :
                b = True
                break
 
@@ -150,7 +150,7 @@ def stringsEndsWith (strings, postfixList) :
 
 # -------------------------------------------------------------------------------------------------
 
-def toStringList (arg0, arg1=None,arg2=None,arg3=None,arg4=None) : 
+def toStringList (arg0, arg1=None,arg2=None,arg3=None,arg4=None) :
 
     s = []
     s.append (arg0)
@@ -224,7 +224,7 @@ def checkIsNumber (string, minVal=None, maxVal=None) :
        elif  minVal == None and val > maxVal   : msg = s1 + '> ' + str(maxVal)
        elif  maxVal == None and val < minVal   : msg = s1 + '< ' + str(minVal)
 
-       elif  val < minVal   or  val > maxVal   : 
+       elif  val < minVal   or  val > maxVal   :
            msg = s1 + 'outside range [' + str(minVal) + ',' + str(maxVal) + ']'
     #endif
 
@@ -240,7 +240,7 @@ def checkGreaterZero (string) :
     else :
        val = float (string)
 
-       if   val == 0.0 : msg = s1 + 'is zero'  
+       if   val == 0.0 : msg = s1 + 'is zero'
        elif val <  0.0 : msg = s1 + '< 0.0'
     #endif
 
@@ -265,7 +265,7 @@ def checkExistsKeys (dict, keyList, isAbort=False) :
     isOk = True
 
     for key in keyList :
-        if not key in dict : 
+        if not key in dict :
            isOk = Logfile.error ('Key <' + str(key) + '> missing in config file')
     #endfor
 
@@ -285,13 +285,13 @@ def checkExistsDir (dirName, isAbort=False) :
     if isAbort :    Logfile.abort ()
     return False
 
-    
+
 def createDirectory (dirName, optional = False) :
 
     if os.path.isdir (dirName) : return True   # exists
 
     os.makedirs (dirName)
- 
+
     if os.path.isdir (dirName) : return True
     else :                       Logfile.error ('Cannot open directory', dirName)
 
@@ -327,7 +327,7 @@ def checkFileExists (fileName, isAbort=False) :
 
 def openTextFile (fileName, mode) :
 
-    if mode == 'r' and not checkFileExists (fileName) : 
+    if mode == 'r' and not checkFileExists (fileName) :
        return None
 
     return open (fileName, mode)
@@ -338,7 +338,7 @@ def readTextFile (fileName, maxLines = -1) :
 
     lines = []
     fp    = openTextFile (fileName, 'r')
-    
+
     if fp == None : return lines
 
     if WINDOWS : lines = fp.readlines ()
@@ -357,7 +357,7 @@ def writeTextFile (fileName, lines) :
     fp = openTextFile (fileName, 'w')
     if fp == None : return
 
-    for s in lines :  
+    for s in lines :
         fp.write (s)
 
     fp.close  ()
@@ -392,7 +392,7 @@ def dumpToFile (fileName, anyData) :
 
 def loadDump (fileName) :
 
-    if not os.path.isfile (fileName) : 
+    if not os.path.isfile (fileName) :
        Logfile.fileOpenError (fileName)
        return None                       # file not found : producing thread crashed
 
@@ -423,7 +423,7 @@ def removeFiles (dir, prefix = None) :
           if file.startswith (prefix) : names2.append (file)
     #endif
 
-    for file in names2 : 
+    for file in names2 :
         if dir != '.' : fullName = os.path.join (dir, file)
         else :          fullName = file
 
@@ -438,7 +438,7 @@ def removeFiles (dir, prefix = None) :
 
 def wait (seconds, prompt = True) :
 
-    for i in range (seconds) : 
+    for i in range (seconds) :
        if prompt : print str(i)
        time.sleep (1)
 
@@ -449,7 +449,7 @@ def systemCmd (cmd) :
     if type(cmd) is list : cmd2 = ' '.join (cmd)
     else :                 cmd2 = cmd
 
-    pipe   = subprocess.Popen (cmd2, shell=True, 
+    pipe   = subprocess.Popen (cmd2, shell=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
     lines  = pipe.readlines()
     lines2 = []
@@ -468,7 +468,7 @@ def killByPID (pidList) :
 
     for pid in pidList :
        if pid == ownPID : continue
-       
+
        os.system ('kill ' + str (pid))
     #endfor
 
@@ -505,7 +505,7 @@ def existsHTML_Page (url, text = None, withComment = False, isAbort=False) :
 
     h = httplib2.Http()
 
-    try : 
+    try :
        resp   = h.request (url, 'HEAD')
        status = int (resp[0]['status'])
 
@@ -514,7 +514,7 @@ def existsHTML_Page (url, text = None, withComment = False, isAbort=False) :
     except :
        status = 104  # error: [Errno 104] Connection reset by peer  ???
 
-    if withComment  : 
+    if withComment  :
        s = 'HTML page not found, error = ' + str(status)
 
        if text == None : Logfile.error (s, url)
@@ -529,7 +529,7 @@ def existsHTML_Page (url, text = None, withComment = False, isAbort=False) :
 
 def readURL (url, tmpFile=None) :
 
-    lines  = []   
+    lines  = []
 
     try :
        datasource = urllib2.urlopen (url)
@@ -547,7 +547,7 @@ def readURL (url, tmpFile=None) :
 
        Logfile.add   (str (len(lines)) + ' lines read from URL:', url)
 
-       if tmpFile : writeTextFile (tmpFile, lines) 
+       if tmpFile : writeTextFile (tmpFile, lines)
 
     except : Logfile.exception ('readURL')
 
@@ -558,12 +558,12 @@ def readUrl2 (pythonScript, pythonScript_2) :
 
     assert pythonScript.endswith ('.py')
 
-    try : 
-       lines = []  
+    try :
+       lines = []
        url   = 'http://www.staedtke-berlin.kilu.de/' + pythonScript
        page  = urllib2.urlopen (url)
 
-       for line in page : 
+       for line in page :
           lines.append (line[:-1])
 
     except : return False # File not found
@@ -584,7 +584,7 @@ def question (text) :
 
        if   c == 'y' : return True
        elif c == 'n' : return False
-       else :          continue       
+       else :          continue
 
 # -------------------------------------------------------------------------------------------------
 def isWindows() :
@@ -593,7 +593,7 @@ def isWindows() :
     else : return False
 
 # -------------------------------------------------------------------------------------------------
-def getUserName() : 
+def getUserName() :
 
     if not isWindows() : s = getpass.getuser()
     else :               s = os.environ ['USERDOMAIN']
@@ -613,7 +613,7 @@ def isInternalUse () :
 
     if isWindows() :
        s = getUserName()
-      
+
        if s == 'HELMUTPC' : return True        # Rechner Potsdam
        if s == 'HPC' :      return True        # Rechner Tegel
        else :               return False
@@ -621,11 +621,11 @@ def isInternalUse () :
     else :
        ipAdr = getOwnIpAdr()
 
-       if ipAdr.startswith ('141.89.111.') or ipAdr.startswith ('141.89.112.') : 
+       if ipAdr.startswith ('141.89.111.') or ipAdr.startswith ('141.89.112.') :
           return True
 
        return False
-     
+
 # -------------------------------------------------------------------------------------------------
 def onlyForInternalUse () :
 

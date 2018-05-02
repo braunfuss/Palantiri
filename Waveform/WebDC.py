@@ -1,13 +1,6 @@
 
 import os
-import platform
-
-WINDOWS = (platform.system() == 'Windows')
-
-from   obspy.arclink.client import Client
-
-#       Import from Common
-
+from obspy.clients.arclink    import Client
 import  Basic
 import  Globals
 import  Logfile
@@ -17,7 +10,7 @@ import  Logfile
 
 def _getFromCatalog (network) :
 
-    return None   
+    return None
 
     # spaeter ???
 
@@ -35,23 +28,23 @@ def _getFromCatalog (network) :
 def getNetworkInventory (network, user1):
         '''
         Retrieve all stations from one WEBDC network
-        
+
         :type network: str
         :param network: name of network to search for station
         '''
-        
+
         inv  = None
         isOk = False
 
         for i in range(5) :
             try :
                client = Client (user=user1)                                            #hs
-               #client  = Client (user=user1, timeout=100)                             #hs 
+               #client  = Client (user=user1, timeout=100)                             #hs
                inv     = client.getInventory (network, '*', '*', '*', restricted=None,permanent=None)
                isOk    = True
                break
 
-            except : 
+            except :
              #time.sleep (1.0); continue
               return None
         #endfor
@@ -60,7 +53,7 @@ def getNetworkInventory (network, user1):
         else :         return inv
 
 
-# used by ev_meta.py :           
+# used by ev_meta.py :
 
 def getInventory (station, usermail_1, key_1) :
 
@@ -75,7 +68,7 @@ def getInventory (station, usermail_1, key_1) :
 def parseInventory (Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
-        
+
         :type Dict: dictionary
         :param Dict: network dictionary with all station information
         '''
@@ -90,7 +83,7 @@ def parseInventory (Dict):
                 net    = t[0]
                 sta    = t[1]
                 lat    = Dict[i]['latitude']
-                lon    = Dict[i]['longitude'] 
+                lon    = Dict[i]['longitude']
                 elev   = Dict[i]['elevation']
                 site   = Dict[i]['description']
                 tstart = Dict[i]['start']
@@ -109,7 +102,7 @@ def parseInventory (Dict):
 def getNetworks (user1, start, end) :
     '''
     Return dictionary of available networks via Arclink
-        
+
     :type start: obspy.core.utcdatetime.UTCDateTime
     :param start: Start date and time
     :type end: obspy.core.utcdatetime.UTCDateTime
@@ -124,7 +117,7 @@ def getNetworks (user1, start, end) :
           client  = Client (user = user1)                           #hs
           #client = Client (user = user1, timeout=20)               #hs
           t       = client.getNetworks (start,end)
-    
+
           for index,i in enumerate (t.iterkeys()):
              z = i.split('.')
              L.append (z[0])
@@ -175,19 +168,19 @@ def listNetworks ():                         #hs : new routine : replaces ..._ol
     #URL = 'http://geofon.gfz-potsdam.de/waveform/archive/index.php?type=all'   # all
     s    = 'download latest GEOFON network tables :'
 
-    if not Basic.existsHTML_Page (URL, s, withComment = True) : 
+    if not Basic.existsHTML_Page (URL, s, withComment = True) :
        Logfile.error ('Cannot find url :', URL)
        return L
 
     Logfile.add (' ',s, URL)
 
-    tmpFile = os.path.join  (Globals.ProtFileDir, 'geofon_index.txt') 
+    tmpFile = os.path.join  (Globals.ProtFileDir, 'geofon_index.txt')
     lines   = Basic.readURL (URL, tmpFile)
 
     for line in lines :
         word = 'network='
 
-        if 'station.php' in line and word in line :              
+        if 'station.php' in line and word in line :
            pos     = line.find (word) + len(word)
            network = line [pos: pos+2]
            #Logfile.add (network)
@@ -196,4 +189,3 @@ def listNetworks ():                         #hs : new routine : replaces ..._ol
 
     L = list (set(L))
     return L
-

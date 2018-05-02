@@ -7,9 +7,9 @@ WINDOWS = (platform.system() == 'Windows')
 
 # add local directories to import path
 
-sys.path.append ('../tools/') 
-sys.path.append ('../Common/')                              
- 
+sys.path.append ('../tools/')
+sys.path.append ('../Common/')
+
 from   optparse import OptionParser
 import logging
 import time
@@ -23,16 +23,16 @@ from datetime import datetime
 
 import  config
 import  urllib
-import  urllib2   
-from    lxml     import etree   
+import  urllib2
+from    lxml     import etree
 
 from ConfigParser import SafeConfigParser
 
-from obspy.arclink.client     import Client   
-from obspy.core.util          import locations2degrees
+from obspy.clients.arclink    import Client
+from obspy.geodetics import locations2degrees
 from obspy.core.utcdatetime   import UTCDateTime
 
-import cPickle as pickle 
+import cPickle as pickle
 
 if WINDOWS :
    import xlrd              # for convertion xls to cvs
@@ -66,7 +66,7 @@ def printMsg (station, text=' ') :
 class Station(object):
     '''
     Class for storing station information
-    
+
     :type net: str
     :param net: Network of station
     :type station: str
@@ -89,9 +89,9 @@ class Station(object):
     :param end: Realtime data stream of WEBDC, optional
     :type provider: str
     :param provider: Data provider of the station, optional
-    
+
     '''
-    
+
     def __init__(self, net, station, lat, lon, elev, site,
                  atime=None,rtime=None,start=None,end=None,provider=None):
         '''
@@ -110,9 +110,9 @@ class Station(object):
 class NetworkList(object):
     '''
     Class of network list client to retrieve network list of WEBDC and IRIS
-    
+
     :type otime: str
-    :param otime: Event time 
+    :param otime: Event time
     :type elat: str
     :param elat: Event latitude
     :type elon: str
@@ -122,13 +122,13 @@ class NetworkList(object):
     :type maxDist:  str
     :param maxDist: Maximum distance from station to event
     :type duration: str
-    :param duration: duration from event time on where data should be available for the station 
+    :param duration: duration from event time on where data should be available for the station
     :type mail: str
-    :param mail: Mail adress of user to get network information from WEBDC , optional 
+    :param mail: Mail adress of user to get network information from WEBDC , optional
     :type blacklist: list
     :param blacklist: List of Networks who will be blacklisted in the search
     '''
-    
+
     def __init__(self,otime,elat,elon,minDist,maxDist,duration,
                  mail='ehlert@geo.uni-potsdam.de',blacklist=[]):
         '''
@@ -146,9 +146,9 @@ class NetworkList(object):
         '''
         inetworks = self._listIrisNetworks()
         inetworks = list (set (inetworks))
-        
+
         self._filterStationsBlacklist (inetworks)
-        
+
         return sorted (inetworks)
 
 # -------------------------------------------------------------------------------------------------
@@ -158,26 +158,26 @@ class NetworkList(object):
         Returns list of available WEBDC networks
         '''
 
-        gnetworks  = self._listGeofonNetworks()   
+        gnetworks  = self._listGeofonNetworks()
         gnetworks2 = self._listGeofonNetworks2()
 
         if WINDOWS : gnetworks3 = []  # ??? noch fuer Windows einbauen
         else :
-           t = UTCDateTime(self.otime)        
-           gnetworks3 = self._getGeofonNetworks (t-10, t+10) 
-        
-        gnetworks.extend (gnetworks2)  
-        gnetworks.extend (gnetworks3) 
+           t = UTCDateTime(self.otime)
+           gnetworks3 = self._getGeofonNetworks (t-10, t+10)
+
+        gnetworks.extend (gnetworks2)
+        gnetworks.extend (gnetworks3)
         gnetworks = list (set(gnetworks))
-        
+
         self._filterStationsBlacklist (gnetworks)
 
         return sorted (gnetworks)
 # -------------------------------------------------------------------------------------------------
-    
+
     def _listIrisNetworks(self):
         #Downloads available IRIS networks, removes duplicates and returns them as list
-        
+
         data = []
 
        #URL  = 'http://www.iris.edu/dms/nodes/dmc/services/network-codes/?type=csv' #9.12.2015
@@ -191,7 +191,7 @@ class NetworkList(object):
            for row in datareader : data.append (row[0])
         #endif
 
-        URL = 'http://www.iris.edu/SeismiQuery/bin/tempNetsExcel.php'   
+        URL = 'http://www.iris.edu/SeismiQuery/bin/tempNetsExcel.php'
         s   = 'download latest IRIS temporary network tables : '
 
         if Basic.existsHTML_Page (URL, withComment = True) :
@@ -207,10 +207,10 @@ class NetworkList(object):
            localFile.close  ()
 
            try :
-              if WINDOWS : 
+              if WINDOWS :
                  wb = xlrd.open_workbook (tempnetname)
-                 
-              else :       
+
+              else :
                  os.system (('in2csv  %s > %s') % (tempnetname,tmpcsv))
                  datareader = csv.reader (open (tmpcsv, 'rb'), delimiter=",")
 
@@ -228,17 +228,17 @@ class NetworkList(object):
         return data
 
 # -------------------------------------------------------------------------------------------------
-    
+
     def _listGeofonNetworks2 (self):
         '''
         Download available WEBDC networks from EIDA
         '''
-    
+
         L   = []
         URL = 'http://www.orfeus-eu.org/Data-info/eida-station-overview.txt'
         s   = 'download latest EIDA network tables :'
 
-        if not Basic.existsHTML_Page (URL, withComment = True) : 
+        if not Basic.existsHTML_Page (URL, withComment = True) :
            return L
 
         Logfile.add (' ', s, URL)
@@ -278,16 +278,16 @@ class NetworkList(object):
 
     def _listGeofonNetworks (self):                         #hs : new routine : replaces ..._old
         '''
-        Download available networks via Geofon kml file 
-        '''      
+        Download available networks via Geofon kml file
+        '''
         return WebDC.listNetworks ()
 
 # -------------------------------------------------------------------------------------------------
-   
+
     def _getGeofonNetworks (self,start,end):
         '''
         Return dictionary of available networks via Arclink
-        
+
         :type start: obspy.core.utcdatetime.UTCDateTime
         :param start: Start date and time
         :type end: obspy.core.utcdatetime.UTCDateTime
@@ -295,12 +295,12 @@ class NetworkList(object):
         '''
         return WebDC.getNetworks (self.mail, start, end)
 
-# -------------------------------------------------------------------------------------------------  
-    
+# -------------------------------------------------------------------------------------------------
+
     def _filterStationsBlacklist (self,NList):
         '''
         Delete blacklisted networks from network list
-        
+
         :type NList: list
         :param Nlist: List of Networks to delete blacklisted Networks
         '''
@@ -316,11 +316,11 @@ RETRY_ACCESS = 'Retry access'
 def getNetworkInventory (network):
         '''
         Retrieve all stations from one WEBDC network
-        
+
         :type network: str
         :param network: name of network to search for station
         '''
-        
+
         inv = WebDC.getNetworkInventory (network, 'ehlert@geo.uni-potsdam.de')
 
         if inv == None : print RETRY_ACCESS
@@ -332,7 +332,7 @@ def getNetworkInventory (network):
 def parseInventory (Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
-        
+
         :type Dict: dictionary
         :param Dict: network dictionary with all station information
         '''
@@ -347,7 +347,7 @@ def parseInventory (Dict):
                 net    = t[0]
                 sta    = t[1]
                 lat    = Dict[i]['latitude']
-                lon    = Dict[i]['longitude'] 
+                lon    = Dict[i]['longitude']
                 elev   = Dict[i]['elevation']
                 site   = Dict[i]['description']
                 tstart = Dict[i]['start']
@@ -363,7 +363,7 @@ def parseInventory (Dict):
 def parseInventory_new (Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
-        
+
         :type Dict: dictionary
         :param Dict: network dictionary with all station information
         '''
@@ -377,20 +377,20 @@ def buildGeofonMsg (stationobject, text=None) :
     end   = str (stationobject.end).split   ('T')[0]
     now   = str (UTCDateTime (datetime.now())).split ('T')[0]
 
-    if end.strip() == now.strip() : end = '           '                           
+    if end.strip() == now.strip() : end = '           '
 
     s = start + ' - ' + end + '  ' + toStr (stationobject.site)
-    
+
     if text != None : s += (' (' + text +')')
 
     return s
 
 # -------------------------------------------------------------------------------------------------
-    
+
 def filterStationsTimeGeofon (stationList, parameter):
         '''
         Filter stations via time attribute
-        
+
         :type stationList: list
         :param stationList: list of stationobjects
         :type parameter: list
@@ -426,12 +426,12 @@ def filterStationsTimeGeofon (stationList, parameter):
         #endfor
 
         return G
-# -------------------------------------------------------------------------------------------------   
-    
+# -------------------------------------------------------------------------------------------------
+
 def create_dir (directory):
     '''
     Creates recursively directorys with access control
-    
+
     :type directory: str
     :param directory: name of the path to be created
     '''
@@ -454,17 +454,17 @@ def toStr (s) :
 def filterStationsDistance (stationList, parameter):
         '''
         Filters stationslist via distance attribute
-        
+
         :type stationList: list
         :param stationList: list of stationobjects
         :type parameter: list
         :param parameter: list of parameter used filter routines
         '''
-    
+
         D = []
 
         for stationobject in stationList:
-            sdelta = locations2degrees (parameter['elat'], parameter['elon'], 
+            sdelta = locations2degrees (parameter['elat'], parameter['elon'],
                                         float (stationobject.lat), float (stationobject.lon))
 
             if sdelta > parameter['minDist'] and sdelta < parameter['maxDist']:
@@ -480,10 +480,10 @@ def buildIRISMsg (stationobject, start, end, text) :
     end   = ('%s-%s-%s') % (end[0],  end[1],  end[2])
     now   = str (UTCDateTime (datetime.now())).split ('T')[0]
 
-    if end.strip() == now.strip() : end = '           '                           
+    if end.strip() == now.strip() : end = '           '
 
     s = start + ' - ' + end + '  ' + toStr (stationobject.site)
-    
+
     if text != None : s += (' (' + text +')')
 
     return s
@@ -492,7 +492,7 @@ def buildIRISMsg (stationobject, start, end, text) :
 def filterStationsTimeIRIS (stationList, parameter):
     '''
     Filters stations via time attribute
-    
+
     :type stationList: list
     :param stationList: list of stationobjects
     :type parameter: list
@@ -550,7 +550,7 @@ def filterStationsTimeIRIS (stationList, parameter):
 def parseXML (request):
     '''
     Parse XML representation of IRIS networks to retrieve station information
-    
+
     :type request: str
     :param request: name of iris network
     '''
@@ -567,7 +567,7 @@ def parseXML (request):
                 net   = str (node.getAttribute("net"))
                 sta   = node.getAttribute("sta")
                 lat   = node.getAttribute("lat")
-                lon   = node.getAttribute("lon") 
+                lon   = node.getAttribute("lon")
                 elev  = node.getAttribute("elev")
                 atime = node.getAttribute("ardata")
                 rtime = node.getAttribute("rtdata")
@@ -585,7 +585,7 @@ def parseXML (request):
 def geofonMt (geofonnetwork,pid,parameter):
         '''
         Function to retrieve network information for WEBDC networks
-        
+
         :type geofonnetwork: list
         :param geofonnetwork: list of networks from webdc
         :type pid: int
@@ -593,15 +593,15 @@ def geofonMt (geofonnetwork,pid,parameter):
         :type parameter: list
         :param parameter: list of parameter used filter routines
         '''
-        
+
         SDict = getNetworkInventory (geofonnetwork)
         T     = []
 
-        if SDict != None :   
+        if SDict != None :
            S     = parseInventory (SDict)
            D     = filterStationsDistance   (S,parameter)
            T     = filterStationsTimeGeofon (D,parameter)
-        
+
         return T
 
 # -------------------------------------------------------------------------------------------------
@@ -609,7 +609,7 @@ def geofonMt (geofonnetwork,pid,parameter):
 def irisMt (irisnetwork,pid,parameter):
     '''
     Function to retrieve network information for IRIS networks
-    
+
     :type irisnetwork: list
     :param irisnetwork: list of networks from iris
     :type pid: int
@@ -617,13 +617,13 @@ def irisMt (irisnetwork,pid,parameter):
     :type parameter: list
     :param parameter: list of parameter used filter routines
     '''
-    
+
     S = parseXML (irisnetwork)
     D = filterStationsDistance (S,parameter)
     T = filterStationsTimeIRIS (D,parameter)
 
     return T
-  
+
 # -------------------------------------------------------------------------------------------------
 
 def checkProcessError (station, nErrors, lines, execTime = None) :
@@ -650,11 +650,11 @@ def checkProcessError (station, nErrors, lines, execTime = None) :
 
        # UserWarning: MAX_REQUESTS exceeded - breaking current request loop -> retry access
 
-       if 'MAX_REQUESTS' in line : 
+       if 'MAX_REQUESTS' in line :
           errCode = Server.RETRY_IT
           s =  'UserWarning: MAX_REQUESTS exceeded - breaking current request loop'
           s += ' (' + str(nErrors) + ')'
- 
+
        elif 'deprecated' in line : s = ' '             # ignore ObsPyDeprecation Warning   #15.7.2016
 
        elif 'python' in line : s = line
@@ -698,7 +698,7 @@ def checkProcessError (station, nErrors, lines, execTime = None) :
     return errCode
 
 # --------------------------------------------------------------------------------------------------
- 
+
 def init (options) :
 
     isClient = (options.args != None)
@@ -726,7 +726,7 @@ def checkConfigFile (conf) :
     maxDist       = ConfigFile.maxdist
     blackList     = ConfigFile.blacklist
 
-    keyList = [mail, pwd, duration, minDist, maxDist]  
+    keyList = [mail, pwd, duration, minDist, maxDist]
     ConfigFile.checkKeys (conf, keyList)
 
     keyList = [blackList]
@@ -738,27 +738,27 @@ def run_parallel (options) :
 
     '''
     Starts station search procedure
-    
+
     :type options: instance
     :param options: parameter to initialize the networklist class
     '''
     isClient = (options.args != None)
 
-    if not init (options) : 
+    if not init (options) :
        return False
- 
+
     if isClient :                                       #        Run client
 
        clt = StationListClient (options)
        clt.run ()
-       return True 
+       return True
 
     else :                                              #         Run server
        #    Create directory for clients
        #
        clientDir = os.path.join (options.evpath, 'keyfiles-' + str (time.time()))
 
-       Logfile.add ('Create keyfile directory ', clientDir, ' ')  
+       Logfile.add ('Create keyfile directory ', clientDir, ' ')
        create_dir  (clientDir)
 
        #  Build network list
@@ -766,12 +766,12 @@ def run_parallel (options) :
        C      = config.Config (options.evpath)
        Origin = C.parseConfig ('origin')
        Conf   = Globals.ConfigDict
-    
-       checkConfigFile (Conf)  
-      
+
+       checkConfigFile (Conf)
+
        globalCfg = ConfigObj (dict = Conf)
        originCfg = ConfigObj (dict = Origin)
-    
+
        ot       = originCfg.Time()                          # str   (Origin['time'])
        elat     = originCfg.lat()                           # Origin['lat']
        elon     = originCfg.lon()                           # Origin['lon']
@@ -788,34 +788,34 @@ def run_parallel (options) :
           K  = (Conf ['blacklist']).split(',')
           BL = ['# Network Code']
           BL.extend(K)
-       
+
        T = NetworkList (ot,elat,elon,minDist,maxDist,duration, blacklist = BL,mail=Conf['mail'])
 
        SERVER_NAME = 'network'
 
        #         Handle Iris networks
        #
-       inetworks = T.getIRISList()   
-      #inetworks = ['BF']  
-    
+       inetworks = T.getIRISList()
+      #inetworks = ['BF']
+
        if len (inetworks) == 0 :  Logfile.error ('No iris networks found')
-       else : 
+       else :
           args = Server.joinClientArgs ([IRIS_TAG, clientDir], paramList)
-          ctrl = Server.ServerCtrl (nRetries = 1, nParallel=1, waitTime=1.0, printStat=False)    
+          ctrl = Server.ServerCtrl (nRetries = 1, nParallel=1, waitTime=1.0, printStat=False)
           srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
 
           #if WINDOWS : srv.control.ClientProc = MainProc
 
           if not srv.run (inetworks, args) : return False
        #endif
-       
+
        #       Handle Geofon networks
        #
-       gnetworks = T.getWEBDCList() 
+       gnetworks = T.getWEBDCList()
       #gnetworks = ['AF']
       #gnetworks = ['FR']
       #gnetworks = []
-   
+
        if len (gnetworks) == 0 :
           Logfile.error ('No geofon networks found')
 
@@ -823,16 +823,16 @@ def run_parallel (options) :
           #     Access network infos now from Geofo
           #
           args = Server.joinClientArgs ([GEOFON_TAG, clientDir], paramList)
-          ctrl = Server.ServerCtrl (nRetries = 4, nParallel=1, waitTime=2.0, printStat=False)    
+          ctrl = Server.ServerCtrl (nRetries = 4, nParallel=1, waitTime=2.0, printStat=False)
           srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
 
           #if WINDOWS : srv.control.ClientProc = MainProc
 
           if not srv.run (gnetworks, args) : return False
        #endif
-    
+
        #    Print statistic
-       
+
        nIres  = len (inetworks)
        nWebDC = len (gnetworks)
        nAll   = nIres + nWebDC
@@ -847,7 +847,7 @@ def run_parallel (options) :
        else :             err = None
 
        if err != None : Logfile.add (err)
-       
+
        # showNextStep
        #
        evpath        = options.evpath.split('/')[-1]
@@ -862,13 +862,13 @@ def run_parallel (options) :
 
 # -------------------------------------------------------------------------------------------------
 #
-#   Client routine 
+#   Client routine
 #
 IRIS_TAG   = 'i'
 GEOFON_TAG = 'g_'
 
 class StationListClient (Server.ClientBase) :
-    
+
     def __init__ (self, options) :
 
         print 'Start client ', options.args
@@ -895,7 +895,7 @@ class StationListClient (Server.ClientBase) :
         else :                        assert False
 
         stationList = list (set (stationList))
-   
+
         for stat in stationList :
             # Write dummy Key Files with reduced station information
             #
@@ -904,7 +904,7 @@ class StationListClient (Server.ClientBase) :
             #keyfile.read  ()
         #endfor
 
-        if len(stationList) > 0 :  print HAS_DATA 
+        if len(stationList) > 0 :  print HAS_DATA
 
 #endclass StationListClient
 
@@ -913,7 +913,7 @@ class StationListClient (Server.ClientBase) :
 def main (args):
     '''
     Parse commandline arguments
-    
+
     :type args: list
     :param args: List of commandline arguments to parse for the parameter of the program
     '''
