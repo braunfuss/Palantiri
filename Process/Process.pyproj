@@ -1,0 +1,44 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{6bbb3319-624b-45a2-9b98-ade7c2b3356a}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>TestProcess.py</StartupFile>
+    <SearchPath>..\Common;..\Process;..\tools</SearchPath>
+    <WorkingDirectory>..</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>Process</Name>
+    <RootNamespace>Process</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="array_crosscorrelation_v4.py" />
+    <Compile Include="deserializer.py" />
+    <Compile Include="filterStation.py" />
+    <Compile Include="main.py" />
+    <Compile Include="semp.py" />
+    <Compile Include="TestProcess.py" />
+    <Compile Include="ProcessProgs.py" />
+    <Compile Include="sembCalc.py" />
+    <Compile Include="times.py" />
+    <Compile Include="trigger.py" />
+    <Compile Include="ttt.py" />
+    <Compile Include="Version.py" />
+    <Compile Include="waveform.py" />
+    <Compile Include="xcorrfilter.py" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="semb_lutz.cpp" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+</Project>

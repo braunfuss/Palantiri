@@ -1,0 +1,36 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4e508da9-c769-4d97-bd5e-38f4d937b831}</ProjectGuid>
+    <ProjectHome>.</ProjectHome>
+    <StartupFile>TestWaveform.py</StartupFile>
+    <SearchPath>..\Waveform;..\Common;..\tools;..\..\ARRAYTOOL_2</SearchPath>
+    <WorkingDirectory>.</WorkingDirectory>
+    <OutputPath>.</OutputPath>
+    <Name>Waveform</Name>
+    <RootNamespace>Waveform</RootNamespace>
+    <IsWindowsApplication>False</IsWindowsApplication>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="DataDir.py" />
+    <Compile Include="ev_meta_mt4.py" />
+    <Compile Include="getStationList.py" />
+    <Compile Include="getStationWaveformData.py" />
+    <Compile Include="KeyFile.py" />
+    <Compile Include="Server.py" />
+    <Compile Include="Version.py" />
+    <Compile Include="TestWaveform.py" />
+    <Compile Include="WaveformProgs.py" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.Common.targets" />
+</Project>
