@@ -17,7 +17,7 @@ from optparse import OptionParser
 from   ConfigParser import SafeConfigParser
 from pyrocko import util, io, trace, cake
 from   config import Event, Trigger
-
+from    ConfigFile import ConfigObj, FilterCfg, OriginCfg
 global options,args
 
 def checkConfigFile (conf) :
@@ -65,36 +65,26 @@ C      = config.Config (options.eventpath)
 Origin = C.parseConfig ('origin')
 Conf   = globalConf()
 checkConfigFile (Conf)
+Config = C.parseConfig ('config')
+
+filter = FilterCfg (Config)
+
+cfg     = ConfigObj (dict=Config)
+minDist, maxDist = cfg.FloatRange ('mindist', 'maxdist')
+
 ev = Event (Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )
 event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=float(ev.depth)*1000., time=util.str_to_time(ev.time))
-
+newFreq                = float (filter.newFrequency())
 options.time           = Origin ['time']
 options.duration       = int (Conf['duration'])
 options.sdsfolder      = os.path.join (options.eventpath,'data')
 options.keyfolder      = os.path.join (options.eventpath, Conf['keyfilefolder'])
 tmin = util.str_to_time(ev.time)
 tmax = util.str_to_time(ev.time)+options.duration
-mag = 6.
-site = 'geofon'
-geofon = catalog.Geofon()
-events = geofon.get_event_names(
-    time_range=(tmin, tmax),
-    magmin=mag)
+site = 'iris'
 
-
-
-
-for event_name in events:
-    event = geofon.get_event(event_name)
-
-tmin = event.time
-
-tmax = event.time+3600.
-
-
-def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH?'):
+def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BHZ'):
     from pyrocko.fdsn import ws
-
     extra = {}
     if site == 'iris':
         extra.update(matchtimeseries=True)
@@ -109,7 +99,7 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH?'):
 
 # get stations data for BH? from 24 degrees distance to 93 degree distance
 
-stations = get_stations(site, event.lat,event.lon,24.,93.,tmin,tmax, 'BHZ')
+stations = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
 model.dump_stations(stations, 'stations.txt')
 # setup a waveform data request
 
@@ -139,17 +129,9 @@ lon=event.lon)
 
 traces = io.load('traces.mseed')
 for tr in traces:
-	tr.downsample_to(2.0)
+	tr.downsample_to(newFreq)
 	if tr.channel == "BHZ":
 		tr.channel = "Z"
-io.save(traces, 'dat/traces.mseed')
-import grond
-ds = grond.Dataset()  ## initialize Dataset
-
-
-ds.add_events(events=events)
-ds.add_stations(pyrocko_stations_filename='stations.txt')
-ds.add_waveforms(paths=['dat/'])
 
 displacement = []
 for tr in traces:

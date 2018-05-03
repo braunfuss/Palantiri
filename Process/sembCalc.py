@@ -12,7 +12,7 @@ import Logfile
 import  DataTypes
 from DataTypes import Location
 from ObspyFkt import loc2degrees
-from ConfigFile import ConfigObj, OriginCfg
+from ConfigFile import ConfigObj, OriginCfg, SynthCfg
 import time
 import numpy as num
 from collections import OrderedDict, defaultdict
@@ -378,7 +378,7 @@ def toMatrix (npVector, nColumns) :
 
 
 
-def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Folder,Origin, ntimes, switch, ev,arrayfolder):
+def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Folder,Origin, ntimes, switch, ev,arrayfolder, syn_in):
     '''
     method for calculating semblance of one station array
     '''
@@ -429,10 +429,9 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
 
     if cfg.Bool('synthetic_test') == True:
-
-    	store_id = 'global_2hz'
+    	store_id = syn_in.store()
     	#engine = LocalEngine(store_superdirs=['/media/asteinbe/data/asteinbe/aragorn/andreas/Tibet/'])
-    	engine = LocalEngine(store_superdirs=['/media/asteinbe/memory47/'])
+    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
 
         targets =[]
     	for st in stations:
@@ -444,22 +443,20 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     		targets.append(target)
 
 
-            ## scaling law?
-    	timeev = util.str_to_time(ev.time)
     	source_dc = RectangularSource(
     	    lat=float(ev.lat),
     	    lon=float(ev.lon),
-    	    depth=ev.depth*1000.,
-    	    strike=110.,
-    	    dip=80.,
-    	    rake=-160.,
-    	    width=10.*1000.,
-    	    length=55.*1000.,
-    	    nucleation_x=0.,
-            slip=0.8,
-            nucleation_y=0.0,
+    	    depth=syn_in.depth(),
+    	    strike=syn_in.strike(),
+    	    dip=syn_in.dip(),
+    	    rake=syn_in.rake(),
+    	    width=syn_in.width()*1000.,
+    	    length=syn_in.length()*1000.,
+    	    nucleation_x=syn_in.nucleation_x(),
+            slip=syn_in.slip(),
+            nucleation_y=syn_in.nucleation_y(),
     	    #stf=gf.BoxcarSTF(duration=20.0),
-    	    time = timeev,)
+    	    time = util.str_to_time(syn_in.time()))
      	    #magnitude=6.7)
 
     	response = engine.process(source_dc, targets)

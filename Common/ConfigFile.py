@@ -2,9 +2,6 @@
 #             Semantic of config file entries
 #
 import os
-import platform
-
-WINDOWS = (platform.system() == 'Windows')
 
 from ConfigParser import SafeConfigParser
 
@@ -31,7 +28,7 @@ class ConfigObj (object):
     def setDict (self,d) :    self._dict = d
 
     def getFileName (self) :  return self._fileName
-    
+
     # --------------------------------------------------------------------------------------------
 
     def Str (self, key, default=None) :
@@ -81,7 +78,7 @@ class ConfigObj (object):
 
         if val < 0.0 :                       self._error (key, str(val) + ' < 0.0')
         if maxVal != None and val > maxVal : self._error (key, str(val) + ' > ' + str(maxVal))
-        
+
         return val
 
 
@@ -129,7 +126,9 @@ class ConfigObj (object):
     def winlen (self) :       return self.UInt ('winlen')
     def step   (self) :       return self.UInt ('step')
     def cs   (self) :       return self.UInt ('compressed_sensing')
-    def newFrequency (self)  : return self.Freq ('new_frequence')
+    def synthetic_test   (self) : return self.Bool ('synthetic_test')
+    def shift_by_phase_onset   (self) : return self.Bool ('shift_by_phase_onset')
+    def newFrequency (self): return self.Freq ('new_frequence')
 
 
     # ---------------------------------------------------------------------------------------------
@@ -137,7 +136,7 @@ class ConfigObj (object):
     def _error0 (self,msg) :
 
         Logfile.error (msg)
-        Logfile.abort ()    
+        Logfile.abort ()
 
     def _error (self, key,msg) : self._error0 (self.getFileName() + ',' + key + ' : ' + msg)
 
@@ -153,9 +152,9 @@ class ConfigObj (object):
 
         return int (s)
 
-    def _keyMissing (self, key) :      self._error  (key, 'Key missing')  
+    def _keyMissing (self, key) :      self._error  (key, 'Key missing')
     def rangeError  (self, key, a,b) : self._error  (key, 'Value outside [' + a + ',' + b + ']')
-    def rangeError2 (self, key1,key2): self._error0 ('Range error : ' + key1 + ' > ' + key2) 
+    def rangeError2 (self, key1,key2): self._error0 ('Range error : ' + key1 + ' > ' + key2)
 
 #endclass ConfigObj
 
@@ -163,9 +162,9 @@ class ConfigObj (object):
 
 class FilterCfg (ConfigObj) :
 
-    def __init__  (self, dict) :   ConfigObj.__init__ (self, None, dict) 
-    
-    
+    def __init__  (self, dict) :   ConfigObj.__init__ (self, None, dict)
+
+
     def newFrequency (self) : return self.Freq ('new_frequence')
     def filterswitch (self) : return self.UInt ('filterswitch', 3)        # filter
 
@@ -206,7 +205,7 @@ def filterName (dict) :
 
 class OriginCfg (ConfigObj) :
 
-    def __init__  (self, dict) :   ConfigObj.__init__ (self, None, dict) 
+    def __init__  (self, dict) :   ConfigObj.__init__ (self, None, dict)
 
     def strike (self, def1) : return self.Float  ('strike', def1)
     def dip    (self, def1) : return self.Float  ('dip',    def1)
@@ -215,14 +214,37 @@ class OriginCfg (ConfigObj) :
 
 #endclass
 
+
+class SynthCfg (ConfigObj) :
+
+    def __init__  (self, dict) :   ConfigObj.__init__ (self, None, dict)
+
+    def lat   (self) : return self.Float  ('lat')
+    def lon   (self) : return self.Float  ('lon')
+    def strike (self) : return self.Float  ('strike')
+    def dip    (self) : return self.Float  ('dip')
+    def rake   (self) : return self.Float  ('rake')
+    def length   (self) : return self.Float  ('length')
+    def width   (self) : return self.Float  ('width')
+    def nucleation_x   (self) : return self.Float  ('nucleation_x')
+    def nucleation_y   (self) : return self.Float  ('nucleation_y')
+    def slip   (self) : return self.Float  ('slip')
+    def magnitude   (self) : return self.Float  ('magnitude')
+    def store_superdirs  (self) :       return self.Str ('store_superdirs')      # ???
+    def time   (self)       : return self.String ('time')
+    def store  (self) :       return self.Str ('store')      # ???
+
+#endclass
+
+
 # -------------------------------------------------------------------------------------------------
 
 DEFAULT_CONFIG_FILE = 'global.conf'
-    
+
 #
 #       Keys for global.conf
 #
-blacklist     = 'blacklist'   
+blacklist     = 'blacklist'
 duration      = 'duration'
 keyfilefolder = 'keyfilefolder'
 
@@ -264,7 +286,7 @@ def readConf (fileName):
     cDict  = {}
     parser = SafeConfigParser()
     parser.read (fileName)
-    
+
     isClient = Globals.isClient
 
     if not isClient :
@@ -316,11 +338,10 @@ def checkKeys (conf, keyList, optional=False) :
         elif key in [keyfilefolder, metaCatalog] : Basic.checkExistsDir (os.path.join (eventDir, val), isAbort=True)
         elif key in [blacklist, mail, pwd] :       continue
 
-        if msg != None : 
+        if msg != None :
            isOk = Logfile.error ('Key <' + key +'> in config file : ' + msg)
 
     #endfor
 
     if not isOk : Logfile.abort ()
     return True
-

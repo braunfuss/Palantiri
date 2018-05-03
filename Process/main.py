@@ -22,7 +22,7 @@ import  Logfile
 import  Debug
 from    Program    import MainObj
 import  ConfigFile
-from    ConfigFile import ConfigObj, FilterCfg, OriginCfg
+from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 
 #       Import from Tools
 
@@ -87,6 +87,7 @@ def processLoop () :
     #==================================get meta info==========================================
     C      = config.Config (evpath)
     Origin = C.parseConfig ('origin')
+    Syn_in = C.parseConfig ('syn')
     Config = C.parseConfig ('config')
     Meta   = C.readMetaInfoFile()
     #==================================get meta info==========================================
@@ -100,6 +101,7 @@ def processLoop () :
     cfg    = ConfigObj (dict=Config)
     filter = FilterCfg (Config)
     origin = OriginCfg (Origin)
+    syn_in = SynthCfg (Syn_in)
 
     ntimes  = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
 
@@ -362,7 +364,7 @@ def processLoop () :
 		    ##############=======================PARALLEL==========================================
             t1        = time.time()
             arraySemb = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                         Folder,Origin,ntimes,switch, ev,arrayfolder)
+                                         Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
             t2        = time.time()
             Logfile.add ('CALC took %0.3f sec' % (t2-t1))
 
