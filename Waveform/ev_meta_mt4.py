@@ -161,11 +161,11 @@ def makeTime (sdsyear,sdsday):
     t_begin = obspy.core.utcdatetime.UTCDateTime(year=int(sdsyear), julday=int(sdsday),iso8601=True)
     t_end = t_begin + 23 * 60
 
-    iris_begin = t_begin.formatIRISWebService()
-    iris_end   = t_end.formatIRISWebService()
+    iris_begin = t_begin.format_iris_web_service()
+    iris_end   = t_end.format_iris_web_service()
 
-    geofon_begin = t_begin.formatArcLink()
-    geofon_end = t_end.formatArcLink()
+    geofon_begin = t_begin.format_arclink()
+    geofon_end = t_end.format_arclink()
 
     time_d = {'g_begin':geofon_begin,'g_end':geofon_end,'i_begin':iris_begin,'i_end':iris_end,'go_begin':t_begin,'go_end':t_end}
     return time_d
@@ -328,8 +328,8 @@ def arclinkRequest_sc (station,begin,end):
 
     if station.loc == '--' : station.loc = ''
 
-    content = str(dt.formatArcLink())+' '+str(et.formatArcLink())+' '+station.net+' '+station.sta+' '+station.comp+' '+station.loc+'\n'
-    Logfile.add ('%s %s %s' % (sname, str(dt.formatArcLink()) ,str(et.formatArcLink())))
+    content = str(dt.format_arclink())+' '+str(et.format_arclink())+' '+station.net+' '+station.sta+' '+station.comp+' '+station.loc+'\n'
+    Logfile.add ('%s %s %s' % (sname, str(dt.format_arclink()) ,str(et.format_arclink())))
     fobj.write(content)
     fobj.close()
 
