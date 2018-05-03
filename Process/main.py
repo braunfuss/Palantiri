@@ -1,19 +1,17 @@
 
 import os
 import sys
-import platform
 
-WINDOWS = (platform.system() == 'Windows')
-                
+
 import logging
 import shutil
 import time
 import multiprocessing
-from   optparse import OptionParser    
+from   optparse import OptionParser
 import cPickle  as pickle
 # add local directories to import path
 
-sys.path.append ('../tools/')                     
+sys.path.append ('../tools/')
 sys.path.append ('../Common/')
 
 #       Import from common
@@ -24,12 +22,12 @@ import  Logfile
 import  Debug
 from    Program    import MainObj
 import  ConfigFile
-from    ConfigFile import ConfigObj, FilterCfg, OriginCfg 
+from    ConfigFile import ConfigObj, FilterCfg, OriginCfg
 
 #       Import from Tools
 
 import config
-from   config import Event,Trigger
+from   config import Event, Trigger
 
 #       Import from Process
 
@@ -85,21 +83,21 @@ def initModule () :
 # --------------------------------------------------------------------------------------------------
 
 def processLoop () :
-    
+
     #==================================get meta info==========================================
     C      = config.Config (evpath)
     Origin = C.parseConfig ('origin')
     Config = C.parseConfig ('config')
     Meta   = C.readMetaInfoFile()
     #==================================get meta info==========================================
-    
+
     #==================================do prerequiries========================================
     Folder = C.createFolder()
 
     C.cpSkeleton  (Folder,Config)
     C.writeConfig (Config,Origin,Folder)
-    
-    cfg    = ConfigObj (dict=Config) 
+
+    cfg    = ConfigObj (dict=Config)
     filter = FilterCfg (Config)
     origin = OriginCfg (Origin)
 
@@ -109,13 +107,11 @@ def processLoop () :
     strike  = origin.strike (default)        # Origin.get ('strike', default)
     dip     = origin.dip    (default)        # Origin.get ('dip',    default)
     rake    = origin.rake   (default)        # Origin.get ('rake',   default)
-    
-#   ev = Event (Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'],
-#               strike = strike,dip=dip,rake=rake)
-    ev = Event (origin.lat(), origin.lon(), origin.depth(), origin.time(),  
+
+    ev = Event (origin.lat(), origin.lon(), origin.depth(), origin.time(),
                 strike = strike,dip=dip,rake=rake)
 
-    filtername = filter.filterName()  
+    filtername = filter.filterName()
     Logfile.add ('filtername = ' + filtername)
 
     #todo crosscorrelation for all arrays before processing
@@ -123,9 +119,8 @@ def processLoop () :
     XDict   = {}
     RefDict = {}
     SL      = {}
-    print "jump"
-    if cfg.Int ('xcorr') == 1:
-        
+    if cfg.Int('xcorr') == 1:
+
         newFreq                = str (filter.newFrequency())
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp                     = os.path.join (Folder['semb'], fobjreferenceshiftname)
@@ -150,7 +145,7 @@ def processLoop () :
             xcorrnetworks = cfg.String ('networks').split(',')
 
             for i in xcorrnetworks:
-            
+
                 W = {}
                 refshift    = 0
                 network     = cfg.String(i).split('|')
@@ -159,11 +154,11 @@ def processLoop () :
 
                 if os.access (arrayfolder,os.F_OK) == False:
                    os.makedirs(arrayfolder)
-            
+
                 A = Xcorr (ev,FilterMeta,evpath,Config,arrayfolder)
                 print "run Xcorr"
                 W,triggerobject= A.runXcorr()
-                
+
                 XDict[i]   = W
                 RefDict[i] = triggerobject.tdiff
                 SL[i]      = len(network)
@@ -172,7 +167,7 @@ def processLoop () :
             fobjrefshift = open (rp,'w')
             pickle.dump (RefDict,fobjrefshift)
             fobjrefshift.close()
-        
+
             output = open (ps, 'w')
             pickle.dump (XDict, output)
             output.close()
@@ -221,7 +216,7 @@ def processLoop () :
 
                for array in names :
                    arrayfolder = os.path.join (Folder['semb'], array)
-               
+
                    if not os.path.isdir (arrayfolder) :
                       Logfile.error ('Illegal network name ' + str(array))
                       isOk = False
@@ -229,29 +224,19 @@ def processLoop () :
                #endfor
 
                if not isOk :  continue   # Illegal network : input again
- 
+
                # use these networks
 
                Logfile.add ('This networks will be used for processing: %s' % (nnl))
                Config ['networks'] = nnl
                break
-           #endif
-        #endwhile True
 
         for i in range(3,0,-1):
             time.sleep(1)
             Logfile.red ('Start processing in %d seconds ' % (i))
-        #endfor
- 
-    #print XDict
-    #print RefDict
-    
-    #TriggerOnset.append(triggerobject)
-    #print 'MAINTDIFF ',triggerobject.tdiff
-    
-    #sys.exit()
-    
-    wd = Origin['depth']    
+
+
+    wd = Origin['depth']
     start,stop,step = cfg.String ('depths').split(',')
 
     start = int(start)
@@ -269,7 +254,7 @@ def processLoop () :
 		workdepth = float(wd) + depthindex
 
 		Origin['depth'] = workdepth
-		
+
 		ev = Event (Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'],
 		            strike = strike,dip=dip,rake=rake)
 		Logfile.add ('WORKDEPTH: ' + str (Origin['depth']))
@@ -281,28 +266,26 @@ def processLoop () :
 		networks     = Config['networks'].split(',')
 		counter      = 1
 		TriggerOnset = []
-		
+
 		for i in networks:
-		
+
 		    arrayname = i
 		    arrayfolder = os.path.join (Folder['semb'],arrayname)
-		    
+
 		    network = Config[i].split('|')
 		    Logfile.add ('network: ' + str (network))
-		    
+
 		    FilterMeta = ttt.filterStations (Meta,Config,Origin,network)
-		    
+
 		    #if len(FilterMeta) < 3: continue              #hs : wieder rein
 		    if len(FilterMeta)  < 3: continue
 
 		    W = XDict[i]
-		    print "refdict"
-		    print RefDict
 		    refshift = RefDict[i]
-		    
-		    FilterMeta = cmpFilterMetavsXCORR (W, FilterMeta)       
+
+		    FilterMeta = cmpFilterMetavsXCORR (W, FilterMeta)
 		    #print 'W: ',W,len(W); print refshift; print 'FM ',FilterMeta,len(FilterMeta)
-		    
+
 		    Logfile.add ('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
 		                 % (Config['dimx'],Config['dimy'],Config['gridspacing']))
 
@@ -311,27 +294,26 @@ def processLoop () :
 		    Logfile.red ('Calculating Traveltime Grid')
 		    t1 = time.time()
 
-		    if WINDOWS : isParallel = False                            #hs : parallel 
-		   #else :       isParallel = True                             #10.12.2015
-		    else :       isParallel = False                          #10.12.2015
+
+            isParallel = False                          #10.12.2015
 
 
-		    try:	
+            try:
 			    #a=1
-			    f = open('/home/asteinbe/tttgrid%s.pkl' % (arrayname), 'rb')
+
+			    f = open('../tttgrid/tttgrid_%s_%s.pkl' % (ev.time, arrayname), 'rb')
 			    print "loading"
 			    TTTGridMap,mint,maxt = pickle.load(f)
-			    print TTTGridMap
 			    f.close()
 			    print "loading sucessful"
-		    except:
+            except:
 
 			    print "loading unsucessful"
 			    if isParallel :                                            #hs
 			      # maxp = int (Config['ncore'])
 			       maxp = 6                                               #hs
 			       po   = multiprocessing.Pool(maxp)
-			    
+
 			       for i in xrange(len(FilterMeta)):
 				   po.apply_async (ttt.calcTTTAdv,(Config,FilterMeta[i],Origin,i,arrayname,W,refshift))
 
@@ -346,78 +328,78 @@ def processLoop () :
 				  Logfile.add ('ttt.calcTTTAdv : ' + str(time.time() - t1) + ' sec.')
 			    #endif                                                                           #hs-
 
-			    assert len(FilterMeta) > 0 
+			    assert len(FilterMeta) > 0
 
 			    TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
 		    	    mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
-			    f = open('/home/asteinbe/tttgrid%s.pkl' % (arrayname), 'wb')	
+			    f = open('../tttgrid/tttgrid_%s_%s.pkl' % (ev.time, arrayname), 'wb')
 			    print "dumping"
 			    pickle.dump([TTTGridMap,mint,maxt], f)
 			    f.close()
 
-		    
-		    t2 = time.time()
-		    Logfile.red ('%s took %0.3f s' % ('TTT', (t2-t1)))
+
+            t2 = time.time()
+            Logfile.red ('%s took %0.3f s' % ('TTT', (t2-t1)))
 
 		    #sys.exit()
 		    ##############=======================SERIELL===========================================
-		    
-		    tw  = times.calculateTimeWindows (mint,maxt,Config,ev)        
-		    Wd  = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
-		    switch = filterindex
 
-		    Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-	#	    A = Xcorr (ev,FilterMeta,evpath,Config,Folder)
-	#	    print "run Xcorr"
-	#	    W,triggerobject, Wdf = A.runXcorr()
-		    #sys.exit()
-	 
-		    C.writeStationFile(FilterMeta,Folder,counter)
-		    Logfile.red ('%d Streams added for Processing' % (len(Wd)))
+            tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
+            Wd  = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
+            switch = filterindex
+
+            Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+            #	    A = Xcorr (ev,FilterMeta,evpath,Config,Folder)
+            #	    print "run Xcorr"
+            #	    W,triggerobject, Wdf = A.runXcorr()
+            #sys.exit()
+
+            C.writeStationFile(FilterMeta,Folder,counter)
+            Logfile.red ('%d Streams added for Processing' % (len(Wd)))
 
 		    ##############=========================================================================
 
 		    ##############=======================PARALLEL==========================================
-		    t1        = time.time()
-		    arraySemb = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-		                                 Folder,Origin,ntimes,switch, ev,arrayfolder)
-		    t2        = time.time()
-		    Logfile.add ('CALC took %0.3f sec' % (t2-t1))
-		    
-		    ASL.append(arraySemb)
-		    counter +=1
-		    
-		    sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
+            t1        = time.time()
+            arraySemb = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                         Folder,Origin,ntimes,switch, ev,arrayfolder)
+            t2        = time.time()
+            Logfile.add ('CALC took %0.3f sec' % (t2-t1))
 
-		    fileName = os.path.join (arrayfolder,'stations.txt')
-		    Logfile.add ('Write to file ' + fileName)
+            ASL.append(arraySemb)
+            counter +=1
 
-		    fobjarraynetwork = open (fileName,'w')
+            sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
 
-		    for i in FilterMeta:
-		        fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
+            fileName = os.path.join (arrayfolder,'stations.txt')
+            Logfile.add ('Write to file ' + fileName)
 
-		    fobjarraynetwork.close()
-		
-		if ASL:
-		    Logfile.red ('collect semblance matrices from all arrays')
-		    
-		    sembCalc.collectSemb (ASL,Config,Origin,Folder,ntimes,len(networks),switch)
-	    
-		    #fobjtrigger = open (os.path.join(Folder['semb'],'Trigger.txt'),'w')
-		    #for i in TriggerOnset:
-		    #    print i.aname,i.sname,i.ttime
-		    #    fobjtrigger.write(('%s %s %s\n')%(i.aname,i.sname,i.ttime))
-		    #fobjtrigger.close
+            fobjarraynetwork = open (fileName,'w')
 
-		else:
-		    Logfile.red ('Nothing to do  -> Finish')
-		print "depth:"
-		print workdepth
+            for i in FilterMeta:
+                fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
+
+            fobjarraynetwork.close()
+
+            if ASL:
+                Logfile.red ('collect semblance matrices from all arrays')
+
+                sembCalc.collectSemb (ASL,Config,Origin,Folder,ntimes,len(networks),switch)
+
+                #fobjtrigger = open (os.path.join(Folder['semb'],'Trigger.txt'),'w')
+                #for i in TriggerOnset:
+                #    print i.aname,i.sname,i.ttime
+                #    fobjtrigger.write(('%s %s %s\n')%(i.aname,i.sname,i.ttime))
+                #fobjtrigger.close
+
+            else:
+                Logfile.red ('Nothing to do  -> Finish')
+            print "depth:"
+            print workdepth
 # --------------------------------------------------------------------------------------------------
 
 class ProcessMain (MainObj) :
-    
+
     def __init__ (self) :
         initModule ()
 
@@ -425,8 +407,8 @@ class ProcessMain (MainObj) :
 
     # ---------------------------------------------------------------------------------------------
 
-    def init (self) :  
-        
+    def init (self) :
+
         if not Globals.init () : return False
 
         #  Copy model file to working directory
@@ -436,13 +418,13 @@ class ProcessMain (MainObj) :
         if not os.path.isfile (file) :
            source = os.path.join   ('..','tools', file)
            Basic.checkFileExists (source, isAbort = True)
-           shutil.copy (source, file)                  
+           shutil.copy (source, file)
 
         return True
 
     # --------------------------------------------------------------------------------------------
 
-    def process (self) : 
+    def process (self) :
         processLoop ()
         return True
 
@@ -461,7 +443,6 @@ def MainProc () :
 isClient = False
 
 if __name__ == "__main__":
-   
-   if not isClient :    
-      MainProc()
 
+   if not isClient :
+      MainProc()
