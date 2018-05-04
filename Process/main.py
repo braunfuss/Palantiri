@@ -173,8 +173,6 @@ def processLoop () :
             output = open (ps, 'w')
             pickle.dump (XDict, output)
             output.close()
-        #endif
-        print XDict
         for i in sorted (XDict.iterkeys()) :
             Logfile.red ('Array %s has %3d of %3d Stations left' % (i,len(XDict[i]),SL[i]))
 
@@ -286,7 +284,6 @@ def processLoop () :
 		    refshift = RefDict[i]
 
 		    FilterMeta = cmpFilterMetavsXCORR (W, FilterMeta)
-		    #print 'W: ',W,len(W); print refshift; print 'FM ',FilterMeta,len(FilterMeta)
 
 		    Logfile.add ('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
 		                 % (Config['dimx'],Config['dimy'],Config['gridspacing']))
@@ -304,13 +301,13 @@ def processLoop () :
 			    #a=1
 
 			    f = open('../tttgrid/tttgrid_%s_%s.pkl' % (ev.time, arrayname), 'rb')
-			    print "loading"
+			    print "loading travel time grid"
 			    TTTGridMap,mint,maxt = pickle.load(f)
 			    f.close()
-			    print "loading sucessful"
+			    print "loading of travel time grid sucessful"
             except:
 
-			    print "loading unsucessful"
+			    print "loading of travel time grid unsucessful, will now calculate the grid:"
 			    if isParallel :                                            #hs
 			      # maxp = int (Config['ncore'])
 			       maxp = 6                                               #hs
@@ -335,7 +332,7 @@ def processLoop () :
 			    TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
 		    	    mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
 			    f = open('../tttgrid/tttgrid_%s_%s.pkl' % (ev.time, arrayname), 'wb')
-			    print "dumping"
+			    print "dumping the traveltime grid for this array"
 			    pickle.dump([TTTGridMap,mint,maxt], f)
 			    f.close()
 
@@ -388,11 +385,6 @@ def processLoop () :
 
                 sembCalc.collectSemb (ASL,Config,Origin,Folder,ntimes,len(networks),switch)
 
-                #fobjtrigger = open (os.path.join(Folder['semb'],'Trigger.txt'),'w')
-                #for i in TriggerOnset:
-                #    print i.aname,i.sname,i.ttime
-                #    fobjtrigger.write(('%s %s %s\n')%(i.aname,i.sname,i.ttime))
-                #fobjtrigger.close
 
             else:
                 Logfile.red ('Nothing to do  -> Finish')

@@ -4,7 +4,7 @@ import sys
 
 # add local directories to import path
 
-sys.path.append ('../tools/')                     
+sys.path.append ('../tools/')
 sys.path.append ('../Common/')
 
 from   optparse import OptionParser
@@ -30,7 +30,7 @@ parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
 
 # -------------------------------------------------------------------------------------------------
 
-class Result(object): 
+class Result(object):
 
     def __init__(self,meanvalue,minvalue,centroidcount,usedstationcount,path):
 
@@ -41,7 +41,7 @@ class Result(object):
         self.path             = path
 
 # -------------------------------------------------------------------------------------------------
-        
+
 class BestSolution(object):
 
     def __init__(self,station,cluster,lat,lon):
@@ -54,13 +54,13 @@ class BestSolution(object):
 # -------------------------------------------------------------------------------------------------
 
 def getStatistics (clusterresults):
-    
+
     p        = os.path.join (options.evpath,'stat.dat')
     fobjstat = open (p,'w')
     resDict  = {}
 
     for root,dirs,files in os.walk (clusterresults):
-        for i in files: 
+        for i in files:
             if i == 'event.statistic':
                 fname  = os.path.join (root,i)
                 bspath = os.path.join ('/',*fname.split('/')[:-1])
@@ -73,7 +73,7 @@ def getStatistics (clusterresults):
                 #endfor
 
                 fobj.close()
-        #endfor   
+        #endfor
     #endfor
 
     fobjstat.close()
@@ -82,24 +82,24 @@ def getStatistics (clusterresults):
 # -------------------------------------------------------------------------------------------------
 
 def getBestSolution(resultDictionary):
-    
+
     bestsolution = -100000
-    
+
     for i in resultDictionary.iterkeys():
         if bestsolution < resultDictionary[i].meanvalue:
             bestsolution = resultDictionary[i].meanvalue
-            
+
     L = []
 
     for j in resultDictionary.iterkeys():
         if bestsolution == resultDictionary[j].meanvalue:
             L.append(resultDictionary[j])
-    
+
     return L[0]
 # -------------------------------------------------------------------------------------------------
 
 def copyCluster2EventConfig (ClusterDict, evpath):
-    
+
     epath     = os.path.join ('/',*evpath.split('/')[:-1])
     t         = epath.split  (os.path.sep)[-1]
     fname     = t+'.config'
@@ -120,10 +120,10 @@ def copyCluster2EventConfig (ClusterDict, evpath):
     #endfor
 
     fobj.close()
-    
+
     Confpart1 = L [:firstend]
     Confpart2 = L [secondbegin:]
-    
+
     fobj = open (fullfname,'w')
     fobj.write  (''.join(Confpart1))
     #print Confpart1
@@ -152,7 +152,7 @@ def copyCluster2EventConfig (ClusterDict, evpath):
 # -------------------------------------------------------------------------------------------------
 
 def printBestSolution(solution):
-    
+
     maxline = -100
     L       = []
     M       = []
@@ -166,9 +166,9 @@ def printBestSolution(solution):
         L.append (BestSolution(line[0],line[3],line[1],line[2]))
 
     fobj.close()
-    
+
     maxline = max(M)
-    
+
     C = {}
     fobjarrays = open(os.path.join(os.path.join('/',*solution.path.split('/')[:-2]),'arraycluster.dat'),'w')
 
@@ -187,7 +187,7 @@ def printBestSolution(solution):
     #endfor
 
     fobjarrays.close()
-    
+
     return C
 
 # -------------------------------------------------------------------------------------------------
@@ -199,14 +199,15 @@ def copyAndShowBestSolution (solution):
     src  = os.path.join (src,'skeleton','clusterplot.sh')
 
     #print 'SRC ',src,' DEST ',dest
-    
+
     if os.access (os.getcwd(), os.W_OK):
        try:    shutil.copy2 (src,dest)
        except: Logfile.exception ('Copy processing scripts Error')
-    
-    cmd = 'bash clusterplot.sh &'
-    os.chdir (solution.path)
-    os.system(cmd)
+
+    # plot cluster here
+    #cmd = 'bash clusterplot.sh &'
+    #os.chdir (solution.path)
+    #os.system(cmd)
     #os.path.join(dest,'arraycluster.ps')
 # -------------------------------------------------------------------------------------------------
 
@@ -239,15 +240,15 @@ def filterBestSolution(solution):
     #endfor
 
     fobj.close()
-    
+
     M = list (set(M))
-    
+
     Logfile.add ('number of clusters ' + str (len(M)),
                  'number of stations ' + str (len(SL)))
-    
+
     kd = obs_kilometer2degrees (cfg.Distance ('intraclusterdistance'))
     Logfile.add ('icd ' + str(kd))
-    
+
     maxdist = -1
 
     for i in SL:
@@ -263,19 +264,19 @@ def filterBestSolution(solution):
                   print i,i.member,' <--> ',k,k.member, ' delta: ',delta,' allowed ',kd
 
                   if delta < kd:  counter +=1
-               #endif    
-            #endif      
+               #endif
+            #endif
         #endfor
 
         print i,'less then allowd ',counter
     #endfor
 
     print 'masxdist ',maxdist
-    
+
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    
+
     rD = getStatistics(options.evpath)
     bs = getBestSolution(rD)
     print bs,type(bs)
@@ -283,5 +284,5 @@ if __name__ == "__main__":
     #filterBestSolution(bs)
     CD = printBestSolution(bs)
     copyAndShowBestSolution(bs)
-    
+
     copyCluster2EventConfig(CD,options.evpath)

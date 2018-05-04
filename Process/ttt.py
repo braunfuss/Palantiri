@@ -2,11 +2,11 @@ import os
 import sys
 import platform
 
-# add local directories to import path 
+# add local directories to import path
 
-sys.path.append ('../tools/')                     
+sys.path.append ('../tools/')
 sys.path.append ('../Common/')
-                                                 
+
 import cPickle as pickle
 
 from config import Station
@@ -46,7 +46,7 @@ class GridElem (object):
         self.delta = delta
 
 # -------------------------------------------------------------------------------------------------
-        
+
 class TTTGrid(object):
     def __init__(self, dimZ, mint,maxt,Latul,Lonul,Lator,Lonor,GridArray):
         self.dimZ  = dimZ
@@ -59,7 +59,7 @@ class TTTGrid(object):
         self.GridArray = GridArray
 
 # -------------------------------------------------------------------------------------------------
-        
+
 class MinTMaxT(object):
     def __init__(self, mint,maxt):
         self.mint = mint
@@ -68,13 +68,13 @@ class MinTMaxT(object):
 # -------------------------------------------------------------------------------------------------
 
 def filterStations (StationList,Config,Origin,network):
-    
+
     F = []
     cfg = ConfigObj (dict=Config)
 
     minDist, maxDist = cfg.FloatRange ('mindist', 'maxdist')
     origin = Location (Origin['lat'], Origin['lon'])
-    
+
     Logfile.red ('Filter stations with configured parameters...')
     print 'nr networks = ', len(network)
     print 'nr stations = ', len(StationList)
@@ -86,12 +86,12 @@ def filterStations (StationList,Config,Origin,network):
             if fnmatch.fnmatch(i.getcmpName(),j):
                 pos    = Location (i.lat, i.lon)
                 sdelta = loc2degrees (origin, pos)
-                
+
                 if sdelta > minDist and sdelta < maxDist:
                     s = Station(i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain)
-                    
+
                     if s not in F: F.append(s)
-    
+
     Logfile.red ('%d STATIONS LEFT IN LIST' % len(F))
     return F
 
@@ -103,7 +103,7 @@ def calctakeoff (Station,Event,Config):
     Phase = cake.PhaseDef(Config[phasename])
     model = cake.load_model()
     arrivals= model.arrivals([de,de], phases=Phase, zstart=Event.depth*km)
-        
+
     return arrivals[0].takeoff_angle()
 
 # -------------------------------------------------------------------------------------------------
@@ -149,20 +149,20 @@ def backazi (Station, Event):
 
         return angle
 
-# -------------------------------------------------------------------------------------------------    
+# -------------------------------------------------------------------------------------------------
 def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=None):
-    
+
     phasename = ('%sphase') % (os.path.basename(arrayname))
 
     cfg         = ConfigObj (dict=Config)
-    dimX        = cfg.Int   ('dimx') 
-    dimY        = cfg.Int   ('dimy') 
+    dimX        = cfg.Int   ('dimx')
+    dimY        = cfg.Int   ('dimy')
     gridspacing = cfg.Float ('gridspacing')
-    
+
     o_lat   = float (Origin['lat'])
     o_lon   = float (Origin['lon'])
     o_depth = float (Origin['depth'])
-    
+
     oLator = o_lat + dimX/2;   oLonor = o_lon + dimY/2
     oLatul = 0
     oLonul = 0
@@ -183,7 +183,7 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 
     Phase = cake.PhaseDef(Config[phasename])
     model = cake.load_model()
-   # arrivals= model.arrivals([sdelta,sdelta], phases=Phase, zstart=o_depth*km) 
+   # arrivals= model.arrivals([sdelta,sdelta], phases=Phase, zstart=o_depth*km)
     #correction = 0.
     #if arrivals:
     #	correction = arrivals[0].t - ttime
@@ -193,21 +193,21 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
     if plane== True:
  	   # depth = np.arange(0.0, 15., gridspacing)
  	    depth = np.linspace(0., 40., num=dimY)
-	    for i in xrange (70): 
+	    for i in xrange (70):
 		    oLatul = o_lat - ((dimX-1)/2) * gridspacing + i * gridspacing
 
 		    if z == 0 and i == 0 :
 		        Latul = oLatul
-		    o=0    
+		    o=0
 		    start_time = time.clock()
 
 		    for j in xrange (40):
-		        #ttime  = 0               
+		        #ttime  = 0
 		        oLonul = o_lon - ((dimY-1)/2)* gridspacing + j * gridspacing/np.cos(o_dip) #* depth[0]-depth[1]*depth[j]
 		        if o==0 and j==0 : Lonul = oLonul
 		        de = loc2degrees (Location (oLatul, oLonul), locStation)
 		        arrivals= model.arrivals([de,de], phases=Phase, zstart=depth[j]*km)
-			try: 
+			try:
 		        	ttime = arrivals[0].t
 				#print arrivals, oLatul, oLonul, locStation, o_depth, Phase, de
 			except:
@@ -217,9 +217,9 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 
 				except:
 					tt = obs_TravelTimes (de, o_depth)
-				
+
 					for k in tt:
-					    if k['phase_name'] == Config[phasename] or k['phase_name'] == ('%sdiff')%(Config[phasename]):
+					    if k['phase_name'] == 'P' or k['phase_name'] == ('%sdiff')%(Config[phasename]):
 						ttime = k ['time']
 					print "obspy!"
 
@@ -230,7 +230,7 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 		            ttime = ttime - float (Xcorrshift [station.getName()].shift) - Refshift
 		        GridArray[(i,j)] = GridElem (oLatul, oLonul, o_depth,ttime,de)
 		        LMINMAX.append (ttime)
-		               
+
 		        if ttime == 0:
 		            print '\033[31mAvailable phases for station %s in range %f deegree\033[0m'%(station,de)
 		            print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
@@ -239,31 +239,31 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 		            raise Exception("\033[31mILLEGAL: phase definition\033[0m")
     else:
 
-	   for i in xrange (dimX): 
+	   for i in xrange (dimX):
 		    oLatul = o_lat - ((dimX-1)/2) * gridspacing + i * gridspacing
 
 		    if z == 0 and i == 0 :
 		        Latul = oLatul
-		    o=0    
+		    o=0
 		    start_time = time.clock()
 		    for j in xrange (dimY):
-		        #ttime  = 0               
+		        #ttime  = 0
 		        oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
 
 		        if o==0 and j==0 : Lonul = oLonul
 		        de = loc2degrees (Location (oLatul, oLonul), locStation)
 		        arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km)
-			try: 
+			try:
 		        	ttime = arrivals[0].t
 				#print arrivals, oLatul, oLonul, locStation, o_depth, Phase, de
 			except:
 				try:
-					arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km-0.5, zstop=o_depth*km+2.0, refine=True)
+					arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km-2.5, zstop=o_depth*km+2.0, refine=True)
 					ttime = arrivals[0].t
 
 				except:
 					tt = obs_TravelTimes (de, o_depth)
-				
+
 					for k in tt:
 					    if k['phase_name'] == Config[phasename] or k['phase_name'] == ('%sdiff')%(Config[phasename]):
 						ttime = k ['time']
@@ -276,33 +276,33 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 		            ttime = ttime - float (Xcorrshift [station.getName()].shift) - Refshift
 		        GridArray[(i,j)] = GridElem (oLatul, oLonul, o_depth,ttime,de)
 		        LMINMAX.append (ttime)
-		               
+
 		        if ttime == 0:
 		            print '\033[31mAvailable phases for station %s in range %f deegree\033[0m'%(station,de)
 		            print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
 		            print '\033[31myou tried phase %s\033[0m'%(Config[phasename])
 
 		            raise Exception("\033[31mILLEGAL: phase definition\033[0m")
-	  
+
     mint = min(LMINMAX)
-    maxt = max(LMINMAX)                 #       maxt = time        
-    TTTGridMap [station.getName()] = TTTGrid (o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)                                           
+    maxt = max(LMINMAX)                 #       maxt = time
+    TTTGridMap [station.getName()] = TTTGrid (o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)
     k = MinTMaxT (mint,maxt)
-    
+
     Basic.dumpToFile (str(flag)  + '-ttt.pkl', TTTGridMap)
     Basic.dumpToFile ('minmax-'  + str(flag) + '.pkl', k)
     Basic.dumpToFile ('station-' + str(flag) + '.pkl', station)
 
-# -------------------------------------------------------------------------------------------------    
-    
+# -------------------------------------------------------------------------------------------------
+
 def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
-    
+
     cfg = ConfigObj (dict=Config)
 
-    dimX        = cfg.Int   ('dimx') 
-    dimY        = cfg.Int   ('dimy') 
+    dimX        = cfg.Int   ('dimx')
+    dimY        = cfg.Int   ('dimy')
     gridspacing = cfg.Float ('gridspacing')
-    
+
     o_lat   = float(Origin['lat'])
     o_lon   = float(Origin['lon'])
     o_depth = float(Origin['depth'])
@@ -311,7 +311,7 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
     oLonor = o_lon + dimY/2
     oLatul = 0
     oLonul = 0
-    
+
     TTTGridMap = {}
     LMINMAX    = []
     GridArray  = {}
@@ -319,35 +319,35 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
 
     sdelta = loc2degrees (Location (o_lat, o_lon), locStation)
     Logfile.add ('TTT PROCESS %d STATION: %s --> DELTA: %f'% (flag,station.getName(),sdelta))
-    
+
     inputpath  = str(flag)+'-'+station.getName()+".input";
     outputpath = str(flag)+'-'+station.getName()+".output";
     errorpath  = str(flag)+'-'+station.getName()+'.error'
-    
+
     fobjinput = open(inputpath,'w')
-    
+
     fobjinput.write ('s\n')
     fobjinput.write (('%s %s\n')%(station.lat,station.lon))
     fobjinput.write ('h\n')
     fobjinput.write (('%s\n')%(o_depth))
-    
+
     for i in xrange(dimX):
         oLatul = o_lat -((dimX-1)/2) * gridspacing + i * gridspacing
-        
+
         for j in xrange(dimY):
             oLonul = o_lon -((dimY-1)/2) * gridspacing + j * gridspacing
-            
+
             fobjinput.write('e\n')
             fobjinput.write(('%s %s\n')%(oLatul,oLonul))
     #endfor
 
     fobjinput.close()
-    
+
     cmd = ('taup_time -ph P -mod ak135 -time -o %s < %s > %s') % (outputpath,inputpath,errorpath)
     #os.system(cmd)
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
-    
+
     L      = []
     output = open(outputpath,'r')
     'OUTPUT: ',outputpath
@@ -362,25 +362,25 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
     #endfor
 
     output.close()
-    
+
     z=0
-        
+
     for i in xrange(dimX):
             oLatul = o_lat -((dimX-1)/2) * gridspacing + i * gridspacing
 
             if z == 0 and i == 0:
                 Latul = oLatul
-            o=0    
-            
+            o=0
+
             for j in xrange (dimY):
                 oLonul = o_lon -((dimY-1)/2) * gridspacing + j * gridspacing
 
                 if o==0 and j==0:
                     Lonul = oLonul
-                
+
                 de   = loc2degrees (Location (oLatul, oLonul), locStation)
                 time = L[i * dimX+j]
-                
+
                 GridArray[(i,j)] = GridElem(oLatul, oLonul, o_depth,time,de)
                 LMINMAX.append(time)
     #endfor
@@ -388,13 +388,13 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
     mint = float (min(LMINMAX))
     maxt = float (max(LMINMAX))
     k    = MinTMaxT(mint,maxt)
-    
+
     TTTGridMap [station.getName()] = TTTGrid(o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)
-    
+
     tttname = str(flag)+'-ttt.pkl'
     Basic.dumpToFile (tttname, TTTGridMap)
     Basic.dumpToFile ('minmax-'+str(flag)+'.pkl', k)
-    
+
     try:
         os.remove(inputpath)
         os.remove(outputpath)
@@ -402,11 +402,11 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
 
     except:
         Logfile.exception ('cannot delete files')
-        
-# -------------------------------------------------------------------------------------------------    
+
+# -------------------------------------------------------------------------------------------------
 
 def calcak135parameter(Event):
-    
+
     vp     = 0
     vs     = 0
     rho    = 0
@@ -417,7 +417,7 @@ def calcak135parameter(Event):
     Logfile.add ('MODELDEPTH ' + depth)
 
     Basic.checkFileExists ('ak135.model', isAbort=True)
-    
+
     try:
         fobj = open ('ak135.model','r')
         print fobj
@@ -434,11 +434,11 @@ def calcak135parameter(Event):
                 L.append(i)
 
         fobj.seek(0)
-        
+
         if len(L) == 0:
             for counter,line in enumerate(fobj):
                 line = line.split()
-                
+
                 if float(depth) > float(line[0]):
                     x = counter
 
@@ -456,7 +456,7 @@ def calcak135parameter(Event):
             vpdist    = float(I[1].split()[2]) - float(I[0].split()[2])
             vsdist    = float(I[1].split()[3]) - float(I[0].split()[3])
             depthdist = float(depth)           - float(I[0].split()[0])
-            
+
             rhofact = rhodist/dist
             vpfact  = vpdist/dist
             vsfact  = vsdist/dist
@@ -469,7 +469,7 @@ def calcak135parameter(Event):
         #endif
 
         n = len(L)
-        
+
         if n == 1:
             for counter,line in enumerate(fobj):
                 for a in L:
@@ -508,7 +508,7 @@ def calcak135parameter(Event):
 
     except:
         Logfile.exception ('Model File not found Exception')
-    
+
     return vp,vs,rho
 
 # -------------------------------------------------------------------------------------------------
@@ -530,17 +530,17 @@ def dubcup (rho, vp,vs,stri,dip, rak, azi, phi):
     rad7   = -0.5 * sin(drak)       * sin(2.0 * ddip) * (1.0-rad4);
     ph     = float (phi * d2r);
     radra1 = sin(2.0 * ph);
-    
+
     #/* SV waves at source */
 
     radra2 = cos(2.0 * ph);
     ducusw = rad5 * radra2 + rad2 * radra2 + rad6 * radra1 + rad7 * radra1;
-    
+
     #/* P waves at source */
 
     radra3 = sin(ph) * sin(ph);
     ducupw = rad1 * radra3 + rad2 * radra1 + rad3 * (cos(ph) * cos(ph) + radra3 * rad4) + rad5 * radra1;
-    
+
     #/* SH waves at source */
     rad8   = cos(drak) * cos(ddip) * sin(dazi-dstri);
     rad9   = cos(drak) * sin(ddip) * cos(2.0 * (dazi-dstri));
@@ -550,13 +550,13 @@ def dubcup (rho, vp,vs,stri,dip, rak, azi, phi):
 
     if ducusw < 0.0:  svsign = -1.0;
     else:             svsign =  1.0;
-  
+
     if ducupw < 0.0:  psign = -1.0;
     else:             psign =  1.0;
-  
+
     if ducush < 0.0:  shsign = -1.0
     else:             shsign =  1.0
-    
+
     pamp = ducupw;
     svamp = ducusw;
     shamp = ducush;
@@ -568,8 +568,3 @@ def dubcup (rho, vp,vs,stri,dip, rak, azi, phi):
  * *shamp = ducush*(4.0*PI*rho*vs*vs*vs);
  */
  '''
-    
-
-
-
-

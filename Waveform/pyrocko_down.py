@@ -83,7 +83,7 @@ tmin = util.str_to_time(ev.time)
 tmax = util.str_to_time(ev.time)+options.duration
 site = 'iris'
 
-def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BHZ'):
+def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
     from pyrocko.fdsn import ws
     extra = {}
     if site == 'iris':

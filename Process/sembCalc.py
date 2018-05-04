@@ -286,9 +286,7 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
                latv.append (oLatul)
                lonv.append (oLonul)
-    #endfor
 
-    #print 'SL: ',SembList, type(SembList),type(SembList[0]),SembList[0].ndim
 
     tmp=1
     for a in SembList:
@@ -409,7 +407,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     from pyrocko import trace as troll
     from pyrocko import orthodrome, model
     obspy_compat.plant()
-    from pprint import pprint
+
     ############################################################################
     calcStreamMap = WaveformDict
 
@@ -473,25 +471,22 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                 mod = synthetic_traces[i]
                 recordstarttime = calcStreamMapsyn[trace].stats.starttime.timestamp
                 recordendtime = calcStreamMapsyn[trace].stats.endtime.timestamp
-                #tmin_new = util.str_to_time('2009-04-06 01:32:42.000')
                 mod.shift(recordstarttime-mod.tmin)
                 extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
-                #	tr_org.shift(xy[i])
+                tr_org.shift(xy[i])
                 #	tr_org.bandpass(4,0.025,0.24)
-                #calcStreamMap[trace]=obspy_compat.to_obspy_trace(tr_org)
 
                 synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
-
                 calcStreamMapsyn[trace]=synthetic_obs_tr
                 trs_orgs.append(tr_org)
-
                 trs_org.append(extracted)
                 i = i+1
         calcStreamMap = calcStreamMapsyn
 
 
     if cfg.Bool('shift_by_phase_onset') == True:
+        from noise_analyser import analyse
     	pjoin = os.path.join
     	timeev = util.str_to_time(ev.time)
     	trs_orgs= []
@@ -511,9 +506,15 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                   timing=timing,
                   fn_dump_center=pjoin(directory, 'array_center.pf'),
                   fn_beam=pjoin(directory, 'beam.mseed'))
-        #	troll.snuffle(trs_orgs)
         #	troll.snuffle(trs_org)
         i = 0
+    	store_id = syn_in.store()
+    	#engine = LocalEngine(store_superdirs=['/media/asteinbe/data/asteinbe/aragorn/andreas/Tibet/'])
+    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        weights = analyse(shifted_traces, engine, event, stations,
+         100., store_id, nwindows=1,
+         check_events=True, phase_def='P')
+        print(weights)
         for trace in calcStreamMapshifted.iterkeys():
             recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
             recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
