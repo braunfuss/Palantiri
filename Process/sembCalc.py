@@ -23,10 +23,56 @@ km = 1000.
 import trigger
 from semp import otest
 from beam_stack import BeamForming
+from pyrocko.gf import STF
 
 # -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger('ARRAY-MP')
+
+
+class CombiSource(gf.Source):
+    '''Composite source model.'''
+
+    discretized_source_class = gf.DiscretizedMTSource
+
+    subsources = List.T(gf.Source.T())
+
+    def __init__(self, subsources=[], **kwargs):
+        if subsources:
+
+            lats = num.array(
+                [subsource.lat for subsource in subsources], dtype=num.float)
+            lons = num.array(
+                [subsource.lon for subsource in subsources], dtype=num.float)
+
+            assert num.all(lats == lats[0]) and num.all(lons == lons[0])
+            lat, lon = lats[0], lons[0]
+
+            # if not same use:
+            # lat, lon = center_latlon(subsources)
+
+            depth = float(num.mean([p.depth for p in subsources]))
+            t = float(num.mean([p.time for p in subsources]))
+            kwargs.update(time=t, lat=float(lat), lon=float(lon), depth=depth)
+
+        gf.Source.__init__(self, subsources=subsources, **kwargs)
+
+    def get_factor(self):
+        return 1.0
+
+    def discretize_basesource(self, store, target=None):
+
+        dsources = []
+        t0 = self.subsources[0].time
+        for sf in self.subsources:
+            assert t0 == sf.time
+            ds = sf.discretize_basesource(store, target)
+            ds.m6s *= sf.get_factor()
+            dsources.append(ds)
+
+        return gf.DiscretizedMTSource.combine(dsources)
+
+
 
 
 class CakeTiming(Object):
@@ -419,8 +465,11 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         py_trs.append(py_tr)
         for il in FilterMetaData:
 		if str(il) == str(trace):
-                        szo = model.Station(lat=il.lat, lon=il.lon, station=il.sta, network=il.net, channels='Z', elevation=il.ele, location=il.loc)
-			stations.append(szo)
+                        szo = model.Station(lat=il.lat, lon=il.lon,
+                                            station=il.sta, network=il.net,
+                                            channels=py_tr.channel,
+                                            elevation=il.ele, location=il.loc)
+			stations.append(szo) #right number of stations?
 
 
 #==================================synthetic BeamForming=======================================
@@ -433,40 +482,94 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
         targets =[]
     	for st in stations:
-    		target= Target(
-    		lat=st.lat,
-    		lon=st.lon,
-    		store_id=store_id,
-    		codes=(st.network, st.station, st.location, 'BHZ'))
-    		targets.append(target)
+            for cha in st.channels:
+        		target= Target(
+        		lat=st.lat,
+        		lon=st.lon,
+        		store_id=store_id,
+        		codes=(st.network, st.station, st.location, cha))
+        		targets.append(target)
 
 
-    	source_dc = RectangularSource(
-    	    lat=float(ev.lat),
-    	    lon=float(ev.lon),
-    	    depth=syn_in.depth(),
-    	    strike=syn_in.strike(),
-    	    dip=syn_in.dip(),
-    	    rake=syn_in.rake(),
-    	    width=syn_in.width()*1000.,
-    	    length=syn_in.length()*1000.,
-    	    nucleation_x=syn_in.nucleation_x(),
-            slip=syn_in.slip(),
-            nucleation_y=syn_in.nucleation_y(),
-    	    #stf=gf.BoxcarSTF(duration=20.0),
-    	    time = util.str_to_time(syn_in.time()))
-     	    #magnitude=6.7)
+        if syn_in.nsources() == 1:
+            if syn_in.use_specific_stf() == True:
+                stf= exec(syn_in.stf())
+            else:
+                stf = STF()
+            if syn_in.source() == 'RectangularSource':
+                    source= RectangularSource(
+                        lat=float(syn_in.lat_0()),
+                        lon=float(syn_in.lon_0()),
+                        depth=syn_in.depth_0(),
+                        strike=syn_in.strike_0(),
+                        dip=syn_in.dip_0(),
+                        rake=syn_in.rake_0(),
+                        width=syn_in.width_0()*1000.,
+                        length=syn_in.length_0()*1000.,
+                        nucleation_x=syn_in.nucleation_x_0(),
+                        slip=syn_in.slip_0(),
+                        nucleation_y=syn_in.nucleation_y_0(),
+                        stf=stf,
+                        time = util.str_to_time(syn_in.time_0()))
 
-    	response = engine.process(source_dc, targets)
+            if syn_in.source() ==  'DCSource':
+                    source = DCSource(
+                        lat=float(syn_in.lat_0()),
+                        lon=float(syn_in.lon_0()),
+                        depth=syn_in.depth_syn_0(),
+                        strike=syn_in.strike_0(),
+                        dip=syn_in.dip_0(),
+                        rake=syn_in.rake_0(),
+                        stf=stf,
+                        time = util.str_to_time(syn_in.time_0()),
+                    	magnitude=syn_in.magnitude_0())
+
+        else:
+            sources = []
+            for i in range(syn_in.nsources()):
+                if syn_in.use_specific_stf() == True:
+                    stf= exec(syn_in.stf())
+                else:
+                    stf = STF()
+                if syn_in.source() == 'RectangularSource':
+                        sources.append(RectangularSource(
+                            lat=float(syn_in.lat_1(i)),
+                            lon=float(syn_in.lon_1(i)),
+                            depth=syn_in.depth_syn_1(i),
+                            strike=syn_in.strike_1(i),
+                            dip=syn_in.dip_1(i),
+                            rake=syn_in.rake_1(i),
+                            width=syn_in.width_1(i)*1000.,
+                            length=syn_in.length_1(i)*1000.,
+                            nucleation_x=syn_in.nucleation_x_1(i),
+                            slip=syn_in.slip_1(i),
+                            nucleation_y=syn_in.nucleation_y_1(i),
+                            stf=stf,
+                            time = util.str_to_time(syn_in.time_1(i))))
+
+                if syn_in.source() ==  'DCSource':
+                        sources.append(DCSource(
+                            lat=float(syn_in.lat_1(i)),
+                            lon=float(syn_in.lon_1(i)),
+                            depth=syn_in.depth_1(i),
+                            strike=syn_in.strike_1(i),
+                            dip=syn_in.dip_1(i),
+                            rake=syn_in.rake_1(i),
+                            stf=stf,
+                            time = util.str_to_time(syn_in.time_1(i)),
+                        	magnitude=syn_in.magnitude_1(i)))
+            source = CombiSource(subsources=sources)
+        response = engine.process(source, targets)
 
     	synthetic_traces = response.pyrocko_traces()
 
-    	i =0
+    	l =0
     	trs_org= []
     	trs_orgs= []
     	fobj = os.path.join (arrayfolder,'shift.dat')
     	xy = num.loadtxt(fobj, usecols=1, delimiter=',')
         calcStreamMapsyn= calcStreamMap.copy()
+
         for trace in calcStreamMapsyn.iterkeys():
                 mod = synthetic_traces[i]
                 recordstarttime = calcStreamMapsyn[trace].stats.starttime.timestamp
@@ -474,14 +577,14 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                 mod.shift(recordstarttime-mod.tmin)
                 extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
-                tr_org.shift(xy[i])
+                tr_org.shift(xy[l])
                 #	tr_org.bandpass(4,0.025,0.24)
 
                 synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
                 calcStreamMapsyn[trace]=synthetic_obs_tr
                 trs_orgs.append(tr_org)
                 trs_org.append(extracted)
-                i = i+1
+                l = l+1
         calcStreamMap = calcStreamMapsyn
 
 
