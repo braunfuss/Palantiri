@@ -482,25 +482,26 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
         targets =[]
     	for st in stations:
-            for cha in st.channels:
-        		target= Target(
-        		lat=st.lat,
-        		lon=st.lon,
-        		store_id=store_id,
-        		codes=(st.network, st.station, st.location, cha))
-        		targets.append(target)
+
+    		target= Target(
+    		lat=st.lat,
+    		lon=st.lon,
+    		store_id=store_id,
+    		codes=(st.network, st.station, st.location, 'BHZ'))
+    		targets.append(target)
 
 
         if syn_in.nsources() == 1:
             if syn_in.use_specific_stf() == True:
-                stf= exec(syn_in.stf())
+                stf=syn_in.stf()
+                exec(stf)
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
                     source= RectangularSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_0(),
+                        depth=syn_in.depth_syn_0(),
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
                         rake=syn_in.rake_0(),
@@ -528,7 +529,8 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
             sources = []
             for i in range(syn_in.nsources()):
                 if syn_in.use_specific_stf() == True:
-                    stf= exec(syn_in.stf())
+                    stf=syn_in.stf()
+                    exec(stf)
                 else:
                     stf = STF()
                 if syn_in.source() == 'RectangularSource':

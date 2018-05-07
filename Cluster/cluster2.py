@@ -11,9 +11,9 @@ import platform
 
 WINDOWS = (platform.system() == 'Windows')
 
-# add local directories to import path 
+# add local directories to import path
 
-sys.path.append ('../tools/')                     
+sys.path.append ('../tools/')
 sys.path.append ('../Common/')
 
 from   optparse     import OptionParser
@@ -27,8 +27,8 @@ import  Globals
 import  Logfile
 import  DataTypes
 from    Program    import MainObj
-from    ObspyFkt   import loc2degrees 
-from    ConfigFile import ConfigObj 
+from    ObspyFkt   import loc2degrees
+from    ConfigFile import ConfigObj
 
 import config                               #       Import from Tools
 from    Version  import  VERSION_STRING     #       Import from Cluster
@@ -135,7 +135,7 @@ def readMetaInfoFile(EventPath):
                 evfile = os.path.join(EventPath,i)
 
         MetaL = []
-        
+
         Logfile.add (evfile)
         fobj = open(evfile,'r')
 
@@ -160,52 +160,64 @@ def readMetaInfoFile(EventPath):
     except:
         Logfile.red ('METAFILE NOT READABLE')
 
-    
+
+    return MetaL
+
+def readpyrockostations(path):
+    paths= os.path.join (path,'stations.txt')
+    model.load(paths)
+    MetaL = []
+    for station in stations:
+        for channel in station.channels:
+            if fnmatch.fnmatch(channel,'*HZ'):
+                MetaL.append(Station(station.network,station.name,
+                station.location,channel,station.lat,station.lon,
+                station.elevation,channel.dip,channel.azimuth,
+                channel.gain))
     return MetaL
 
 # -------------------------------------------------------------------------------------------------
 
 def createFolder (EventPath):
-    
+
     Folder = {}
     Logfile.red ('Create working environment')
-    
+
     #print 'EVPATH: ',EventPath
-    
+
     Folder['cluster'] = os.path.join (EventPath,'cluster')
-    
+
     if os.access (Folder['cluster'],os.F_OK) == False:
        os.makedirs(Folder['cluster'])
-    
+
     if os.access(os.getcwd(), os.W_OK):
         basedir   = os.path.join (EventPath,'work')
         sembdir   = os.path.join (basedir, 'semblance')
         ascdir    = os.path.join (basedir, 'asc')
         mseeddir  = os.path.join (basedir, 'mseed')
-        
+
         Folder['base']  = basedir
         Folder['semb']  = sembdir
         Folder['asc']   = ascdir
         Folder['mseed'] = mseeddir
         Folder['event'] = EventPath
-        
+
     else:
         Logfile.abort ('create Folder : No write permissions for ' + os.getcwd())
-        
+
     Folder['config'] = os.path.join (os.getcwd(),'..','skeleton')
     return Folder
 # -------------------------------------------------------------------------------------------------
 
 def filterStations (StationList, Config, Origin):
-    
     F       = []
     cfg     = ConfigObj (dict=Config)
 
     minDist, maxDist = cfg.FloatRange ('mindist', 'maxdist')
     origin           = DataTypes.dictToLocation (Origin)
-       
+
     Logfile.red ('Filter stations with configured parameters')
-    
+
     for i in StationList:
         sdelta = loc2degrees (origin, i)
 
@@ -217,7 +229,7 @@ def filterStations (StationList, Config, Origin):
 # -------------------------------------------------------------------------------------------------
 
 def checkStationAroundInitialCentroid (station,Config,StationMetaList):
-    
+
     cfg       = ConfigObj (dict=Config)
     initDist  = cfg.Float ('initialstationdistance')
     counter   = 0
@@ -225,12 +237,12 @@ def checkStationAroundInitialCentroid (station,Config,StationMetaList):
     for i in StationMetaList:
         sdelta = loc2degrees (station, i)
         if sdelta < initDist : counter +=1
-    
+
     return counter
 # -------------------------------------------------------------------------------------------------
 
 def addOK (station,stationList,Config,MetaList):
-    
+
     cfg       = ConfigObj    (dict=Config)
     minDist   = cfg.Distance ('centroidmindistance')
     minAround = cfg.UInt     ('minstationaroundinitialcluster')
@@ -238,7 +250,7 @@ def addOK (station,stationList,Config,MetaList):
 
     for i in stationList:
         sdelta = loc2degrees (station, i)
-        
+
         if sdelta > minDist:
             aroundcounter = checkStationAroundInitialCentroid (station,Config,MetaList)
 
@@ -254,7 +266,7 @@ def addOK (station,stationList,Config,MetaList):
 # -------------------------------------------------------------------------------------------------
 
 def alreadyUsedIndex (index,usedIndexList):
-    
+
     for i in usedIndexList:
         if i == index:   return 1
         else:            return 0
@@ -262,13 +274,13 @@ def alreadyUsedIndex (index,usedIndexList):
 # -------------------------------------------------------------------------------------------------
 
 def createRandomInitialCentroids(Config,StationMetaList):
-    
+
     Logfile.red ('Begin initial centroid search')
-    
+
     initialCentroids = []
     usedIndexes      = []
     random.seed (time.clock())
-    
+
     if len(StationMetaList) == 0 :                                 #hs
        Logfile.red ('Empty station list')
        return initialCentroids
@@ -280,14 +292,14 @@ def createRandomInitialCentroids(Config,StationMetaList):
             randomIndex = random.randint (0, len(StationMetaList)-1)
             #flag       = alreadyUsedIndex (randomIndex,usedIndexes)
             usedIndexes.append (randomIndex)
-        
+
             #if len(usedIndexes) == len(StationMetaList):
             #    raise Exception("\033[31mERROR: 'tested all stations'\033[0m")
-            
+
             around = checkStationAroundInitialCentroid (StationMetaList[randomIndex],Config,StationMetaList)
             #print StationMetaList[randomIndex],around
             found = False
-            
+
             if len(initialCentroids) == 0:
                 initialCentroids.append (StationMetaList[randomIndex])
                 found = True
@@ -298,7 +310,7 @@ def createRandomInitialCentroids(Config,StationMetaList):
                 if t == 1:
                     initialCentroids.append (StationMetaList [randomIndex])
                     found = True
-                    
+
                 else:
                     continue
             #endif
@@ -314,9 +326,9 @@ def createRandomInitialCentroids(Config,StationMetaList):
 # -------------------------------------------------------------------------------------------------
 
 def stationBelongToCluster (Config, CentroidList, StationMetaList) :
-    
+
     ClusterList = []
-    
+
     for i in StationMetaList:
         mind = 100000
         c    = 0
@@ -324,21 +336,21 @@ def stationBelongToCluster (Config, CentroidList, StationMetaList) :
         for j in CentroidList:
             delta =  loc2degrees (j, i)
             c     += 1
-            
+
             if mind > delta:
                 mind     = delta
                 i.member = c
         #endfor
-    
+
         ClusterList.append (Station (i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain,i.member))
     #endfor
-    
+
     return ClusterList
 # -------------------------------------------------------------------------------------------------
 
 
 def calculateClusterCentre (Config, ClusterStationList):
-    
+
     newClusterVector = []
     cfg = ConfigObj (dict=Config)
 
@@ -353,7 +365,7 @@ def calculateClusterCentre (Config, ClusterStationList):
                 sumlon += float (j.lon)
                 clusterstationcounter += 1
         #endfor
-        
+
         if clusterstationcounter == 0 :                                              # hs-1
            newClusterVector.append (Centroid (0.0, 0.0, -1))                         # hs-1
         else :                                                                       # hs-1
@@ -361,12 +373,12 @@ def calculateClusterCentre (Config, ClusterStationList):
            sclo = sumlon / clusterstationcounter
            name = i
            newClusterVector.append (Centroid (scla,sclo,name))
-    
+
     return newClusterVector
 # -------------------------------------------------------------------------------------------------
 
 def compareClusterCentre (oldCluster, newCluster, Config):
-    
+
     counter = 0
 
     for i in range (int (Config['maxcluster'])):
@@ -397,21 +409,21 @@ def deleteFarStations (CentroidList, StationClusterList,Config):
     for i in CentroidList :
         for j in StationClusterList :
             if i.rank == j.member :
-                if loc2degrees (i, j) > stationdistance : 
+                if loc2degrees (i, j) > stationdistance :
                    j.member = -1
     #endfor
 
     for index,k in enumerate (StationClusterList):
         if k.member == -1 : del StationClusterList[index]
-            
+
     return StationClusterList
 # -------------------------------------------------------------------------------------------------
 
 def filterClusterStationMinimumNumber (CentroidList, StationClusterList, Config):
-    
+
     newCentroidList       = []
     newStationClusterList = []
-    
+
     for i in CentroidList:
         counter = 0
 
@@ -421,14 +433,14 @@ def filterClusterStationMinimumNumber (CentroidList, StationClusterList, Config)
                 streamID = j.net+'.'+j.sta+'.'+j.loc+'.'+j.comp
                 delta    = loc2degrees (i, j)
                 #print i.lat,i.lon,': ',streamID,j.lat,j.lon,delta
-        
+
         if counter < int (Config['minclusterstation']) : s1 = 'OUT'
         else :
            s1 = 'IN '
            newCentroidList.append(i)
 
         Logfile.red ('Centroid %s %d %s %5.2f %5.2f' % (i.rank, counter, s1, i.lat,i.lon))
-    
+
     for i in newCentroidList:
         for j in StationClusterList :
             if i.rank == j.member :
@@ -451,9 +463,9 @@ def calcMeanCentroidDistance (CentroidList):
 # -------------------------------------------------------------------------------------------------
 
 def calcMinValue (CentroidList):
-    
+
     mCD = calcMeanCentroidDistance (CentroidList)
-    
+
     sumdelta = 0
 
     for i in CentroidList:
@@ -461,31 +473,31 @@ def calcMinValue (CentroidList):
             delta     = loc2degrees (i, j)
             x         = (delta - mCD)
             sumdelta += math.pow( x, 2 )
-            
+
     minval = sumdelta / len (CentroidList)
-    
+
     return minval
 # -------------------------------------------------------------------------------------------------
 
 def write4Plot (Config,Origin,StationClusterList,CentroidList,Folder,flag):
-    
+
     plotfolder = 'plot-'+str(flag)
     p = os.path.join (Folder['cluster'],plotfolder)
 
     if os.access (p,os.F_OK) == False:
         os.makedirs(p)
-    
+
     fobjorigin = open (os.path.join (p,'event.orig'),'w')
     fobjorigin.write  (Origin['lat']+','+Origin['lon'])
     fobjorigin.close  ()
-    
+
     fobjcentroid = open (os.path.join(p,'event.centroid'),'w')
 
     for i in CentroidList:
         fobjcentroid.write (str (i.rank)+' '+str(i.lat)+' '+str(i.lon)+'\n')
 
     fobjcentroid.close()
-    
+
     fobjstation = open (os.path.join(p,'event.stations'),'w')
 
     for i in StationClusterList:
@@ -496,7 +508,7 @@ def write4Plot (Config,Origin,StationClusterList,CentroidList,Folder,flag):
         fobjstation.write (streamID+' '+i.lat+' '+i.lon+' '+str(i.member)+'\n')
 
     fobjstation.close()
-    
+
     fobjcentroid = open (os.path.join (p,'event.statistic'),'w')
     mCD          = calcMeanCentroidDistance (CentroidList)
     mv           = calcMinValue (CentroidList)
@@ -506,7 +518,7 @@ def write4Plot (Config,Origin,StationClusterList,CentroidList,Folder,flag):
 # -------------------------------------------------------------------------------------------------
 
 def km(Config,FilterMeta,Folder,Origin,flag):
-    
+
     ic = createRandomInitialCentroids(Config,FilterMeta)
 
     if len(ic) == 0 : return                                      #hs
@@ -516,7 +528,7 @@ def km(Config,FilterMeta,Folder,Origin,flag):
 # -------------------------------------------------------------------------------------------------
 
 def endcheck(inputCentroid,FilterMeta,Config,Folder,Origin,flag):
-    
+
     FM = deleteFarStations(inputCentroid,FilterMeta,Config)
     FMM,NCL = filterClusterStationMinimumNumber(inputCentroid,FM,Config)
     #print len(FMM),'    ',len(FM)
@@ -524,7 +536,7 @@ def endcheck(inputCentroid,FilterMeta,Config,Folder,Origin,flag):
 # -------------------------------------------------------------------------------------------------
 
 def kmean (Config,inputCentroid,FilterMeta,counter,Folder,Origin,flag):
-    
+
     counter += 1
     Logfile.add ('COUNTER ' + str(counter) + ' CUTOFF ' + Config['cutoff'])
 
@@ -533,10 +545,10 @@ def kmean (Config,inputCentroid,FilterMeta,counter,Folder,Origin,flag):
     if counter == cfg.UInt ('cutoff'):
        endcheck (inputCentroid,FilterMeta,Config,Folder,Origin,flag)
        sys.exit ()
-        
+
     scl = stationBelongToCluster (Config,inputCentroid,FilterMeta)
     #sys.exit()
-    
+
     #print scl,len(scl)
     acounter= 1
 
@@ -555,25 +567,25 @@ def kmean (Config,inputCentroid,FilterMeta,counter,Folder,Origin,flag):
                 #else:
                  #   print a,i,i.member,delta
         acounter+=1
-    #endfor            
-    
+    #endfor
+
     #sys.exit()
     nsc = calculateClusterCentre (Config,scl)
     t   = compareClusterCentre   (inputCentroid,nsc,Config)
-    
+
     Logfile.add ('ITERATIONSTEP: ---> ' + str(counter) + ' <-----------------------------')
-    
+
     while t != cfg.UInt ('maxcluster'):
         Logfile.add ('ANZAHL DER JO in KMEAN: ' + str(t))
         kmean (Config, nsc, FilterMeta, counter, Folder, Origin, flag)
-        
+
     endcheck (inputCentroid,FilterMeta,Config,Folder,Origin,flag)
     sys.exit()
 
 # --------------------------------------------------------------------------------------------------
 
 class ClusterMain (MainObj) :
-    
+
     def __init__ (self) :
 
         parser = OptionParser(usage="%prog -f Eventpath ")
@@ -586,7 +598,7 @@ class ClusterMain (MainObj) :
         Globals.setEventDir  (self.eventpath)
         MainObj.__init__     (self, self, VERSION_STRING, 'cluster_run.log', 'cluster.log')
 
-    def init (self) :      
+    def init (self) :
         return Globals.init ()
 
     def process (self) :
@@ -595,12 +607,15 @@ class ClusterMain (MainObj) :
         C          = config.Config (self.eventpath)
         Config     = C.parseConfig ('config')
         Origin     = C.parseConfig ('origin')
-        Meta       = readMetaInfoFile (self.eventpath)
-    
-        Folder     = createFolder   (self.eventpath)
+        cfg = ConfigObj (dict=Config)
+        if cfg.pyrocko_download == True:
+            Meta = readpyrockostations(self.eventpath)
+        else:
+            Meta = readMetaInfoFile (self.eventpath)
+
+        Folder = createFolder   (self.eventpath)
         FilterMeta = filterStations (Meta,Config,Origin)
-    
-        #sys.exit()
+
 
         try :
            km (Config,FilterMeta,Folder,Origin,t)
@@ -610,7 +625,7 @@ class ClusterMain (MainObj) :
 
         return True
 
-    def finish (self) :    
+    def finish (self) :
         pass
 
 #endclass ClusterMain
@@ -623,5 +638,5 @@ def MainProc () :
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    
+
     MainProc ()

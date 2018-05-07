@@ -128,7 +128,8 @@ class ConfigObj (object):
     def cs   (self) :       return self.UInt ('compressed_sensing')
     def synthetic_test   (self) : return self.Bool ('synthetic_test')
     def shift_by_phase_onset   (self) : return self.Bool ('shift_by_phase_onset')
-    def newFrequency (self): return self.Freq ('new_frequence')
+    def newFrequency (self): return self.Float ('new_frequence')
+    def pyrocko_download   (self) : return self.Bool ('pyrocko_download')
 
 
     # ---------------------------------------------------------------------------------------------
@@ -165,16 +166,16 @@ class FilterCfg (ConfigObj) :
     def __init__  (self, dict) :   ConfigObj.__init__ (self, None, dict)
 
 
-    def newFrequency (self) : return self.Freq ('new_frequence')
+    def newFrequency (self) : return self.Float ('new_frequence')
     def filterswitch (self) : return self.UInt ('filterswitch', 3)        # filter
 
-    def flo (self) :          return self.Freq ('flo')                    #    bandpass
-    def fhi (self) :          return self.Freq ('fhi')
-    def ns  (self) :          return self.Freq ('ns')
+    def flo (self) :          return self.Float ('flo')                    #    bandpass
+    def fhi (self) :          return self.Float ('fhi')
+    def ns  (self) :          return self.Float ('ns')
 
-    def flo2 (self) :          return self.Freq ('flo2')                    #    bandpass2
-    def fhi2 (self) :          return self.Freq ('fhi2')
-    def ns2  (self) :          return self.Freq ('ns2')
+    def flo2 (self) :          return self.Float ('flo2')                    #    bandpass2
+    def fhi2 (self) :          return self.Float ('fhi2')
+    def ns2  (self) :          return self.Float ('ns2')
 
     def l_fc (self) :         return self.Freq ('l_fc')                   #    lowpass
     def l_ns (self) :         return self.Freq ('l_ns')

@@ -67,7 +67,7 @@ options.time           = Origin ['time']
 options.duration       = int (Conf['duration'])
 #options.sdsfolder      = os.path.join (options.eventpath,'data')
 sdspath = os.path.join(options.eventpath,'data')
-tmin = util.str_to_time(ev.time)
+tmin = util.str_to_time(ev.time)-options.duration
 tmax = util.str_to_time(ev.time)+options.duration
 site = 'iris'
 
@@ -85,9 +85,8 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
 
     return sx.get_pyrocko_stations()
 
-# get stations data for BH? from 24 degrees distance to 93 degree distance
 
-stations = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
+stations = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
 
 model.dump_stations(stations, os.path.join (sdspath,'stations.txt'))
 # setup a waveform data request
@@ -101,7 +100,7 @@ request_waveform = fdsn.dataselect(site=site, selection=selection)
 # write the incoming data stream to 'traces.mseed'
 with open(os.path.join (sdspath,'traces.mseed'), 'wb') as file:
     file.write(request_waveform.read())
-
+print('traces written')
 # request meta data
 request_response = fdsn.station(
     site=site, selection=selection, level='response')

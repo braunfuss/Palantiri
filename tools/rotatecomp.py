@@ -20,7 +20,11 @@ evpath = options.evpath
 
 C = config.Config(evpath)
 Origin = C.parseConfig('origin')
-Meta = C.readMetaInfoFile()
+cfg = ConfigObj (dict=C)
+if cfg.pyrocko_download == True:
+    Meta = C.readpyrockostations()
+else:
+    Meta = C.readMetaInfoFile()
 
 print Origin
 o_lat = float(Origin['lat'])
@@ -80,12 +84,12 @@ for index,station in enumerate(Meta):
                 if fnmatch.fnmatch(tr.stats.channel,'*N'):
                     n = tr.data
                     print 'N COMP'
-        
+
         if len(n) == len(e):
 
             z = rotate.rotate_NE_RT(n, e, bazi)#return r and t data array
-            
-            
+
+
             tmr = Trace(z[0])
             tmr.stats.network = tr.stats.network
             tmr.stats.station = tr.stats.station
@@ -93,14 +97,14 @@ for index,station in enumerate(Meta):
             tmr.stats.channel = 'R'
             tmr.stats.starttime = UTCDateTime(tr.stats.starttime)
             tmr.stats._format = 'MSEED'
-            
+
             pr = os.path.join(os.path.join('/',*j.split('/')[:-2]),'R.D')
             os.makedirs(pr)
             print 'PR ',pr
             jd = "%03d" % tmr.stats.starttime.julday
-            n = ('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd)) 
+            n = ('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd))
             tmr.write(os.path.join(pr,n),format='MSEED')
-            
+
             tmt = Trace(z[1])
             tmt.stats.network = tr.stats.network
             tmt.stats.station = tr.stats.station
@@ -108,17 +112,17 @@ for index,station in enumerate(Meta):
             tmt.stats.channel = 'T'
             tmt.stats.starttime = UTCDateTime(tr.stats.starttime)
             tmt.stats._format = 'MSEED'
-            
+
             pt = os.path.join(os.path.join('/',*j.split('/')[:-2]),'T.D')
             os.makedirs(pt)
             print 'PT ',pt
             jd = "%03d" % tmr.stats.starttime.julday
-            n = ('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd)) 
+            n = ('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd))
             tmt.write(os.path.join(pt,n),format='MSEED')
-            
-            
+
+
             print z
-            
+
         print '\n\n\n\n'
 
 
@@ -132,13 +136,13 @@ for i in T:
         ss = sdsname.split('.')
         sdsshort = ('%s.%s')%(ss[0],ss[1])
         if i == sdsshort:
-            L.append(j) 
+            L.append(j)
             print 'JUHU ',i,j
     sDict[i] = StatRot()
             #r = os.path.join('/',*t.split('/')[:-1])
             #if not fnmatch.fnmatch(os.path.basename(r), '*HZ.D'):
             #    print r
-                
+
 ''
 '''
 '''
@@ -147,7 +151,7 @@ for root,dirs,files in os.walk(os.path.join(evpath,'data')):
         for i in files:
             t = os.path.join(root,i)
             r = os.path.join('/',*t.split('/')[:-1])
-            
+
             if not fnmatch.fnmatch(os.path.basename(r), '*HZ.D'):
                 sdsname = i[:-11]
                 L.append(t)
@@ -159,7 +163,7 @@ for root,dirs,files in os.walk(os.path.join(evpath,'data')):
                         dist,azi,bazi = util.geodetics.gps2DistAzimuth(s_lat,s_lon,o_lat,o_lon)
                         print station,dist,azi,bazi,t
                         sDict[station] = StatRot(station.getName(),bazi,L)
-                        
+
 
 for i in sDict.iterkeys():
     print i

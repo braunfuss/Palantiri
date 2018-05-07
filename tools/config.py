@@ -11,7 +11,7 @@ logger = logging.getLogger('ARRAY-MP')
 
 class Station(object):
     '''
-    class to store station object from metadatafile 
+    class to store station object from metadatafile
     '''
     def __init__(self, net, sta, loc, comp,lat=0,lon=0,ele=0,dip=0,azi=0,gain=0,takeoff=0,backazi=0,sazi=0):
         self.net = net
@@ -124,17 +124,34 @@ class Config(object):
             logger.info('\033[31m %d ENTRIES IN METAFILE FOUND \033[0m \n' % (len(MetaL)))
         except:
             logger.info('\033[31m METAFILE NOT READABLE \033[0m \n')
-            
+
         FML = self.checkMetaInfoFile(MetaL)
-        
+
         return FML
-    
+
+    def readpyrockostations(self):
+        paths= os.path.join (self.eventpath,'stations.txt')
+        model.load(paths)
+        MetaL = []
+        for station in stations:
+            for channel in station.channels:
+                print "this"
+                print channel
+                if fnmatch.fnmatch(channel,'*HZ'):
+                    MetaL.append(Station(station.network,station.name,
+                    station.location,channel,station.lat,station.lon,
+                    station.elevation,channel.dip,channel.azimuth,
+                    channel.gain))
+        FML = self.checkMetaInfoFile(MetaL)
+
+        return FML
+
     def checkMetaInfoFile(self,MetaList):
-        
+
         ML = []
         DL = []
         LL = []
-        
+
         for i in MetaList:
             try:
             	if float(i.gain) == 0:
@@ -157,13 +174,13 @@ class Config(object):
                         ML.append(j)
         else:
             ML = MetaList
-        
+
         print len(MetaList)
         print len(ML)
-        
+
         return ML
-    
-    
+
+
     def createFolder(self):
         '''
         method to create work folder in event directory
@@ -172,24 +189,24 @@ class Config(object):
         Folder = {}
         logger.info('\033[31m Create working environment \033[0m \n')
         if os.access(os.getcwd(), os.W_OK):
-        
+
             basedir = os.path.join(self.eventpath,'work')
             sembdir = os.path.join(basedir, 'semblance')
             ascdir  = os.path.join(basedir, 'asc')
             mseeddir  = os.path.join(basedir, 'mseed')
-        
+
             Folder['base'] = basedir
             Folder['semb'] = sembdir
             Folder['asc']  = ascdir
             Folder['mseed'] = mseeddir
-        
+
             for key in Folder:
                 if os.access(Folder[key],os.F_OK) == False:
                     os.makedirs(Folder[key])
-                
+
         else:
             print "no write permissions"
-        
+
         Folder['config'] = os.path.join('..','skeleton')
         return Folder
 
@@ -208,7 +225,7 @@ class Config(object):
                 except:
                     logger.info('\033[31m Copy processing scripts Error \033[0m \n')
                     continue
-    
+
 
     def writeConfig(self,Config,Origin,Folder):
         '''
@@ -219,7 +236,7 @@ class Config(object):
         for i in Config:
             fobj.write('%'+i+': '+Config[i]+'\n')
         fobj.close()
-    
+
 
     def writeStationFile(self,StationMetaData,Folder,flag):
         '''

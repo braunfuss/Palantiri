@@ -89,7 +89,11 @@ def processLoop () :
     Origin = C.parseConfig ('origin')
     Syn_in = C.parseConfig ('syn')
     Config = C.parseConfig ('config')
-    Meta   = C.readMetaInfoFile()
+    cfg = ConfigObj (dict=Config)
+    if cfg.pyrocko_download == True:
+        Meta = C.readpyrockostations()
+    else:
+        Meta = C.readMetaInfoFile()
     #==================================get meta info==========================================
 
     #==================================do prerequiries========================================
@@ -98,7 +102,6 @@ def processLoop () :
     C.cpSkeleton  (Folder,Config)
     C.writeConfig (Config,Origin,Folder)
 
-    cfg    = ConfigObj (dict=Config)
     filter = FilterCfg (Config)
     origin = OriginCfg (Origin)
     syn_in = SynthCfg (Syn_in)
@@ -137,7 +140,6 @@ def processLoop () :
             RefDict       = pickle.load(f)
             x             = open(ps)
             XDict         = pickle.load(x)
-           #xcorrnetworks = Config['networks'].split(',')
             xcorrnetworks = cfg.String ('networks').split(',')
 
             for i in xcorrnetworks:
@@ -145,9 +147,7 @@ def processLoop () :
         else:
             SL = {}
             xcorrnetworks = cfg.String ('networks').split(',')
-
             for i in xcorrnetworks:
-
                 W = {}
                 refshift    = 0
                 network     = cfg.String(i).split('|')
@@ -173,6 +173,7 @@ def processLoop () :
             output = open (ps, 'w')
             pickle.dump (XDict, output)
             output.close()
+
         for i in sorted (XDict.iterkeys()) :
             Logfile.red ('Array %s has %3d of %3d Stations left' % (i,len(XDict[i]),SL[i]))
 
@@ -342,12 +343,17 @@ def processLoop () :
 
 		    #sys.exit()
 		    ##############=======================SERIELL===========================================
-
-            tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
-            Wd  = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
             switch = filterindex
 
-            Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+            tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
+            if cfg.pyrocko_download == True:
+                Wd  = waveform.readWaveformsPyrocko     (FilterMeta, tw, evpath, ev)
+                Wdf = waveform.processpyrockoWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+
+            else:
+                Wd  = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
+
+                Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
             #	    A = Xcorr (ev,FilterMeta,evpath,Config,Folder)
             #	    print "run Xcorr"
             #	    W,triggerobject, Wdf = A.runXcorr()

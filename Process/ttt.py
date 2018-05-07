@@ -80,8 +80,6 @@ def filterStations (StationList,Config,Origin,network):
     print 'nr stations = ', len(StationList)
 
     for j in network:
-        #print j
-
         for i in StationList:
             if fnmatch.fnmatch(i.getcmpName(),j):
                 pos    = Location (i.lat, i.lon)
@@ -100,7 +98,7 @@ def filterStations (StationList,Config,Origin,network):
 def calctakeoff (Station,Event,Config):
 
     de       = loc2degrees (Event, Station)
-    Phase = cake.PhaseDef(Config[phasename])
+    Phase = cake.PhaseDef('P')
     model = cake.load_model()
     arrivals= model.arrivals([de,de], phases=Phase, zstart=Event.depth*km)
 
@@ -212,7 +210,7 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 				#print arrivals, oLatul, oLonul, locStation, o_depth, Phase, de
 			except:
 				try:
-					arrivals= model.arrivals([de,de], phases=Phase, zstart=depth[j]*km-0.5, zstop=depth[j]*km+0.5, refine=True)
+					arrivals= model.arrivals([de,de], phases=Phase, zstart=depth[j]*km-2.5, zstop=depth[j]*km+2.5, refine=True)
 					ttime = arrivals[0].t
 
 				except:
@@ -258,16 +256,13 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 				#print arrivals, oLatul, oLonul, locStation, o_depth, Phase, de
 			except:
 				try:
-					arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km-2.5, zstop=o_depth*km+2.0, refine=True)
+					arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km-2.5, zstop=o_depth*km+2.5, refine=True)
 					ttime = arrivals[0].t
 
 				except:
 					tt = obs_TravelTimes (de, o_depth)
-
-					for k in tt:
-					    if k['phase_name'] == Config[phasename] or k['phase_name'] == ('%sdiff')%(Config[phasename]):
-						ttime = k ['time']
-					print "obspy!"
+					l = tt[0]
+					ttime=l.time
 
 
 		        GridArray[(i,j)] = GridElem (oLatul, oLonul, o_depth,ttime,de)
