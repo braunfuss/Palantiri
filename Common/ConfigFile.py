@@ -130,6 +130,10 @@ class ConfigObj (object):
     def shift_by_phase_onset   (self) : return self.Bool ('shift_by_phase_onset')
     def newFrequency (self): return self.Float ('new_frequence')
     def pyrocko_download   (self) : return self.Bool ('pyrocko_download')
+    def synthetic_test_add_noise  (self) : return self.Bool ('synthetic_test_add_noise')
+    def quantity (self) :       return self.Str ('quantity')
+    def colesseo_input  (self) : return self.Bool ('colesseo_input')
+    def colosseo_scenario_yml (self) :       return self.Str ('colosseo_scenario_yml')
 
 
     # ---------------------------------------------------------------------------------------------

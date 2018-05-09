@@ -81,15 +81,12 @@ def filterStations (StationList,Config,Origin,network):
 
     for j in network:
         for i in StationList:
-            if fnmatch.fnmatch(i.getcmpName(),j):
+            if fnmatch.fnmatch(i.getcmpName(),j) :
                 pos    = Location (i.lat, i.lon)
                 sdelta = loc2degrees (origin, pos)
-
                 if sdelta > minDist and sdelta < maxDist:
                     s = Station(i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain)
-
                     if s not in F: F.append(s)
-
     Logfile.red ('%d STATIONS LEFT IN LIST' % len(F))
     return F
 

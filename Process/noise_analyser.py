@@ -61,9 +61,6 @@ def seismic_noise_variance(traces, engine, event, stations,
         variance is calculated on the entire pre-event
         noise
     phase_def : :class:'pyrocko.gf.Timing'
-    arrivals : list
-        of :class'pyrocko.gf.Timing' arrivals of waveforms
-        at station
 
     Returns
     -------

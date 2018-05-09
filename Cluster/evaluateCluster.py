@@ -54,11 +54,9 @@ class BestSolution(object):
 # -------------------------------------------------------------------------------------------------
 
 def getStatistics (clusterresults):
-
     p        = os.path.join (options.evpath,'stat.dat')
     fobjstat = open (p,'w')
     resDict  = {}
-
     for root,dirs,files in os.walk (clusterresults):
         for i in files:
             if i == 'event.statistic':
@@ -71,6 +69,7 @@ def getStatistics (clusterresults):
                     resDict[fname] = Result (line[0],line[1],line[2],line[3],bspath)
                     fobjstat.write (('%s:  %s  %s  %s  %s\n')%(fname,line[0],line[1],line[2],line[3]))
                 #endfor
+                    print resDict
 
                 fobj.close()
         #endfor
@@ -90,7 +89,6 @@ def getBestSolution(resultDictionary):
             bestsolution = resultDictionary[i].meanvalue
 
     L = []
-
     for j in resultDictionary.iterkeys():
         if bestsolution == resultDictionary[j].meanvalue:
             L.append(resultDictionary[j])
@@ -198,17 +196,7 @@ def copyAndShowBestSolution (solution):
     src  = os.path.join ('/',*solution.path.split('/')[:-4])
     src  = os.path.join (src,'skeleton','clusterplot.sh')
 
-    #print 'SRC ',src,' DEST ',dest
 
-    if os.access (os.getcwd(), os.W_OK):
-       try:    shutil.copy2 (src,dest)
-       except: Logfile.exception ('Copy processing scripts Error')
-
-    # plot cluster here
-    #cmd = 'bash clusterplot.sh &'
-    #os.chdir (solution.path)
-    #os.system(cmd)
-    #os.path.join(dest,'arraycluster.ps')
 # -------------------------------------------------------------------------------------------------
 
 def filterBestSolution(solution):
@@ -276,12 +264,9 @@ def filterBestSolution(solution):
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-
+    print options.evpath
     rD = getStatistics(options.evpath)
     bs = getBestSolution(rD)
-    print bs,type(bs)
-    print bs.path
-    #filterBestSolution(bs)
     CD = printBestSolution(bs)
     copyAndShowBestSolution(bs)
 

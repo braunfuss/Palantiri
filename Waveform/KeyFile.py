@@ -2,8 +2,7 @@
 import os
 import sys
 
-# add local directories to import path                      #hs+
-                    
+
 sys.path.append ('../Common/')
 
 import  Basic
@@ -13,7 +12,6 @@ import  Debug
 
 import  DataTypes
 
-#       Constants for element 'provider'
 
 PROV_WEB_DC = 'WEB_DC'
 PROV_IRIS   = 'IRIS'
@@ -21,9 +19,6 @@ PROV_UNDEF  = '???'
 
 class KeyFileObj (object):
 
-   #_g_DirName  = None
-   #_g_FullName = None
-   #_g_Key      = None
 
    def __init__(self, dirName=None, net=None, station=None, fullName=None) :
 
@@ -49,7 +44,7 @@ class KeyFileObj (object):
 
        fname = 'station_' + str (net) + '_' + str (station)
        return os.path.join (self.dirName, fname)
-   
+
    def _error (self, text) :
        Logfile.error (self.fullName + ',' + self.key + ' : ' + text)
 
@@ -60,12 +55,12 @@ class KeyFileObj (object):
    def _Float (self, s, minVal=None, maxVal=None) :
 
        try :   val = float (s[1:-1])
-       except : 
+       except :
            _error (self, 'Cannot convert to float ' + s)
            return 0.0
 
        if minVal != None :
-          if val < minVal : 
+          if val < minVal :
              return _floatError (self, str(val) + ' - Range error (< ' + str(minVal))
 
        if maxVal != None :
@@ -77,16 +72,14 @@ class KeyFileObj (object):
 
    def _String (self, s) :
        try :    return str (s)
-       except : 
+       except :
           _error (self, 'Illegal string')
           return '???'
 
    # ----------------------------------------------------------------------------------------------
 
    def read (self):
-       
-       # Read Key Files with station information
-    
+
        net      = DataTypes.toNetwork (self.fullName)
        station  = DataTypes.toStation (self.fullName)
        fname    = self._keyfileName   (net, station)
@@ -95,7 +88,6 @@ class KeyFileObj (object):
 
        lines    = Basic.readTextFile  (fname)
 
-       #print 'read ', fname
        if len(lines) == 0 : return None
 
        sta = DataTypes.Station (net, station, loc='???',comp='???')
@@ -137,12 +129,12 @@ class KeyFileObj (object):
              else                           : #self._error ('Invalid key ' + key)
                 Logfile.error ('Invalid key ' + key)
 
-             if key == END_FLAG : 
+             if key == END_FLAG :
                 endFound = True
                 break
           #endfor
-          
-       except : 
+
+       except :
           Logfile.exception ('readKeyFile', fname)
 
        if not endFound : Logfile.error (self.fullName+ ' : keyfile cut')
@@ -157,7 +149,7 @@ class KeyFileObj (object):
 
    def write (self, stationobject):
         '''
-        Write dummy Key Files with reduced station information    
+        Write dummy Key Files with reduced station information
         '''
         fname = self._keyfileName (stationobject.net, stationobject.station)
         fobj  = open (fname, 'w')
@@ -186,7 +178,7 @@ PACKAGES=\'''' + self.toStr1 (stationobject.provider) + '''\'
        '''
            fobj.write (msg)
 
-        except : 
+        except :
            Logfile.exception ('writeKeyFile', fname)
 
         fobj.close()
@@ -203,13 +195,13 @@ def getNetworks (dirName=None) :
     files    = os.listdir (dir)
     networks = []
 
-    for s in files : 
+    for s in files :
         word = str.split (s,'_')
 
         if len (word) == 3 and word[0] == 'station' :
            networks.append (word[1])
     #endfor
-    
+
     return sorted (set (networks))
 
 def isNetwork (network, dirName = None) :
@@ -229,7 +221,7 @@ def getProvider (dirName=None, net=None, station=None, fullName=None) :
 
     file = KeyFileObj (dirName, net,station, fullName)
     sta  = file.read()
-    
+
     if sta == None : return None
     else :           return sta.provider
 
@@ -257,7 +249,7 @@ def isIRIS (dirName=None, net=None, station=None, fullName=None) :
 
     if provider == PROV_IRIS   : return True
     if provider == PROV_WEB_DC : return False
- 
+
     return False # ???
     #Debug.assert1 (False, 'Invalid provider in keyfile ' + file.fullName, 'Perhaps old program version') ???
     xxx
@@ -281,10 +273,9 @@ def checkVersion (dirName, net=None, station=None, fullName=None) :
     prov = getProvider (dirName, net,station, fullName)
 
     if prov == None :
-       return Logfile.error ('Invalid provider in keyfile ' + fullName) 
+       return Logfile.error ('Invalid provider in keyfile ' + fullName)
 
     if prov == PROV_IRIS or prov == PROV_WEB_DC : return True
 
-    return Logfile.error ('Invalid provider <' + prov + '> in keyfile station_' + fullName, 
+    return Logfile.error ('Invalid provider <' + prov + '> in keyfile station_' + fullName,
                           'Perhaps old program version')
-    

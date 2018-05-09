@@ -1,4 +1,8 @@
+import logging
+import os.path as op
+from optparse import OptionParser
 
+from pyrocko import util, scenario, guts, gf
 import os
 import sys
 import fnmatch
@@ -29,7 +33,7 @@ import  DataTypes
 from    Program    import MainObj
 from    ObspyFkt   import loc2degrees
 from    ConfigFile import ConfigObj
-
+from pyrocko import guts, model
 import config                               #       Import from Tools
 from    Version  import  VERSION_STRING     #       Import from Cluster
 
@@ -79,51 +83,6 @@ class Centroid(object):
         self.lat = lat
         self.lon = lon
         self.rank = rank
-# -------------------------------------------------------------------------------------------------
-'''                                                                 #hs
-def init():
-
-    cDict  = {}
-    parser = SafeConfigParser()
-    parser.read('global.conf')
-
-    for section_name in parser.sections():
-        for name, value in parser.items(section_name):
-            cDict[name]=value
-
-    return cDict
-'''                                                                 #hs
-# -------------------------------------------------------------------------------------------------
-
-'''
-def readEvent(path):
-
-    Logfile.red ('Parsing Origin')
-    cDict = {}
-    parser = SafeConfigParser()
-    parser.read('KYRGYZSTAN_2008-10-05_15-52-52.000000.origin')
-
-    for section_name in parser.sections():
-        for name, value in parser.items(section_name):
-            cDict[name]=value
-
-    return cDict
-# -------------------------------------------------------------------------------------------------
-
-def readConfig(path):
-
-    Logfile.red ('Parsing Config')
-    cDict = {}
-    parser = SafeConfigParser()
-    parser.read('KYRGYZSTAN_2008-10-05_15-52-52.000000.config')
-
-    for section_name in parser.sections():
-        for name, value in parser.items(section_name):
-            cDict[name]=value
-
-    return cDict
-'''
-# -------------------------------------------------------------------------------------------------
 
 def readMetaInfoFile(EventPath):
 
@@ -164,16 +123,26 @@ def readMetaInfoFile(EventPath):
     return MetaL
 
 def readpyrockostations(path):
-    paths= os.path.join (path,'stations.txt')
-    model.load(paths)
+    stations = model.load_stations(path+'/data/stations.txt')
     MetaL = []
-    for station in stations:
-        for channel in station.channels:
-            if fnmatch.fnmatch(channel,'*HZ'):
-                MetaL.append(Station(station.network,station.name,
-                station.location,channel,station.lat,station.lon,
-                station.elevation,channel.dip,channel.azimuth,
-                channel.gain))
+    for sl in stations:
+            channel = sl.channels[0]
+            MetaL.append(Station(str(sl.network),str(sl.station),
+            str(sl.location),str(sl.channels[0])[:3],str(sl.lat),str(sl.lon),
+            str(sl.elevation),str(channel.dip),str(channel.azimuth),
+            str(channel.gain)))
+
+    return MetaL
+
+def readcolosseostations(scenario):
+    stations = scenario.get_stations()
+    MetaL = []
+    for sl in stations:
+            channel = sl.channels[2]
+            MetaL.append(Station(str(sl.network),str(sl.station),
+            str(sl.location),str(sl.channels[2])[:3],str(sl.lat),str(sl.lon),
+            str(sl.elevation),str(channel.dip),str(channel.azimuth),
+            str(channel.gain)))
     return MetaL
 
 # -------------------------------------------------------------------------------------------------
@@ -182,8 +151,6 @@ def createFolder (EventPath):
 
     Folder = {}
     Logfile.red ('Create working environment')
-
-    #print 'EVPATH: ',EventPath
 
     Folder['cluster'] = os.path.join (EventPath,'cluster')
 
@@ -223,7 +190,6 @@ def filterStations (StationList, Config, Origin):
 
         if sdelta > minDist and sdelta < maxDist:
            F.append (Station (i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain))
-
     Logfile.red ('%d STATIONS LEFT IN LIST'% len(F))
     return F
 # -------------------------------------------------------------------------------------------------
@@ -274,7 +240,6 @@ def alreadyUsedIndex (index,usedIndexList):
 # -------------------------------------------------------------------------------------------------
 
 def createRandomInitialCentroids(Config,StationMetaList):
-
     Logfile.red ('Begin initial centroid search')
 
     initialCentroids = []
@@ -386,7 +351,6 @@ def compareClusterCentre (oldCluster, newCluster, Config):
 
         delta = loc2degrees (oldCluster[i], newCluster[i])
 
-       #print i,' OLD: ',oldCluster[i].lat,oldCluster[i].lon,' NEW: ',newCluster[i].lat,newCluster[i].lon,' DELTA: ',delta
         msg = str(i) + ' OLD: ' + str(oldCluster[i].lat) + ' ' + str(oldCluster[i].lon)
         msg+=          ' NEW: ' + str(newCluster[i].lat) + ' ' + str(newCluster[i].lon) + ' DELTA: ' + str (delta)
         Logfile.add (msg)
@@ -432,7 +396,6 @@ def filterClusterStationMinimumNumber (CentroidList, StationClusterList, Config)
                 counter +=1
                 streamID = j.net+'.'+j.sta+'.'+j.loc+'.'+j.comp
                 delta    = loc2degrees (i, j)
-                #print i.lat,i.lon,': ',streamID,j.lat,j.lon,delta
 
         if counter < int (Config['minclusterstation']) : s1 = 'OUT'
         else :
@@ -504,7 +467,6 @@ def write4Plot (Config,Origin,StationClusterList,CentroidList,Folder,flag):
         if i.loc == '--' :  i.loc=''
 
         streamID = i.net+'.'+i.sta+'.'+i.loc+'.'+i.comp
-        #print streamID,i.member
         fobjstation.write (streamID+' '+i.lat+' '+i.lon+' '+str(i.member)+'\n')
 
     fobjstation.close()
@@ -606,16 +568,27 @@ class ClusterMain (MainObj) :
         t          = time.time()
         C          = config.Config (self.eventpath)
         Config     = C.parseConfig ('config')
-        Origin     = C.parseConfig ('origin')
         cfg = ConfigObj (dict=Config)
-        if cfg.pyrocko_download == True:
+        Origin     = C.parseConfig ('origin')
+        if cfg.pyrocko_download() == True:
             Meta = readpyrockostations(self.eventpath)
+        elif cfg.colesseo_input() == True:
+            scenario = guts.load(filename=cfg.colosseo_scenario_yml())
+            Meta = readcolosseostations(scenario)
+            events = scenario.get_events()
+            ev = events[0]
+            Origin['strike'] = str(ev.moment_tensor.strike1)
+            Origin['rake'] = str(ev.moment_tensor.rake1)
+            Origin['dip'] = str(ev.moment_tensor.dip1)
+            Origin['lat'] = str(ev.lat)
+            Origin['lon'] = str(ev.lon)
+            Origin['depth'] = str(ev.depth/1000.)
+
         else:
             Meta = readMetaInfoFile (self.eventpath)
-
         Folder = createFolder   (self.eventpath)
-        FilterMeta = filterStations (Meta,Config,Origin)
 
+        FilterMeta = filterStations (Meta,Config,Origin)
 
         try :
            km (Config,FilterMeta,Folder,Origin,t)

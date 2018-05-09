@@ -440,44 +440,9 @@ def write_statistic (year,day):
 # -------------------------------------------------------------------------------------------------------------------------------
 
 def make_meta(evpath):
-
-    #d = obspy.core.utcdatetime.UTCDateTime(stime)
-    #jd = "%03d" % d.julday
-    #cmd='python ev_meta_mt4.py -p '+_mseed_search_folder+' -y '+str(d.year)+' -d '+str(jd)
-    #write_statistic(d.year,jd)
-    #print cmd
-
     evpath = evpath.split('/')[-1]
     logger.info('\033[31mNEXT PROCESSING STEP: \n\n 1) python arraytool.py getmeta {evdirectory} \n\n\033[0m'.format(evdirectory=evpath))
 
-    #p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    #p.wait()
-    #os.system(cmd)
-
-
-# -------------------------------------------------------------------------------------------------------------------------------
-
-def stationRequest_old (station,timeDict,counter,pwdkeys,maxstation):
-
-        for i in _loc:
-            for j in _channel:
-                print 'loc, channel = ', i,j
-
-                size = make_irisrequest(station,timeDict['i_begin'],timeDict['i_end'],j,i)
-
-                if size != 0: print  'DATA FROM IRIS FOR STATION'; return
-                else:
-                    size = make_arcObspyrequest (station,timeDict['obspy_begin'],
-                                                         timeDict['obspy_end'],j,i,pwdkeys)
-
-                    if size != 0: print 'DATA FROM WEBDC FOR STATION'; return
-                    else:         print 'NO DATA FROM WEBDC OR IRIS FOR STATION AND FINISH'
-                    #endif
-                #endif
-
-                print '+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n'
-            #endfor
-        #endfor
 
 
 NO_DATA_FLAG = 'NO DATA FROM WEBDC OR IRIS FOR STATION'
@@ -527,17 +492,6 @@ def checkNoData (station, traceback) :              # ??? :  Erst mal Notbehelf
 
     for i in range (len (traceback)) :
         line = traceback[i]
-
-        # in make_irisrequest
-        #  if len(st) > 0 :  size = proof_file_v3 (st,channel)      #hs
-        #    in proof_file_v3
-        #     filename.write (savename, format='MSEED', reclen=512)
-        #     in write
-        #       writeFormat(self, filename, **kwargs)
-        #          in writeMSEED
-        #            (1.0 / trace.stats.sampling_rate * HPTMODULUS) % 100 != 0:
-        #               ZeroDivisionError: float division by zero
-
         if 'trace.stats.sampling_rate' in line :
            err = 'Sampling rate is zero';
            ret = True
@@ -547,13 +501,11 @@ def checkNoData (station, traceback) :              # ??? :  Erst mal Notbehelf
            err = 'HTTP Error 404: Not Found'
            ret = True
            break
-    #endfor
 
     if err != None :
        Logfile.setErrorLog (True)
        Server.printMsg (station, 'Error : ' + err)
        Logfile.setErrorLog (False)
-    #endif
 
     return ret
 
@@ -595,13 +547,6 @@ def checkProcessError (station, nErrors, lines, execTime) :   # ??? execTime
           s     = line
           isEnd = True
 
-       # PROOF FILE V3  3 Trace(s) in Stream:
-       # AK.FID..BHE | 2014-04-03T02:43:14.008400Z - 2014-04-03T04:43:13.988400Z | 50.0 Hz, 360000 samples
-       # AK.FID..BHN | 2014-04-03T02:43:14.008400Z - 2014-04-03T04:43:13.988400Z | 50.0 Hz, 360000 samples
-       # AK.FID..BHZ | 2014-04-03T02:43:14.008400Z - 2014-04-03T04:43:13.988400Z | 50.0 Hz, 360000 samples
-       # CHANNEL:  3 3
-       # SIZE: ---->  961024
-
        elif 'PROOF FILE' in line  :                 # station has data
           errCode = Server.HAS_DATA
           sn      = []
@@ -628,7 +573,6 @@ def checkProcessError (station, nErrors, lines, execTime) :   # ??? execTime
           for i in range (0,300) :
               if lineNr+i >= len (lines) : break         #10.12.2015
               if 'KeyboardInterrupt' in lines [lineNr+i] : sn = []; break
-             #if lineNr+i >= len (lines) : break         #10.12.2015
 
               sn.append (lines [lineNr+i])
           #endfor
@@ -639,7 +583,6 @@ def checkProcessError (station, nErrors, lines, execTime) :   # ??? execTime
 
           elif checkNoData (station, sn) :               # Traceback shows 'no data'
              errCode = Server.HAS_NO_DATA
-            #errCode = Server.RETRY_IT
              return errCode
 
           else :                                         # Traceback --> log
@@ -701,7 +644,6 @@ def startIrisServer (stations) :
 
     ctrl = Server.ServerCtrl (nRetries = 1, nParallel=10, waitTime=0.1, printStat=False)
     srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
-    #if WINDOWS : srv.control.ClientProc = MainProc
 
     return srv.run (stations)
 
@@ -711,14 +653,9 @@ def startGeofonServer (stations) :
     ctrl = Server.ServerCtrl (nRetries = 2, nParallel=10, waitTime=1.0, printStat=False)
     srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
     srv.control = ctrl
-    #if WINDOWS : srv.control.ClientProc = MainProc
 
     return srv.run (stations)
 
-# -------------------------------------------------------------------------------------------------
-#
-#   Client routine
-#
 class WaveformClient (Server.ClientBase) :
 
     def __init__ (self, options, pwdkeys) :
@@ -732,7 +669,6 @@ class WaveformClient (Server.ClientBase) :
         time_d = make_time (self.options.time, self.options.duration)
         stationRequest (self.options.station ,time_d, 0, self.pwdkeys, 0)
 
-# --------------------------------------------------------------------------------------------------
 
 def run_parallel (options, pwdDict) :
 
@@ -758,13 +694,10 @@ def run_parallel (options, pwdDict) :
        if len (stationList) == 0 :
           return Logfile.error ('No stations found')
 
-       #  Check program version
        #
        if not KeyFile.checkVersion (keyfileDir, fullName = stationList[0]) :
           return False
 
-       #  Run server(s)
-       #
        saveUrl (' ', None)        # init debug service
        network = options.network
 

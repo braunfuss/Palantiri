@@ -1,3 +1,8 @@
+import logging
+import os.path as op
+from optparse import OptionParser
+
+from pyrocko import util, scenario, guts, gf
 import fnmatch
 import os
 import shutil
@@ -6,7 +11,7 @@ import logging
 import platform
 import numpy as np
 from ConfigParser import SafeConfigParser
-
+from pyrocko import model
 logger = logging.getLogger('ARRAY-MP')
 
 class Station(object):
@@ -30,6 +35,9 @@ class Station(object):
 
     def getName(self):
         return self.net+'.'+self.sta+'.'+self.loc+'.'+self.comp
+
+    def pyr_name(self):
+        return self.net+'.'+self.sta+'.'+self.loc+'.'
 
     def getcmpName(self):
         if self.loc == '--':
@@ -130,21 +138,34 @@ class Config(object):
         return FML
 
     def readpyrockostations(self):
-        paths= os.path.join (self.eventpath,'stations.txt')
-        model.load(paths)
+        stations = model.load_stations(self.eventpath+'/data/stations.txt')
         MetaL = []
-        for station in stations:
-            for channel in station.channels:
-                print "this"
-                print channel
-                if fnmatch.fnmatch(channel,'*HZ'):
-                    MetaL.append(Station(station.network,station.name,
-                    station.location,channel,station.lat,station.lon,
-                    station.elevation,channel.dip,channel.azimuth,
-                    channel.gain))
+        for sl in stations:
+                channel = sl.channels[0]
+                MetaL.append(Station(str(sl.network),str(sl.station),
+                str(sl.location),str(sl.channels[0])[:3],str(sl.lat),str(sl.lon),
+                str(sl.elevation),str(channel.dip),str(channel.azimuth),
+                str(channel.gain)))
+
         FML = self.checkMetaInfoFile(MetaL)
 
         return FML
+
+    def readcolosseostations(self, scenario):
+        stations = scenario.get_stations()
+        MetaL = []
+        for sl in stations:
+                channel = sl.channels[2]
+                MetaL.append(Station(str(sl.network),str(sl.station),
+                str(sl.location),str(sl.channels[2])[:3],str(sl.lat),str(sl.lon),
+                str(sl.elevation),str(channel.dip),str(channel.azimuth),
+                str(channel.gain)))
+        FML = self.checkMetaInfoFile(MetaL)
+
+        return FML
+
+
+
 
     def checkMetaInfoFile(self,MetaList):
 

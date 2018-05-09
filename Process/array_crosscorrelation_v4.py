@@ -1,3 +1,9 @@
+import sys
+import logging
+import os.path as op
+from optparse import OptionParser
+
+from pyrocko import util, scenario, guts, gf
 import os
 import sys
 sys.path.append ('../Common/')
@@ -5,6 +11,7 @@ sys.path.append ('../Common/')
 import logging
 import sys
 import fnmatch
+from noise_analyser import analyse
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.core import read
@@ -14,20 +21,22 @@ from obspy.signal.trigger import trigger_onset as triggerOnset
 from obspy.signal.trigger import recursive_sta_lta as recSTALTA
 from obspy.signal.trigger import classic_sta_lta as classicSTALTA
 from obspy.signal.trigger import plot_trigger as plotTrigger
-from pyrocko import obspy_compat
-from pyrocko import orthodrome, model
-from pyrocko import cake
-import numpy as np
+from pyrocko import obspy_compat, orthodrome, model,  cake, io
+from pyrocko.gf import LocalEngine
+
+import numpy as num
 km = 1000.
+from pyrocko import obspy_compat
 
 import Basic
 import Logfile
 import Debug
 from ObspyFkt   import loc2degrees, obs_TravelTimes
-from ConfigFile import ConfigObj, FilterCfg
+from ConfigFile import ConfigObj, FilterCfg, SynthCfg
 
 from config import Trigger                                 # Import from Tools
 from waveform import resampleWaveform_2, filterWaveform_2    # Import from Process
+from pyrocko import util, scenario, guts, gf
 
 logger = logging.getLogger(sys.argv[0])
 
@@ -74,7 +83,8 @@ def getArrayShiftValue(refshiftfile, arrayname):
 
 class Xcorr(object):
 
-    def __init__(self, Origin, StationMeta, EventPath, Config, ArrayFolder):
+    def __init__(self, Origin, StationMeta, EventPath, Config, Syn_in,
+                 ArrayFolder):
 
         self.Origin = Origin
         self.StationMeta = StationMeta
@@ -82,7 +92,7 @@ class Xcorr(object):
         self.Config = Config
         self.AF = ArrayFolder
         self.mintforerun = int(10)
-
+        self.Syn_in = Syn_in
     # ---------------------------------------------------------------------------------------------
 
     def calculateTimeWindows(self, mint):
@@ -150,9 +160,7 @@ class Xcorr(object):
         for i in Waveform:
                 Logfile.red('Downsampling to %s: from %d' % (new_frequence,
                             i.stats.sampling_rate))
-
                 j = i.resample(new_frequence)
-
                 switch = cfg.filterswitch()
 
                 if switch == 1:
@@ -213,7 +221,6 @@ class Xcorr(object):
 
         stream = ''
         snr = ''
-
         if station.loc == '--':
             station.loc = ''
 
@@ -223,21 +230,114 @@ class Xcorr(object):
         if len(st.get_gaps()) > 0:
             st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
         snr  = self.signoise     (st[0], ttime, entry)
-        #amp = self.maxAmplitude (st[0], ttime, Origin, entry)
-        try:
-            stream = self.filterWaveform(st)
-        except:
-            stream = self.filterWaveform(st)
-    #        stream = self.filterpyrockoWaveform(st)
+        stream = self.filterWaveform(st)
 
-       # stream = st
+
         xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
         stream.write (xname,format='MSEED')
         stream.trim (tw['xcorrstart'], tw['xcorrend'])
-      #  stream[0].stats.starttime = UTCDateTime(3600)
-        #stream.write(streamData,format='MSEED')
-      #  stream[0].stats.starttime = UTCDateTime(1971, 1, 1, 1, 0)
+
         return stream, snr
+
+
+    def readWaveformsCross_pyrocko(self, station, tw, ttime):
+        obspy_compat.plant()
+
+        t2 = UTCDateTime(self.Origin.time)
+        sdspath = os.path.join(self.EventPath, 'data')
+
+        traces = io.load(self.EventPath+'/data/traces.mseed')
+        for tr in traces:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(station):
+                    traces_station = tr
+
+                    es = obspy_compat.to_obspy_trace(traces_station)
+                    streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+
+                    entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+
+                    #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                    st = obspy.Stream()
+                    st.extend([es])
+                    stream = ''
+                    snr = ''
+
+                    if station.loc == '--':
+                        station.loc = ''
+
+                    if len(st.get_gaps()) > 0:
+                        st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+                    #snr  = self.signoise     (st[0], ttime, entry)
+                    snr_trace= traces_station.chop(tmin=traces_station.tmin,
+                                                   tmax=traces_station.tmin+ttime-20.,
+                                                   inplace=False)
+                    snr = num.var(snr_trace.ydata)
+                    stream = self.filterWaveform(st)
+
+
+                    xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                    stream.write (xname,format='MSEED')
+                    stream.trim (tw['xcorrstart'], tw['xcorrend'])
+                    print "xcorr"
+                    return stream, snr
+
+              else:
+                    pass
+
+
+    def readWaveformsCross_colesseo(self, station, tw, ttime):
+        obspy_compat.plant()
+        pjoin = os.path.join
+        Config = self.Config
+        cfg = ConfigObj (dict=Config)
+        Syn_in = self.Syn_in
+        syn_in = SynthCfg (Syn_in)
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
+        scenario._engine = engine
+        pile_data = scenario.get_pile()
+
+        t2 = UTCDateTime(self.Origin.time)
+        sdspath = os.path.join(self.EventPath, 'data')
+
+        for traces in pile_data.chopper():
+            for tr in traces:
+                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+                  if tr_name == str(station):
+                        traces_station = tr
+                        es = obspy_compat.to_obspy_trace(traces_station)
+                        streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+
+                        entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+
+                        #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                        st = obspy.Stream()
+                        st.extend([es])
+                        stream = ''
+                        snr = ''
+
+                        if station.loc == '--':
+                            station.loc = ''
+
+                        if len(st.get_gaps()) > 0:
+                            st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+                        #snr  = self.signoise     (st[0], ttime, entry)
+                        snr_trace= traces_station.chop(tmin=traces_station.tmin,
+                                                       tmax=traces_station.tmin+ttime,
+                                                       inplace=False)
+                        snr = num.var(snr_trace.ydata)
+                        stream = self.filterWaveform(st)
+
+                        xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                        stream.trim (tw['xcorrstart'], tw['xcorrend'])
+                        print "xcorr"
+                        return stream, snr
+
+                  else:
+                        pass
+
 
     # ---------------------------------------------------------------------------------------------
 
@@ -248,7 +348,8 @@ class Xcorr(object):
         T     = []
         Wdict = {}
         SNR   = {}
-
+        Config = self.Config
+        cfg = ConfigObj (dict=Config)
         for i in self.StationMeta:
 
             Logfile.red ('read in %s '%(i))
@@ -271,17 +372,23 @@ class Xcorr(object):
                 raise Exception ("ILLEGAL: phase definition")
 
             tw = self.calculateTimeWindows(ptime)
-            try:
+        #    try:
+            if cfg.pyrocko_download() == True:
+                w, snr = self.readWaveformsCross_pyrocko (i, tw, ptime)
+            elif cfg.colesseo_input() == True:
+                w, snr = self.readWaveformsCross_colesseo (i, tw, ptime)
+            else:
                 w, snr = self.readWaveformsCross (i, tw, ptime)
-                Wdict [i.getName()] = w
-                SNR   [i.getName()] = snr
-            except:
-                pass
+
+
+            Wdict [i.getName()] = w
+            SNR   [i.getName()] = snr
+        #    except:
+        #        pass
 
             Logfile.red ('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++ ')
 
         Logfile.red ('Exit AUTOMATIC FILTER ')
-        print SNR
         return Wdict, SNR
 
     # ---------------------------------------------------------------------------------------------
@@ -305,6 +412,95 @@ class Xcorr(object):
         stream = self.filterWaveform (st)
         return stream
 
+
+    def readWaveformsPicker_pyrocko (self,station, tw, Origin, ttime):
+
+        obspy_compat.plant()
+
+        t2 = UTCDateTime(self.Origin.time)
+        sdspath = os.path.join(self.EventPath, 'data')
+
+        traces = io.load(self.EventPath+'/data/traces.mseed')
+        for tr in traces:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(station):
+                    traces_station = tr
+
+                    es = obspy_compat.to_obspy_trace(traces_station)
+                    streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+
+                    entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+
+                    #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                    st = obspy.Stream()
+                    st.extend([es])
+                    stream = ''
+                    snr = ''
+
+                    if station.loc == '--':
+                        station.loc = ''
+
+                    if len(st.get_gaps()) > 0:
+                        st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+                    #snr  = self.signoise     (st[0], ttime, entry)
+                    stream = self.filterWaveform(st)
+
+
+                    xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                    stream.trim (tw['xcorrstart'], tw['xcorrend'])
+                    return stream
+
+              else:
+                    pass
+
+    def readWaveformsPicker_colos (self,station, tw, Origin, ttime):
+
+        obspy_compat.plant()
+        pjoin = os.path.join
+        Config = self.Config
+        cfg = ConfigObj (dict=Config)
+        Syn_in = self.Syn_in
+        syn_in = SynthCfg (Syn_in)
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
+        scenario._engine = engine
+        pile_data = scenario.get_pile()
+
+        t2 = UTCDateTime(self.Origin.time)
+        sdspath = os.path.join(self.EventPath, 'data')
+
+        for traces in pile_data.chopper():
+            for tr in traces:
+                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+                  if tr_name == str(station):
+                        traces_station = tr
+                        es = obspy_compat.to_obspy_trace(traces_station)
+                        streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+
+                        entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+
+                        #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                        st = obspy.Stream()
+                        st.extend([es])
+                        stream = ''
+                        snr = ''
+
+                        if station.loc == '--':
+                            station.loc = ''
+
+                        if len(st.get_gaps()) > 0:
+                            st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+
+                        stream = self.filterWaveform(st)
+
+                        xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                        stream.trim (tw['xcorrstart'], tw['xcorrend'])
+                        print "xcorr"
+                        return stream
+
+                  else:
+                        pass
     # ---------------------------------------------------------------------------------------------
 
     def searchMeta (self,sname,Metalist):
@@ -342,7 +538,14 @@ class Xcorr(object):
                 raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
         tw  = self.calculateTimeWindows (ptime)
-        stP = self.readWaveformsPicker  (i, tw, self.Origin, ptime)
+        Config = self.Config
+        cfg = ConfigObj (dict=Config)
+        if cfg.pyrocko_download() == True:
+            stP = self.readWaveformsPicker_pyrocko  (i, tw, self.Origin, ptime)
+        elif cfg.colesseo_input() == True:
+            stP = self.readWaveformsPicker_colos  (i, tw, self.Origin, ptime)
+        else:
+            stP = self.readWaveformsPicker  (i, tw, self.Origin, ptime)
 
         refuntouchname = os.path.basename(self.AF)+'-refstation-raw.mseed'
         stP.write (os.path.join(self.EventPath,refuntouchname),format='MSEED',byteorder='>')
@@ -461,7 +664,7 @@ class Xcorr(object):
     def writeShift (self,ShiftList):
         import csv
         filename = os.path.join (self.AF,'shift.dat')
-        #np.savetxt(filename, ShiftList)
+        #num.savetxt(filename, ShiftList)
         with open(filename, 'wb') as csv_file:
             writer = csv.writer(csv_file)
             for val in ShiftList:
@@ -495,6 +698,7 @@ class Xcorr(object):
 
     def doXcorr (self):
         StreamDict, SNRDict = self.traveltimes()
+        print StreamDict, SNRDict
         t = self.f6(SNRDict)
         Logfile.add ('doXcorr: REFERENCE: ' + t)
 
@@ -509,13 +713,14 @@ class Xcorr(object):
 
         corrDict = {}
         ref      = StreamDict[t][0].data
-
+        print ref
         Logfile.red ('Reference Station of %s for Xcorr Procedure %s' % (os.path.basename(self.AF),t))
         Logfile.red ('Enter Xcorr Procedure ')
-
+        print StreamDict
         for stream in StreamDict.iterkeys():
-           xcorrshiftvalue = StreamDict[stream][0].stats.npts/10
+           print stream
 
+           xcorrshiftvalue = StreamDict[stream][0].stats.npts/10
            a, b  = obspy.signal.cross_correlation.xcorr (ref, StreamDict[stream][0], xcorrshiftvalue)
            shift = a / StreamDict[stream][0].stats.sampling_rate
            corrDict[stream] = Corr(shift, b, a)

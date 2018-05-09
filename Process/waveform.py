@@ -1,32 +1,29 @@
+import sys
+import logging
+import os.path as op
+from optparse import OptionParser
+
+from pyrocko import util, scenario, guts, gf
 
 import os
 import sys
 import logging
 import fnmatch
-
-
-# add local directories to import path
-
 sys.path.append ('../tools/')
 sys.path.append ('../Common/')
-
 from obspy.core             import read
 from obspy.core.stream      import Stream, Trace
 from obspy.core.utcdatetime import UTCDateTime
-from pyrocko import obspy_compat
+from pyrocko import obspy_compat, io
 from pyrocko import orthodrome, model
 import numpy
-
-#       Import from common
-
 import  Basic
 import  Globals
 import  Logfile
-from    ConfigFile import ConfigObj, FilterCfg
-
+from    ConfigFile import ConfigObj, FilterCfg, SynthCfg
 from    config import Station,Event     #       Import from Tools
 import  ttt                             #       Import from Process
-
+import obspy
 # -------------------------------------------------------------------------------------------------
 
 def getStation (streamID,MetaDict):
@@ -90,16 +87,47 @@ def readWaveforms (stationList,tw,EventPath,Origin):
     return Wdict
 
 def readWaveformsPyrocko (stationlist, w,EventPath,Origin):
+    Wdict = {}
+    traces = io.load(EventPath+'/data/traces.mseed')
+    obspy_compat.plant()
 
-    sdspath = os.path.join(EventPath,'data')
-    traces = io.load(os.path.join (sdspath,'traces.mseed'))
     traces_dict = []
     for tr in traces:
-        for il in stationList:
-	          if str(il) == str(trace):
+        for il in stationlist:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(il):
+                    st = obspy.Stream()
+                    es = obspy_compat.to_obspy_trace(tr)
+                    st.extend([es])
                     traces_dict.append(tr)
+                    Wdict[il.getName()] = st
+    return Wdict
 
-    return traces_dict
+def readWaveforms_colesseo (stationlist, w,EventPath,Origin, C):
+    Wdict = {}
+    Syn_in = C.parseConfig ('syn')
+    Config = C.parseConfig ('config')
+    cfg = ConfigObj (dict=Config)
+    syn_in = SynthCfg (Syn_in)
+
+    store_id = syn_in.store()
+    engine = gf.LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+    scenario = guts.load(filename=cfg.colosseo_scenario_yml())
+    scenario._engine = engine
+    pile_data = scenario.get_pile()
+    traces_dict = []
+    for traces in pile_data.chopper():
+        for tr in traces:
+            for il in stationlist:
+                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+                  if tr_name == str(il):
+                        st = obspy.Stream()
+                        es = obspy_compat.to_obspy_trace(tr)
+                        st.extend([es])
+                        traces_dict.append(tr)
+                        Wdict[il.getName()] = st
+    return Wdict
+
 
 # -------------------------------------------------------------------------------------------------
 
@@ -242,13 +270,13 @@ def processWaveforms (WaveformDict,Config,Folder,network,MetaDict,Event,switch,X
 
 
 def processpyrockoWaveforms (WaveformDict,Config,Folder,network,MetaDict,Event,switch,Xcorr):
-
+    WaveformDict_obs = []
     obspy_compat.plant()
     Logfile.red ('Start Processing')
     cfg           = FilterCfg (Config)
     new_frequence = cfg.newFrequency()                #  ['new_frequence']
 
-
+    traces = []
     for tr in WaveformDict:
             Logfile.add ('%s:%s -------------------------------------------------------------' % (index,i))
 
@@ -267,8 +295,9 @@ def processpyrockoWaveforms (WaveformDict,Config,Folder,network,MetaDict,Event,s
                 tr.bandpass(4, cfg.flo2,cfg.fhi2)
             tr.downsample_to(new_frequence)
             tr = obspy_compat.to_obspy_trace(tr)
+            traces.append(tr)
+            stream = obspy.Stream()
+            Wdict= stream.extend([tr])
+            WaveformDict_obs.append(Wdict)
 
-
-    stream = obspy.Stream()
-    Wdict= stream.extend([to_obspy_trace(tr) for tr in traces])
-    return Wdict
+    return WaveformDict_obs

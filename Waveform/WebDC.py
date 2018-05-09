@@ -45,7 +45,6 @@ def getNetworkInventory (network, user1):
                break
 
             except :
-             #time.sleep (1.0); continue
               return None
         #endfor
 
@@ -135,37 +134,14 @@ def getNetworks (user1, start, end) :
     return L
 
 # -------------------------------------------------------------------------------------------------
-# used by getStationList.py
 
-def listNetworks_old ():                     #hs : Code von Lutz - nicht mehr benutzt
-    '''
-    Download available networks via Geofon kml file
-    '''
-
-    URL = 'http://geofon.gfz-potsdam.de/waveform/archive/kml.php'
-    Logfile.add (' ','download latest GEOFON network tables :')
-
-    L = []
-    kml_file = urllib2.urlopen (URL)
-    baum     = etree.parse (kml_file)
-    tag_dict = baum.getroot()
-
-    for eintrag in tag_dict.getchildren():
-       for t in eintrag.getchildren():
-          for i in t:
-             if i.tag == '{http://www.opengis.net/kml/2.2}name' :  L.append(i.text)
-    return L
-
-# -------------------------------------------------------------------------------------------------
-
-def listNetworks ():                         #hs : new routine : replaces ..._old
+def listNetworks ():
     '''
     Download available networks via Geofon kml file
     '''
 
     L    = []
     URL  = 'http://geofon.gfz-potsdam.de/waveform/archive/index.php?type=p'     # permanent
-    #URL = 'http://geofon.gfz-potsdam.de/waveform/archive/index.php?type=all'   # all
     s    = 'download latest GEOFON network tables :'
 
     if not Basic.existsHTML_Page (URL, s, withComment = True) :
@@ -183,9 +159,7 @@ def listNetworks ():                         #hs : new routine : replaces ..._ol
         if 'station.php' in line and word in line :
            pos     = line.find (word) + len(word)
            network = line [pos: pos+2]
-           #Logfile.add (network)
            L.append (network)
-        #endfor
 
     L = list (set(L))
     return L

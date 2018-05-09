@@ -457,7 +457,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     ############################################################################
     calcStreamMap = WaveformDict
 
-
     stations = []
     py_trs = []
     for trace in calcStreamMap.iterkeys():
@@ -477,7 +476,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
     if cfg.Bool('synthetic_test') == True:
     	store_id = syn_in.store()
-    	#engine = LocalEngine(store_superdirs=['/media/asteinbe/data/asteinbe/aragorn/andreas/Tibet/'])
     	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
 
         targets =[]
@@ -487,7 +485,8 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     		lat=st.lat,
     		lon=st.lon,
     		store_id=store_id,
-    		codes=(st.network, st.station, st.location, 'BHZ'))
+    		codes=(st.network, st.station, st.location, 'BHZ'),
+            quantity=cfg.quantity())
     		targets.append(target)
 
 
@@ -547,9 +546,9 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                             slip=syn_in.slip_1(i),
                             nucleation_y=syn_in.nucleation_y_1(i),
                             stf=stf,
-                            time = util.str_to_time(syn_in.time_1(i))))
+                            time=util.str_to_time(syn_in.time_1(i))))
 
-                if syn_in.source() ==  'DCSource':
+                if syn_in.source() == 'DCSource':
                         sources.append(DCSource(
                             lat=float(syn_in.lat_1(i)),
                             lon=float(syn_in.lon_1(i)),
@@ -558,16 +557,21 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                             dip=syn_in.dip_1(i),
                             rake=syn_in.rake_1(i),
                             stf=stf,
-                            time = util.str_to_time(syn_in.time_1(i)),
-                        	magnitude=syn_in.magnitude_1(i)))
+                            time=util.str_to_time(syn_in.time_1(i)),
+                            magnitude=syn_in.magnitude_1(i)))
             source = CombiSource(subsources=sources)
         response = engine.process(source, targets)
 
-    	synthetic_traces = response.pyrocko_traces()
-
-    	l =0
-    	trs_org= []
-    	trs_orgs= []
+        synthetic_traces = response.pyrocko_traces()
+        if cfg.Bool('synthetic_test_add_noise') == True:
+            from noise_addition import add_noise
+            store_id = syn_in.store()
+            engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+            synthetic_traces = add_noise(synthetic_traces, engine, event, stations,
+              store_id, phase_def='P')
+        l=0
+        trs_org= []
+        trs_orgs= []
     	fobj = os.path.join (arrayfolder,'shift.dat')
     	xy = num.loadtxt(fobj, usecols=1, delimiter=',')
         calcStreamMapsyn= calcStreamMap.copy()
@@ -580,8 +584,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                 extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
                 tr_org.shift(xy[l])
-                #	tr_org.bandpass(4,0.025,0.24)
-
                 synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
                 calcStreamMapsyn[trace]=synthetic_obs_tr
                 trs_orgs.append(tr_org)
@@ -611,15 +613,12 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                   timing=timing,
                   fn_dump_center=pjoin(directory, 'array_center.pf'),
                   fn_beam=pjoin(directory, 'beam.mseed'))
-        #	troll.snuffle(trs_org)
         i = 0
     	store_id = syn_in.store()
-    	#engine = LocalEngine(store_superdirs=['/media/asteinbe/data/asteinbe/aragorn/andreas/Tibet/'])
     	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        weights = analyse(shifted_traces, engine, event, stations,
-         100., store_id, nwindows=1,
-         check_events=True, phase_def='P')
-        print(weights)
+        #weights = analyse(shifted_traces, engine, event, stations,
+        # 100., store_id, nwindows=1,
+        # check_events=True, phase_def='P')
         for trace in calcStreamMapshifted.iterkeys():
             recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
             recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
@@ -694,11 +693,13 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
         c += 1
         streamCounter += 1
+
     #endfor
 
 
     ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
     nsamp     = winlen * new_frequence
+
     nstep     = int (step*new_frequence)
     migpoints = dimX * dimY
 
@@ -799,19 +800,22 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     traces     = traces.reshape     (1,nostat*minSampleCount)
     traveltime = traveltime.reshape (1,nostat*dimX*dimY)
     USE_C_CODE = True
-    if USE_C_CODE :
-        import Cm
-        import CTrig
-        start_time = time.time()
-        k  = Cm.otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltime,traces)
-        print("--- %s seconds ---" % (time.time() - start_time))
-    else :
-        start_time = time.time()
-        k = otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                  minSampleCount,latv,lonv,traveltime,traces)                       #hs
-        print("--- %s seconds ---" % (time.time() - start_time))
-
+    try:
+        if USE_C_CODE :
+            import Cm
+            import CTrig
+            start_time = time.time()
+            k  = Cm.otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                          minSampleCount,latv,lonv,traveltime,traces)
+            print("--- %s seconds ---" % (time.time() - start_time))
+        else :
+            start_time = time.time()
+            k = otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                      minSampleCount,latv,lonv,traveltime,traces)                       #hs
+            print("--- %s seconds ---" % (time.time() - start_time))
+    except:
+        print("Wrong tttgrid loaded. Clear folder tttgrid or delete the specifc array\
+        from tttgrid folder")
     t2 = time.time()
 
     Logfile.add ('%s took %0.3f s' % ('CALC:', (t2-t1)))

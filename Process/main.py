@@ -1,6 +1,6 @@
-
 import os
 import sys
+from pyrocko import util, scenario, guts, gf
 
 
 import logging
@@ -25,7 +25,6 @@ import  ConfigFile
 from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 
 #       Import from Tools
-
 import config
 from   config import Event, Trigger
 
@@ -39,7 +38,7 @@ import  ttt
 import  sembCalc
 import  waveform
 import  times
-
+import time
 #from   xcorrfilter import Xcorr
 from    array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR, getArrayShiftValue
 
@@ -82,7 +81,7 @@ def initModule () :
 
 # --------------------------------------------------------------------------------------------------
 
-def processLoop () :
+def processLoop():
 
     #==================================get meta info==========================================
     C      = config.Config (evpath)
@@ -90,8 +89,14 @@ def processLoop () :
     Syn_in = C.parseConfig ('syn')
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
-    if cfg.pyrocko_download == True:
-        Meta = C.readpyrockostations()
+    if cfg.pyrocko_download() == True:
+        Meta = C.readpyrockostations()#
+#        sys.path.append ('../Cluster/')
+#        from cluster2 import *
+#        Meta = readpyrockostations(evpath)
+    elif cfg.colesseo_input() == True:
+        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
+        Meta = C.readcolosseostations(scenario)
     else:
         Meta = C.readMetaInfoFile()
     #==================================get meta info==========================================
@@ -103,18 +108,46 @@ def processLoop () :
     C.writeConfig (Config,Origin,Folder)
 
     filter = FilterCfg (Config)
-    origin = OriginCfg (Origin)
     syn_in = SynthCfg (Syn_in)
-
     ntimes  = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    origin = OriginCfg (Origin)
 
-    default = 0
-    strike  = origin.strike (default)        # Origin.get ('strike', default)
-    dip     = origin.dip    (default)        # Origin.get ('dip',    default)
-    rake    = origin.rake   (default)        # Origin.get ('rake',   default)
+    if cfg.colesseo_input() == True:
+        from pyrocko import util
+        events = scenario.get_events()
+        ev = events[0]
+        origin.strike = str(ev.moment_tensor.strike1)
+        origin.rake = str(ev.moment_tensor.rake1)
+        origin.dip = str(ev.moment_tensor.dip1)
+        strike = ev.moment_tensor.strike1
+        origin.lat = str(ev.lat)
+        origin.lon = str(ev.lon)
+        origin.depth = str(ev.depth/1000.)
+        depth = ev.depth
+        origin.time = util.time_to_str(ev.time)
+        time_ev = util.time_to_str(ev.time)
+        lat = ev.lat
+        lon = ev.lon
+        rake = ev.moment_tensor.rake1
+        dip = ev.moment_tensor.dip1
+        Origin['strike'] = str(ev.moment_tensor.strike1)
+        Origin['rake'] = str(ev.moment_tensor.rake1)
+        Origin['dip'] = str(ev.moment_tensor.dip1)
+        Origin['lat'] = str(ev.lat)
+        Origin['lon'] = str(ev.lon)
+        Origin['time'] = util.time_to_str(ev.time)
+        Origin['depth'] = str(ev.depth/1000.)
+        ev = Event (lat, lon, depth, time_ev,
+                    strike = strike,dip=dip,rake=rake)
+    else:
 
-    ev = Event (origin.lat(), origin.lon(), origin.depth(), origin.time(),
-                strike = strike,dip=dip,rake=rake)
+        default = 0
+        strike  = origin.strike (default)        # Origin.get ('strike', default)
+        dip     = origin.dip    (default)        # Origin.get ('dip',    default)
+        rake    = origin.rake   (default)        # Origin.get ('rake',   default)
+
+        ev = Event (origin.lat(), origin.lon(), origin.depth(), origin.time(),
+                    strike = strike,dip=dip,rake=rake)
 
     filtername = filter.filterName()
     Logfile.add ('filtername = ' + filtername)
@@ -156,8 +189,11 @@ def processLoop () :
 
                 if os.access (arrayfolder,os.F_OK) == False:
                    os.makedirs(arrayfolder)
+                if cfg.pyrocko_download() == True:
+                    A = Xcorr (ev,FilterMeta,evpath,Config,Syn_in,arrayfolder)
+                else:
+                    A = Xcorr (ev,FilterMeta,evpath,Config,Syn_in,arrayfolder)
 
-                A = Xcorr (ev,FilterMeta,evpath,Config,arrayfolder)
                 print "run Xcorr"
                 W,triggerobject= A.runXcorr()
 
@@ -346,14 +382,15 @@ def processLoop () :
             switch = filterindex
 
             tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
-            if cfg.pyrocko_download == True:
+            if cfg.pyrocko_download() == True:
                 Wd  = waveform.readWaveformsPyrocko     (FilterMeta, tw, evpath, ev)
-                Wdf = waveform.processpyrockoWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-
+            #    Wdf = waveform.processpyrockoWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+            elif cfg.colesseo_input() == True:
+                Wd  = waveform.readWaveforms_colesseo     (FilterMeta, tw, evpath, ev, C)
             else:
                 Wd  = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
-
-                Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+            print Wd
+            Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
             #	    A = Xcorr (ev,FilterMeta,evpath,Config,Folder)
             #	    print "run Xcorr"
             #	    W,triggerobject, Wdf = A.runXcorr()

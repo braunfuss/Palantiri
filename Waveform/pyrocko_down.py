@@ -67,8 +67,8 @@ options.time           = Origin ['time']
 options.duration       = int (Conf['duration'])
 #options.sdsfolder      = os.path.join (options.eventpath,'data')
 sdspath = os.path.join(options.eventpath,'data')
-tmin = util.str_to_time(ev.time)-options.duration
-tmax = util.str_to_time(ev.time)+options.duration
+tmin = util.str_to_time(ev.time)-600.
+tmax = util.str_to_time(ev.time)+1800.
 site = 'iris'
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
@@ -88,7 +88,7 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
 
 stations = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
 
-model.dump_stations(stations, os.path.join (sdspath,'stations.txt'))
+#model.dump_stations(stations, os.path.join (sdspath,'stations.txt'))
 # setup a waveform data request
 
 nstations = [s for s in stations]
@@ -102,11 +102,31 @@ with open(os.path.join (sdspath,'traces.mseed'), 'wb') as file:
     file.write(request_waveform.read())
 print('traces written')
 # request meta data
+traces = io.load(os.path.join (sdspath,'traces.mseed'))
+
+stations_real = []
+gaps= []
+for tr in traces:
+    for st in stations:
+        if tr.station == st.station and tr.location == st.location:
+                stations_real.append(st)
+                gaps.append(st.station)
+remove =[x for x in gaps if gaps.count(x) > 1]
+for re in remove:
+    for st in stations_real:
+        if st.station == re:
+            stations_real.remove(st)
+model.dump_stations(stations_real, os.path.join (sdspath,'stations.txt'))
+
 request_response = fdsn.station(
     site=site, selection=selection, level='response')
-
+from pyrocko.io import stationxml
 # save the response in YAML and StationXML format
 request_response.dump(filename=os.path.join (sdspath,'responses.yml'))
+request_response.dump_xml (filename=os.path.join (sdspath,'responses.xml'))
+sx = stationxml.load_xml(filename=os.path.join (sdspath,'responses.xml'))
+pyrocko_stations = sx.get_pyrocko_stations()
+model.dump_stations(stations_real, os.path.join (sdspath,'stations2.txt'))
 
 # Loop through retrieved waveforms and request meta information
 # for each trace

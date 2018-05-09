@@ -21,7 +21,7 @@ evpath = options.evpath
 C = config.Config(evpath)
 Origin = C.parseConfig('origin')
 cfg = ConfigObj (dict=C)
-if cfg.pyrocko_download == True:
+if cfg.pyrocko_download() == True:
     Meta = C.readpyrockostations()
 else:
     Meta = C.readMetaInfoFile()
