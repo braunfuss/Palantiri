@@ -88,6 +88,7 @@ For step 3) four options exsist:
 		
 
 step 4) 
+
 		python arraytool.py cluster eventfoldername: - clustering of stations to automatically build synthetic arrays (gives you arrayconfiguration + overview plot)
                                                      - configuration parameter in the event config file (eventname.config)
                                                      - possible parameter:  - clustermethod (distance zoning/ kmeans)
@@ -96,17 +97,17 @@ step 4)
                                                                                     endminstationdistance=59.9
                                                                                     beginmaxstationdistance=60
                                                                                     endmaxstationdistance=90
-                                                                                    
-                                                                              kmeans:
-                                                                                   maxcluster = 2 (amount of clusters you would like to have at the end of clustering)
-                                                                                   minstationaroundinitialcluster = 5 (minimum station around initial cluster center to be one inital cluster)
-                                                                                   initialstationdistance = 10 (stations must be 10 degree around initial cluster center)
-                                                                                   cutoff = 30              (if no final result for kmean then run only 30 times and take last result)
-                                                                                   runs = 5                 (repeatings for kmean clustering to get best result)
-                                                                                   centroidmindistance = 20 (minimum distance of initial centroids,unit in degree)
-                                                                                   comparedelta = 2       
-                                                                                   stationdistance = 10   (maximum distance from station to cluster center)
-                                                                                   minclusterstation = 10 (minimum stations per cluster)
+                                                            
+                                                      kmeans:
+                                                           maxcluster = 2 (amount of clusters you would like to have at the end of clustering)
+                                                           minstationaroundinitialcluster = 5 (minimum station around initial cluster center to be one inital cluster)
+                                                           initialstationdistance = 10 (stations must be 10 degree around initial cluster center)
+                                                           cutoff = 30              (if no final result for kmean then run only 30 times and take last result)
+                                                           runs = 5                 (repeatings for kmean clustering to get best result)
+                                                           centroidmindistance = 20 (minimum distance of initial centroids,unit in degree)
+                                                           comparedelta = 2       
+                                                           stationdistance = 10   (maximum distance from station to cluster center)
+                                                           minclusterstation = 10 (minimum stations per cluster)
 
 STEP 5) 
 
