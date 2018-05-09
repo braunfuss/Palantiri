@@ -52,11 +52,13 @@ step 2)
 
 For step 3) four options exsist:
 	
- 	a) Download real data with pyrocko (faster, less stations):
+ 	a) 
+		Download real data with pyrocko (faster, less stations):
 	
 		python arraytool.py pyrocko_download eventfoldername
 
-	b) download  real data with obspy (slower, more stations). For this three commands are needed, first:
+	b) 
+		download  real data with obspy (slower, more stations). For this three commands are needed, first:
 
 		1) python arraytool.py getstations eventfoldername: - search for station in iris and webdc with searchparameters defined in global.conf
 		                                                 - possible parameter: - mindistance from event
@@ -72,12 +74,14 @@ For step 3) four options exsist:
 	       3) python arraytool.py getmeta eventfoldername: - create file with metainformation from every station which has data in sds structure
 
 
-	c) use synthetics but station distributions from a real data case: 
+	c) 
+		use synthetics but station distributions from a real data case: 
 		For this you will need a greensfunctions store that is pre-calculated with the fomosto tool from pyrocko (https://pyrocko.org/docs/current/apps/fomosto/index.html).
 		Several already pre-calculated stores for download can be found at http://kinherd.org:8080/gfws/static/stores/
 		This possibilty assumes also that you downloaded data with a) or b).
 
-	d) use synthetics from a scenario generator:
+	d) 
+		use synthetics from a scenario generator:
 		You can also use the output of the pyrocko scenario generator colosseo.
 		After you followed the steps to create a purely synthetic dataset at https://pyrocko.org/docs/current/apps/colosseo/index.html
 		you can give the scenario.yml to 
