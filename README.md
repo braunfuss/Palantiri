@@ -30,9 +30,12 @@ need to install obspy and pyrocko with your python2.
 
 processing steps:
 
-step 0) python arraytool.py list: - lists all events in the eventfolder (config and orig file must exist) (optional, just to see which events are available to process)
+step 0) 
+		python arraytool.py list: - lists all events in the eventfolder (config and orig file must exist) (optional, just to see which events are available to process)
 
-step 1) python arraytool.py search: - search for earthquakes to process in global catalogs
+step 1) 
+
+		python arraytool.py search: - search for earthquakes to process in global catalogs
                                     - searchparameter are defined in global.conf
                                     - possible parameter: - date from to
                                                      - magnitude
@@ -40,7 +43,9 @@ step 1) python arraytool.py search: - search for earthquakes to process in globa
                                                      - number of result
 
                             
-step 2) python arraytool.py create eventid: - creates eventfolder in events 
+step 2) 
+
+		python arraytool.py create eventid: - creates eventfolder in events 
                                             - use eventid from search to start creating event directory structure
                                                 (copies example.config from skeleton folder)
                                     
@@ -49,7 +54,7 @@ For step 3) four options exsist:
 	
  	a) Download real data with pyrocko (faster, less stations):
 	
-	python arraytool.py pyrocko_download eventfoldername
+		python arraytool.py pyrocko_download eventfoldername
 
 	b) download  real data with obspy (slower, more stations). For this three commands are needed, first:
 
@@ -58,7 +63,7 @@ For step 3) four options exsist:
 		                                                                    - maxdistance from event
 		                                                                    - networks for blacklist
 
-	  	2) python arraytool.py getdata eventfoldername: - acquisition of archived waveformdata from iris and eida saved as sds in the eventfolder
+  		2) python arraytool.py getdata eventfoldername: - acquisition of archived waveformdata from iris and eida saved as sds in the eventfolder
 		                                             - copy keyfoldername from step 3 into global.conf
 		                                             - possible parameter: - keyfolder
 		                                             - duration of waveformdata
@@ -78,7 +83,8 @@ For step 3) four options exsist:
 		you can give the scenario.yml to 
 		
 
-step 4) python arraytool.py cluster eventfoldername: - clustering of stations to automatically build synthetic arrays (gives you arrayconfiguration + overview plot)
+step 4) 
+		python arraytool.py cluster eventfoldername: - clustering of stations to automatically build synthetic arrays (gives you arrayconfiguration + overview plot)
                                                      - configuration parameter in the event config file (eventname.config)
                                                      - possible parameter:  - clustermethod (distance zoning/ kmeans)
                                                                               distance zoning:
@@ -98,7 +104,9 @@ step 4) python arraytool.py cluster eventfoldername: - clustering of stations to
                                                                                    stationdistance = 10   (maximum distance from station to cluster center)
                                                                                    minclusterstation = 10 (minimum stations per cluster)
 
-STEP 5) python arraytool.py process eventfoldername: - ARRAYPROCESSING OF THE EVENT
+STEP 5) 
+
+		python arraytool.py process eventfoldername: - ARRAYPROCESSING OF THE EVENT
                                                      - CONFIGURATION PARAMETER IN THE EVENT CONFIG FILE
 						     - this can also be done with synthetic input data
 
