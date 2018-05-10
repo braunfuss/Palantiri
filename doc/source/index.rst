@@ -1,11 +1,15 @@
 
-.. image:: /static/pyrocko_shadow.png
-    :align: left
-
-Pyrocko Manual
+seismoBat Manual
 ==============
 
-Pyrocko is an open source toolbox and library for seismology.
+seismoBat (Backprojection array tool) is an open source toolbox for seismological backprojection to investigate source properties 
+based on teleseismic data and clustering stations into synthetics arrays. A number of synthetic test are possible using Greensfunctions 
+
+based on:
+
+    KRÜGER, Frank; OHRNBERGER, Matthias.
+    Tracking the rupture of the M w= 9.3 Sumatra earthquake over 1,150 km at teleseismic distance.
+    Nature, 2005, 435. Jg., Nr. 7044, S. 937.
 
 .. raw:: html
 
@@ -17,18 +21,14 @@ Features
 .. raw:: html
 
    <div class="keywords">
-    <span>seismogram browser and picker</span>
-    <span>waveform archive management</span>
-    <span>waveform processing</span>
-    <span>Green's function calculation and management</span>
-    <span>seismic ray theory</span>
-    <span>synthetic seismograms</span>
-    <span>online catalog access</span>
-    <span>FDSN web service access</span>
-    <span>beachball plotting</span>
-    <span>online topo data access</span>
-    <span>enhanced GMT mapping</span>
-    <span>geodesic functions</span>
+    <span>automatic download of data for given event</span>
+    <span>automatic clustering of stations into synthetic arrays</span>
+    <span>waveform selection by cross-correlation</span>
+    <span>manual qc shift for each array  possible</span>
+    <span>synthetic backprojections for different sources</span>
+    <span>pyrocko scenario generator (colosseo) input possible </span>
+    <span>calculate seperate and total semblance for each time step</span>
+    <span>noise weights for each arrays semblance</span>
    </div>
 
 Contents
@@ -39,9 +39,7 @@ Contents
 
    overview
    install/index
-   apps/index
-   formats/index
-   library/index
+
 
 Indices and tables
 ------------------
@@ -51,7 +49,4 @@ Indices and tables
 * :ref:`search`
 
 
-More manuals from the ecosystem:
----------------------------------
 
-* `Kite - Static displacement and InSAR post-processing <https://pyrocko.org/docs/kite>`_

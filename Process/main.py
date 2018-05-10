@@ -336,7 +336,7 @@ def processLoop():
                 isParallel = False                          #10.12.2015
 
                 try:
-                    f = open('../tttgrid/tttgrid_%s_%s.pkl' % (ev.time, arrayname), 'rb')
+                    f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'rb')
                     print "loading travel time grid"
                     TTTGridMap,mint,maxt = pickle.load(f)
                     f.close()
@@ -367,7 +367,7 @@ def processLoop():
 
                         TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
                         mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
-                        f = open('../tttgrid/tttgrid_%s_%s.pkl' % (ev.time, arrayname), 'wb')
+                        f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'wb')
                         print "dumping the traveltime grid for this array"
                         pickle.dump([TTTGridMap,mint,maxt], f)
                         f.close()
