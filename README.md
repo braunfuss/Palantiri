@@ -49,6 +49,7 @@ See the pyrocko documentation for details about the sources. This configuration 
 processing steps:
 
 step 0) 
+
 		python arraytool.py list: - lists all events in the eventfolder (config and orig file must exist) (optional, just to see which events are available to process)
 
 step 1) 
@@ -93,6 +94,7 @@ b) Download  real data with obspy (slower, more stations). For this three comman
 
 
 c) use synthetics but station distributions from a real data case: 
+
 		For this you will need a greensfunctions store that is pre-calculated with the fomosto tool from pyrocko (https://pyrocko.org/docs/current/apps/fomosto/index.html).
 		Several already pre-calculated stores for download can be found at http://kinherd.org:8080/gfws/static/stores/
 		This possibilty assumes also that you downloaded data with a) or b), as the real station distributions will be used for the synthetics.
