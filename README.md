@@ -16,7 +16,9 @@ pyrocko: https://github.com/pyrocko/pyrocko
 obspy: https://github.com/obspy/obspy
 
 Note: This tool is still writen in python2, therefore you
-need to install obspy and pyrocko with your python2. 
+need to install obspy and pyrocko with python2!
+Please make sure that current version of both obspy and pyrocko
+are installed. 
 ```
 
 

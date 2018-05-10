@@ -163,4 +163,4 @@ def analyse(traces, engine, event, stations,
     weights = norm_noise/var_ds
     if check_events:
         weights = weights*ev_ws
-    return weights
+    return num.mean(weights)

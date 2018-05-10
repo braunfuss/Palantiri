@@ -337,7 +337,6 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
     tmp=1
     for a in SembList:
         tmp *= a
-
     #sys.exit()
 
     sembmaxvaluev = num.ndarray (ntimes,dtype=float)
@@ -351,8 +350,9 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     folder      = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
-
+    print num.shape(SembList)
     for a, i in enumerate(tmp):
+        print a, i
         logger.info('timestep %d' % a)
 
 
@@ -401,8 +401,118 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
     durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
     print 'DD2: ',durationpath
-    trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)                          #hs
-# -------------------------------------------------------------------------------------------------
+    trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
+
+def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
+    '''
+    method to collect semblance matrizes from all processes and write them to file for each timestep
+    '''
+    Logfile.add ('start collect in collectSemb')
+
+    cfg    = ConfigObj (dict=Config)
+    origin = ConfigObj (dict=Origin)
+
+    dimX   = cfg.dimX()         # ('dimx')
+    dimY   = cfg.dimY()         # ('dimy')
+    winlen = cfg.winlen ()      # ('winlen')
+    step   = cfg.step()         # ('step')
+
+    latv        = []
+    lonv        = []
+
+    gridspacing = cfg.Float ('gridspacing')
+    migpoints   = dimX * dimY
+    o_lat       = origin.lat()         # float (Origin['lat'])
+    o_lon       = origin.lon()         # float (Origin['lon'])
+    oLatul      = 0
+    oLonul      = 0
+
+    z=0
+
+    for i in xrange(dimX):
+         oLatul = o_lat - ((dimX-1)/2) * gridspacing + i*gridspacing
+
+         if z == 0 and i == 0 :
+             Latul = oLatul
+         o=0
+
+         for j in xrange (dimY):
+               oLonul = o_lon - ((dimY-1)/2) * gridspacing + j*gridspacing
+
+               if o==0 and j==0:
+                    Lonul = oLonul
+
+               latv.append (oLatul)
+               lonv.append (oLonul)
+
+
+    tmp=1
+    for a, w in zip(SembList, weights):
+        tmp *= a
+    #sys.exit()
+
+    sembmaxvaluev = num.ndarray (ntimes,dtype=float)
+    sembmaxlatv   = num.ndarray (ntimes,dtype=float)
+    sembmaxlonv   = num.ndarray (ntimes,dtype=float)
+
+    rc         = UTCDateTime(Origin['time'])
+    rcs        = '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
+    d          = rc.timestamp
+    usedarrays = 5
+
+    folder      = Folder['semb']
+    fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
+
+    for a, i in enumerate(tmp):
+        logger.info('timestep %d' % a)
+
+
+        fobj  = open (os.path.join (folder,'%s-%s_%03d._weighted_semblance.ASC' % (switch,Origin['depth'],a)),'w')
+        #fobj = open (os.path.join (folder, '%03d.ASC'    % a),'w')
+
+        fobj.write ('# %s , %s\n' % (d,rcs))
+        fobj.write ('# step %ds| ntimes %d| winlen: %ds\n' % (step,ntimes,winlen))
+        fobj.write ('# \n')
+        fobj.write ('# southwestlat: %.2f dlat: %f nlat: %f \n'%(Latul,gridspacing,dimX))
+        fobj.write ('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
+        fobj.write ('# ddepth: 0 ndepth: 1 \n')
+
+
+        sembmax  = 0
+        sembmaxX = 0
+        sembmaxY = 0
+
+        origin = DataTypes.dictToLocation (Origin)
+        uncert = num.std(i) #maybe not std?
+        for j in range(migpoints):
+            x    = latv[j]
+            y    = lonv[j]
+            semb = i[j]
+
+            fobj.write ('%.2f %.2f %.20f\n' % (x,y,semb))
+
+            if  semb > sembmax:
+                sembmax  = semb;# search for maximum and position of maximum on semblance grid for given time step
+                sembmaxX = x;
+                sembmaxY = y;
+
+        delta = loc2degrees (Location (sembmaxX, sembmaxY), origin)
+        azi   = toAzimuth   (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+
+        sembmaxvaluev[a] = sembmax
+        sembmaxlatv[a]   = sembmaxX
+        sembmaxlonv[a]   = sembmaxY
+
+        fobjsembmax.write ('%d %.2f %.2f %.20f %.20f %d %03f %f %03f\n' % (a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
+        fobj.close()
+
+
+    fobjsembmax.close()
+
+    durationpath  = os.path.join (folder, "duration.txt")
+    trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
+    print 'DD2: ',durationpath
+    trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
 
 def toMatrix (npVector, nColumns) :
 
@@ -450,7 +560,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     nsamp  = int (winlen * new_frequence)
     nstep  = int (step   * new_frequence)
     from pyrocko import obspy_compat
-    from pyrocko import trace as troll
     from pyrocko import orthodrome, model
     obspy_compat.plant()
 
@@ -593,6 +702,41 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
 
     if cfg.Bool('shift_by_phase_onset') == True:
+    	pjoin = os.path.join
+    	timeev = util.str_to_time(ev.time)
+    	trs_orgs= []
+        calcStreamMapshifted= calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
+        directory = arrayfolder
+        bf = BeamForming(stations, traces, normalize=True)
+        shifted_traces = bf.process(event=event,
+                  timing=timing,
+                  fn_dump_center=pjoin(directory, 'array_center.pf'),
+                  fn_beam=pjoin(directory, 'beam.mseed'))
+        i = 0
+    	store_id = syn_in.store()
+    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        for trace in calcStreamMapshifted.iterkeys():
+            recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
+            recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
+            mod = shifted_traces[i]
+            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
+            shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
+            calcStreamMapshifted[trace]=shifted_obs_tr
+            i = i+1
+
+        calcStreamMap = calcStreamMapshifted
+
+    weight = 0.
+    if cfg.Bool('weight_by_noise') == True:
         from noise_analyser import analyse
     	pjoin = os.path.join
     	timeev = util.str_to_time(ev.time)
@@ -616,19 +760,9 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         i = 0
     	store_id = syn_in.store()
     	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        #weights = analyse(shifted_traces, engine, event, stations,
-        # 100., store_id, nwindows=1,
-        # check_events=True, phase_def='P')
-        for trace in calcStreamMapshifted.iterkeys():
-            recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
-            recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
-            mod = shifted_traces[i]
-            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
-            shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
-            calcStreamMapshifted[trace]=shifted_obs_tr
-            i = i+1
-
-        calcStreamMap = calcStreamMapshifted
+        weight = analyse(shifted_traces, engine, event, stations,
+         100., store_id, nwindows=1,
+         check_events=True, phase_def='P')
 
     for trace in calcStreamMap.iterkeys():
         recordstarttime = calcStreamMap[trace].stats.starttime
@@ -799,6 +933,10 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     t1 = time.time()
     traces     = traces.reshape     (1,nostat*minSampleCount)
     traveltime = traveltime.reshape (1,nostat*dimX*dimY)
+    print traveltime
+    print nsamp
+    print nstep
+    print traces
     USE_C_CODE = True
     try:
         if USE_C_CODE :
@@ -814,8 +952,9 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                       minSampleCount,latv,lonv,traveltime,traces)                       #hs
             print("--- %s seconds ---" % (time.time() - start_time))
     except:
-        print("Wrong tttgrid loaded. Clear folder tttgrid or delete the specifc array\
-        from tttgrid folder")
+        print "loaded tttgrid has probably wrong dimensions or stations, delete\
+                ttgrid or exchange"
+
     t2 = time.time()
 
     Logfile.add ('%s took %0.3f s' % ('CALC:', (t2-t1)))
@@ -826,4 +965,4 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     partSemb  = partSemb.reshape (ntimes,migpoints)
 
 
-    return partSemb
+    return partSemb, weight

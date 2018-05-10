@@ -242,11 +242,15 @@ class Xcorr(object):
 
     def readWaveformsCross_pyrocko(self, station, tw, ttime):
         obspy_compat.plant()
+        cfg = ConfigObj (dict=self.Config)
 
         t2 = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath, 'data')
+        if cfg.quantity() == 'displacement':
+            traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
+        else:
+            traces = io.load(self.EventPath+'/data/traces.mseed')
 
-        traces = io.load(self.EventPath+'/data/traces.mseed')
         for tr in traces:
               tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
               if tr_name == str(station):
@@ -311,8 +315,6 @@ class Xcorr(object):
                         streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
 
                         entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
-
-                        #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
                         st = obspy.Stream()
                         st.extend([es])
                         stream = ''
@@ -323,7 +325,6 @@ class Xcorr(object):
 
                         if len(st.get_gaps()) > 0:
                             st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
-                        #snr  = self.signoise     (st[0], ttime, entry)
                         snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                        tmax=traces_station.tmin+ttime,
                                                        inplace=False)
@@ -339,7 +340,6 @@ class Xcorr(object):
                         pass
 
 
-    # ---------------------------------------------------------------------------------------------
 
     def traveltimes(self):
 

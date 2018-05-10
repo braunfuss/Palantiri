@@ -134,6 +134,7 @@ class ConfigObj (object):
     def quantity (self) :       return self.Str ('quantity')
     def colesseo_input  (self) : return self.Bool ('colesseo_input')
     def colosseo_scenario_yml (self) :       return self.Str ('colosseo_scenario_yml')
+    def weight_by_noise  (self) : return self.Bool ('weight_by_noise')
 
 
     # ---------------------------------------------------------------------------------------------

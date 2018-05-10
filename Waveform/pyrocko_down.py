@@ -135,31 +135,28 @@ lat=event.lat,
 lon=event.lon)
 
 traces = io.load(os.path.join (sdspath,'traces.mseed'))
-for tr in traces:
-	tr.downsample_to(newFreq)
-	if tr.channel == "BHZ":
-		tr.channel = "Z"
+
 
 displacement = []
 for tr in traces:
     try:
-	    polezero_response = request_response.get_pyrocko_response(
-		nslc=tr.nslc_id,
-		timespan=(tr.tmin, tr.tmax),
-		fake_input_units='M')
-	    # *fake_input_units*: required for consistent responses throughout entire
-	    # data set
+        polezero_response = request_response.get_pyrocko_response(
+        nslc=tr.nslc_id,
+        timespan=(tr.tmin, tr.tmax),
+        fake_input_units='M')
+        # *fake_input_units*: required for consistent responses throughout entire
+        # data set
 
-	    # deconvolve transfer function
-	    restituted = tr.transfer(
-		tfade=2.,
-		freqlimits=(0.01, 0.1, 1., 2.),
-		transfer_function=polezero_response,
-		invert=True)
+        # deconvolve transfer function
+        restituted = tr.transfer(
+        tfade=2.,
+        freqlimits=(0.01, 0.1, 1., 2.),
+        transfer_function=polezero_response,
+        invert=True)
 
-	    displacement.append(restituted)
+        displacement.append(restituted)
     except:
-	    pass
+        pass
 
 
 io.save(displacement, os.path.join (sdspath,'traces_restituted.mseed'))

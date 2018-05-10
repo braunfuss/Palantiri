@@ -1,14 +1,11 @@
 import os
 import sys
-import platform
 import time
 
 from threading import Thread
 
-WINDOWS = (platform.system() == 'Windows')
-USE_C_CODE = False
-                
-# add local directories to import path                  
+
+# add local directories to import path
 sys.path.append ('../Common/')
 
 import numpy as np          #    Import from NumPy
@@ -30,19 +27,16 @@ def startC_Code (nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSam
         args = Basic.floatToString (f, delim= ',')
         path =  os.path.dirname (__file__)
 
-        if WINDOWS : prog = os.path.join (path,'OTest.exe')
-        else :       prog = os.path.join (path,'OTest')
+        prog = os.path.join (path,'OTest')
 
-       #result = Basic.systemCmd (prog  + ' ' + args)
-       #Logfile.addLines (result)
         os.system (prog  + ' ' + args)
 
 # -------------------------------------------------------------------------------------------------
 
 class MyThread (Thread):
-    
-    def __init__ (self, nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount): 
-        Thread.__init__(self) 
+
+    def __init__ (self, nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount):
+        Thread.__init__(self)
 
         self.nostat    = nostat
         self.nsamp     = nsamp
@@ -53,10 +47,10 @@ class MyThread (Thread):
         self.mint      = mint
         self.new_freq  = new_freq
         self.minSampleCount = minSampleCount
- 
+
     def run(self):
-         
-        return startC_Code (self.nostat, self.nsamp, self.i, self.nstep, self.dimX,self.dimY, 
+
+        return startC_Code (self.nostat, self.nsamp, self.i, self.nstep, self.dimX,self.dimY,
                             self.mint, self.new_freq, self.minSampleCount)
 
 # -------------------------------------------------------------------------------------------------
@@ -76,52 +70,24 @@ def toMatrix (npVector, nColumns) :
 
     return mat
 
-# -------------------------------------------------------------------------------------------------
-# Aufruf von Python :
-#
-#   k  = Cm.otest (maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint, new_frequence,
-#                   minSampleCount, latv, lonv, traveltime, traces)
-#
-#  backSemb = otest (ncpus,nostat,nsamp,ntimes,nstep, dimX,dimY, mint, new_frequence, minSampleCount, 
-#                    latv, lonv, traveltimes, traces)
-#
-#  Required arguments:
-#       ncpus  : input int
-#       nostat : input int
-#       nsamp  : input int
-#       ntimes : input int
-#       nstep  : input int
-#       dimX   : input int
-#       dimY   : input int
-#       mint   : input float
-#       new_frequence : input int
-#       minSampleCount : input int
-#
-#       latv        : input rank-1 array('d') with bounds (dimX*dimY)
-#       lonv        : input rank-1 array('d') with bounds (dimX*dimY)
-#       traveltimes : input rank-1 array('d') with bounds (nostat*dimX*dimY)
-#       traces      : input rank-1 array('d') with bounds (nostat*minSampleCount)
-#
-#     Return objects:
-#        backSemb : rank-1 array('d') with bounds (ntimes*dimX*dimY)
 
-def otest (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount, 
+def otest (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
                latv_1, lonv_1, traveltime_1, trace_1) :
- 
+
    #if USE_C_CODE  :
     USE_C_CODE = True
     if USE_C_CODE == True :
-       return otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, 
+       return otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
                             minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
     else :
        return otest_py     (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
                             minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
 
-def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount, 
+def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
                latv_1, lonv_1, traveltime_1, trace_1) :
- 
+
     trace      = toMatrix (trace_1, minSampleCount)
-    traveltime = toMatrix (traveltime_1, dimX * dimY)  
+    traveltime = toMatrix (traveltime_1, dimX * dimY)
     latv       = latv_1.tolist()
     lonv       = lonv_1.tolist()
 
@@ -142,16 +108,12 @@ def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequen
             semb = 0; nomin = 0; denom = 0
 
             for l in range (int (nsamp)) :
-               sum = 0	
-               #corr = np.median(traveltime[:][j])
+               sum = 0
                for k in range (nostat) :
                    relstart = int ((traveltime[k][j] - mint) * new_frequence + 0.5) + i * nstep
-                   #relstart = int (((traveltime[k][j]) +(traveltime[k][j]-corr) - mint) * new_frequence + 0.5) + i * nstep
                    sum     += trace[k][relstart + l]
-                   denom   += trace[k][relstart + l] * trace[k][relstart + l]         			 
-               # endfor nostat
+                   denom   += trace[k][relstart + l] * trace[k][relstart + l]
 
-            # endfor nsamp            
             nomin += sum * sum
 
             x    = latv[j]
@@ -163,25 +125,23 @@ def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequen
 
             if semb > sembmax :
                sembmax  = semb   # search for maximum and position of maximum on semblance
-                                 # grid for given time step	   
+                                 # grid for given time step
                sembmaxX = latv[j]
-               sembmaxY = lonv[j]				
-            #endif
-        #endfor dimX *dimY
+               sembmaxY = lonv[j]
 
-        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' + 
+
+        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
-    # endfor ntimes
 
     return backSemb
 
 # -------------------------------------------------------------------------------------------------
 
-def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount, 
+def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount,
                   latv_1, lonv_1, traveltime_1, trace_1) :
- 
+
     trace      = toMatrix (trace_1, minSampleCount)
-    traveltime = toMatrix (traveltime_1, dimX * dimY)  
+    traveltime = toMatrix (traveltime_1, dimX * dimY)
 
     Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount)
     Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY)
@@ -193,7 +153,7 @@ def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq
     Basic.writeVector (latv_txt,   latv_1.tolist(), '%e')
     Basic.writeVector (lonv_txt,   lonv_1.tolist(), '%e')
     '''
-    
+
     startC_Code (nostat, int (nsamp), ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
     result   = Basic.readMatrix (semb_txt, ntimes, dimX*dimY)
@@ -207,11 +167,11 @@ def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq
 
 # -------------------------------------------------------------------------------------------------
 
-def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount, 
+def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount,
               latv_1, lonv_1, traveltime_1, trace_1) :
- 
+
     trace      = toMatrix (trace_1, minSampleCount)
-    traveltime = toMatrix (traveltime_1, dimX * dimY)  
+    traveltime = toMatrix (traveltime_1, dimX * dimY)
     latv       = latv_1.tolist()
     lonv       = lonv_1.tolist()
 
@@ -221,7 +181,7 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
     Basic.writeVector (lonv_txt,   lonv, '%e')
 
     backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
-    threads  = []  
+    threads  = []
 
     for i in range(ntimes) :
         t = MyThread (nostat, int(nsamp), i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
@@ -230,7 +190,7 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
 
     for t in threads :
         t.join()
-  
+
 
     for i in range (ntimes) :
        #  loop over grid points
@@ -238,15 +198,15 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
        sembmax     = 0
        sembmaxX    = 0
        sembmaxY    = 0
-       backSemb[i] = startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) 
+       backSemb[i] = startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
        for j in range (dimX * dimY):
           semb = backSemb[i][j]
 
           if semb > sembmax :
-             sembmax  = semb   # search for maximum and position of maximum on semblance grid for given time step	   
+             sembmax  = semb   # search for maximum and position of maximum on semblance grid for given time step
              sembmaxX = latv[j]
-             sembmaxY = lonv[j]				
+             sembmaxY = lonv[j]
           #endif
        #endfor dimX *dimY
 
@@ -258,11 +218,11 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
 # -------------------------------------------------------------------------------------------------
 
 def execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
-    
+
     f     = [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount]
     args  = Basic.floatToString (f, delim= ',')
     prog  = sys.executable + ' ' + __file__
-    cmd   = prog  + ' ' + args 
+    cmd   = prog  + ' ' + args
 
     Logfile.add ('--------------------------------------------', cmd)
     result = Basic.systemCmd (cmd)
@@ -272,7 +232,7 @@ def execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCoun
     return backSemb
 
 def execOTest2 () :
-    
+
     for i in range (len (sys.argv)) : print sys.argv[i]
 
     params = Basic.stringToFloat (sys.argv[1])
@@ -280,21 +240,21 @@ def execOTest2 () :
 
     print 'Enter startOTest'
 
-    backSemb = startOTest (int(nostat), int(nsamp), int(i), int(nstep), 
+    backSemb = startOTest (int(nostat), int(nsamp), int(i), int(nstep),
                            int(dimX),   int(dimY),  mint, new_freq, int(minSampleCount), False)
 
     print 'backSemb = ', backSemb[0:3]
     Basic.writeVector (semb_txt, backSemb)
 
     print 'Leave startOTest'
-    
+
 
 # -------------------------------------------------------------------------------------------------
 def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
 
-    backSemb = []    
-    
-    if isParent : 
+    backSemb = []
+
+    if isParent :
        backSemb = execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
     else :
@@ -303,7 +263,7 @@ def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCou
        latv       = Basic.readVector (latv_txt, '%e')
        lonv       = Basic.readVector (lonv_txt, '%e')
 
-       print 
+       print
        #  loop over grid points
        #
        for j in range (dimX * dimY):
@@ -312,19 +272,19 @@ def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCou
           denom = 0
 
           for l in range (int (nsamp)) :
-             sum = 0	
+             sum = 0
 
              for k in range (nostat) :
                 relstart_samples = int ((traveltime[k][j] - mint) * new_freq + 0.5) + i * nstep
 
                 val   =  trace[k][relstart_samples+l]
                 sum   += val
-                denom += (val * val)      			 
+                denom += (val * val)
              # endfor nostat
 
              nomin += sum * sum;
              semb  = nomin / (float (nostat) * denom);
-          # endfor nsamp        
+          # endfor nsamp
 
           backSemb.append (semb)
        #endfor dimX *dimY

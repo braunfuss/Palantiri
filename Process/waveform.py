@@ -103,6 +103,25 @@ def readWaveformsPyrocko (stationlist, w,EventPath,Origin):
                     Wdict[il.getName()] = st
     return Wdict
 
+
+def readWaveformsPyrocko_restituted(stationlist, w,EventPath,Origin):
+    Wdict = {}
+    traces = io.load(EventPath+'/data/traces_restituted.mseed')
+    obspy_compat.plant()
+
+    traces_dict = []
+    for tr in traces:
+        for il in stationlist:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(il):
+                    st = obspy.Stream()
+                    es = obspy_compat.to_obspy_trace(tr)
+                    st.extend([es])
+                    traces_dict.append(tr)
+                    Wdict[il.getName()] = st
+    return Wdict
+
+
 def readWaveforms_colesseo (stationlist, w,EventPath,Origin, C):
     Wdict = {}
     Syn_in = C.parseConfig ('syn')
