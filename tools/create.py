@@ -5,7 +5,7 @@ import sys
 import shutil
 import logging
 import urllib
-
+import dateutil.parser
 
 logger = logging.getLogger('ARRAY-MP')
 logger.setLevel(logging.DEBUG)
@@ -82,12 +82,12 @@ def writeOriginFile(path,ev_id):
     for i in f:
         if i[0] != '#':
             i = i.split('|')
-            time = i[1]
+            time = str(dateutil.parser.parse(i[1]))[:19]
             fobj.write('region = %s\n' % i[12].strip())
             fobj.write('lat = %s\n' % i[2])
             fobj.write('lon = %s\n' % i[3])
             fobj.write('depth = %s\n' % i[4])
-            fobj.write('time = %sZ\n' % i[1])
+            fobj.write('time = %s\n' % time)
             fobj.write('strike = -999\n')
             fobj.write('dip = -999\n')
             fobj.write('rake = -999\n')
