@@ -15,6 +15,12 @@ Prequsites:
 pyrocko: https://github.com/pyrocko/pyrocko
 obspy: https://github.com/obspy/obspy
 
+Basics that need to be installed:
+
+sudo pip install pyproj scipy matplotlib numpy basemap affine 
+
+basemap is only necessary for plotting and can be omitted
+
 Please make sure that current version of both obspy and pyrocko
 are installed. 
 
