@@ -11,6 +11,51 @@ import sys
 from matplotlib.pyplot import cm
 from matplotlib.widgets import Slider
 from pylab import plot, show, figure, scatter, axes, draw
+from itertools import cycle
+import random
+import csv
+from obspy.imaging.beachball import beach
+
+def plot_cluster():
+    
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    print event_mech
+    map = Basemap(projection='hammer',lon_0=event_cor[1][0])
+    map.drawcoastlines()
+    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
+    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=900030)
+    ax.add_collection(beach1)
+    pathlist = Path(rel).glob('*.dat')
+    i=0
+    for path in sorted(pathlist):
+        path_in_str = str(path)
+        i = i+1
+
+    colors = iter(cm.rainbow(np.linspace(0, 1, i)))
+    pathlist = Path(rel).glob('*.dat')
+
+    for path in sorted(pathlist):
+        path_in_str = str(path)
+        data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,2,3))
+        lons = data[:,2]
+        lats = data[:,1]
+        x, y = map(lons,lats)
+        map.scatter(x,y,30,marker='o',c=next(colors))
+        plt.text(x[0],y[0],'r'+str(data[0,0])[0], fontsize=12)
+    plt.show()
 
 def plot_movie():
     if len(sys.argv)<4:
@@ -41,6 +86,7 @@ def plot_movie():
             plt.tricontourf(x,y, data[::5,3], vmin=mins*0.6)
             plt.title(path_in_str)
             plt.savefig(path_in_str+'.pdf', bbox_inches='tight')
+            plt.close()
 
 def plot_sembmax():
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
@@ -214,3 +260,5 @@ elif sys.argv[2] == 'plot_semb':
     plot_semb()
 elif sys.argv[2] == 'plot_movingmax':
     plot_movingsembmax()
+elif sys.argv[2] == 'cluster':
+    plot_cluster()
