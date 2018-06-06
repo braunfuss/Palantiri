@@ -24,7 +24,7 @@ import trigger
 from semp import otest
 from beam_stack import BeamForming
 from pyrocko.gf import STF
-
+from stacking import PWS_stack
 # -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger('ARRAY-MP')
@@ -734,6 +734,11 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
             i = i+1
 
         calcStreamMap = calcStreamMapshifted
+
+    if cfg.Bool('PWS_stack') == True:
+        calcStreamMapshifted= calcStreamMap.copy()
+        pws_stack = PWS_stack(calcStreamMapshifted, weight=2, normalize=True)
+        calcStreamMap = pws_stack
 
     weight = 0.
     if cfg.Bool('weight_by_noise') == True:
