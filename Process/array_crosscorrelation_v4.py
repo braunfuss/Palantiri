@@ -283,7 +283,6 @@ class Xcorr(object):
                     xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
                     stream.write (xname,format='MSEED')
                     stream.trim (tw['xcorrstart'], tw['xcorrend'])
-                    print "xcorr"
                     return stream, snr
 
               else:
@@ -333,7 +332,6 @@ class Xcorr(object):
 
                         xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
                         stream.trim (tw['xcorrstart'], tw['xcorrend'])
-                        print "xcorr"
                         return stream, snr
 
                   else:
@@ -496,7 +494,6 @@ class Xcorr(object):
 
                         xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
                         stream.trim (tw['xcorrstart'], tw['xcorrend'])
-                        print "xcorr"
                         return stream
 
                   else:
@@ -549,8 +546,6 @@ class Xcorr(object):
 
         refuntouchname = os.path.basename(self.AF)+'-refstation-raw.mseed'
         stP.write (os.path.join(self.EventPath,refuntouchname),format='MSEED',byteorder='>')
-        print float(self.Config['refstationfreqmin'])
-        print float(self.Config['refstationfreqmax'])
         stP.filter("bandpass", freqmin  = float (self.Config['refstationfreqmin']),
                                freqmax  = float (self.Config['refstationfreqmax']))
 
@@ -606,7 +601,6 @@ class Xcorr(object):
 
                 selection = float (raw_input('Enter self picked phase in seconds: '))
                 tdiff     = selection-self.mintforerun
-                print selection-self.mintforerun
 
                 refname = os.path.basename (self.AF)+'-shift.mseed'
                 trP.stats.starttime = trP.stats.starttime - selection
@@ -698,7 +692,6 @@ class Xcorr(object):
 
     def doXcorr (self):
         StreamDict, SNRDict = self.traveltimes()
-        print StreamDict, SNRDict
         t = self.f6(SNRDict)
         Logfile.add ('doXcorr: REFERENCE: ' + t)
 
@@ -713,13 +706,9 @@ class Xcorr(object):
 
         corrDict = {}
         ref      = StreamDict[t][0].data
-        print ref
         Logfile.red ('Reference Station of %s for Xcorr Procedure %s' % (os.path.basename(self.AF),t))
         Logfile.red ('Enter Xcorr Procedure ')
-        print StreamDict
         for stream in StreamDict.iterkeys():
-           print stream
-
            xcorrshiftvalue = StreamDict[stream][0].stats.npts/10
            a, b  = obspy.signal.cross_correlation.xcorr (ref, StreamDict[stream][0], xcorrshiftvalue)
            shift = a / StreamDict[stream][0].stats.sampling_rate

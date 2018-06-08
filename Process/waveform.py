@@ -81,8 +81,6 @@ def readWaveforms (stationList,tw,EventPath,Origin):
         else:
            print ' OUT ',streamData
 
-        print st
-
     Logfile.red ('%d Streams added with available Data' % len(Wdict))
     return Wdict
 

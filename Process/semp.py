@@ -203,11 +203,8 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
              sembmax  = semb   # search for maximum and position of maximum on semblance grid for given time step
              sembmaxX = latv[j]
              sembmaxY = lonv[j]
-          #endif
-       #endfor dimX *dimY
 
        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' + str(sembmaxX)+','+ str (sembmaxY))
-    #endfor ntimes
     return backSemb
 
 # -------------------------------------------------------------------------------------------------
@@ -231,16 +228,12 @@ def execOTest2 () :
 
     params = Basic.stringToFloat (sys.argv[1])
     [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount] = params
-
-    print 'Enter startOTest'
-
     backSemb = startOTest (int(nostat), int(nsamp), int(i), int(nstep),
                            int(dimX),   int(dimY),  mint, new_freq, int(minSampleCount), False)
 
     print 'backSemb = ', backSemb[0:3]
     Basic.writeVector (semb_txt, backSemb)
 
-    print 'Leave startOTest'
 
 
 # -------------------------------------------------------------------------------------------------

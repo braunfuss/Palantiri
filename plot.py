@@ -81,8 +81,8 @@ def plot_movie():
             plt.figure()
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
                     resolution='h')
-            parallels = np.arange(num.min(northings),num.max(northings),1.)
-            meridians = np.arange(num.min(eastings),num.max(eastings),1.)
+            parallels = np.arange(num.min(northings),num.max(northings),0.2)
+            meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
             eastings, northings = map(eastings, northings)
             map.drawcoastlines(color='b',linewidth=3)
@@ -127,9 +127,15 @@ def plot_sembmax():
 
     size = (data[:,3]/np.max(data[:,3]))*300
     ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
+    for i in range(0,len(x)):
+        if data[i,3]> np.max(data[:,3])*0.05:
+            plt.text(x[i],y[i],'%s' %i)
     xpixels = 1000
     map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-
+    parallels = num.arange(num.min(northings),num.max(northings),0.2)
+    meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
+    map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+    map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
     cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
     plt.savefig(rel+'semblance_max_0.pdf', bbox_inches='tight')
     plt.show()
@@ -162,12 +168,18 @@ def plot_sembmax():
         map.drawcoastlines(color='b',linewidth=1)
 
         x, y = map(data[:,2], data[:,1])
+        for i in range(0,len(x)):
+            if data[i,3]> np.max(data[:,3])*0.05:
+                plt.text(x[i],y[i],'%s' %i)
         l = range(0,num.shape(data[:,2])[0])
         size = (data[:,3]/np.max(data[:,3]))*300
         ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
         xpixels = 1000
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-
+        parallels = num.arange(num.min(northings),num.max(northings),0.2)
+        meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
         cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
         plt.savefig(rel+'semblance_max_1.pdf', bbox_inches='tight')
         plt.show()
@@ -202,7 +214,10 @@ def plot_movingsembmax():
     eastings, northings = map(X, Y)
     map.drawcoastlines(color='b',linewidth=1)
     map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-
+    parallels = num.arange(num.min(northings),num.max(northings),0.2)
+    meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
+    map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+    map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
     x, y = map(data[:,2], data[:,1])
     size = num.shape(data[:,2])[0]
     l = range(0,size)
@@ -253,7 +268,10 @@ def plot_movingsembmax():
         eastings, northings = map(X, Y)
         map.drawcoastlines(color='b',linewidth=1)
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-
+        parallels = num.arange(num.min(northings),num.max(northings),0.2)
+        meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
         x, y = map(data[:,2], data[:,1])
         size = num.shape(data[:,2])[0]
         l = range(0,size)

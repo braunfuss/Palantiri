@@ -921,7 +921,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
 				    x = num.array(vx.value)
 				    x = num.squeeze(x)
-
 				    back1    = x.reshape     (dimX,dimY)
 				    sig = spfft.idct(x, norm='ortho', axis=0)
 				    back2 = back2 + back1
