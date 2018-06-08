@@ -228,7 +228,6 @@ def processWaveforms (WaveformDict,Config,Folder,network,MetaDict,Event,switch,X
 
 
             if cfg.Int ('fm') == 1:
-                print 'Event ',Event, Event.strike,Event.dip,Event.rake
                 azi   = ttt.bearing (Event, station)
                 bazi  = ttt.backazi (station, Event)
                 psign = ttt.dubcup  (rho, vp,vs,Event.strike,Event.dip,Event.rake, azi, station.takeoff)

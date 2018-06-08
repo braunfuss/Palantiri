@@ -250,7 +250,6 @@ def calcTTTAdv (Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=No
 		        arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km)
 			try:
 		        	ttime = arrivals[0].t
-				#print arrivals, oLatul, oLonul, locStation, o_depth, Phase, de
 			except:
 				try:
 					arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km-2.5, zstop=o_depth*km+2.5, refine=True)
@@ -412,7 +411,6 @@ def calcak135parameter(Event):
 
     try:
         fobj = open ('ak135.model','r')
-        print fobj
         index = {}
 
         for counter,line in enumerate(fobj):
@@ -457,7 +455,6 @@ def calcak135parameter(Event):
             vp  = float(I[0].split()[2]) + vpfact  * depthdist
             vs  = float(I[0].split()[3]) + vsfact  * depthdist
 
-            print 'InterpolationFinal ' + depth,rho,vp,vs
         #endif
 
         n = len(L)
@@ -467,7 +464,6 @@ def calcak135parameter(Event):
                 for a in L:
                     if counter == a:
                         line = line.split()
-                        print line
                         tmprho = float(line[1])
                         tmpvp  = float(line[2])
                         tmpvs  = float(line[3])
@@ -476,7 +472,6 @@ def calcak135parameter(Event):
             rho = tmprho / n
             vp  = tmpvp  / n
             vs  = tmpvs  / n
-            print 'SingleFINAL', rho, vp, vs
         #endif
 
         if n == 2:
@@ -484,7 +479,6 @@ def calcak135parameter(Event):
                 for a in L:
                     if counter == a:
                         line = line.split()
-                        print line
                         tmprho += float(line[1])
                         tmpvp  += float(line[2])
                         tmpvs  += float(line[3])
@@ -493,7 +487,6 @@ def calcak135parameter(Event):
             rho = tmprho / n
             vp  = tmpvp  / n
             vs  = tmpvs  / n
-            print 'DoubleFINAL', rho, vp, vs
         #endif
 
         fobj.close()

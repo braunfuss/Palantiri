@@ -99,7 +99,6 @@ def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequen
     '''
 
     backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
-    print "lob"
     for i in range (ntimes) :
         #  loop over grid points
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
@@ -119,8 +118,6 @@ def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequen
             x    = latv[j]
             y    = lonv[j]
             semb = nomin / (float (nostat) * denom)
-
-            #print 'sembout ', x,y,semb
             backSemb[i][j] = semb
 
             if semb > sembmax :
@@ -162,7 +159,6 @@ def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq
     for i in range (ntimes) :
         for j in range (dimX * dimY) :
             backSemb [i][j] = result [i][j]
-    print "noppe3"
     return backSemb
 
 # -------------------------------------------------------------------------------------------------
@@ -212,7 +208,6 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
 
        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' + str(sembmaxX)+','+ str (sembmaxY))
     #endfor ntimes
-    print "nope4"
     return backSemb
 
 # -------------------------------------------------------------------------------------------------
@@ -227,7 +222,6 @@ def execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCoun
     Logfile.add ('--------------------------------------------', cmd)
     result = Basic.systemCmd (cmd)
     Logfile.addLines (result)
-    print "nope2"
     backSemb = Basic.readVector (semb_txt)
     return backSemb
 
@@ -263,9 +257,7 @@ def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCou
        latv       = Basic.readVector (latv_txt, '%e')
        lonv       = Basic.readVector (lonv_txt, '%e')
 
-       print
-       #  loop over grid points
-       #
+
        for j in range (dimX * dimY):
           semb  = 0
           nomin = 0
@@ -295,5 +287,4 @@ def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCou
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-   print "yes"
    execOTest2 ()

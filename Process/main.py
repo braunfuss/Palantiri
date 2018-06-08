@@ -392,7 +392,6 @@ def processLoop():
                     Wd = waveform.readWaveforms_colesseo     (FilterMeta, tw, evpath, ev, C)
                 else:
                     Wd = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
-                print Wd
                 Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
 
 

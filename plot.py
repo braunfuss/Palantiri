@@ -17,7 +17,7 @@ import csv
 from obspy.imaging.beachball import beach
 
 def plot_cluster():
-    
+
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
     desired=[3,4]
@@ -28,7 +28,6 @@ def plot_cluster():
     with open(event, 'r') as fin:
         reader=csv.reader(fin)
         event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    print event_mech
     map = Basemap(projection='hammer',lon_0=event_cor[1][0])
     map.drawcoastlines()
     map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
@@ -50,11 +49,19 @@ def plot_cluster():
     for path in sorted(pathlist):
         path_in_str = str(path)
         data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,2,3))
-        lons = data[:,2]
-        lats = data[:,1]
+        try:
+            lons = data[:,2]
+            lats = data[:,1]
+        except:
+            lons = data[2]
+            lats = data[1]
         x, y = map(lons,lats)
         map.scatter(x,y,30,marker='o',c=next(colors))
-        plt.text(x[0],y[0],'r'+str(data[0,0])[0], fontsize=12)
+        try:
+            plt.text(x[0],y[0],'r'+str(data[0,0])[0], fontsize=12)
+        except:
+            plt.text(x,y,'r'+str(data[0]), fontsize=12)
+
     plt.show()
 
 def plot_movie():
@@ -96,7 +103,20 @@ def plot_sembmax():
 
     map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
             resolution='h',epsg = 4269)
-
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+    ax.add_collection(beach1)
     X,Y = np.meshgrid(eastings, northings)
 
     eastings, northings = map(X, Y)
@@ -105,7 +125,8 @@ def plot_sembmax():
     x, y = map(data[:,2], data[:,1])
     l = range(0,num.shape(data[:,2])[0])
 
-    ps = map.scatter(x,y,marker='o',c=l, s=data[:,3]*8000, cmap='seismic', vmin= num.max(data[:,3])*0.66)
+    size = (data[:,3]/np.max(data[:,3]))*300
+    ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
     xpixels = 1000
     map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
 
@@ -121,6 +142,20 @@ def plot_sembmax():
         map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
                 resolution='h',epsg = 4269)
 
+        event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+        desired=[3,4]
+        with open(event, 'r') as fin:
+            reader=csv.reader(fin)
+            event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        desired=[7,8,9]
+        with open(event, 'r') as fin:
+            reader=csv.reader(fin)
+            event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        x, y = map(event_cor[1][0],event_cor[0][0])
+        ax = plt.gca()
+        np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+        beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+        ax.add_collection(beach1)
         X,Y = np.meshgrid(eastings, northings)
 
         eastings, northings = map(X, Y)
@@ -128,8 +163,8 @@ def plot_sembmax():
 
         x, y = map(data[:,2], data[:,1])
         l = range(0,num.shape(data[:,2])[0])
-
-        ps = map.scatter(x,y,marker='o',c=l, s=data[:,3]*8000, cmap='seismic', vmin= num.max(data[:,3])*0.66)
+        size = (data[:,3]/np.max(data[:,3]))*300
+        ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
         xpixels = 1000
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
 
@@ -150,7 +185,20 @@ def plot_movingsembmax():
             resolution='h',epsg = 4269)
 
     X,Y = np.meshgrid(eastings, northings)
-
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+    ax.add_collection(beach1)
     eastings, northings = map(X, Y)
     map.drawcoastlines(color='b',linewidth=1)
     map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
@@ -158,8 +206,9 @@ def plot_movingsembmax():
     x, y = map(data[:,2], data[:,1])
     size = num.shape(data[:,2])[0]
     l = range(0,size)
+    si = (data[:,3]/np.max(data[:,3]))*300
 
-    scat = map.scatter(x,y,marker='o',c=l, cmap='jet', s=data[:,3]*10900)
+    scat = map.scatter(x,y,marker='o',c=l, cmap='jet', s=si)
     axcolor = 'lightgoldenrodyellow'
     axamp = axes([0.2, 0.01, 0.65, 0.03])
 
@@ -185,7 +234,20 @@ def plot_movingsembmax():
         xpixels = 1000
         map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
                 resolution='h',epsg = 4269)
-
+        event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+        desired=[3,4]
+        with open(event, 'r') as fin:
+            reader=csv.reader(fin)
+            event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        desired=[7,8,9]
+        with open(event, 'r') as fin:
+            reader=csv.reader(fin)
+            event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        x, y = map(event_cor[1][0],event_cor[0][0])
+        ax = plt.gca()
+        np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+        beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+        ax.add_collection(beach1)
         X,Y = np.meshgrid(eastings, northings)
 
         eastings, northings = map(X, Y)
@@ -195,8 +257,8 @@ def plot_movingsembmax():
         x, y = map(data[:,2], data[:,1])
         size = num.shape(data[:,2])[0]
         l = range(0,size)
-
-        scat = map.scatter(x,y,marker='o',c=l, cmap='jet', s=data[:,3]*10900)
+        si = (data[:,3]/np.max(data[:,3]))*300
+        scat = map.scatter(x,y,marker='o',c=l, cmap='jet', s=si)
         axcolor = 'lightgoldenrodyellow'
         axamp = axes([0.2, 0.01, 0.65, 0.03])
 
@@ -220,23 +282,19 @@ def plot_movingsembmax():
 
 def plot_semb():
 
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
     astf = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ', skiprows=5)
-    astf_data= astf[:,3]
-
-    fig = plt.figure(figsize=(15,15))
-
+    astf_data = astf[:, 3]
+    fig = plt.figure(figsize=(15, 15))
     plt.plot(astf_data)
     plt.ylabel('Beampower')
-
     plt.xlabel('Time [s]')
-
     plt.savefig(rel+'semblance_0.pdf', bbox_inches='tight')
     plt.show()
     try:
-        rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         astf = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ', skiprows=5)
-        fig = plt.figure(figsize=(15,15))
+        fig = plt.figure(figsize=(15, 15))
 
         plt.plot(astf_data)
         plt.ylabel('Beampower')
@@ -248,17 +306,18 @@ def plot_semb():
     except:
         pass
 
-if len(sys.argv)<3:
-    print "input: eventname plot_name"
-
-event = sys.argv[1]
-if sys.argv[2] == 'plot_movie':
-    plot_movie()
-elif sys.argv[2] == 'plot_sembmax':
-    plot_sembmax()
-elif sys.argv[2] == 'plot_semb':
-    plot_semb()
-elif sys.argv[2] == 'plot_movingmax':
-    plot_movingsembmax()
-elif sys.argv[2] == 'cluster':
-    plot_cluster()
+if len(sys.argv)<2:
+    print "input: eventname plot_name, available plot_name:\
+    plot_movie, plot_sembmax, plot_semb, plot_movingmax, cluster"
+else:
+    event = sys.argv[1]
+    if sys.argv[2] == 'movie':
+        plot_movie()
+    elif sys.argv[2] == 'sembmax':
+        plot_sembmax()
+    elif sys.argv[2] == 'semblance':
+        plot_semb()
+    elif sys.argv[2] == 'interactive_max':
+        plot_movingsembmax()
+    elif sys.argv[2] == 'cluster':
+        plot_cluster()

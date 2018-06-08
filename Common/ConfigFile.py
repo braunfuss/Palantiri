@@ -128,7 +128,7 @@ class ConfigObj (object):
     def cs   (self) :       return self.UInt ('compressed_sensing')
     def synthetic_test   (self) : return self.Bool ('synthetic_test')
     def shift_by_phase_onset   (self) : return self.Bool ('shift_by_phase_onset')
-    def PWS_stack   (self) : return self.Bool ('PWS_stack')
+    def PWS   (self) : return self.Bool ('PWS_stack')
     def newFrequency (self): return self.Float ('new_frequence')
     def pyrocko_download   (self) : return self.Bool ('pyrocko_download')
     def synthetic_test_add_noise  (self) : return self.Bool ('synthetic_test_add_noise')

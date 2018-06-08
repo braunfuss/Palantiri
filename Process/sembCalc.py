@@ -350,9 +350,7 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     folder      = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
-    print num.shape(SembList)
     for a, i in enumerate(tmp):
-        print a, i
         logger.info('timestep %d' % a)
 
 
@@ -700,6 +698,18 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                 l = l+1
         calcStreamMap = calcStreamMapsyn
 
+    if cfg.Bool('shift_by_phase_pws') == True:
+        calcStreamMapshifted= calcStreamMap.copy()
+        from obspy.core import stream
+        stream = stream.Stream()
+        for trace in calcStreamMapshifted.iterkeys():
+            stream.append(calcStreamMapshifted[trace])
+        pws_stack = PWS_stack([stream], weight=2, normalize=True)
+        for tr in pws_stack:
+            for trace in calcStreamMapshifted.iterkeys():
+                    calcStreamMapshifted[trace]=tr
+        calcStreamMap = calcStreamMapshifted
+
 
     if cfg.Bool('shift_by_phase_onset') == True:
     	pjoin = os.path.join
@@ -735,10 +745,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
         calcStreamMap = calcStreamMapshifted
 
-    if cfg.Bool('PWS_stack') == True:
-        calcStreamMapshifted= calcStreamMap.copy()
-        pws_stack = PWS_stack(calcStreamMapshifted, weight=2, normalize=True)
-        calcStreamMap = pws_stack
 
     weight = 0.
     if cfg.Bool('weight_by_noise') == True:
@@ -938,10 +944,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     t1 = time.time()
     traces     = traces.reshape     (1,nostat*minSampleCount)
     traveltime = traveltime.reshape (1,nostat*dimX*dimY)
-    print traveltime
-    print nsamp
-    print nstep
-    print traces
     USE_C_CODE = True
     try:
         if USE_C_CODE :
