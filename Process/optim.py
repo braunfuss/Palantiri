@@ -17,7 +17,7 @@ import time
 import numpy as num
 from collections import OrderedDict, defaultdict
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
-from pyrocko import util, pile, model, catalog, gf, cake
+from pyrocko import util, pile, model, catalog, gf, cake, io, trace
 from pyrocko.guts import Object, String, Float, List
 km = 1000.
 import trigger
@@ -580,125 +580,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
 #==================================synthetic BeamForming=======================================
 
-
-    if cfg.Bool('synthetic_test') == True:
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-
-        targets =[]
-    	for st in stations:
-
-    		target= Target(
-    		lat=st.lat,
-    		lon=st.lon,
-    		store_id=store_id,
-    		codes=(st.network, st.station, st.location, 'BHZ'),
-            quantity=cfg.quantity())
-    		targets.append(target)
-
-
-        if syn_in.nsources() == 1:
-            if syn_in.use_specific_stf() == True:
-                stf=syn_in.stf()
-                exec(stf)
-            else:
-                stf = STF()
-            if syn_in.source() == 'RectangularSource':
-                    source= RectangularSource(
-                        lat=float(syn_in.lat_0()),
-                        lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0(),
-                        strike=syn_in.strike_0(),
-                        dip=syn_in.dip_0(),
-                        rake=syn_in.rake_0(),
-                        width=syn_in.width_0()*1000.,
-                        length=syn_in.length_0()*1000.,
-                        nucleation_x=syn_in.nucleation_x_0(),
-                        slip=syn_in.slip_0(),
-                        nucleation_y=syn_in.nucleation_y_0(),
-                        stf=stf,
-                        time = util.str_to_time(syn_in.time_0()))
-
-            if syn_in.source() ==  'DCSource':
-                    source = DCSource(
-                        lat=float(syn_in.lat_0()),
-                        lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0(),
-                        strike=syn_in.strike_0(),
-                        dip=syn_in.dip_0(),
-                        rake=syn_in.rake_0(),
-                        stf=stf,
-                        time = util.str_to_time(syn_in.time_0()),
-                    	magnitude=syn_in.magnitude_0())
-
-        else:
-            sources = []
-            for i in range(syn_in.nsources()):
-                if syn_in.use_specific_stf() == True:
-                    stf=syn_in.stf()
-                    exec(stf)
-
-                else:
-                    stf = STF()
-                if syn_in.source() == 'RectangularSource':
-                        sources.append(RectangularSource(
-                            lat=float(syn_in.lat_1(i)),
-                            lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_syn_1(i),
-                            strike=syn_in.strike_1(i),
-                            dip=syn_in.dip_1(i),
-                            rake=syn_in.rake_1(i),
-                            width=syn_in.width_1(i)*1000.,
-                            length=syn_in.length_1(i)*1000.,
-                            nucleation_x=syn_in.nucleation_x_1(i),
-                            slip=syn_in.slip_1(i),
-                            nucleation_y=syn_in.nucleation_y_1(i),
-                            stf=stf,
-                            time=util.str_to_time(syn_in.time_1(i))))
-
-                if syn_in.source() == 'DCSource':
-                        sources.append(DCSource(
-                            lat=float(syn_in.lat_1(i)),
-                            lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_1(i),
-                            strike=syn_in.strike_1(i),
-                            dip=syn_in.dip_1(i),
-                            rake=syn_in.rake_1(i),
-                            stf=stf,
-                            time=util.str_to_time(syn_in.time_1(i)),
-                            magnitude=syn_in.magnitude_1(i)))
-            source = CombiSource(subsources=sources)
-        response = engine.process(source, targets)
-
-        synthetic_traces = response.pyrocko_traces()
-        if cfg.Bool('synthetic_test_add_noise') == True:
-            from noise_addition import add_noise
-            store_id = syn_in.store()
-            engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-            synthetic_traces = add_noise(synthetic_traces, engine, event, stations,
-              store_id, phase_def='P')
-        l=0
-        trs_org= []
-        trs_orgs= []
-    	fobj = os.path.join (arrayfolder,'shift.dat')
-    	xy = num.loadtxt(fobj, usecols=1, delimiter=',')
-        calcStreamMapsyn= calcStreamMap.copy()
-
-        for trace in calcStreamMapsyn.iterkeys():
-                mod = synthetic_traces[l] ##corect order?
-                recordstarttime = calcStreamMapsyn[trace].stats.starttime.timestamp
-                recordendtime = calcStreamMapsyn[trace].stats.endtime.timestamp
-                mod.shift(recordstarttime-mod.tmin)
-                extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
-                tr_org.shift(xy[l])
-                synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
-                calcStreamMapsyn[trace]=synthetic_obs_tr
-                trs_orgs.append(tr_org)
-                trs_org.append(extracted)
-                l = l+1
-        calcStreamMap = calcStreamMapsyn
-
     if cfg.Bool('shift_by_phase_pws') == True:
         calcStreamMapshifted= calcStreamMap.copy()
         from obspy.core import stream
@@ -748,7 +629,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         calcStreamMap = calcStreamMapshifted
 
 
-    weight = 1.
+    weight = 0.
     if cfg.Bool('weight_by_noise') == True:
         from noise_analyser import analyse
     	pjoin = os.path.join
@@ -871,74 +752,383 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
        print ('traces',traces,type(traces))
        print ('traveltime',traveltime,type(traveltime))
 
-#==================================compressed sensing========================================
 
+    t1 = time.time()
+    traces_org     = traces.reshape     (1,nostat*minSampleCount)
+    traveltime_org = traveltime.reshape (1,nostat*dimX*dimY)
+    USE_C_CODE = True
     try:
-    	cs = cfg.cs ()
+        if USE_C_CODE :
+            import Cm
+            import CTrig
+            start_time = time.time()
+            k  = Cm.otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                          minSampleCount,latv,lonv,traveltime_org,traces_org)
+            print("--- %s seconds ---" % (time.time() - start_time))
+        else :
+            start_time = time.time()
+            k = otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                      minSampleCount,latv,lonv,traveltime_org,traces_org)                       #hs
+            print("--- %s seconds ---" % (time.time() - start_time))
     except:
-    	cs = 0
-    if cs == 1:
-    	    csmaxvaluev = num.ndarray (ntimes,dtype=float)
-    	    csmaxlatv   = num.ndarray (ntimes,dtype=float)
-    	    csmaxlonv   = num.ndarray (ntimes,dtype=float)
-	    folder      = Folder['semb']
-            fobjcsmax = open (os.path.join (folder,'csmax_%s.txt' % (switch)),'w')
-	    traveltimes = traveltime.reshape (1,nostat*dimX*dimY)
-	    traveltime2 = toMatrix (traveltimes, dimX * dimY)  # for relstart
-	    traveltime = traveltime.reshape (dimX*dimY,nostat)
-	    import matplotlib as mpl
-	    import scipy.optimize as spopt
-	    import scipy.fftpack as spfft
-	    import scipy.ndimage as spimg
-	    import cvxpy as cvx
-	    import matplotlib.pyplot as plt
-	    A = spfft.idct(traveltime, norm='ortho', axis=0)
-	    #A = traveltime
-	    n = (nostat*dimX*dimY)
-	    vx = cvx.Variable(dimX*dimY)
-	    res = cvx.Variable(1)
-	    objective = cvx.Minimize(cvx.norm(res, 1))
-	    back2 = num.zeros([dimX,dimY])
-	    l = int(nsamp)
-            fobj  = open (os.path.join (folder,'%s-%s_%03d.cs' % (switch,Origin['depth'],l)),'w')
+        print "loaded tttgrid has probably wrong dimensions or stations, delete\
+                ttgrid or exchange"
+
+    t2 = time.time()
+
+    Logfile.add ('%s took %0.3f s' % ('CALC:', (t2-t1)))
 
 
-	    for i in range (ntimes) :
-	    		    ydata = []
-                            try:
-			    	    for tr in traces:
-						relstart = int ((dimX*dimY - mint) * new_frequence + 0.5) + i * nstep
-						tr=spfft.idct(tr[relstart+i:relstart+i+dimX*dimY], norm='ortho', axis=0)
+    partSemb = k
 
-						ydata.append(tr)
-				    ydata = num.asarray(ydata)
-				    ydata     = ydata.reshape     (dimX*dimY,nostat)
-				    #print num.shape(A), num.shape(vx), num.shape(ydata)
+    partSemb_data  = partSemb.reshape (ntimes,migpoints)
 
-				    constraints = [res == cvx.sum_entries( 0+ num.sum([ydata[:,x]-A[:,x]*vx  for x in range(nostat) ]) ) ]
-				   # constraints = [0 <= ydata[0,:]- A*vx]
-				   # constraints = [A[0,:]*vx == ydata[0,:]]
-				    prob = cvx.Problem(objective, constraints)
-				    result = prob.solve(verbose=False, max_iters=200)
+    return partSemb_data
+############################################################################
 
-				    x = num.array(vx.value)
-				    x = num.squeeze(x)
-				    back1    = x.reshape     (dimX,dimY)
-				    sig = spfft.idct(x, norm='ortho', axis=0)
-				    back2 = back2 + back1
-				    xs = num.array(res.value)
-				    xs = num.squeeze(xs)
-				    max_cs = num.max(back1)
-				    idx = num.where(back1==back1.max())
-				    csmaxvaluev[i] = max_cs
-				    csmaxlatv[i]   = latv[idx[0]]
-				    csmaxlonv[i]   = lonv[idx[1]]
-				    fobj.write ('%.5f %.5f %.20f\n' % (latv[idx[0]],lonv[idx[1]],max_cs))
-				    fobjcsmax.write ('%.5f %.5f %.20f\n' % (latv[idx[0]],lonv[idx[1]],max_cs))
-                            except:
-			            pass
-	    fobj.close()
-	    fobjcsmax.close()
+
+def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
+                Folder,Origin, ntimes, switch, ev,arrayfolder, syn_in, parameter):
+    '''
+    method for calculating semblance of one station array
+    '''
+    Logfile.add ('PROCESS %d %s' % (flag,' Enters Semblance Calculation') )
+    Logfile.add ('MINT  : %f  MAXT: %f Traveltime' % (Gmint,Gmaxt))
+
+    cfg = ConfigObj (dict=Config)
+
+    dimX   = cfg.dimX()         # ('dimx')
+    dimY   = cfg.dimY()         # ('dimy')
+    winlen = cfg.winlen ()      # ('winlen')
+    step   = cfg.step()         # ('step')
+
+    new_frequence   = cfg.newFrequency()          #  ('new_frequence')
+    forerun         = cfg.Int  ('forerun')
+    duration        = cfg.Int  ('duration')
+    gridspacing     = cfg.Float('gridspacing')
+
+    nostat          = len (WaveformDict)
+    traveltimes     = {}
+    recordstarttime = ''
+    minSampleCount  = 999999999
+
+    ntimes = int ((forerun + duration)/step)
+    nsamp  = int (winlen * new_frequence)
+    nstep  = int (step   * new_frequence)
+    from pyrocko import obspy_compat
+    from pyrocko import orthodrome, model
+    obspy_compat.plant()
+
+    ############################################################################
+    calcStreamMap = WaveformDict
+
+    stations = []
+    py_trs = []
+    for trace in calcStreamMap.iterkeys():
+        py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+        py_trs.append(py_tr)
+        for il in FilterMetaData:
+            if str(il) == str(trace):
+                        szo = model.Station(lat=il.lat, lon=il.lon,
+                                            station=il.sta, network=il.net,
+                                            channels=py_tr.channel,
+                                            elevation=il.ele, location=il.loc)
+			stations.append(szo) #right number of stations?
+
+
+    store_id = syn_in.store()
+    engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+
+    targets =[]
+    for st in stations:
+
+    	target= Target(
+    	lat=st.lat,
+    	lon=st.lon,
+    	store_id=store_id,
+    	codes=(st.network, st.station, st.location, 'BHZ'),
+        quantity=cfg.quantity())
+    	targets.append(target)
+
+    print parameter
+    if syn_in.nsources() == 1:
+        if syn_in.use_specific_stf() == True:
+            stf=syn_in.stf()
+            exec(stf)
+        else:
+            stf = STF()
+        if syn_in.source() == 'RectangularSource':
+                source= RectangularSource(
+                    lat=float(syn_in.lat_0()),
+                    lon=float(syn_in.lon_0()),
+                    depth=syn_in.depth_syn_0(),
+                    strike=syn_in.strike_0(),
+                    dip=syn_in.dip_0(),
+                    rake=syn_in.rake_0(),
+                    width=syn_in.width_0()*1000.,
+                    length=syn_in.length_0()*1000.,
+                    nucleation_x=syn_in.nucleation_x_0(),
+                    slip=syn_in.slip_0(),
+                    nucleation_y=syn_in.nucleation_y_0(),
+                    stf=stf,
+                    time = util.str_to_time(syn_in.time_0()))
+
+        if syn_in.source() ==  'DCSource':
+                source = DCSource(
+                        north_shift=parameter[5],  # Optimize for the shift from the GCMT origin
+                        east_shift=parameter[6],  # in east and north direction.
+                        depth=parameter[4],
+                        strike=parameter[1],
+                        dip=parameter[2],
+                        rake=parameter[3],
+                        magnitude=parameter[0],
+                        lat=float(syn_in.lat_0()),
+                        lon=float(syn_in.lon_0()),
+                        stf=stf,
+                        time=util.str_to_time(syn_in.time_0())-parameter[7])
+
+    else:
+        sources = []
+        for i in range(syn_in.nsources()):
+            if syn_in.use_specific_stf() == True:
+                stf=syn_in.stf()
+                exec(stf)
+
+            else:
+                stf = STF()
+            if syn_in.source() == 'RectangularSource':
+                    sources.append(RectangularSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        depth=syn_in.depth_syn_1(i),
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
+                        width=syn_in.width_1(i)*1000.,
+                        length=syn_in.length_1(i)*1000.,
+                        nucleation_x=syn_in.nucleation_x_1(i),
+                        slip=syn_in.slip_1(i),
+                        nucleation_y=syn_in.nucleation_y_1(i),
+                        stf=stf,
+                        time=util.str_to_time(syn_in.time_1(i))))
+
+            if syn_in.source() == 'DCSource':
+                    sources.append(DCSource(
+                        north_shift=parameter[5],  # Optimize for the shift from the GCMT origin
+                        east_shift=parameter[6],  # in east and north direction.
+                        depth=parameter[4],
+                        strike=parameter[1],
+                        dip=parameter[2],
+                        rake=parameter[3],
+                        magnitude=parameter[0]),
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        stf=stf,
+                        time=util.str_to_time(syn_in.time_1(i))-parameter[7])
+        source = CombiSource(subsources=sources)
+    response = engine.process(source, targets)
+
+    synthetic_traces = response.pyrocko_traces()
+    if cfg.Bool('synthetic_test_add_noise') == True:
+        from noise_addition import add_noise
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        synthetic_traces = add_noise(synthetic_traces, engine, event, stations,
+          store_id, phase_def='P')
+    l=0
+    trs_org= []
+    trs_orgs= []
+    fobj = os.path.join (arrayfolder,'shift.dat')
+    xy = num.loadtxt(fobj, usecols=1, delimiter=',')
+    calcStreamMapsyn= calcStreamMap.copy()
+
+    for trace in calcStreamMapsyn.iterkeys():
+            mod = synthetic_traces[l] ##l correct order?
+            recordstarttime = calcStreamMapsyn[trace].stats.starttime.timestamp
+            recordendtime = calcStreamMapsyn[trace].stats.endtime.timestamp
+            mod.shift(recordstarttime-mod.tmin)
+            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
+            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
+            tr_org.shift(xy[l])
+            synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
+            calcStreamMapsyn[trace]=synthetic_obs_tr
+            trs_orgs.append(tr_org)
+            trs_org.append(extracted)
+            l = l+1
+    calcStreamMap = calcStreamMapsyn
+
+    if cfg.Bool('shift_by_phase_pws') == True:
+        calcStreamMapshifted= calcStreamMap.copy()
+        from obspy.core import stream
+        stream = stream.Stream()
+        for trace in calcStreamMapshifted.iterkeys():
+            stream.append(calcStreamMapshifted[trace])
+        pws_stack = PWS_stack([stream], weight=2, normalize=True)
+        for tr in pws_stack:
+            for trace in calcStreamMapshifted.iterkeys():
+                    calcStreamMapshifted[trace]=tr
+        calcStreamMap = calcStreamMapshifted
+
+
+    if cfg.Bool('shift_by_phase_onset') == True:
+    	pjoin = os.path.join
+    	timeev = util.str_to_time(ev.time)
+    	trs_orgs= []
+        calcStreamMapshifted= calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+
+        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
+        directory = arrayfolder
+        bf = BeamForming(stations, traces, normalize=True)
+        shifted_traces = bf.process(event=event,
+                  timing=timing,
+                  fn_dump_center=pjoin(directory, 'array_center.pf'),
+                  fn_beam=pjoin(directory, 'beam.mseed'))
+        i = 0
+    	store_id = syn_in.store()
+    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        for trace in calcStreamMapshifted.iterkeys():
+            recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
+            recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
+            mod = shifted_traces[i]
+            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
+            shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
+            calcStreamMapshifted[trace]=shifted_obs_tr
+            i = i+1
+
+        calcStreamMap = calcStreamMapshifted
+
+
+    weight = 0.
+    if cfg.Bool('weight_by_noise') == True:
+        from noise_analyser import analyse
+    	pjoin = os.path.join
+    	timeev = util.str_to_time(ev.time)
+    	trs_orgs= []
+        calcStreamMapshifted= calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
+        directory = arrayfolder
+        bf = BeamForming(stations, traces, normalize=True)
+        shifted_traces = bf.process(event=event,
+                  timing=timing,
+                  fn_dump_center=pjoin(directory, 'array_center.pf'),
+                  fn_beam=pjoin(directory, 'beam.mseed'))
+        i = 0
+    	store_id = syn_in.store()
+    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        weight = analyse(shifted_traces, engine, event, stations,
+         100., store_id, nwindows=1,
+         check_events=True, phase_def='P')
+
+    for trace in calcStreamMap.iterkeys():
+        recordstarttime = calcStreamMap[trace].stats.starttime
+        d = calcStreamMap[trace].stats.starttime
+        d = d.timestamp
+
+        if calcStreamMap[trace].stats.npts < minSampleCount:
+            minSampleCount = calcStreamMap[trace].stats.npts
+
+    ############################################################################
+    traces     = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
+    traveltime = num.ndarray (shape=(len(calcStreamMap), dimX*dimY), dtype=float)
+    latv       = num.ndarray (dimX*dimY, dtype=float)
+    lonv       = num.ndarray (dimX*dimY, dtype=float)
+    ############################################################################
+
+
+    c=0
+    streamCounter = 0
+
+    for key in calcStreamMap.iterkeys():
+        streamID = key
+        c2       = 0
+
+        for o in calcStreamMap[key]:
+            if c2 < minSampleCount:
+                traces[c][c2] = o
+
+                c2 += 1
+
+
+        for key in TTTGridMap.iterkeys():
+
+            if streamID == key:
+                traveltimes[streamCounter] = TTTGridMap[key]
+            else:
+                "NEIN", streamID, key
+
+
+        if not streamCounter in traveltimes :
+           continue                              #hs : thread crashed before
+
+        g     = traveltimes[streamCounter]
+        dimZ  = g.dimZ
+        mint  = g.mint
+        maxt  = g.maxt
+        Latul = g.Latul
+        Lonul = g.Lonul
+        Lator = g.Lator
+        Lonor = g.Lonor
+
+        gridElem = g.GridArray
+
+        for x in range(dimX):
+            for y in range(dimY):
+                elem = gridElem[x, y]
+
+                traveltime [c][x * dimY + y] = elem.tt
+                latv [x * dimY + y] = elem.lat
+                lonv [x * dimY + y] = elem.lon
+        #endfor
+
+        c += 1
+        streamCounter += 1
+
+    #endfor
+
+
+    ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
+    nsamp     = winlen * new_frequence
+
+    nstep     = int (step*new_frequence)
+    migpoints = dimX * dimY
+
+    dimZ = 0
+    new_frequence = cfg.newFrequency ()              # ['new_frequence']
+    maxp = int (Config['ncore'])
+
+
+    Logfile.add ('PROCESS %d  NTIMES: %d' % (flag,ntimes))
+
+    if False :
+       print ('nostat ',nostat,type(nostat))
+       print ('nsamp ',nsamp,type(nsamp))
+       print ('ntimes ',ntimes,type(ntimes))
+       print ('nstep ',nstep,type(nstep))
+       print ('dimX ',dimX,type(dimX))
+       print ('dimY ',dimY,type(dimY))
+       print ('mint ',Gmint,type(mint))
+       print ('new_freq ',new_frequence,type(new_frequence))
+       print ('minSampleCount ',minSampleCount,type(minSampleCount))
+       print ('latv ',latv,type(latv))
+       print ('traces',traces,type(traces))
+       print ('traveltime',traveltime,type(traveltime))
+
 
 #==================================semblance calculation========================================
 
@@ -970,7 +1160,90 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
     partSemb = k
 
-    partSemb  = partSemb.reshape (ntimes,migpoints)
+    partSemb_syn  = partSemb.reshape (ntimes,migpoints)
 
 
-    return partSemb, weight
+    return partSemb_syn
+
+def optimization(*params, **args):
+    counter = params[1]
+    Config = params[2]
+    Wdf = params[3]
+    FilterMeta = params[4]
+    mint = params[5]
+    maxt = params[6]
+    TTTGridMap = params[7]
+    Folder = params[8]
+    Origin = params[9]
+    ntimes = params[10]
+    switch = params[11]
+    ev = params[12]
+    arrayfolder = params[13]
+    syn_in = params[14]
+    data = params[15]
+
+    params = num.asarray(params)
+    parameter = num.ndarray.tolist(params)
+#    parameter = [val for sublist in parameter for val in sublist]
+
+    semb_syn = doCalc_syn (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in,
+                                  parameter[0])
+    misfit_list = []  # init a list for a all the singular misfits
+    norm_list = []  # init a list for a all the singular normalizations
+    taper = trace.CosFader(xfade=2.0)  # Cosine taper with fade in and out of 2s.
+    bw_filter = trace.ButterworthResponse(corner=0.000055,  # in Hz
+                                      order=4,
+                                      type='high')  # "low"pass or "high"pass
+    setup = trace.MisfitSetup(description='Misfit Setup',
+                              norm=2,  # L1 or L2 norm
+                              taper=taper,
+                              filter=bw_filter,
+                              domain='time_domain')
+    for t_data, t_syn  in zip(data,semb_syn):
+        nsamples = len(t_data)
+        tmin = util.str_to_time('2010-02-20 15:15:30.100')
+        tr = trace.Trace(station='TEST', channel='Z',
+                         deltat=0.5, tmin=tmin, ydata=t_data)
+        syn = trace.Trace(station='TEST', channel='Z',
+                         deltat=0.5, tmin=tmin, ydata=t_syn)
+        misfit, norm = tr.misfit(candidate=syn, setup=setup) # calculate the misfit of a single observed trace with its synthetics
+        # with the setup from above
+        misfit_list.append(misfit), norm_list.append(norm)  # append the misfit into a list
+    global_misfit_normed = num.sqrt(num.nansum((num.asarray(misfit_list))**2) / # sum all the misfits and normalize to get a single minimizable value
+                                    num.nansum((num.asarray(norm_list))**2))
+    print global_misfit_normed
+    return global_misfit_normed
+
+
+def solve(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                             Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in):
+    import scipy
+    t = time.time()  # start timing
+    # bounds given as (min,max)
+    bounds = ((syn_in.mag_0_low(), syn_in.mag_0_high()),  # magnitude
+              (syn_in.strike_0_low(), syn_in.strike_0_high()),  # strike [deg.]
+              (syn_in.dip_0_low(), syn_in.dip_0_high()),  # dip [deg.]
+              (syn_in.rake_0_low(), syn_in.rake_0_high()),  # rake [deg.]
+              (syn_in.depth_0_low()*km, syn_in.depth_0_high()*km),  # depth [km]
+              (syn_in.north_shift_0_low()*km, syn_in.north_shift_0_high()*km),  # north shift from GCMT [km]
+              (syn_in.east_shift_0_low()*km, syn_in.east_shift_0_high()*km),  # east shift from GCMT [km]
+              (syn_in.time_0_low(), syn_in.time_0_high()))  # timeshift from GCMT [s]
+    # optimize.differential_evolution of scipy is used for the optim.
+    # Differential Evolution is stochastic in nature (does not use gradient methods)
+    #to find the minimium, and can search large areas of candidate space, but often requires
+    #larger numbers of function evaluations than conventional gradient based techniques.
+    # The scipy solver can easily be exchanged.
+
+    data = doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+    result = scipy.optimize.differential_evolution(optimization, bounds=bounds, args=(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in, data))
+    elapsed = time.time() - t  # get the processing time
+    # Now we just print out all information that we like:
+    print "Time elapsed:", elapsed
+    print "Best model:"
+    print "magnitude:", result.x[0], "strike:", result.x[1]
+    print "dip:", result.x[2], "rake:", result.x[3], "depth:", result.x[4]
+    print "north shift from GCMT in m", result.x[5], "east shift from GCMT in m:"
+    print result.x[6], "time shift from GCMT in s:", result.x[7],

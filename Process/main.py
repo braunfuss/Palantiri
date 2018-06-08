@@ -14,7 +14,7 @@ sys.path.append ('../tools/')
 sys.path.append ('../Common/')
 
 #       Import from common
-
+import optim
 import  Basic
 import  Globals
 import  Logfile
@@ -399,8 +399,12 @@ def processLoop():
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
 
                 t1        = time.time()
-                arraySemb, weight = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                             Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                if cfg.optimize() == True:
+                    optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                else:
+                    arraySemb, weight = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
                 t2        = time.time()
                 Logfile.add ('CALC took %0.3f sec' % (t2-t1))
                 weights.append(weight)
