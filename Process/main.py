@@ -305,7 +305,7 @@ def processLoop():
             networks     = Config['networks'].split(',')
             counter      = 1
             TriggerOnset = []
-
+            Wdfs = []
             for i in networks:
 
                 arrayname = i
@@ -393,7 +393,7 @@ def processLoop():
                 else:
                     Wd = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
                 Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-
+                Wdfs.append(Wdf)
 
                 C.writeStationFile(FilterMeta,Folder,counter)
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
@@ -422,10 +422,18 @@ def processLoop():
                     fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
 
                 fobjarraynetwork.close()
+            if cfg.optimize_all() == True:
+                import optim_csemb
+                from optim_csemb import solve
 
+                sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
+                optim_csemb.solve(counter, Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                             Folder,Origin,ntimes,switch, ev,arrayfolder,
+                                             syn_in, ASL, sembmax, evpath, XDict, RefDict,
+                                             workdepth, filterindex, Wdfs)
             if ASL:
                 Logfile.red ('collect semblance matrices from all arrays')
-                sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
+                sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
                 if cfg.Bool('weight_by_noise') == True:
                     sembCalc.collectSembweighted(ASL,Config,Origin,Folder,ntimes,len(networks),switch, weights)
 
@@ -462,7 +470,10 @@ class ProcessMain (MainObj) :
     # --------------------------------------------------------------------------------------------
 
     def process (self) :
-        processLoop ()
+        #processLoop ()
+        import cProfile
+        cProfile.run('processLoop ()', filename='test.profile')
+        #print halt
         return True
 
     def finish (self) :    pass
@@ -473,6 +484,7 @@ class ProcessMain (MainObj) :
 def MainProc () :
 
     mainObj = ProcessMain ()
+
     mainObj.run()
 
 # -------------------------------------------------------------------------------------------------

@@ -8,23 +8,19 @@ import time
 import shutil
 import subprocess
 import getpass
-import platform
 import re
 
-WINDOWS = (platform.system() == 'Windows')
 
 import httplib2
 import urllib2
 from   urllib import urlopen
 from   ftplib import FTP
 
-if WINDOWS :  import pickle
-else :        import cPickle as pickle
+import cPickle as pickle
 
 import Logfile    #      Import from Common
 
 # -------------------------------------------------------------------------------------------------
-#def floatToString (fList, delim= ',') :                                      #17.12.2015
 def  floatToString (fList, format = None, delim= ',') :
     if not format : return delim.join (map (str, fList))
     else :                                                                    #17.12.2015+
@@ -45,13 +41,11 @@ def stringToFloat (s, delim= ',') :
 
     return line
 
-#def matrixToString (matrix, nLines, nColumns, delim= ',') :                   #17.12.2015
 def  matrixToString (matrix, nLines, nColumns, format = None, delim= ',') :
 
     lines = []
 
     for i in range (nLines) :
-      #lines.append (floatToString (matrix[i]))            #17.12.2015
        lines.append (floatToString (matrix[i], format))
 
     return '\n'.join (lines)
@@ -71,17 +65,13 @@ def stringToMatrix (lines, nLines, nColumns, delim= ',') :
 
 # -------------------------------------------------------------------------------------------------
 
-#def writeVector (fileName, vector) :                                             #17.12.2015+
-#    writeTextFile (fileName, list (floatToString (vector)))
+
 
 def  writeVector (fileName, vector, format=None) :
      writeTextFile (fileName, list (floatToString (vector, format)))              #17.12.2015-
 
 def readVector (fileName) :
     return stringToFloat (readTextFile (fileName, 1)[0])
-
-#def writeMatrix (fileName, matrix, nLines, nColumns) :                           #17.12.2015+
-#   writeTextFile (fileName, matrixToString (matrix, nLines, nColumns))
 
 def writeMatrix (fileName, matrix, nLines, nColumns, format=None) :
    writeTextFile (fileName, matrixToString (matrix, nLines, nColumns, format))    #17.12.2015-
@@ -183,10 +173,8 @@ def And (mask) :
 
 # -------------------------------------------------------------------------------------------------
 
-def baseFileName (fullName) :               # return file name without path and extension
-
+def baseFileName (fullName) :
     basename = os.path.basename (fullName)
-    #print 'basename =', basename
     filename = os.path.splitext (basename)
     return filename[0]
 
@@ -202,7 +190,6 @@ def isNumber (s) :
 def isInt (s) :
 
     if not isNumber (s) : return False
-
     try :    int (s)
     except : return False
 
@@ -227,7 +214,6 @@ def checkIsNumber (string, minVal=None, maxVal=None) :
        elif  val < minVal   or  val > maxVal   :
            msg = s1 + 'outside range [' + str(minVal) + ',' + str(maxVal) + ']'
     #endif
-
     return msg
 
 
@@ -243,7 +229,6 @@ def checkGreaterZero (string) :
        if   val == 0.0 : msg = s1 + 'is zero'
        elif val <  0.0 : msg = s1 + '< 0.0'
     #endif
-
     return msg
 
 
@@ -341,10 +326,10 @@ def readTextFile (fileName, maxLines = -1) :
 
     if fp == None : return lines
 
-    if WINDOWS : lines = fp.readlines ()
-    else :
-       if maxLines == -1 : lines = fp.readlines ()
-       else :              lines = fp.readlines (maxLines)
+    if maxLines == -1 :
+         lines = fp.readlines ()
+    else:
+         lines = fp.readlines (maxLines)
 
     fp.close  ()
 
@@ -476,17 +461,12 @@ def killByPID (pidList) :
 
 def removeTempFiles () :
 
-    if WINDOWS : return 0            # ??? fuer Windows einbauen
-
     dir   = '/tmp'
     names = os.listdir (dir)
     user  = getpass.getuser()
     cnt   = 0
 
     for s in names :
-       #if user != getpwuid (stat (s).st_uid).pw_name :   ???
-       #   continue                                       ???
-
        if s .startswith ('obspy-') :
           os.remove (dir + '/' + s)
           cnt += 1
@@ -500,8 +480,6 @@ def removeTempFiles () :
 
 def existsHTML_Page (url, text = None, withComment = False, isAbort=False) :
 
-    #response = requests.get(url)
-    #status   = response.status_code
 
     h = httplib2.Http()
 
@@ -587,51 +565,8 @@ def question (text) :
        else :          continue
 
 # -------------------------------------------------------------------------------------------------
-def isWindows() :
-
-    if platform.system() == 'Windows' : return True
-    else : return False
-
-# -------------------------------------------------------------------------------------------------
 def getUserName() :
 
-    if not isWindows() : s = getpass.getuser()
-    else :               s = os.environ ['USERDOMAIN']
+    s = os.environ ['USERDOMAIN']
 
     return s
-
-# -------------------------------------------------------------------------------------------------
-def getOwnIpAdr() :
-
-    data  = str (urlopen ('http://checkip.dyndns.com/').read())
-    ipAdr = re.compile(r'Address: (\d+\.\d+\.\d+\.\d+)').search(data).group(1)
-
-    return ipAdr
-
-# -------------------------------------------------------------------------------------------------
-def isInternalUse () :
-
-    if isWindows() :
-       s = getUserName()
-
-       if s == 'HELMUTPC' : return True        # Rechner Potsdam
-       if s == 'HPC' :      return True        # Rechner Tegel
-       else :               return False
-
-    else :
-       ipAdr = getOwnIpAdr()
-
-       if ipAdr.startswith ('141.89.111.') or ipAdr.startswith ('141.89.112.') :
-          return True
-
-       return False
-
-# -------------------------------------------------------------------------------------------------
-def onlyForInternalUse () :
-
-    if isInternalUse() : return
-
-    print ('***')
-    print ('*** Program is only for internal use ***')
-    print ('***')
-    sys.exit ()

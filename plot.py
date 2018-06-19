@@ -74,30 +74,93 @@ def plot_movie():
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/' + str(sys.argv[3])
         pathlist = Path(rel).glob('**/*.ASC')
         for path in sorted(pathlist):
-            path_in_str = str(path)
-            data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-            eastings = data[:,1]
-            northings =  data[:,0]
-            plt.figure()
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                    resolution='h')
-            parallels = np.arange(num.min(northings),num.max(northings),0.2)
-            meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+            try:
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                eastings = data[:,1]
+                northings =  data[:,0]
+                plt.figure()
+                map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                        resolution='h')
+                parallels = np.arange(num.min(northings),num.max(northings),0.2)
+                meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
-            eastings, northings = map(eastings, northings)
-            map.drawcoastlines(color='b',linewidth=3)
-            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
-            x, y = map(data[::5,1], data[::5,0])
-            mins = np.max(data[:,3])
-            plt.tricontourf(x,y, data[::5,3], vmin=mins*0.6)
-            plt.title(path_in_str)
-            plt.savefig(path_in_str+'.pdf', bbox_inches='tight')
-            plt.close()
+                eastings, northings = map(eastings, northings)
+                map.drawcoastlines(color='b',linewidth=3)
+                map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+                map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+                x, y = map(data[::5,1], data[::5,0])
+                mins = np.max(data[:,3])
+                plt.tricontourf(x,y, data[::5,3], vmin=mins*0.6)
+                plt.title(path_in_str)
+                plt.savefig(path_in_str+'.pdf', bbox_inches='tight')
+                plt.close()
+            except:
+                pass
+
+
+def plot_moving():
+    datas = []
+    if len(sys.argv)<4:
+        print "missing input arrayname"
+    else:
+        if sys.argv[3] == 'combined':
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            pathlist = Path(rel).glob('**/1-0.1_*.ASC')
+            for path in sorted(pathlist):
+                try:
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    eastings = data[:,1]
+                    northings =  data[:,0]
+                except:
+                    pass
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            pathlist = Path(rel).glob('**/1-0.1_*.ASC')
+
+        else:
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/' + str(sys.argv[3])
+            pathlist = Path(rel).glob('**/*.ASC')
+            for path in sorted(pathlist):
+                try:
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    eastings = data[:,1]
+                    northings =  data[:,0]
+                except:
+                    pass
+            pathlist = Path(rel).glob('**/*.ASC')
+
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                resolution='h')
+        parallels = np.arange(num.min(northings),num.max(northings),0.2)
+        meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+
+        eastings, northings = map(eastings, northings)
+        map.drawcoastlines(color='b',linewidth=3)
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+        for path in sorted(pathlist):
+            try:
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                eastings = data[:,1]
+                northings =  data[:,0]
+                x, y = map(data[:,1], data[:,0])
+                datas.append(data[:,2])
+            except:
+                pass
+        #mins = np.max(data[:,3])
+        data = num.zeros(num.shape(data[:,2]))
+        datas = num.asarray(datas)
+        for dp in datas:
+            data = data+dp
+        scat = plt.tricontourf(x,y, data, vmin=num.max(data)*0.88)
+        plt.show()
 
 def plot_sembmax():
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ', skiprows=5)
+    data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
 
@@ -124,7 +187,6 @@ def plot_sembmax():
 
     x, y = map(data[:,2], data[:,1])
     l = range(0,num.shape(data[:,2])[0])
-
     size = (data[:,3]/np.max(data[:,3]))*300
     ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
     for i in range(0,len(x)):
@@ -141,7 +203,7 @@ def plot_sembmax():
     plt.show()
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ', skiprows=5)
+        data = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
         eastings = data[:,2]
         northings =  data[:,1]
 
@@ -189,7 +251,7 @@ def plot_sembmax():
 
 def plot_movingsembmax():
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ', skiprows=5)
+    data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
     xpixels = 1000
@@ -243,7 +305,7 @@ def plot_movingsembmax():
     show(scat)
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ', skiprows=5)
+        data = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
         eastings = data[:,2]
         northings =  data[:,1]
         xpixels = 1000
@@ -301,7 +363,7 @@ def plot_movingsembmax():
 def plot_semb():
 
     rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-    astf = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ', skiprows=5)
+    astf = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     astf_data = astf[:, 3]
     fig = plt.figure(figsize=(15, 15))
     plt.plot(astf_data)
@@ -311,7 +373,7 @@ def plot_semb():
     plt.show()
     try:
         rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-        astf = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ', skiprows=5)
+        astf = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
         fig = plt.figure(figsize=(15, 15))
 
         plt.plot(astf_data)
@@ -324,9 +386,9 @@ def plot_semb():
     except:
         pass
 
-if len(sys.argv)<2:
-    print "input: eventname plot_name, available plot_name:\
-    plot_movie, plot_sembmax, plot_semb, plot_movingmax, cluster"
+if len(sys.argv)<3:
+    print "input: eventname plot_name,\
+     available plot_name: movie, sembmax, semblance, interactive_max, cluster"
 else:
     event = sys.argv[1]
     if sys.argv[2] == 'movie':
@@ -339,3 +401,5 @@ else:
         plot_movingsembmax()
     elif sys.argv[2] == 'cluster':
         plot_cluster()
+    elif sys.argv[2] == 'moving':
+        plot_moving()

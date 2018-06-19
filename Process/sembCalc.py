@@ -333,10 +333,10 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
                latv.append (oLatul)
                lonv.append (oLonul)
 
-
     tmp=1
     for a in SembList:
-        tmp *= a
+        if num.mean(a)>0:
+            tmp *= a
     #sys.exit()
 
     sembmaxvaluev = num.ndarray (ntimes,dtype=float)
@@ -375,7 +375,6 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
             x    = latv[j]
             y    = lonv[j]
             semb = i[j]
-
             fobj.write ('%.2f %.2f %.20f\n' % (x,y,semb))
 
             if  semb > sembmax:
@@ -389,17 +388,14 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a]   = sembmaxX
         sembmaxlonv[a]   = sembmaxY
-
-        fobjsembmax.write ('%d %.2f %.2f %.20f %.20f %d %03f %f %03f\n' % (a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
+        fobjsembmax.write ('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n' % (a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
         fobj.close()
-
 
     fobjsembmax.close()
 
-    durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    print 'DD2: ',durationpath
     trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
+    return sembmaxvaluev
 
 def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
     '''
@@ -446,8 +442,8 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
 
     tmp=1
     for a, w in zip(SembList, weights):
-        tmp *= a
-    #sys.exit()
+        if num.mean(a)>0:
+            tmp *= a*w
 
     sembmaxvaluev = num.ndarray (ntimes,dtype=float)
     sembmaxlatv   = num.ndarray (ntimes,dtype=float)
@@ -459,14 +455,13 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
     usedarrays = 5
 
     folder      = Folder['semb']
-    fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
+    fobjsembmax = open (os.path.join (folder,'sembmax_weighted_%s.txt' % (switch)),'w')
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
 
 
         fobj  = open (os.path.join (folder,'%s-%s_%03d._weighted_semblance.ASC' % (switch,Origin['depth'],a)),'w')
-        #fobj = open (os.path.join (folder, '%03d.ASC'    % a),'w')
 
         fobj.write ('# %s , %s\n' % (d,rcs))
         fobj.write ('# step %ds| ntimes %d| winlen: %ds\n' % (step,ntimes,winlen))
@@ -507,9 +502,7 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
 
     fobjsembmax.close()
 
-    durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    print 'DD2: ',durationpath
     trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
 
 def toMatrix (npVector, nColumns) :

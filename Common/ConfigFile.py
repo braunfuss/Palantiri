@@ -114,7 +114,7 @@ class ConfigObj (object):
 
     def Distance (self, key, maxVal = 40 * 1000) : return self.UFloat (key, maxVal)
     def Freq     (self, key, maxVal = 1000) :      return self.UFloat (key, maxVal)
-    def Duration (self, key='duration') :          return self.UFloat (key)
+    def Duration (self, key='duration') :          return self.UInt (key)
     def Time     (self, key='time') :              return self.String (key)
 
     def lat    (self) :       return self.Float ('lat')        # ??? range einbauen
@@ -123,8 +123,8 @@ class ConfigObj (object):
 
     def dimX   (self) :       return self.UInt ('dimx')
     def dimY   (self) :       return self.UInt ('dimy')
-    def winlen (self) :       return self.Float ('winlen')
-    def step   (self) :       return self.Float ('step')
+    def winlen (self) :       return self.UInt ('winlen')
+    def step   (self) :       return self.UInt ('step')
     def cs   (self) :       return self.UInt ('compressed_sensing')
     def synthetic_test   (self) : return self.Bool ('synthetic_test')
     def shift_by_phase_onset   (self) : return self.Bool ('shift_by_phase_onset')
@@ -134,6 +134,8 @@ class ConfigObj (object):
     def synthetic_test_add_noise  (self) : return self.Bool ('synthetic_test_add_noise')
     def quantity (self) :       return self.Str ('quantity')
     def colesseo_input  (self) : return self.Bool ('colesseo_input')
+    def optimize(self) : return self.Bool ('optimize')
+    def optimize_all(self) : return self.Bool ('optimize_all')
     def colosseo_scenario_yml (self) :       return self.Str ('colosseo_scenario_yml')
     def weight_by_noise  (self) : return self.Bool ('weight_by_noise')
 
@@ -238,6 +240,23 @@ class SynthCfg (ConfigObj) :
     def nucleation_y_0   (self) : return self.Float  ('nucleation_y_0')
     def slip_0   (self) : return self.Float  ('slip_0')
     def magnitude_0   (self) : return self.Float  ('magnitude_0')
+    def mag_0_low   (self) : return self.Float  ('mag_low_0')
+    def mag_0_high  (self) : return self.Float  ('mag_high_0')
+    def dip_0_low   (self) : return self.Float  ('dip_low_0')
+    def dip_0_high  (self) : return self.Float  ('dip_high_0')
+    def depth_0_low   (self) : return self.Float  ('depth_low_0')
+    def depth_0_high  (self) : return self.Float  ('depth_high_0')
+    def rake_0_low   (self) : return self.Float  ('rake_low_0')
+    def rake_0_high  (self) : return self.Float  ('rake_high_0')
+    def strike_0_low   (self) : return self.Float  ('strike_low_0')
+    def strike_0_high  (self) : return self.Float  ('strike_high_0')
+    def north_shift_0_low   (self) : return self.Float  ('north_shift_low_0')
+    def north_shift_0_high  (self) : return self.Float  ('north_shift_high_0')
+    def east_shift_0_low   (self) : return self.Float  ('east_shift_low_0')
+    def east_shift_0_high  (self) : return self.Float  ('east_shift_high_0')
+    def time_0_low   (self) : return self.Float  ('time_low_0')
+    def time_0_high  (self) : return self.Float  ('time_high_0')
+
     def time_0   (self)       : return self.String ('time_0')
     def store_superdirs  (self) :       return self.Str ('store_superdirs')
     def store  (self) :       return self.Str ('store')

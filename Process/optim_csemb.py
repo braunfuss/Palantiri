@@ -25,7 +25,15 @@ from semp import otest
 from beam_stack import BeamForming
 from pyrocko.gf import STF
 from stacking import PWS_stack
+import sembCalc
+import ttt
+import config
+from    array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR, getArrayShiftValue
+import cPickle  as pickle
+import  times
+import  waveform
 # -------------------------------------------------------------------------------------------------
+
 
 logger = logging.getLogger('ARRAY-MP')
 
@@ -398,7 +406,6 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    print 'DD2: ',durationpath
     trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
 
 def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
@@ -509,7 +516,6 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
 
     durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    print 'DD2: ',durationpath
     trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
 
 def toMatrix (npVector, nColumns) :
@@ -776,8 +782,6 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
     t2 = time.time()
 
-    Logfile.add ('%s took %0.3f s' % ('CALC:', (t2-t1)))
-
 
     partSemb = k
 
@@ -850,7 +854,6 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         quantity=cfg.quantity())
     	targets.append(target)
 
-    print parameter
     if syn_in.nsources() == 1:
         if syn_in.use_specific_stf() == True:
             stf=syn_in.stf()
@@ -1179,14 +1182,70 @@ def optimization(*params, **args):
     arrayfolder = params[13]
     syn_in = params[14]
     data = params[15]
+    evpath = params[16]
+    XDict = params[17]
+    RefDict = params[18]
+    workdepth = params[19]
+    filterindex = params[20]
+    Wdfs = params[21]
 
+    networks = Config['networks'].split(',')
     params = num.asarray(params)
     parameter = num.ndarray.tolist(params)
-#    parameter = [val for sublist in parameter for val in sublist]
+    ASL_syn = []
 
-    semb_syn = doCalc_syn (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in,
-                                  parameter[0])
+
+    C      = config.Config (evpath)
+    Config = C.parseConfig ('config')
+    cfg = ConfigObj (dict=Config)
+    if cfg.pyrocko_download() == True:
+        Meta = C.readpyrockostations()#
+#        sys.path.append ('../Cluster/')
+#        from cluster2 import *
+#        Meta = readpyrockostations(evpath)
+    elif cfg.colesseo_input() == True:
+        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
+        Meta = C.readcolosseostations(scenario)
+    else:
+        Meta = C.readMetaInfoFile()
+    l = 0
+    for i in networks:
+
+        arrayname = i
+        arrayfolder = os.path.join (Folder['semb'],arrayname)
+
+        network = Config[i].split('|')
+
+        FilterMeta = ttt.filterStations (Meta,Config,Origin,network)
+
+        if len(FilterMeta)  < 3: continue
+
+        W = XDict[i]
+        refshift = RefDict[i]
+
+        FilterMeta = cmpFilterMetavsXCORR (W, FilterMeta)
+
+        Logfile.add ('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
+                 % (Config['dimx'],Config['dimy'],Config['gridspacing']))
+
+        f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'rb')
+        TTTGridMap,mint,maxt = pickle.load(f)
+        f.close()
+
+
+        switch = filterindex
+
+        tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
+        Wdf = Wdfs[l]
+        semb_syn = doCalc_syn (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                     Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in,
+                                      parameter[0])
+        ASL_syn.append(semb_syn)
+        counter += 1
+        l += 1
+
+    sembmax_syn = sembCalc.collectSemb(ASL_syn,Config,Origin,Folder,ntimes,len(networks),switch)
+
     misfit_list = []  # init a list for a all the singular misfits
     norm_list = []  # init a list for a all the singular normalizations
     taper = trace.CosFader(xfade=2.0)  # Cosine taper with fade in and out of 2s.
@@ -1198,27 +1257,28 @@ def optimization(*params, **args):
                               taper=taper,
                               filter=bw_filter,
                               domain='time_domain')
-    for t_data, t_syn  in zip(data,semb_syn):
-        nsamples = len(t_data)
-        tmin = util.str_to_time('2010-02-20 15:15:30.100')
-        tr = trace.Trace(station='TEST', channel='Z',
-                         deltat=0.5, tmin=tmin, ydata=t_data)
-        syn = trace.Trace(station='TEST', channel='Z',
-                         deltat=0.5, tmin=tmin, ydata=t_syn)
-        misfit, norm = tr.misfit(candidate=syn, setup=setup) # calculate the misfit of a single observed trace with its synthetics
-        # with the setup from above
-        misfit_list.append(misfit), norm_list.append(norm)  # append the misfit into a list
+    nsamples = len(data)
+    tmin = util.str_to_time('2010-02-20 15:15:30.100')
+    tr = trace.Trace(station='TEST', channel='Z',
+                     deltat=0.5, tmin=tmin, ydata=data)
+    syn = trace.Trace(station='TEST', channel='Z',
+                     deltat=0.5, tmin=tmin, ydata=sembmax_syn)
+    misfit, norm = tr.misfit(candidate=syn, setup=setup) # calculate the misfit of a single observed trace with its synthetics
+    # with the setup from above
+    misfit_list.append(misfit), norm_list.append(norm)  # append the misfit into a list
     global_misfit_normed = num.sqrt(num.nansum((num.asarray(misfit_list))**2) / # sum all the misfits and normalize to get a single minimizable value
                                     num.nansum((num.asarray(norm_list))**2))
-    print global_misfit_normed
     return global_misfit_normed
 
 
 def solve(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                             Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in):
+                             Folder,Origin,ntimes,switch, ev,arrayfolder,
+                             syn_in, ASL_d, sembmax_d, evpath, XDict,
+                             RefDict, workdepth, filterindex, Wdfs):
     import scipy
     t = time.time()  # start timing
     # bounds given as (min,max)
+
     bounds = ((syn_in.mag_0_low(), syn_in.mag_0_high()),  # magnitude
               (syn_in.strike_0_low(), syn_in.strike_0_high()),  # strike [deg.]
               (syn_in.dip_0_low(), syn_in.dip_0_high()),  # dip [deg.]
@@ -1233,12 +1293,10 @@ def solve(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
     #larger numbers of function evaluations than conventional gradient based techniques.
     # The scipy solver can easily be exchanged.
 
-    data = doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-    result = scipy.optimize.differential_evolution(optimization, bounds=bounds, args=(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in, data))
+    data = sembmax_d
+    result = scipy.optimize.differential_evolution(optimization, bounds=bounds, maxiter=3, popsize=3, args=(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in, data, evpath, XDict, RefDict, workdepth, filterindex, Wdfs))
     elapsed = time.time() - t  # get the processing time
-    # Now we just print out all information that we like:
     print "Time elapsed:", elapsed
     print "Best model:"
     print "magnitude:", result.x[0], "strike:", result.x[1]
