@@ -350,6 +350,9 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     folder      = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
+    norm = num.max(num.max(tmp, axis=1))
+
+
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
 
@@ -374,7 +377,7 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
         for j in range(migpoints):
             x    = latv[j]
             y    = lonv[j]
-            semb = i[j]
+            semb = i[j]/norm
             fobj.write ('%.2f %.2f %.20f\n' % (x,y,semb))
 
             if  semb > sembmax:

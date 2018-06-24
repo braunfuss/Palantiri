@@ -316,7 +316,7 @@ def processLoop():
 
                 FilterMeta = ttt.filterStations (Meta,Config,Origin,network)
 
-                #if len(FilterMeta) < 3: continue              #hs : wieder rein
+                                        #if len(FilterMeta) < 3: continue              #hs : wieder rein
                 if len(FilterMeta)  < 3: continue
 
                 W = XDict[i]

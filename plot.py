@@ -70,33 +70,73 @@ def plot_movie():
     else:
         if sys.argv[3] == 'combined':
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            pathlist = Path(rel).glob('*.ASC')
+            maxs = 0.
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    max = np.max(data[:, 2])
+                    if maxs < max:
+                        maxs = max
+                        datamax = data[:, 2]
+            pathlist = Path(rel).glob('0-*.ASC')
+            for path in sorted(pathlist):
+            #    try:
+                    path_in_str = str(path)
+                    print path_in_str
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    eastings = data[:,1]
+                    northings =  data[:,0]
+                    plt.figure()
+                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                            resolution='h')
+                    parallels = np.arange(num.min(northings),num.max(northings),0.2)
+                    meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+                    xpixels = 1000
+                    #map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+                    eastings, northings = map(eastings, northings)
+                    map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+                    map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+                    x, y = map(data[::10,1], data[::10,0])
+                    mins = np.max(data[:,2])
+                    plt.tricontourf(x,y, data[::10,2], cmap='hot', vmin=0., vmax=maxs)
+                    plt.colorbar()
+                    plt.title(path_in_str)
+                    plt.savefig(path_in_str+'.pdf', bbox_inches='tight')
+                    plt.close()
+            #    except:
+                #    plt.close()
+                #    pass
+
         else:
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/' + str(sys.argv[3])
-        pathlist = Path(rel).glob('**/*.ASC')
-        for path in sorted(pathlist):
-            try:
-                path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                eastings = data[:,1]
-                northings =  data[:,0]
-                plt.figure()
-                map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                        resolution='h')
-                parallels = np.arange(num.min(northings),num.max(northings),0.2)
-                meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+            pathlist = Path(rel).glob('**/*.ASC')
+            for path in sorted(pathlist):
+                try:
+                    path_in_str = str(path)
+                    print path_in_str
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    eastings = data[:,1]
+                    northings =  data[:,0]
+                    plt.figure()
+                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                            resolution='h')
+                    parallels = np.arange(num.min(northings),num.max(northings),0.2)
+                    meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
-                eastings, northings = map(eastings, northings)
-                map.drawcoastlines(color='b',linewidth=3)
-                map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-                map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
-                x, y = map(data[::5,1], data[::5,0])
-                mins = np.max(data[:,3])
-                plt.tricontourf(x,y, data[::5,3], vmin=mins*0.6)
-                plt.title(path_in_str)
-                plt.savefig(path_in_str+'.pdf', bbox_inches='tight')
-                plt.close()
-            except:
-                pass
+                    eastings, northings = map(eastings, northings)
+                    map.drawcoastlines(color='b',linewidth=3)
+                    map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+                    map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+                    x, y = map(data[::5,1], data[::5,0])
+                    mins = np.max(data[:,3])
+                    plt.tricontourf(x,y, data[::5,3], vmin=mins*0.6)
+                    plt.title(path_in_str)
+                    plt.savefig(path_in_str+'.pdf', bbox_inches='tight')
+                    plt.close()
+                except:
+                    plt.close()
+                    pass
 
 
 def plot_moving():
@@ -234,7 +274,7 @@ def plot_sembmax():
             if data[i,3]> np.max(data[:,3])*0.05:
                 plt.text(x[i],y[i],'%s' %i)
         l = range(0,num.shape(data[:,2])[0])
-        size = (data[:,3]/np.max(data[:,3]))*300
+        size = (data[:,3]/np.max(data[:,3]))*3000
         ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
         xpixels = 1000
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
