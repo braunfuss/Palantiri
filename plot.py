@@ -139,6 +139,77 @@ def plot_movie():
                     pass
 
 
+def plot_integrated():
+    if len(sys.argv)<4:
+        print "missing input arrayname"
+    else:
+        if sys.argv[3] == 'combined':
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            pathlist = Path(rel).glob('*.ASC')
+            maxs = 0.
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    max = np.max(data[:, 2])
+                    if maxs < max:
+                        maxs = max
+                        datamax = data[:, 2]
+            pathlist = Path(rel).glob('0-*.ASC')
+            data_int = num.zeros(num.shape(data[:, 2]))
+            for path in sorted(pathlist):
+            #    try:
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    data_int += np.nan_to_num(data[:,2])
+
+            eastings = data[:,1]
+            northings =  data[:,0]
+            plt.figure()
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                    resolution='h')
+            parallels = np.arange(num.min(northings),num.max(northings),0.2)
+            meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+            xpixels = 1000
+            #map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+            eastings, northings = map(eastings, northings)
+            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+            x, y = map(data[:,1], data[:,0])
+            mins = np.max(data[:,2])
+            plt.tricontourf(x,y, data_int, cmap='hot')
+            plt.colorbar()
+            plt.title(path_in_str)
+            plt.show()
+
+            pathlist = Path(rel).glob('1-*.ASC')
+            data_int = num.zeros(num.shape(data[:, 2]))
+            for path in sorted(pathlist):
+            #    try:
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    data_int += np.nan_to_num(data[:,2])
+
+            eastings = data[:,1]
+            northings =  data[:,0]
+            plt.figure()
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                    resolution='h')
+            parallels = np.arange(num.min(northings),num.max(northings),0.2)
+            meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+            xpixels = 1000
+            #map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+            eastings, northings = map(eastings, northings)
+            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+            x, y = map(data[:,1], data[:,0])
+            mins = np.max(data[:,2])
+            plt.tricontourf(x,y, data_int, cmap='hot')
+            plt.colorbar()
+            plt.title(path_in_str)
+            plt.show()
+
+
+
 def plot_moving():
     datas = []
     if len(sys.argv)<4:
@@ -443,3 +514,5 @@ else:
         plot_cluster()
     elif sys.argv[2] == 'moving':
         plot_moving()
+    elif sys.argv[2] == 'integrated':
+        plot_integrated()

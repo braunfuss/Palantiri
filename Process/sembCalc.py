@@ -687,7 +687,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                 mod.shift(recordstarttime-mod.tmin)
                 extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
-                tr_org.shift(xy[l])
+                #tr_org.shift(xy[l])
                 synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
                 calcStreamMapsyn[trace]=synthetic_obs_tr
                 trs_orgs.append(tr_org)
@@ -707,6 +707,21 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                     calcStreamMapshifted[trace]=tr
         calcStreamMap = calcStreamMapshifted
 
+    if cfg.Bool('shift_by_phase_cc') == True:
+        from stacking import align_traces
+        calcStreamMapshifted= calcStreamMap.copy()
+        list_tr = []
+        for trace in calcStreamMapshifted.iterkeys():
+            tr_org = calcStreamMapshifted[trace]
+            list_tr.append(tr_org)
+        shifts, ccs = align_traces(list_tr, 10)
+        for shift in shifts:
+            for trace in calcStreamMapshifted.iterkeys():
+                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                    tr_org.shift(shift)
+                    shifted = obspy_compat.to_obspy_trace(tr_org)
+                    calcStreamMapshifted[trace]=shifted
+        calcStreamMap = calcStreamMapshifted
 
     if cfg.Bool('shift_by_phase_onset') == True:
     	pjoin = os.path.join

@@ -123,12 +123,13 @@ class ConfigObj (object):
 
     def dimX   (self) :       return self.UInt ('dimx')
     def dimY   (self) :       return self.UInt ('dimy')
-    def winlen (self) :       return self.UInt ('winlen')
+    def winlen (self) :       return self.Float ('winlen')
     def step   (self) :       return self.UInt ('step')
     def cs   (self) :       return self.UInt ('compressed_sensing')
     def synthetic_test   (self) : return self.Bool ('synthetic_test')
     def shift_by_phase_onset   (self) : return self.Bool ('shift_by_phase_onset')
     def shift_by_phase_pws   (self) : return self.Bool ('shift_by_phase_pws')
+    def shift_by_phase_cc   (self) : return self.Bool ('shift_by_phase_cc')
     def newFrequency (self): return self.Float ('new_frequence')
     def pyrocko_download   (self) : return self.Bool ('pyrocko_download')
     def synthetic_test_add_noise  (self) : return self.Bool ('synthetic_test_add_noise')
@@ -138,7 +139,6 @@ class ConfigObj (object):
     def optimize_all(self) : return self.Bool ('optimize_all')
     def colosseo_scenario_yml (self) :       return self.Str ('colosseo_scenario_yml')
     def weight_by_noise  (self) : return self.Bool ('weight_by_noise')
-
 
     # ---------------------------------------------------------------------------------------------
 
