@@ -359,7 +359,7 @@ class Xcorr(object):
                 	ptime = arrivals[0].t
 	    except:
 			try:
-		        	arrivals= model.arrivals([de,de], phases=Phase, zstart=o_depth*km-2.1)
+		        	arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km-2.1)
 				ptime = arrivals[0].t
 			except:
 				ptime = ptime
