@@ -73,8 +73,6 @@ class CombiSource(gf.Source):
         return gf.DiscretizedMTSource.combine(dsources)
 
 
-
-
 class CakeTiming(Object):
     '''Calculates and caches phase arrivals.
     :param fallback_time: returned, when no phase arrival was found for the
@@ -106,7 +104,6 @@ class CakeTiming(Object):
             self.which = 'last'
         if self.which:
             _phase_selection = self.strip(_phase_selection)
-
         self.phases = _phase_selection.split('|')
 
     def return_time(self, ray):

@@ -346,7 +346,8 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
     rc         = UTCDateTime(Origin['time'])
     rcs        = '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
     d          = rc.timestamp
-    usedarrays = 5
+
+    usedarrays = arrays
 
     folder      = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
@@ -455,7 +456,8 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
     rc         = UTCDateTime(Origin['time'])
     rcs        = '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
     d          = rc.timestamp
-    usedarrays = 5
+    usedarrays = arrays
+
 
     folder      = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_weighted_%s.txt' % (switch)),'w')
@@ -485,7 +487,7 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
             y    = lonv[j]
             semb = i[j]
 
-            fobj.write ('%.2f %.2f %.20f\n' % (x,y,semb))
+            fobj.write ('%.2f %.2f %.20f %.20f\n' % (x,y,semb))
 
             if  semb > sembmax:
                 sembmax  = semb;# search for maximum and position of maximum on semblance grid for given time step

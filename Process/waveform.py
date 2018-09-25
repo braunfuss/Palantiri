@@ -126,23 +126,18 @@ def readWaveforms_colesseo (stationlist, w,EventPath,Origin, C):
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
     syn_in = SynthCfg (Syn_in)
-
-    store_id = syn_in.store()
-    engine = gf.LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-    scenario = guts.load(filename=cfg.colosseo_scenario_yml())
-    scenario._engine = engine
-    pile_data = scenario.get_pile()
     traces_dict = []
-    for traces in pile_data.chopper():
-        for tr in traces:
-            for il in stationlist:
-                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
-                  if tr_name == str(il):
-                        st = obspy.Stream()
-                        es = obspy_compat.to_obspy_trace(tr)
-                        st.extend([es])
-                        traces_dict.append(tr)
-                        Wdict[il.getName()] = st
+    traces = io.load(cfg.colosseo_scenario_yml()[:-12]+'scenario.mseed')
+
+    for tr in traces:
+        for il in stationlist:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(il):
+                    st = obspy.Stream()
+                    es = obspy_compat.to_obspy_trace(tr)
+                    st.extend([es])
+                    traces_dict.append(tr)
+                    Wdict[il.getName()] = st
     return Wdict
 
 

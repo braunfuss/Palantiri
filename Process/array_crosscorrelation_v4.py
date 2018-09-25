@@ -296,46 +296,47 @@ class Xcorr(object):
         cfg = ConfigObj (dict=Config)
         Syn_in = self.Syn_in
         syn_in = SynthCfg (Syn_in)
-        store_id = syn_in.store()
-        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
-        scenario._engine = engine
-        pile_data = scenario.get_pile()
-
         t2 = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath, 'data')
 
-        for traces in pile_data.chopper():
-            for tr in traces:
-                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
-                  if tr_name == str(station):
-                        traces_station = tr
-                        es = obspy_compat.to_obspy_trace(traces_station)
-                        streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+        traces = io.load(cfg.colosseo_scenario_yml()[:-12]+'scenario.mseed')
 
-                        entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
-                        st = obspy.Stream()
-                        st.extend([es])
-                        stream = ''
-                        snr = ''
+        for tr in traces:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(station):
+                    traces_station = tr
 
-                        if station.loc == '--':
-                            station.loc = ''
+                    es = obspy_compat.to_obspy_trace(traces_station)
+                    streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
 
-                        if len(st.get_gaps()) > 0:
-                            st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
-                        snr_trace= traces_station.chop(tmin=traces_station.tmin,
-                                                       tmax=traces_station.tmin+ttime,
-                                                       inplace=False)
-                        snr = num.var(snr_trace.ydata)
-                        stream = self.filterWaveform(st)
+                    entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
 
-                        xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
-                        stream.trim (tw['xcorrstart'], tw['xcorrend'])
-                        return stream, snr
+                    #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                    st = obspy.Stream()
+                    st.extend([es])
+                    stream = ''
+                    snr = ''
 
-                  else:
-                        pass
+                    if station.loc == '--':
+                        station.loc = ''
+
+                    if len(st.get_gaps()) > 0:
+                        st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+                    #snr  = self.signoise     (st[0], ttime, entry)
+                    snr_trace= traces_station.chop(tmin=traces_station.tmin,
+                                                   tmax=traces_station.tmin+ttime-20.,
+                                                   inplace=False)
+                    snr = num.var(snr_trace.ydata)
+                    stream = self.filterWaveform(st)
+
+
+                    xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                    stream.write (xname,format='MSEED')
+                    stream.trim (tw['xcorrstart'], tw['xcorrend'])
+                    return stream, snr
+
+              else:
+                    pass
 
 
 
@@ -354,16 +355,19 @@ class Xcorr(object):
             de = loc2degrees     (self.Origin, i)
     	    Phase = cake.PhaseDef('P')
             model = cake.load_model()
-            arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km)
-	    try:
-                	ptime = arrivals[0].t
-	    except:
-			try:
-		        	arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km-2.1)
-				ptime = arrivals[0].t
-			except:
-				ptime = ptime
-	    T.append(ptime)
+            if cfg.colesseo_input() == True:
+                arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth, zstop=0.)
+            else:
+                arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km, zstop=0.)
+    	    try:
+                    	ptime = arrivals[0].t
+    	    except:
+    			try:
+    		        	arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km-2.1)
+    				ptime = arrivals[0].t
+    			except:
+    				ptime = ptime
+    	    T.append(ptime)
             if ptime == 0:
                 Logfile.red ('Available phases for station %s in range %f deegree' % (i,de))
                 Logfile.red ('you tried phase %s' % (self.Config[phasename]))
@@ -381,8 +385,8 @@ class Xcorr(object):
 
             Wdict [i.getName()] = w
             SNR   [i.getName()] = snr
-        #    except:
-        #        pass
+    #    except:
+    #        pass
 
             Logfile.red ('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++ ')
 
@@ -459,45 +463,47 @@ class Xcorr(object):
         cfg = ConfigObj (dict=Config)
         Syn_in = self.Syn_in
         syn_in = SynthCfg (Syn_in)
-        store_id = syn_in.store()
-        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
-        scenario._engine = engine
-        pile_data = scenario.get_pile()
 
         t2 = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath, 'data')
+        traces = io.load(cfg.colosseo_scenario_yml()[:-12]+'scenario.mseed')
 
-        for traces in pile_data.chopper():
-            for tr in traces:
-                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
-                  if tr_name == str(station):
-                        traces_station = tr
-                        es = obspy_compat.to_obspy_trace(traces_station)
-                        streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+        for tr in traces:
+              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+              if tr_name == str(station):
+                    traces_station = tr
 
-                        entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+                    es = obspy_compat.to_obspy_trace(traces_station)
+                    streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
 
-                        #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
-                        st = obspy.Stream()
-                        st.extend([es])
-                        stream = ''
-                        snr = ''
+                    entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
 
-                        if station.loc == '--':
-                            station.loc = ''
+                    #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                    st = obspy.Stream()
+                    st.extend([es])
+                    stream = ''
+                    snr = ''
 
-                        if len(st.get_gaps()) > 0:
-                            st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+                    if station.loc == '--':
+                        station.loc = ''
 
-                        stream = self.filterWaveform(st)
+                    if len(st.get_gaps()) > 0:
+                        st.merge (method=0, fill_value='interpolate', interpolation_samples=0)
+                    #snr  = self.signoise     (st[0], ttime, entry)
+                    snr_trace= traces_station.chop(tmin=traces_station.tmin,
+                                                   tmax=traces_station.tmin+ttime-20.,
+                                                   inplace=False)
+                    snr = num.var(snr_trace.ydata)
+                    stream = self.filterWaveform(st)
 
-                        xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
-                        stream.trim (tw['xcorrstart'], tw['xcorrend'])
-                        return stream
 
-                  else:
-                        pass
+                    xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                    stream.write (xname,format='MSEED')
+                    stream.trim (tw['xcorrstart'], tw['xcorrend'])
+                    return stream
+
+              else:
+                    pass
     # ---------------------------------------------------------------------------------------------
 
     def searchMeta (self,sname,Metalist):
@@ -508,19 +514,21 @@ class Xcorr(object):
     # ---------------------------------------------------------------------------------------------
 
     def refTrigger (self,RefWaveform):
-
+        Config = self.Config
+        cfg = ConfigObj (dict=Config)
         name = ('%s.%s.%s.%s') % (RefWaveform[0].stats.network, RefWaveform[0].stats.station,
                                   RefWaveform[0].stats.location,RefWaveform[0].stats.channel)
 
         i     = self.searchMeta (name,self.StationMeta)
         de    = loc2degrees     (self.Origin, i)
-        tt    = obs_TravelTimes (de, self.Origin.depth)
         ptime = 0
 
         Phase = cake.PhaseDef('P')
         model = cake.load_model()
-
-        arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km)
+        if cfg.colesseo_input() == True:
+            arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth, zstop=0.)
+        else:
+            arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km, zstop=0.)
         try:
             ptime = arrivals[0].t
         except:
@@ -535,8 +543,7 @@ class Xcorr(object):
                 raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
         tw  = self.calculateTimeWindows (ptime)
-        Config = self.Config
-        cfg = ConfigObj (dict=Config)
+
         if cfg.pyrocko_download() == True:
             stP = self.readWaveformsPicker_pyrocko  (i, tw, self.Origin, ptime)
         elif cfg.colesseo_input() == True:
@@ -680,9 +687,8 @@ class Xcorr(object):
         fCD = {}
 
         dsfactor = float(self.Config['xcorrtreshold'])
-
         for stream in CorrDict.iterkeys():
-            if CorrDict[stream].value >= dsfactor:
+            if abs(CorrDict[stream].value) >= dsfactor:
                 fCD[stream] = CorrDict[stream]
                 fCD[stream].value = fCD[stream].value
 

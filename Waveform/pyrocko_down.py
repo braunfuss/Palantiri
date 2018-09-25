@@ -19,6 +19,7 @@ from pyrocko import util, io, trace, cake
 from   config import Event, Trigger
 from    ConfigFile import ConfigObj, FilterCfg, OriginCfg
 global options,args
+from pyrocko.io import stationxml
 
 
 
@@ -65,11 +66,9 @@ event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=float(ev.depth)*
 newFreq                = float (filter.newFrequency())
 options.time           = Origin ['time']
 options.duration       = int (Conf['duration'])
-#options.sdsfolder      = os.path.join (options.eventpath,'data')
 sdspath = os.path.join(options.eventpath,'data')
 tmin = util.str_to_time(ev.time)-600.
 tmax = util.str_to_time(ev.time)+1800.
-site = 'iris'
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
     from pyrocko.fdsn import ws
@@ -84,49 +83,43 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
 		format='text', level='channel', includerestricted=False)
 
     return sx.get_pyrocko_stations()
+site = 'iris'
+stations_iris = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
 
+nstations_iris = [s for s in stations_iris]
 
-stations = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
-
-#model.dump_stations(stations, os.path.join (sdspath,'stations.txt'))
-# setup a waveform data request
-
-nstations = [s for s in stations]
-
-
-selection = fdsn.make_data_selection(nstations, tmin, tmax)
-request_waveform = fdsn.dataselect(site=site, selection=selection)
+selection_iris = fdsn.make_data_selection(nstations_iris, tmin, tmax)
+request_waveform_iris = fdsn.dataselect(site=site, selection=selection_iris)
 
 # write the incoming data stream to 'traces.mseed'
-with open(os.path.join (sdspath,'traces.mseed'), 'wb') as file:
-    file.write(request_waveform.read())
+with open(os.path.join (sdspath,'traces_iris.mseed'), 'wb') as file:
+    file.write(request_waveform_iris.read())
 print('traces written')
 # request meta data
-traces = io.load(os.path.join (sdspath,'traces.mseed'))
+traces_iris = io.load(os.path.join (sdspath,'traces_iris.mseed'))
 
-stations_real = []
+stations_real_iris = []
 gaps= []
-for tr in traces:
-    for st in stations:
+for tr in traces_iris:
+    for st in stations_iris:
         if tr.station == st.station and tr.location == st.location:
-                stations_real.append(st)
+                stations_real_iris.append(st)
                 gaps.append(st.station)
 remove =[x for x in gaps if gaps.count(x) > 1]
 for re in remove:
-    for st in stations_real:
+    for st in stations_real_iris:
         if st.station == re:
-            stations_real.remove(st)
-model.dump_stations(stations_real, os.path.join (sdspath,'stations.txt'))
+            stations_real_iris.remove(st)
+model.dump_stations(stations_real_iris, os.path.join (sdspath,'stations_iris.txt'))
 
 request_response = fdsn.station(
-    site=site, selection=selection, level='response')
-from pyrocko.io import stationxml
+    site=site, selection=selection_iris, level='response')
 # save the response in YAML and StationXML format
-request_response.dump(filename=os.path.join (sdspath,'responses.yml'))
-request_response.dump_xml (filename=os.path.join (sdspath,'responses.xml'))
-sx = stationxml.load_xml(filename=os.path.join (sdspath,'responses.xml'))
+request_response.dump(filename=os.path.join (sdspath,'responses_iris.yml'))
+request_response.dump_xml (filename=os.path.join (sdspath,'responses_iris.xml'))
+sx = stationxml.load_xml(filename=os.path.join (sdspath,'responses_iris.xml'))
 pyrocko_stations = sx.get_pyrocko_stations()
-model.dump_stations(stations_real, os.path.join (sdspath,'stations2.txt'))
+#model.dump_stations(stations_real, os.path.join (sdspath,'stations2.txt'))
 
 # Loop through retrieved waveforms and request meta information
 # for each trace
@@ -134,29 +127,139 @@ event_origin = gf.Source(
 lat=event.lat,
 lon=event.lon)
 
-traces = io.load(os.path.join (sdspath,'traces.mseed'))
+traces_iris = io.load(os.path.join (sdspath,'traces_iris.mseed'))
 
 
-displacement = []
-for tr in traces:
-    try:
-        polezero_response = request_response.get_pyrocko_response(
-        nslc=tr.nslc_id,
-        timespan=(tr.tmin, tr.tmax),
-        fake_input_units='M')
-        # *fake_input_units*: required for consistent responses throughout entire
-        # data set
+displacement_iris = []
+stations_disp_iris = []
+for tr in traces_iris:
+    for station in stations_real_iris:
+        if tr.station == station.station and tr.location == station.location:
+            try:
+                polezero_response = request_response.get_pyrocko_response(
+                nslc=tr.nslc_id,
+                timespan=(tr.tmin, tr.tmax),
+                fake_input_units='M')
+                # *fake_input_units*: required for consistent responses throughout entire
+                # data set
 
-        # deconvolve transfer function
-        restituted = tr.transfer(
-        tfade=2.,
-        freqlimits=(0.01, 0.1, 1., 2.),
-        transfer_function=polezero_response,
-        invert=True)
+                # deconvolve transfer function
+                restituted = tr.transfer(
+                tfade=2.,
+                freqlimits=(0.01, 0.1, 1., 2.),
+                transfer_function=polezero_response,
+                invert=True)
 
-        displacement.append(restituted)
-    except:
-        pass
+                displacement_iris.append(restituted)
+                stations_disp_iris.append(station)
+            except:
+                pass
 
 
-io.save(displacement, os.path.join (sdspath,'traces_restituted.mseed'))
+io.save(displacement_iris, os.path.join (sdspath,'traces_restituted_iris.mseed'))
+model.dump_stations(stations_disp_iris, os.path.join (sdspath,'stations_disp_iris.txt'))
+
+site = 'geofon'
+minDist, maxDist = cfg.FloatRange ('mindist', 'maxdist')
+diffDist = (maxDist - minDist)/6.
+displacement_geofon = []
+stations_disp_geofon = []
+stations_real_geofon = []
+gaps= []
+
+for l in range(0,6):
+    maxDist = minDist+diffDist
+    stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
+
+    nstations_geofon = [s for s in stations_geofon]
+
+    selection_geofon = fdsn.make_data_selection(nstations_geofon, tmin, tmax)
+    request_waveform_geofon = fdsn.dataselect(site=site, selection=selection_geofon)
+
+    # write the incoming data stream to 'traces.mseed'
+    with open(os.path.join (sdspath,'traces_geofon_part%s.mseed' %l), 'wb') as file:
+        file.write(request_waveform_geofon.read())
+    print('traces written')
+    # request meta data
+    traces_geofon = io.load(os.path.join (sdspath,'traces_geofon_part%s.mseed' %l))
+
+    for tr in traces_geofon:
+        for st in stations_geofon:
+            if tr.station == st.station and tr.location == st.location:
+                    stations_real_geofon.append(st)
+                    gaps.append(st.station)
+    remove =[x for x in gaps if gaps.count(x) > 1]
+    for re in remove:
+        for st in stations_real_geofon:
+            if st.station == re:
+                stations_real_geofon.remove(st)
+    model.dump_stations(stations_real_geofon, os.path.join (sdspath,'stations_geofon_part%s.txt' %l))
+    request_response = fdsn.station(
+        site=site, selection=selection_geofon, level='response')
+    # save the response in YAML and StationXML format
+    request_response.dump(filename=os.path.join (sdspath,'responses_geofon_part%s.yml'%l))
+    request_response.dump_xml (filename=os.path.join (sdspath,'responses_geofon_part%s.xml'%l))
+    sx = stationxml.load_xml(filename=os.path.join (sdspath,'responses_geofon_part%s.xml'%l))
+    pyrocko_stations = sx.get_pyrocko_stations()
+    # Loop through retrieved waveforms and request meta information
+    # for each trace
+    event_origin = gf.Source(
+    lat=event.lat,
+    lon=event.lon)
+
+    traces_geofon = io.load(os.path.join (sdspath,'traces_geofon_part%s.mseed' %l))
+
+    for tr in traces_geofon:
+        for station in stations_real_geofon:
+            if tr.station == station.station and tr.location == station.location:
+                try:
+                    polezero_response = request_response.get_pyrocko_response(
+                    nslc=tr.nslc_id,
+                    timespan=(tr.tmin, tr.tmax),
+                    fake_input_units='M')
+                    # *fake_input_units*: required for consistent responses throughout entire
+                    # data set
+
+                    # deconvolve transfer function
+                    restituted = tr.transfer(
+                    tfade=2.,
+                    freqlimits=(0.01, 0.1, 1., 2.),
+                    transfer_function=polezero_response,
+                    invert=True)
+
+                    displacement_geofon.append(restituted)
+                    stations_disp_geofon.append(station)
+                except:
+                    pass
+    minDist = minDist+diffDist
+
+io.save(displacement_geofon, os.path.join (sdspath,'traces_restituted_geofon.mseed'))
+model.dump_stations(stations_disp_geofon, os.path.join (sdspath,'stations_disp_geofon.txt'))
+
+stations_all  = stations_real_iris+stations_real_geofon
+for stg in stations_real_geofon:
+    for sti in stations_real_iris:
+        if sti.station == stg.station and sti.location == stg.location:
+            try:
+                stations_all.remove(sti)
+            except:
+                pass
+        else:
+            pass
+traces_all = traces_iris+traces_geofon
+io.save(traces_all, os.path.join (sdspath,'traces.mseed'))
+model.dump_stations(stations_all, os.path.join (sdspath,'stations.txt'))
+
+stations_all_disp = stations_disp_iris+stations_disp_geofon
+for stg in stations_disp_geofon:
+    for sti in stations_disp_iris:
+        if sti.station == stg.station and sti.location == stg.location:
+            try:
+                stations_all_disp.remove(sti)
+            except:
+                pass
+        else:
+            pass
+traces_all_disp = displacement_iris+displacement_geofon
+io.save(traces_all_disp, os.path.join (sdspath,'traces_restituted.mseed'))
+model.dump_stations(stations_all_disp, os.path.join (sdspath,'stations_disp.txt'))

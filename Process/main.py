@@ -94,12 +94,11 @@ def processLoop():
     cfg = ConfigObj (dict=Config)
     if cfg.pyrocko_download() == True:
         Meta = C.readpyrockostations()#
-#        sys.path.append ('../Cluster/')
-#        from cluster2 import *
-#        Meta = readpyrockostations(evpath)
+
     elif cfg.colesseo_input() == True:
         scenario = guts.load(filename=cfg.colosseo_scenario_yml())
-        Meta = C.readcolosseostations(scenario)
+        scenario_path = cfg.colosseo_scenario_yml()[:-12]
+        Meta = C.readcolosseostations(scenario_path)
     else:
         Meta = C.readMetaInfoFile()
     #==================================get meta info==========================================

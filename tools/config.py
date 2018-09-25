@@ -151,8 +151,9 @@ class Config(object):
 
         return FML
 
-    def readcolosseostations(self, scenario):
-        stations = scenario.get_stations()
+    def readcolosseostations(self, scenario_path):
+        stations = model.load_stations(scenario_path+'/meta/stations.txt')
+
         MetaL = []
         for sl in stations:
                 channel = sl.channels[2]

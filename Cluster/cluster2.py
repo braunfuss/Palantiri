@@ -11,9 +11,6 @@ import time
 import shutil
 import sys
 import math
-import platform
-
-WINDOWS = (platform.system() == 'Windows')
 
 # add local directories to import path
 
@@ -122,8 +119,11 @@ def readMetaInfoFile(EventPath):
 
     return MetaL
 
-def readpyrockostations(path):
-    stations = model.load_stations(path+'/data/stations.txt')
+def readpyrockostations(path, disp):
+    if disp == True:
+        stations = model.load_stations(path+'/data/stations_disp.txt')
+    else:
+        stations = model.load_stations(path+'/data/stations.txt')
     MetaL = []
     for sl in stations:
             channel = sl.channels[0]
@@ -134,8 +134,8 @@ def readpyrockostations(path):
 
     return MetaL
 
-def readcolosseostations(scenario):
-    stations = scenario.get_stations()
+def readcolosseostations(scenario_path):
+    stations = model.load_stations(scenario_path+'/meta/stations.txt')
     MetaL = []
     for sl in stations:
             channel = sl.channels[2]
@@ -373,6 +373,8 @@ def deleteFarStations (CentroidList, StationClusterList,Config):
     for i in CentroidList :
         for j in StationClusterList :
             if i.rank == j.member :
+                print('dist')
+                print(loc2degrees (i, j))
                 if loc2degrees (i, j) > stationdistance :
                    j.member = -1
     #endfor
@@ -402,7 +404,7 @@ def filterClusterStationMinimumNumber (CentroidList, StationClusterList, Config)
            s1 = 'IN '
            newCentroidList.append(i)
 
-        Logfile.red ('Centroid %s %d %s %5.2f %5.2f' % (i.rank, counter, s1, i.lat,i.lon))
+        Logfile.red ('Centroid %s %d %s %.2f %5.2f' % (i.rank, counter, s1, i.lat,i.lon))
 
     for i in newCentroidList:
         for j in StationClusterList :
@@ -571,10 +573,15 @@ class ClusterMain (MainObj) :
         cfg = ConfigObj (dict=Config)
         Origin     = C.parseConfig ('origin')
         if cfg.pyrocko_download() == True:
-            Meta = readpyrockostations(self.eventpath)
+            if cfg.quantity() == 'displacement':
+                disp = True
+            else:
+                disp = False
+            Meta = readpyrockostations(self.eventpath, disp)
         elif cfg.colesseo_input() == True:
             scenario = guts.load(filename=cfg.colosseo_scenario_yml())
-            Meta = readcolosseostations(scenario)
+            scenario_path = cfg.colosseo_scenario_yml()[:-12]
+            Meta = readcolosseostations(scenario_path)
             events = scenario.get_events()
             ev = events[0]
             Origin['strike'] = str(ev.moment_tensor.strike1)
