@@ -115,7 +115,8 @@ d) use synthetics from a scenario generator:
 		you have to give the scenario.yml of the scenario as input in the event configuration file and set the variable colosseo input to
 		1. Please make sure that you unset other types of input. Also give the greensfunctions store used in the synthetic input file 
 		(eventname.syn). Disregard all other parameters in the synthetic input file for this case, as the generated event from the scenario
-		will be used. 
+		will be used. You will need to merge all mseed files in the scenarios waveform directory into one file called scenario.mseed, located 
+		in the same folder as the scenario.yml. This can be done with jackseis or simply by using cat.
 		
 
 The next steps are based on the input you have choosen before. Be sure to not mix different types of input. Remove or move the folders eventname/cluster and
