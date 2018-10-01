@@ -111,6 +111,7 @@ def writeSynFile(path,ev_id):
     for i in f:
         if i[0] != '#':
             i = i.split('|')
+            print(i)
             time = i[1]
             fobj.write('region = %s\n' % i[12].strip())
             fobj.write('nsources = 1\n')
@@ -125,12 +126,12 @@ def writeSynFile(path,ev_id):
             fobj.write('length_0 = -999\n')
             fobj.write('slip_0 = -999\n')
             fobj.write('nucleation_x_0 = 0\n')
-            fobj.write('nucleation_1_0 = 0\n')
+            fobj.write('nucleation_y_0 = 0\n')
             fobj.write('store = store_id\n')
             fobj.write('store_superdirs = dir of store\n')
             fobj.write('use_specific_stf = 0\n')
             fobj.write('stf = gf.HalfSinusoidSTF()\n')
-            fobj.write('source = RectangularSource()\n')
+            fobj.write('source = RectangularSource\n')
 
     fobj.close()
 

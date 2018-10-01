@@ -605,7 +605,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                     source= RectangularSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0(),
+                        depth=syn_in.depth_syn_0()*1000.,
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
                         rake=syn_in.rake_0(),
@@ -616,12 +616,11 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                         nucleation_y=syn_in.nucleation_y_0(),
                         stf=stf,
                         time = util.str_to_time(syn_in.time_0()))
-
             if syn_in.source() ==  'DCSource':
                     source = DCSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0(),
+                        depth=syn_in.depth_syn_0()*1000.,
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
                         rake=syn_in.rake_0(),
@@ -642,7 +641,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                         sources.append(RectangularSource(
                             lat=float(syn_in.lat_1(i)),
                             lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_syn_1(i),
+                            depth=syn_in.depth_syn_1(i)*1000.,
                             strike=syn_in.strike_1(i),
                             dip=syn_in.dip_1(i),
                             rake=syn_in.rake_1(i),
@@ -658,7 +657,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                         sources.append(DCSource(
                             lat=float(syn_in.lat_1(i)),
                             lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_1(i),
+                            depth=syn_in.depth_1(i)*1000.,
                             strike=syn_in.strike_1(i),
                             dip=syn_in.dip_1(i),
                             rake=syn_in.rake_1(i),
