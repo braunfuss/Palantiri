@@ -102,7 +102,7 @@ def writeSynFile(path,ev_id):
     '''
     fname = os.path.basename(path)+'.syn'
     fobj = open(os.path.join(path,fname),'w')
-    fobj.write('[origin]\n\n')
+    fobj.write('[synthetic parameter]\n\n')
 
     eventID = ev_id[1].replace('_','')
 
