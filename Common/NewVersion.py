@@ -6,28 +6,28 @@ import Basic
 #VERSION_STRING = 'Version 2.0 - 18.September 2014'
 VERSION_STRING  = 'Version 2.0 - 14.November 2014'
 
-def versionLine() : return 'VERSION_STRING = ' + '\'' + VERSION_STRING + '\''
+def versionLine(): return 'VERSION_STRING = ' + '\'' + VERSION_STRING + '\''
 
 DIRECTORIES = ['Cluster','Process','Waveform']
 
 # -------------------------------------------------------------------------------------------------
 # Generate all new files 'Version.py' for all 'directories'
 
-def generate() :
+def generate():
 
     user = Basic.getUserName()
 
-    if user != 'staedtke' : return
+    if user != 'staedtke': return
 
     print '\n' + VERSION_STRING + '\n' + user + '\n'
 
-    for dir in DIRECTORIES :
+    for dir in DIRECTORIES:
         file = os.path.join(os.getcwd(),dir, 'Version.py')
         print 'file = ', file
 
         fp = open(file, 'w')
 
-        if fp == None :
+        if fp == None:
            print 'Cannot open file ' + file
            continue
 
@@ -43,16 +43,16 @@ def generate() :
 # -------------------------------------------------------------------------------------------------
 # Check if all files 'Version.py' have the same contents
 
-def check() :
+def check():
 
     lines = []
 
-    for dir in DIRECTORIES :
+    for dir in DIRECTORIES:
         file = os.path.join(os.getcwd(),dir, 'Version.py')
 
         fp = open(file, 'r')
 
-        if fp == None : 
+        if fp == None: 
            print 'Cannot open file ' + file
            sys.exit(1)
    
@@ -63,7 +63,7 @@ def check() :
 
 # -------------------------------------------------------------------------------------------------    
         
-if __name__ == "__main__" :
+if __name__ == "__main__":
 
     generate()
 

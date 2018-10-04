@@ -33,16 +33,16 @@ def deserializeTTT(numproc):
 
         L = []
 
-        for i in range(numproc) :
+        for i in range(numproc):
             data = Basic.loadDump(str(i)+'-ttt.pkl')
 
-            if data != None : L.append(data)
+            if data != None: L.append(data)
         #endfor
     
         TTTGridMap = {}
 
         for i in L:
-            for j in i.iterkeys() : TTTGridMap[j] = i[j]
+            for j in i.iterkeys(): TTTGridMap[j] = i[j]
 
         return TTTGridMap
 
@@ -55,7 +55,7 @@ def deserializeMinTMaxT(numproc):
         for i in range(numproc):
             data = Basic.loadDump('minmax-'+str(i)+'.pkl')
 
-            if data != None : L.append(data)
+            if data != None: L.append(data)
         #endfor
 
         mint = min([x.mint for x in L])
@@ -75,13 +75,13 @@ def deserializeSembDict(numproc):
         for i in range(numproc):
             data = Basic.loadDump('sembDict-'+str(i)+'.pkl')
 
-            if data != None : L.append(data)
+            if data != None: L.append(data)
         #endfor
 
         sembDict = {}
 
         for i in L:
-            for j in i.iterkeys() : sembDict[j] = i[j]
+            for j in i.iterkeys(): sembDict[j] = i[j]
             
         return sembDict
     
@@ -118,12 +118,12 @@ def deserializeSembMaxFile(numproc):
     for i in range(numproc):
         data = Basic.loadDump('sembMAX-'+str(i)+'.pkl')
 
-        if data != None :  L.append(data)
+        if data != None:  L.append(data)
     #endfor
 
     sembMax = {}
 
     for i in L:
-        for j in i.iterkeys() : sembMax[j] = i[j]
+        for j in i.iterkeys(): sembMax[j] = i[j]
             
     return sembMax

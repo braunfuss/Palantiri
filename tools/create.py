@@ -44,7 +44,7 @@ def parseEvent(eventID):
             i = i.split('|')
             time = i[1].replace(':','-').strip()
             name = i[12].replace(' ','-').strip()
-            eventname = ('%s_%s')%(name,time)
+            eventname =('%s_%s')%(name,time)
     return eventname
 
 
@@ -67,7 +67,7 @@ def createWorkingDirectory(args):
 
 def writeOriginFile(path,ev_id):
     '''
-    method to write origin (event) file in the event directory to be processed
+    method to write origin(event) file in the event directory to be processed
 
     return origin time of event
     '''
@@ -97,7 +97,7 @@ def writeOriginFile(path,ev_id):
 
 def writeSynFile(path,ev_id):
     '''
-    method to write synthetic input (event) file in the event directory to be processed
+    method to write synthetic input(event) file in the event directory to be processed
 
     '''
     fname = os.path.basename(path)+'.syn'

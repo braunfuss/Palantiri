@@ -44,16 +44,16 @@ def globalConf():
     parser.read(os.path.join('..', 'global.conf'))
 
     for section_name in parser.sections():
-        for name, value in parser.items(section_name) : cDict[name] = value
+        for name, value in parser.items(section_name): cDict[name] = value
 
     return cDict
 
 options,args = main(sys.argv)
 Basic.checkExistsDir(options.eventpath, isAbort=True)
-Globals.setEventDir (options.eventpath)
-C      = config.Config(options.eventpath)
+Globals.setEventDir(options.eventpath)
+C = config.Config(options.eventpath)
 Origin = C.parseConfig('origin')
-Conf   = globalConf()
+Conf = globalConf()
 Config = C.parseConfig('config')
 
 filter = FilterCfg(Config)
@@ -63,26 +63,26 @@ minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
 
 ev = Event(Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )
 event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=float(ev.depth)*1000., time=util.str_to_time(ev.time))
-newFreq                = float(filter.newFrequency())
-options.time           = Origin ['time']
-options.duration       = int(Conf['duration'])
+newFreq = float(filter.newFrequency())
+options.time = Origin ['time']
+options.duration = int(Conf['duration'])
 sdspath = os.path.join(options.eventpath,'data')
 tmin = util.str_to_time(ev.time)-600.
 tmax = util.str_to_time(ev.time)+1800.
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
-    from pyrocko.fdsn import ws
     extra = {}
     if site == 'iris':
         extra.update(matchtimeseries=True)
 
     sx = fdsn.station(
-		site=site, latitude=lat, longitude=lon,
-		minradius=rmin, maxradius=rmax,
-		startbefore=tmin, endafter=tmax, channel=channel_pattern,
-		format='text', level='channel', includerestricted=False)
+            site=site, latitude=lat, longitude=lon,
+            minradius=rmin, maxradius=rmax,
+            startbefore=tmin, endafter=tmax, channel=channel_pattern,
+            format='text', level='channel', includerestricted=False)
 
     return sx.get_pyrocko_stations()
+
 site = 'iris'
 stations_iris = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
 

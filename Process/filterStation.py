@@ -72,10 +72,10 @@ def traveltimes(MetaDict,Config,Event,Folder,evpath):
     T = []
 
     for i in MetaDict:
-        delta = loc2degrees    (Event, i)
+        delta = loc2degrees  (Event, i)
         tt    = obs_TravelTimes(delta, Event.depth)
 
-        if tt[0]['phase_name'] == Config['ttphase'] :
+        if tt[0]['phase_name'] == Config['ttphase']:
            time = tt[0]['time']
            T.append(time)
 

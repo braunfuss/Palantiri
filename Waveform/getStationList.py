@@ -203,8 +203,8 @@ class NetworkList(object):
            u = urllib2.urlopen(URL)
 
            localFile = open(tempnetname, 'w')
-           localFile.write (u.read())
-           localFile.close ()
+           localFile.write(u.read())
+           localFile.close()
 
            try :
               if WINDOWS :
@@ -374,7 +374,7 @@ def parseInventory_new(Dict):
 def buildGeofonMsg(stationobject, text=None) :
 
     start = str(stationobject.start).split('T')[0]
-    end   = str(stationobject.end).split  ('T')[0]
+    end   = str(stationobject.end).split('T')[0]
     now   = str(UTCDateTime(datetime.now())).split('T')[0]
 
     if end.strip() == now.strip() : end = '           '
@@ -599,7 +599,7 @@ def geofonMt(geofonnetwork,pid,parameter):
 
         if SDict != None :
            S     = parseInventory(SDict)
-           D     = filterStationsDistance  (S,parameter)
+           D     = filterStationsDistance(S,parameter)
            T     = filterStationsTimeGeofon(D,parameter)
 
         return T
@@ -711,7 +711,7 @@ def init(options) :
 
        Basic.checkExistsDir(options.evpath, isAbort=True)
 
-    Globals.setEventDir (options.evpath)
+    Globals.setEventDir(options.evpath)
 
     return Globals.init()
 
@@ -759,7 +759,7 @@ def run_parallel(options) :
        clientDir = os.path.join(options.evpath, 'keyfiles-' + str(time.time()))
 
        Logfile.add('Create keyfile directory ', clientDir, ' ')
-       create_dir (clientDir)
+       create_dir(clientDir)
 
        #  Build network list
        #
@@ -772,7 +772,7 @@ def run_parallel(options) :
        globalCfg = ConfigObj(dict = Conf)
        originCfg = ConfigObj(dict = Origin)
 
-       ot       = originCfg.Time()                          # str  (Origin['time'])
+       ot       = originCfg.Time()                          # str(Origin['time'])
        elat     = originCfg.lat()                           # Origin['lat']
        elon     = originCfg.lon()                           # Origin['lon']
 
@@ -890,7 +890,7 @@ class StationListClient(Server.ClientBase) :
 
     def _run(self) :  # called direct from ClientBase
 
-        if   self.tag == IRIS_TAG :   stationList = irisMt  (self.net, -1, self.param)
+        if   self.tag == IRIS_TAG :   stationList = irisMt(self.net, -1, self.param)
         elif self.tag == GEOFON_TAG : stationList = geofonMt(self.net, -1, self.param)
         else :                        assert False
 
@@ -901,7 +901,7 @@ class StationListClient(Server.ClientBase) :
             #
             keyfile = KeyFile.KeyFileObj(self.dirname, stat.net, stat.station)
             keyfile.write(stat)
-            #keyfile.read ()
+            #keyfile.read()
         #endfor
 
         if len(stationList) > 0 :  print HAS_DATA

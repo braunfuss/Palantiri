@@ -79,7 +79,7 @@ def buildCommand(config) :
         intern.checkProgramParameter(3,4)
 
         path   = Globals.EventDir()                                          # event directory
-        at     = os.path.join (os.getcwd(), dir, 'ev_meta_mt4.py')
+        at     = os.path.join(os.getcwd(), dir, 'ev_meta_mt4.py')
         C      = config.Config(path)
         Origin = C.parseConfig('origin')
 
@@ -102,7 +102,7 @@ def start(config) :
 
     if cmd == None : return False
 
-    os.chdir (os.path.join(os.getcwd(), "tools"))                 # ??? Directory aendern
+    os.chdir(os.path.join(os.getcwd(), "tools"))                 # ??? Directory aendern
     os.system(cmd)
 
     return True

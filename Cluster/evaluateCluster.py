@@ -99,7 +99,7 @@ def getBestSolution(resultDictionary):
 def copyCluster2EventConfig(ClusterDict, evpath):
 
     epath     = os.path.join('/',*evpath.split('/')[:-1])
-    t         = epath.split (os.path.sep)[-1]
+    t         = epath.split(os.path.sep)[-1]
     fname     = t+'.config'
     fullfname = os.path.join(epath,fname)
     L         = []
@@ -123,7 +123,7 @@ def copyCluster2EventConfig(ClusterDict, evpath):
     Confpart2 = L [secondbegin:]
 
     fobj = open(fullfname,'w')
-    fobj.write (''.join(Confpart1))
+    fobj.write(''.join(Confpart1))
     #print Confpart1
     nlist=''
 
@@ -211,7 +211,7 @@ def filterBestSolution(solution):
     fobj = open(os.path.join(solution.path, 'event.stations'),'r')
 
     for s in fobj:
-       try :
+       try:
            line = s.split()
            net,sta,loc,comp = line[0].split('.')
 
@@ -219,10 +219,10 @@ def filterBestSolution(solution):
            slon    = line[2]
            smember = line[3]
 
-           M.append (smember)
+           M.append(smember)
            SL.append(Station(net,sta,loc,comp,lat=slat,lon=slon,member=smember))
 
-       except :
+       except:
            Logfile.exception('filterBestSolution', '<' + s + '>')
            continue
     #endfor

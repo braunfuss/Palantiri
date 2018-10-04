@@ -101,7 +101,7 @@ def keyfolder2List(p):
         if options.stationversion == '':
             print 'set station method'
         
-    logger.info('\033[31m FOUND: --> %d KEYFILES \033[0m\n' % (len(K)))
+    logger.info('\033[31m FOUND: --> %d KEYFILES \033[0m\n' %(len(K)))
     
     return K
 
@@ -118,7 +118,7 @@ def sdsList(p):
 
     L_sauber = list(set(L))
 
-    logger.info('\033[31m FOUND ---> %d STATIONS \033[0m\n' % (len(L_sauber)))
+    logger.info('\033[31m FOUND ---> %d STATIONS \033[0m\n' %(len(L_sauber)))
     
     return L_sauber
 
@@ -127,7 +127,7 @@ def cmpSdsKey(K,S):
     logger.info('\033[31m Parsing for Missing Station \033[0m\n')
     t = list(set(K).difference(set(S)))
     t = set(t)
-    logger.info('\033[31m %d STATIONS are missing \033[0m' % (len(t)))
+    logger.info('\033[31m %d STATIONS are missing \033[0m' %(len(t)))
 
     return t
 
@@ -137,7 +137,7 @@ def to_sds(output):
     cmd = 'scart -I '+output+' '+_mseed_search_folder
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
-    logger.info('\033[31munpacking %s to SDS\n\n \033[0m' % (cmd))
+    logger.info('\033[31munpacking %s to SDS\n\n \033[0m' %(cmd))
 
 def create_dir(dir):
   if os.access(dir, os.W_OK):
@@ -161,7 +161,7 @@ def multiplex(filename):
         if diff == 0:
             d = obspy.core.utcdatetime.UTCDateTime(trace.stats.starttime)
             jd = str("%03d" % d.julday)
-            finalname = ('%s.%s.%s.%s.D.%s.%s')%(trace.stats.network,trace.stats.station,trace.stats.location,trace.stats.channel,trace.stats.starttime.year,jd)
+            finalname =('%s.%s.%s.%s.D.%s.%s')%(trace.stats.network,trace.stats.station,trace.stats.location,trace.stats.channel,trace.stats.starttime.year,jd)
             filepath = os.path.join(path,finalname)
             trace.write(filepath,format='MSEED',reclen=512)
         elif diff >= 1:
@@ -178,7 +178,7 @@ def multiplex(filename):
                     e1 = trace.stats.endtime
                 d = obspy.core.utcdatetime.UTCDateTime(s1)
                 jd = str("%03d" % d.julday)
-                finalname = ('%s.%s.%s.%s.D.%s.%s')%(trace.stats.network,trace.stats.station,trace.stats.location,trace.stats.channel,trace.stats.starttime.year,jd)
+                finalname =('%s.%s.%s.%s.D.%s.%s')%(trace.stats.network,trace.stats.station,trace.stats.location,trace.stats.channel,trace.stats.starttime.year,jd)
                 filepath = os.path.join(path,finalname)
                 tr = trace.slice(s1, e1)
                 tr.write(filepath,format='MSEED',reclen=512)
@@ -190,7 +190,7 @@ def proof_file_v2(filename,component):
     size=0
     streamList = []
     
-    if (os.path.isfile(filename) and os.path.getsize(filename) != 0):
+    if(os.path.isfile(filename) and os.path.getsize(filename) != 0):
           
           try:
               st = read(filename)
@@ -209,7 +209,7 @@ def proof_file_v2(filename,component):
 
 def make_arcObspyrequest(station,begin,end,channel,loc):
     
-    logger.info('\033[31m Obspy ARCLINKREQUEST \033[0m\n' % ())
+    logger.info('\033[31m Obspy ARCLINKREQUEST \033[0m\n' %())
     size = 0
     pid = os.getpid()
 
@@ -238,7 +238,7 @@ def make_arcObspyrequest(station,begin,end,channel,loc):
 
 def make_arcrequest(station,begin,end,channel,loc):
 
-    logger.info('\033[31m ARCLINKREQUEST \033[0m\n' % ())
+    logger.info('\033[31m ARCLINKREQUEST \033[0m\n' %())
     rstation = station.replace('_',' ')
     pid = os.getpid()
     reqfile = 'ARC-'+str(pid)+'-'+station+'-'+loc+'.txt'
@@ -248,7 +248,7 @@ def make_arcrequest(station,begin,end,channel,loc):
         loc = ''
     for a in channel:
             content = str(begin)+' '+str(end)+' '+rstation+' '+a+' '+loc+'\n'
-            logger.info('%s %s %s %s %s' % (rstation, loc, a, str(begin) ,str(end)))
+            logger.info('%s %s %s %s %s' %(rstation, loc, a, str(begin) ,str(end)))
             fobj.write(content)
     fobj.close()
     
@@ -276,7 +276,7 @@ def make_arcrequest(station,begin,end,channel,loc):
 
 def make_irisrequest(station,begin,end,channel,loc):
     
-    logger.info('\033[31m IRISREQUEST \033[0m\n' % ())
+    logger.info('\033[31m IRISREQUEST \033[0m\n' %())
     
     net,sta = station.split('_')
     url='http://service.iris.edu/fdsnws/dataselect/1/query?'
@@ -291,7 +291,7 @@ def make_irisrequest(station,begin,end,channel,loc):
                  'endtime': end,
                  'nodata': '404',
         })
-        u = ('%s%s')%(url,parameter)
+        u =('%s%s')%(url,parameter)
         data = urllib.urlopen(u).read()
         tf = NamedTemporaryFile()
         tf.write(data)
@@ -300,7 +300,7 @@ def make_irisrequest(station,begin,end,channel,loc):
         tf.close()
         
     print st
-    output = ('%s.%s-IRIS.mseed')%(net,sta)
+    output =('%s.%s-IRIS.mseed')%(net,sta)
     st.write(output,format='MSEED')
 
     size = proof_file_v2(output,channel)
@@ -346,20 +346,20 @@ def stationRequest(station,timeDict,counter):
     for i in _loc:
         for j in _channel:
             try:
-                logger.info('\033[31m COUNTER: %d %s %s %s %s %s \033[0m\n' % (counter,station,i,j,timeDict['i_begin'],timeDict['i_end']))
+                logger.info('\033[31m COUNTER: %d %s %s %s %s %s \033[0m\n' %(counter,station,i,j,timeDict['i_begin'],timeDict['i_end']))
                 size = make_irisrequest(station,timeDict['i_begin'],timeDict['i_end'],j,i)
                 if size != 0:
-                    logger.info('\033[31m DATA FROM IRIS FOR STATION % LOC: %s CHANNEL: %s \033[0m\n' % (station,i,j))
+                    logger.info('\033[31m DATA FROM IRIS FOR STATION % LOC: %s CHANNEL: %s \033[0m\n' %(station,i,j))
                     return
                 else:
                     #size = make_arcrequest(station,timeDict['g_begin'],timeDict['g_end'],j,i)
                     #size = make_arcObspyrequest(station,timeDict['obspy_begin'],timeDict['obspy_end'],j,i)
                     pass
                     if size != 0:
-                        logger.info('\033[31m DATA FROM WEBDC FOR STATION % LOC: %s CHANNEL: %s \033[0m\n' % (station,i,j))
+                        logger.info('\033[31m DATA FROM WEBDC FOR STATION % LOC: %s CHANNEL: %s \033[0m\n' %(station,i,j))
                         return
                     else:
-                        logger.info('\033[31m NO DATA FROM WEBDC OR IRIS FOR STATION %s AND FINISH  \033[0m\n' % (station))
+                        logger.info('\033[31m NO DATA FROM WEBDC OR IRIS FOR STATION %s AND FINISH  \033[0m\n' %(station))
             except:
                 continue
 
@@ -412,6 +412,6 @@ if __name__ == "__main__":
     run()
     t2 = time.time()
     
-    print '%s took %0.3f s' % ('CALC :', (t2-t1))
+    print '%s took %0.3f s' %('CALC :',(t2-t1))
     
     make_meta(options.time)

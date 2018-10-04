@@ -20,7 +20,7 @@ evpath = options.evpath
 
 C = config.Config(evpath)
 Origin = C.parseConfig('origin')
-cfg = ConfigObj (dict=C)
+cfg = ConfigObj(dict=C)
 if cfg.pyrocko_download() == True:
     Meta = C.readpyrockostations()
 else:
@@ -69,11 +69,11 @@ for index,station in enumerate(Meta):
         s_lat = float(station.lat)
         s_lon = float(station.lon)
         dist,azi,bazi = util.geodetics.gps2DistAzimuth(s_lat,s_lon,o_lat,o_lon)
-        shortname = ('%s.%s')%(station.net,station.sta)
+        shortname =('%s.%s')%(station.net,station.sta)
         for j in P:
             sdsname = os.path.basename(j)[:-11]
             ss = sdsname.split('.')
-            sdsshort = ('%s.%s')%(ss[0],ss[1])
+            sdsshort =('%s.%s')%(ss[0],ss[1])
             if shortname == sdsshort:
                 print 'JUHU',station, j
                 st = read(j)
@@ -102,7 +102,7 @@ for index,station in enumerate(Meta):
             os.makedirs(pr)
             print 'PR ',pr
             jd = "%03d" % tmr.stats.starttime.julday
-            n = ('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd))
+            n =('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd))
             tmr.write(os.path.join(pr,n),format='MSEED')
 
             tmt = Trace(z[1])
@@ -117,7 +117,7 @@ for index,station in enumerate(Meta):
             os.makedirs(pt)
             print 'PT ',pt
             jd = "%03d" % tmr.stats.starttime.julday
-            n = ('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd))
+            n =('%s.%s.%s.%s.%s.%s')%(tmr.stats.network,tmr.stats.station,tmr.stats.location,tmr.stats.channel,str(tmr.stats.starttime.year),str(jd))
             tmt.write(os.path.join(pt,n),format='MSEED')
 
 
@@ -134,7 +134,7 @@ for i in T:
     for j in P:
         sdsname = os.path.basename(j)[:-11]
         ss = sdsname.split('.')
-        sdsshort = ('%s.%s')%(ss[0],ss[1])
+        sdsshort =('%s.%s')%(ss[0],ss[1])
         if i == sdsshort:
             L.append(j)
             print 'JUHU ',i,j

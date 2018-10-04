@@ -150,7 +150,7 @@ def listNetworks():
 
     Logfile.add(' ',s, URL)
 
-    tmpFile = os.path.join (Globals.ProtFileDir, 'geofon_index.txt')
+    tmpFile = os.path.join(Globals.ProtFileDir, 'geofon_index.txt')
     lines   = Basic.readURL(URL, tmpFile)
 
     for line in lines :

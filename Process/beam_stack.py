@@ -55,13 +55,13 @@ class BeamForming(Object):
 
     def process(self, event, timing, bazi=None, slow=None,  restitute=False, *args, **kwargs):
         '''
-        :param timing: CakeTiming. Uses the definition without the offset.
-        :param fn_dump_center: filename to where center stations shall be dumped
-        :param fn_beam: filename of beam trace
-        :param model: earthmodel to use(optional)
-        :param earthmodel to use(optional)
-        :param network: network code(optional)
-        :param station: station code(optional)
+       :param timing: CakeTiming. Uses the definition without the offset.
+       :param fn_dump_center: filename to where center stations shall be dumped
+       :param fn_beam: filename of beam trace
+       :param model: earthmodel to use(optional)
+       :param earthmodel to use(optional)
+       :param network: network code(optional)
+       :param station: station code(optional)
         '''
         logger.debug('start beam forming')
         stations = self.stations

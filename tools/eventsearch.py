@@ -11,7 +11,7 @@ class Event(object):
         self.otime = otime
         self.mag = mag
     def __str__(self):
-        #return ('EventID: %s ---> %s %s %s %s %s')%(self.id,self.region,self.otime,self.mag,self.lat,self.lon)
+        #return('EventID: %s ---> %s %s %s %s %s')%(self.id,self.region,self.otime,self.mag,self.lat,self.lon)
         return 'EventID: {0:10} ---> {1:35} {2:30} {3:10}{4:12}{5:12}'.format(self.id,self.region,self.otime,self.mag,self.lat,self.lon)
 
 def init():
@@ -39,7 +39,7 @@ def parseIrisEventWebservice(searchparameter):
                  'orderby':'time',
                  'limit': searchparameter['resultlimit'],
             })
-   u = ('%s%s')%(url,parameter)
+   u =('%s%s')%(url,parameter)
    
    data = urllib.urlopen(u).read()
    data = data.split('\n')

@@ -67,7 +67,7 @@ def metaFileName(options) :
 
 def parseMetaInfoFile(metafilepath):
 
-    Logfile.add (' ', 'Parsing MetaInfoFile', metafilepath)
+    Logfile.add(' ', 'Parsing MetaInfoFile', metafilepath)
     MetaL = []
 
     try:
@@ -92,8 +92,8 @@ def parseMetaInfoFile(metafilepath):
 
 def parseSDS(p):
 
-    Logfile.add (' ')
-    Logfile.red ('Parsing SDS STRUCTURE ')
+    Logfile.add(' ')
+    Logfile.red('Parsing SDS STRUCTURE ')
 
     L = []
     p = os.path.join(p,'data')
@@ -139,10 +139,10 @@ def cmpMeta(MetaList, SDSList):
 
     g_Diff = len(SList) - len(MList)
 
-    Logfile.add (str(len(SList)+1) + ' ENTRIES IN SDSLIST')               #hs
-    Logfile.add (str(len(MList))   + ' ENTRIES IN METALIST')
-    Logfile.add (str(len(t))       + ' ENTRIES IN SEARCHDIFF')
-    Logfile.add (str(g_Diff)       + ' CALC DIFF')
+    Logfile.add(str(len(SList)+1) + ' ENTRIES IN SDSLIST')               #hs
+    Logfile.add(str(len(MList))   + ' ENTRIES IN METALIST')
+    Logfile.add(str(len(t))       + ' ENTRIES IN SEARCHDIFF')
+    Logfile.add(str(g_Diff)       + ' CALC DIFF')
 
     for a in t:
         line = a.split('.')
@@ -390,7 +390,7 @@ def arclink_Request_obspy(station, begin, end, usermail, pwdkeys):
 #           client.saveResponse(output, station.net, station.sta, station.loc, station.comp, begin, end) #hs
 
 #           mdict = getMetaInfo(output)                                  #hs
-#           inst  = getArclinkInst  (station, usermail, pwdkeys)         #hs
+#           inst  = getArclinkInst(station, usermail, pwdkeys)         #hs
             sta2  = getArclinkInst_2(station, usermail, pwdkeys)         #hs
             #sta2.print1()
 
@@ -405,7 +405,7 @@ def arclink_Request_obspy(station, begin, end, usermail, pwdkeys):
             str(sta2.gain), str(sta2.inst))                                                              #hs
 
             #logfile.red('ARCLINK METAINFO FOR STATION %s' %(info))
-#           os.remove  (output)                        #hs
+#           os.remove(output)                        #hs
             print ARCLINK_META                          #hs
             return info
 
@@ -438,7 +438,7 @@ def xmlString(token, line, default='???') :
     if not token in line : return default
     else :                 return xmlValue(token, line)
 
-def xmlFloat (token, line, default=-1) :
+def xmlFloat(token, line, default=-1) :
 
     if not token in line : return default
     else :                 return float(xmlValue(token, line))
@@ -465,12 +465,12 @@ def extractIrisData(station, xmlFileData) :
     for i in range(len(lines)) :
        s = lines[i]
 
-       if '<Latitude>'              in s : lat  = xmlFloat ('<Latitude>',  s)
-       if '<Longitude>'             in s : lon  = xmlFloat ('<Longitude>', s)
-       if '<Elevation>'             in s : ele  = xmlFloat ('<Elevation>', s)
-       if '<Azimuth>'               in s : azi  = xmlFloat ('<Azimuth>',   s)
-       if '<Dip>'                   in s : dip  = xmlFloat ('<Dip>',       s)
-       if '<InstrumentSensitivity>' in s : gain = xmlFloat ('<Value>', lines[i+1])
+       if '<Latitude>'              in s : lat  = xmlFloat('<Latitude>',  s)
+       if '<Longitude>'             in s : lon  = xmlFloat('<Longitude>', s)
+       if '<Elevation>'             in s : ele  = xmlFloat('<Elevation>', s)
+       if '<Azimuth>'               in s : azi  = xmlFloat('<Azimuth>',   s)
+       if '<Dip>'                   in s : dip  = xmlFloat('<Dip>',       s)
+       if '<InstrumentSensitivity>' in s : gain = xmlFloat('<Value>', lines[i+1])
        if '<Sensor>'                in s : inst = xmlString('<Type>',  lines[i+1])
     #endfor
 
@@ -597,7 +597,7 @@ def makeRequest(i, time_d, flag, usermail, pwdkeys):
           except : meta = ''
 
           if meta == '' :
-             try :    meta = irisRequest (i, t1, t2)
+             try :    meta = irisRequest(i, t1, t2)
              except : meta = ''
 
        else :   # Keyfile not found
@@ -927,7 +927,7 @@ def run_parallel(options) :
 
     else :                                                    # Server part
        Basic.checkExistsDir(options.path, isAbort=True)
-       Globals.setEventDir (options.path)
+       Globals.setEventDir(options.path)
 
        if not init(False) : return False
 
@@ -972,7 +972,7 @@ def MainProc() :
     p.add_option("-x","--dummy",  type="string", dest="station", help="dummy")   #hs : client flag
     p.add_option("-n","--dummy2", type="string", dest="network", help="dummy2")  #hs : use single network
 
-   (options, args) = p.parse_args()
+ (options, args) = p.parse_args()
     run_parallel(options)
 
 if __name__ == "__main__":

@@ -107,8 +107,8 @@ class Xcorr(object):
         tw['xcorrend'] = tw['xcorrstart'] + 20
 
         Logfile.add(' ORIGIN TIME %s' % UTCDateTime(self.Origin.time))
-        Logfile.add(' OVERALL TIME WINDOW : %s - %s' %(tw['start'],      tw['end']))
-        Logfile.add(' XCROSS TIME WINDOW  : %s - %s' %(tw['xcorrstart'], tw['xcorrend']))
+        Logfile.add(' OVERALL TIME WINDOW: %s - %s' %(tw['start'],      tw['end']))
+        Logfile.add(' XCROSS TIME WINDOW : %s - %s' %(tw['xcorrstart'], tw['xcorrend']))
 
         return tw
 
@@ -229,7 +229,7 @@ class Xcorr(object):
         st= read(entry, format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
         if len(st.get_gaps()) > 0:
             st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-        snr  = self.signoise    (st[0], ttime, entry)
+        snr  = self.signoise  (st[0], ttime, entry)
         stream = self.filterWaveform(st)
 
 
@@ -272,7 +272,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise    (st[0], ttime, entry)
+                    #snr  = self.signoise  (st[0], ttime, entry)
                     snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                    tmax=traces_station.tmin+ttime-20.,
                                                    inplace=False)
@@ -322,7 +322,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise    (st[0], ttime, entry)
+                    #snr  = self.signoise  (st[0], ttime, entry)
                     snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                    tmax=traces_station.tmin+ttime-20.,
                                                    inplace=False)
@@ -352,7 +352,7 @@ class Xcorr(object):
         for i in self.StationMeta:
 
             Logfile.red('read in %s '%(i))
-            de = loc2degrees    (self.Origin, i)
+            de = loc2degrees  (self.Origin, i)
     	    Phase = cake.PhaseDef('P')
             model = cake.load_model()
             if cfg.colesseo_input() == True:
@@ -444,7 +444,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise    (st[0], ttime, entry)
+                    #snr  = self.signoise  (st[0], ttime, entry)
                     stream = self.filterWaveform(st)
 
 
@@ -489,7 +489,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise    (st[0], ttime, entry)
+                    #snr  = self.signoise  (st[0], ttime, entry)
                     snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                    tmax=traces_station.tmin+ttime-20.,
                                                    inplace=False)
@@ -520,7 +520,7 @@ class Xcorr(object):
                                   RefWaveform[0].stats.location,RefWaveform[0].stats.channel)
 
         i     = self.searchMeta(name,self.StationMeta)
-        de    = loc2degrees    (self.Origin, i)
+        de    = loc2degrees  (self.Origin, i)
         ptime = 0
 
         Phase = cake.PhaseDef('P')
@@ -545,11 +545,11 @@ class Xcorr(object):
         tw  = self.calculateTimeWindows(ptime)
 
         if cfg.pyrocko_download() == True:
-            stP = self.readWaveformsPicker_pyrocko (i, tw, self.Origin, ptime)
+            stP = self.readWaveformsPicker_pyrocko(i, tw, self.Origin, ptime)
         elif cfg.colesseo_input() == True:
-            stP = self.readWaveformsPicker_colos (i, tw, self.Origin, ptime)
+            stP = self.readWaveformsPicker_colos(i, tw, self.Origin, ptime)
         else:
-            stP = self.readWaveformsPicker (i, tw, self.Origin, ptime)
+            stP = self.readWaveformsPicker(i, tw, self.Origin, ptime)
 
         refuntouchname = os.path.basename(self.AF)+'-refstation-raw.mseed'
         stP.write(os.path.join(self.EventPath,refuntouchname),format='MSEED',byteorder='>')
@@ -707,7 +707,7 @@ class Xcorr(object):
        #alternativeref = os.path.join(*self.AF.split('/')[-1:])    + 'refstation'   #hs
         alternativeref = os.path.join(*self.AF.split(os.sep)[-1:]) + 'refstation'   #hs
 
-        if self.Config [alternativeref] == '' : t = t
+        if self.Config [alternativeref] == '': t = t
         else:                                   t = self.Config [alternativeref]
 
         corrDict = {}

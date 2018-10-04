@@ -180,7 +180,7 @@ def cmpSdsKey(K,S):
     Logfile.red('Parsing for Missing Station')
 
     t = list(set(K).difference(set(S)))
-    t = set (t)
+    t = set(t)
     Logfile.add(str(len(t)) + ' STATIONS are missing')
 
     return t
@@ -246,7 +246,7 @@ def multiplex(filename):
                 finalname = DataDir.filename(trace, d)
                 filepath  = os.path.join(path,finalname)
 
-                tr        = trace.slice (s1, e1)
+                tr        = trace.slice(s1, e1)
                 tr.write(filepath,format='MSEED',reclen=512)
                 print s1,' to ',e1,jd,finalname,filepath
         #endif
@@ -316,7 +316,7 @@ def proof_file_v3(filename,component):
        print 'CHANNEL: ',len(streamList),len(component)
 
        if len(set(streamList)) == len(component) :
-          #to_sds   (savename)                      #hs
+          #to_sds (savename)                      #hs
           #multiplex(filename)                      #hs
           multiplex(savename)                       #hs
           size = os.path.getsize(savename)
@@ -429,12 +429,12 @@ def write_statistic(year,day):
     MISS = cmpSdsKey(K,S)
 
     fobjm = open(os.path.join(os.getcwd(),'missing-station-'+str(year)+'-'+str(day)+'.dat'),'w')
-    fobjm.write ('\n'.join(MISS))
-    fobjm.close ()
+    fobjm.write('\n'.join(MISS))
+    fobjm.close()
 
     fobja = open(os.path.join(os.getcwd(),'available-station-'+str(year)+'-'+str(day)+'.dat'),'w')
-    fobja.write ('\n'.join(S))
-    fobja.close ()
+    fobja.write('\n'.join(S))
+    fobja.close()
 
 
 # -------------------------------------------------------------------------------------------------------------------------------
@@ -563,7 +563,7 @@ def checkProcessError(station, nErrors, lines, execTime) :   # ??? execTime
           #endfor
 
           lineNr += i
-          Server.printMsg  (' ', ' ')
+          Server.printMsg(' ', ' ')
           Server.printLines(station, sn)
        #endif
 
@@ -602,7 +602,7 @@ def checkProcessError(station, nErrors, lines, execTime) :   # ??? execTime
 def initWaitingList(parameter) :
 
     K       = keyfolder2List(parameter.keyfolder)
-    S       = sdsList       (parameter.sdsfolder)
+    S       = sdsList     (parameter.sdsfolder)
     MISS    = cmpSdsKey(K,S)
     MISS    = list(set(MISS))
     waiting = []
@@ -760,7 +760,7 @@ def MainProc() :
     options,args = main(sys.argv)
 
     Basic.checkExistsDir(options.eventpath, isAbort=True)
-    Globals.setEventDir (options.eventpath)
+    Globals.setEventDir(options.eventpath)
 
     C      = config.Config(options.eventpath)
     Origin = C.parseConfig('origin')

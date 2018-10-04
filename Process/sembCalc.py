@@ -387,7 +387,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
                 sembmaxY = y;
 
         delta = loc2degrees(Location(sembmaxX, sembmaxY), origin)
-        azi   = toAzimuth  (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+        azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a]   = sembmaxX
@@ -495,7 +495,7 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
                 sembmaxY = y;
 
         delta = loc2degrees(Location(sembmaxX, sembmaxY), origin)
-        azi   = toAzimuth  (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+        azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a]   = sembmaxX
@@ -526,12 +526,12 @@ def toMatrix(npVector, nColumns):
     return mat
 
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
-            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-            syn_in):
+           TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
+           syn_in):
     '''
     method for calculating semblance of one station array
     '''
-    Logfile.add('PROCESS %d %s' %(flag,' Enters Semblance Calculation') )
+    Logfile.add('PROCESS %d %s' %(flag,' Enters Semblance Calculation'))
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' %(Gmint,Gmaxt))
 
     cfg = ConfigObj(dict=Config)
@@ -541,7 +541,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     winlen = cfg.winlen()      #('winlen')
     step   = cfg.step()         #('step')
 
-    new_frequence = cfg.newFrequency()          # ('new_frequence')
+    new_frequence = cfg.newFrequency()          #('new_frequence')
     forerun = cfg.Int('forerun')
     duration = cfg.Int('duration')
 
@@ -663,18 +663,19 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         response = engine.process(source, targets)
 
         synthetic_traces = response.pyrocko_traces()
-        if cfg.Bool('synthetic_test_add_noise') == True:
+        if cfg.Bool('synthetic_test_add_noise') is True:
             from noise_addition import add_noise
             store_id = syn_in.store()
             engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-            synthetic_traces = add_noise(synthetic_traces, engine, event, stations,
-              store_id, phase_def='P')
-        l=0
-        trs_org= []
-        trs_orgs= []
-    	fobj = os.path.join(arrayfolder,'shift.dat')
-    	xy = num.loadtxt(fobj, usecols=1, delimiter=',')
-        calcStreamMapsyn= calcStreamMap.copy()
+            synthetic_traces = add_noise(synthetic_traces, engine, event,
+                                         stations,
+                                         store_id, phase_def='P')
+        l = 0
+        trs_org = []
+        trs_orgs = []
+        fobj = os.path.join(arrayfolder, 'shift.dat')
+        xy = num.loadtxt(fobj, usecols=1, delimiter=',')
+        calcStreamMapsyn = calcStreamMap.copy()
 
         for trace in calcStreamMapsyn.iterkeys():
                 mod = synthetic_traces[l] ##corect order?
@@ -919,7 +920,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
 						ydata.append(tr)
 				    ydata = num.asarray(ydata)
-				    ydata     = ydata.reshape    (dimX*dimY,nostat)
+				    ydata     = ydata.reshape  (dimX*dimY,nostat)
 				    #print num.shape(A), num.shape(vx), num.shape(ydata)
 
 				    constraints = [res == cvx.sum_entries( 0+ num.sum([ydata[:,x]-A[:,x]*vx  for x in range(nostat) ]) ) ]
@@ -930,7 +931,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
 				    x = num.array(vx.value)
 				    x = num.squeeze(x)
-				    back1    = x.reshape    (dimX,dimY)
+				    back1    = x.reshape  (dimX,dimY)
 				    sig = spfft.idct(x, norm='ortho', axis=0)
 				    back2 = back2 + back1
 				    xs = num.array(res.value)
@@ -950,7 +951,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 #==================================semblance calculation========================================
 
     t1 = time.time()
-    traces     = traces.reshape    (1,nostat*minSampleCount)
+    traces     = traces.reshape  (1,nostat*minSampleCount)
     traveltime = traveltime.reshape(1,nostat*dimX*dimY)
     USE_C_CODE = True
     try:

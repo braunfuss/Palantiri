@@ -24,12 +24,12 @@ import DataTypes
 
 #      Constants
 #
-CLIENT_FLAG     = '-x'                            # options flag : if process is client
+CLIENT_FLAG     = '-x'                            # options flag: if process is client
 
 
 CLIENT_FLAG_SEP = '%'
 
-#      Error code : return value of checkFkt
+#      Error code: return value of checkFkt
 
 RETRY_IT    = -1
 HAS_NO_DATA =  0
@@ -44,7 +44,7 @@ class ServerCtrl(object):
     WAIT_TIME   = 1.0               # Wait time in server loop in sec
 
     def __init__(self, nRetries = N_RETRIES, nParallel = N_PARALLEL, waitTime = WAIT_TIME,
-                       printStat = False) :
+                       printStat = False):
 
         self.nRetries       = nRetries
         self.nParallel      = nParallel
@@ -56,9 +56,9 @@ class ServerCtrl(object):
 
 # -------------------------------------------------------------------------------------------------
 
-class ServerData(object) :
+class ServerData(object):
 
-    def __init__(self) :
+    def __init__(self):
 
         self.waiting        = []
         self.running        = []
@@ -75,22 +75,22 @@ class ServerData(object) :
 #
 # -------------------------------------------------------------------------------------------------
 
-def _toFileName(station, ext) :
+def _toFileName(station, ext):
 
 
-    if station.loc == '--' : loc = ''
-    else :                   loc = station.loc
+    if station.loc == '--': loc = ''
+    else:                   loc = station.loc
 
     return station.net + '_' + station.sta + '_' + loc + '_' + station.comp + ext
 
-def xmlDir() :                            return os.path.join(Globals.ProtFileDir, 'xml')
-def xmlFileName(station, ext) :           return os.path.join(xmlDir(), _toFileName(station, ext))
+def xmlDir():                            return os.path.join(Globals.ProtFileDir, 'xml')
+def xmlFileName(station, ext):           return os.path.join(xmlDir(), _toFileName(station, ext))
 
-def InventoryDir() :                      return os.path.join(Globals.ProtFileDir, 'inv')
-def InventoryFileName(station, ext) :     return os.path.join(InventoryDir(), _toFileName(station, ext))
+def InventoryDir():                      return os.path.join(Globals.ProtFileDir, 'inv')
+def InventoryFileName(station, ext):     return os.path.join(InventoryDir(), _toFileName(station, ext))
 
-def UrlDir() :                            return os.path.join(Globals.ProtFileDir, 'url')
-def UrlFileName(name) :                   return os.path.join(UrlDir(), name + '.txt')
+def UrlDir():                            return os.path.join(Globals.ProtFileDir, 'url')
+def UrlFileName(name):                   return os.path.join(UrlDir(), name + '.txt')
 
 # -------------------------------------------------------------------------------------------------
 #   Queue for finished client threads
@@ -102,7 +102,7 @@ readyQueue = Queue()
 #
 class ClientThread(Thread):
 
-    def __init__(self, cmd, stationName, tmpFile, protFile) :
+    def __init__(self, cmd, stationName, tmpFile, protFile):
 
         Thread.__init__(self)
         self.cmd         = cmd          # system command
@@ -115,36 +115,36 @@ class ClientThread(Thread):
 
     def run(self):
 
-        if os.path.isfile(self.protFile) :           # remove old protocol of client process
+        if os.path.isfile(self.protFile):           # remove old protocol of client process
             os.remove(self.protFile)
 
         t = time.time()
         os.system(self.cmd)                          # start client synchron(thread waits here)
         self.execTime = time.time() - t               # set execution time
 
-        if os.path.isfile(self.tmpFile) :
+        if os.path.isfile(self.tmpFile):
            os.rename(self.tmpFile, self.protFile)
-           self.protLines = Basic.readTextFile(self.protFile)  # read protocol : analyse it in server loop
+           self.protLines = Basic.readTextFile(self.protFile)  # read protocol: analyse it in server loop
 
         readyQueue.put(self)
     # ---------------------------------------------------------------------------------------------
 
-    def toLogfile(self, text) :
+    def toLogfile(self, text):
         printMsg(self.stationName, text)
 
 # -------------------------------------------------------------------------------------------------
 
-class ServerBase(object) :
+class ServerBase(object):
 
-    def __init__(self, serverName, checkFkt, ctrl=None) :
+    def __init__(self, serverName, checkFkt, ctrl=None):
 
         self.serverName = serverName
         self.checkFkt   = checkFkt
-        self.startFkt   = self.startClient                  # default : local fkt
+        self.startFkt   = self.startClient                  # default: local fkt
         self.noDataFkt  = None                              # optional
 
-        if ctrl == None :  self.control = ServerCtrl()
-        else :             self.control = ctrl
+        if ctrl == None:  self.control = ServerCtrl()
+        else:             self.control = ctrl
 
         self.cnt        = 0
         self.startCnt   = 0
@@ -155,37 +155,37 @@ class ServerBase(object) :
 
     # -------------------------------------------------------------------------------------------------
 
-    def _init_2(self) :
+    def _init_2(self):
 
         dir = Globals.ProtFileDir
 
         # create directory "tmp1" for this user
         #
-        if not Basic.createDirectory(dir) :              Logfile.abort()
+        if not Basic.createDirectory(dir):              Logfile.abort()
 
-        if not Basic.createDirectory(xmlDir()) :         Logfile.abort()
-        if not Basic.createDirectory(InventoryDir()) :  Logfile.abort()
-        if not Basic.createDirectory(UrlDir()) :        Logfile.abort()
+        if not Basic.createDirectory(xmlDir()):         Logfile.abort()
+        if not Basic.createDirectory(InventoryDir()):  Logfile.abort()
+        if not Basic.createDirectory(UrlDir()):        Logfile.abort()
 
     # -------------------------------------------------------------------------------------------------
 
-    def protFileName(self, station) :
+    def protFileName(self, station):
         return os.path.join(Globals.ProtFileDir, self.serverName + '_' + station + '.txt')
 
-    def tmpFileName(self, station) :
+    def tmpFileName(self, station):
         return os.path.join(Globals.ProtFileDir, '_' + self.serverName + '_' + station + '.txt')
 
-    def printStatistic(self) :
+    def printStatistic(self):
         intern.printStatistic_2(self.d)
 
      # -------------------------------------------------------------------------------------------------
 
-    def run(self, stationList, args=None) :
+    def run(self, stationList, args=None):
 
         self.cnt       = 0
         self.startCnt  = 0
 
-        if len(stationList) == 0 : return True
+        if len(stationList) == 0: return True
 
         Logfile.setErrorLog(True)
 
@@ -197,12 +197,12 @@ class ServerBase(object) :
 
         t1 = time.time()
 
-        try :
+        try:
            self._serverLoop(stationList, args)
            endMsg = ''
            ret    = True
 
-        except KeyboardInterrupt :
+        except KeyboardInterrupt:
            endMsg = 'Program aborted by Control C'
            ret    = False
         #endTry
@@ -218,8 +218,8 @@ class ServerBase(object) :
         Basic.removeTempFiles()
         deltaT = time.time() - t1
 
-        if self.cnt != 0 : perStation = "%3.2f" %(deltaT / self.cnt)
-        else :             perStation = '0'
+        if self.cnt != 0: perStation = "%3.2f" %(deltaT / self.cnt)
+        else:             perStation = '0'
 
         msg = 'Running ' + str(int(deltaT)) + ' sec. - ' + perStation + ' sec. per request'
 
@@ -230,15 +230,15 @@ class ServerBase(object) :
         return ret
 
     # -------------------------------------------------------------------------------------------------
-    def _isClientFinished(self, stationName) :
+    def _isClientFinished(self, stationName):
 
        file = self.protFileName(stationName)
 
-       if not os.path.isfile(file) : return False                      # client is running
-       else :                         return True
+       if not os.path.isfile(file): return False                      # client is running
+       else:                         return True
 
     # -------------------------------------------------------------------------------------------------
-    def _checkProcess(self, client, nErrors) :
+    def _checkProcess(self, client, nErrors):
 
         lines    = client.protLines
         execTime = client.execTime
@@ -247,15 +247,15 @@ class ServerBase(object) :
         return errorCode
 
     # -------------------------------------------------------------------------------------------------
-    def startClient(self, stationName, args = None) :
+    def startClient(self, stationName, args = None):
 
-        #   Special case : running client with same name(is error)
+        #   Special case: running client with same name(is error)
         intern.killClient(stationName)
 
-        #   Build client args as string : stationName + ':' + arg[0] ':' arg[1] ':' ....
+        #   Build client args as string: stationName + ':' + arg[0] ':' arg[1] ':' ....
 
-        if args == None : args = stationName
-        else :            args = stationName + CLIENT_FLAG_SEP + args
+        if args == None: args = stationName
+        else:            args = stationName + CLIENT_FLAG_SEP + args
 
         #  ... and command line
 
@@ -266,18 +266,18 @@ class ServerBase(object) :
         cmd = 'python '
         cmd += sep.join(sys.argv) + ' ' + CLIENT_FLAG + ' ' + args + ' > ' + file + ' 2>&1 '
 
-        if self.startCnt < 3 :
+        if self.startCnt < 3:
            self.startCnt += 1
            Logfile.debug('cmd = ' + cmd)
 
-        if self.control.ClientProc == None :
+        if self.control.ClientProc == None:
            protFile = self.protFileName(stationName)
 
            t = ClientThread(cmd, stationName, file, protFile)
            t.start()
            return t
 
-        else :                 # ??? nur temporaer : entfernen
+        else:                 # ??? nur temporaer: entfernen
            oldArgs  = sys.argv
            sys.argv = cmd.split()
            self.control.ClientProc()
@@ -287,7 +287,7 @@ class ServerBase(object) :
 
     # ---------------------------------------------------------------------------------------------
 
-    def _serverLoop(self, stationList, args) :
+    def _serverLoop(self, stationList, args):
 
         self.d.waiting = stationList
         nStations      = len(stationList)
@@ -298,7 +298,7 @@ class ServerBase(object) :
         #
         #   Fill list of running processes with N stations
         #
-        for i in range(iMax) :
+        for i in range(iMax):
             station = self.d.waiting [self.cnt]
             self.cnt += 1
 
@@ -313,7 +313,7 @@ class ServerBase(object) :
 
         #   Process all stations
         #
-        while nRunning > 0 :
+        while nRunning > 0:
            allProcessed =(self.cnt >= len(self.d.waiting))
            t1 = time.clock()
 
@@ -323,26 +323,26 @@ class ServerBase(object) :
            nWait  = 20
            client = None
 
-           for i in range(nWait) :
+           for i in range(nWait):
                dt = 20.0
 
-               try :
+               try:
                    client   = readyQueue.get(timeout=dt)       # wait here
                    nRunning -= 1                                # next received
                    break
 
-               except :
-                   if i < 2 :         pass
-                   elif i < nWait-1 : Logfile.add('Wait since ' + str((i+1) * dt) + ' sec.')
+               except:
+                   if i < 2:         pass
+                   elif i < nWait-1: Logfile.add('Wait since ' + str((i+1) * dt) + ' sec.')
            #endfor
 
-           if client == None :   # Nothing received since 400 sec
+           if client == None:   # Nothing received since 400 sec
 
-              if not allProcessed : Logfile.error('Continue with next task')
-              else :
+              if not allProcessed: Logfile.error('Continue with next task')
+              else:
                   Logfile.error('No response from last ' + str(nRunning) + ' clients')
                   break             # exit main loop
-           else :
+           else:
               #
               #  Check finished client
               #
@@ -351,35 +351,35 @@ class ServerBase(object) :
               ErrCode  = self._checkProcess(client, len(self.d.withError))
               timeStr  =("(%.2f sec.)  " % client.execTime)
 
-              if ErrCode != RETRY_IT :                             # client finished ok
+              if ErrCode != RETRY_IT:                             # client finished ok
                  self.d.finished.append(station)
 
-                 if ErrCode == HAS_NO_DATA :  s = ' *****'
-                 else :
+                 if ErrCode == HAS_NO_DATA:  s = ' *****'
+                 else:
                     s = '(Data)'
                     self.d.hasData.append(station)
                  #endif
 
-                 if nRetries == 0 : msg = 'Finished ' + s + timeStr
-                 else :
+                 if nRetries == 0: msg = 'Finished ' + s + timeStr
+                 else:
                     msg = 'Finished ' + s + timeStr + ', retries = ' + str(nRetries)
                     self.d.withRetryFound.append(station)
                  #endif
 
                  client.toLogfile(msg)
 
-                 if ErrCode == HAS_DATA : Logfile.add(' ')
+                 if ErrCode == HAS_DATA: Logfile.add(' ')
 
-              else :    # ErrCode == RETRY_IT                      # client finished with error
+              else:    # ErrCode == RETRY_IT                      # client finished with error
                  self.d.withError.append(station)
 
-                 if self.d.withError.count(station) >= self.control.nRetries :
-                    if self.control.nRetries == 1 : msg = 'finished'
-                    else :                          msg = 'Retry count reached'
+                 if self.d.withError.count(station) >= self.control.nRetries:
+                    if self.control.nRetries == 1: msg = 'finished'
+                    else:                          msg = 'Retry count reached'
 
                     self.d.notFound.append(station)
 
-                 else :
+                 else:
                     msg = 'Finished - retry later'
                     self.d.waiting.append(station)                # retry later
                  #endif
@@ -392,14 +392,14 @@ class ServerBase(object) :
            #
            wt = self.control.waitTime
 
-           if wt > 0.0 :
+           if wt > 0.0:
               dt = time.clock() - t1
 
-              if dt < wt :
+              if dt < wt:
                  time.sleep(wt - dt)
            #endif
 
-           if not allProcessed :
+           if not allProcessed:
               station = self.d.waiting [self.cnt]
               client  = self.startFkt(station, args)
 
@@ -409,7 +409,7 @@ class ServerBase(object) :
               startMsg =  'Start ' + str(self.cnt) + ' / ' + str(nStations)
               startMsg += '(' + str(len(self.d.hasData)) +')'
 
-              if self.cnt > nStations :
+              if self.cnt > nStations:
                  startMsg += ' - retry ' + str(self.d.withError.count(station))
 
               client.toLogfile(startMsg)
@@ -422,7 +422,7 @@ class ServerBase(object) :
 
         #   print statistic
 
-        if self.control.printStatistic :
+        if self.control.printStatistic:
            self.printStatistic()
 
         return True
@@ -430,28 +430,28 @@ class ServerBase(object) :
 
 # -------------------------------------------------------------------------------------------------
 
-class ClientBase(object) :
+class ClientBase(object):
 
-    def __init__(self, station) :
+    def __init__(self, station):
         self.station = station
 
-    def run(self) :
+    def run(self):
         #global CLIENT_WAIT_TIME
 
-        #try :
+        #try:
            # Set the signal handler(unused)
            #
            '''
            Conf   = Globals.ConfigDict
            CLIENT_WAIT_KEY  = 'duration_client'
 
-           if CLIENT_WAIT_KEY in Conf :
+           if CLIENT_WAIT_KEY in Conf:
               CLIENT_WAIT_TIME = int(Conf [CLIENT_WAIT_KEY])
 
-              else :
+              else:
                  signal.signal(signal.SIGALRM, intern.clientSignalhandler)
-                 signal.alarm (CLIENT_WAIT_TIME)
-                 pass    #hs : raus
+                 signal.alarm(CLIENT_WAIT_TIME)
+                 pass    #hs: raus
            '''
 
            t1 = time.time()
@@ -459,7 +459,7 @@ class ClientBase(object) :
            assert self._run != None
            self._run()                               # _run() is defined in derived class
 
-        #except :
+        #except:
            #print 'Client aborted by exception'
         #endtry
 
@@ -475,8 +475,8 @@ def clientSignalhandler(self, signum, frame):
     print 'Signal handler called with signal', signum
     print CLIENT_ABORT_MSG, CLIENT_WAIT_TIME, ' seconds.'
 
-    time.sleep (2.0)
-    sys.exit   (0)
+    time.sleep(2.0)
+    sys.exit (0)
 '''
 # -------------------------------------------------------------------------------------------------
 # Routines for server implementation
@@ -491,7 +491,7 @@ CLIENT_TIME_MSG  = 'Time = '
 
 class ServerIntern(object):
 
-    def __init__(self) :  dummy = 1
+    def __init__(self):  dummy = 1
 
     # -------------------------------------------------------------------------------------------------
 
@@ -504,26 +504,26 @@ class ServerIntern(object):
        lines  = Basic.systemCmd(cmd)
        lines2 = []
 
-       for s in lines :
+       for s in lines:
            words = s.split()
 
-           if not s.find(pythonScript) != -1 : continue
-           if not s.find(CLIENT_FLAG)  != -1 : continue
+           if not s.find(pythonScript) != -1: continue
+           if not s.find(CLIENT_FLAG)  != -1: continue
 
-           if words[0] == user : lines2.append(s)
+           if words[0] == user: lines2.append(s)
        #endfor
 
        return lines2
 
-    def printRunningClients(self) :
+    def printRunningClients(self):
 
         stations2 = self.getStationsOfRunningClients()   # get args of all clients
 
-        if stations2 == 0 : return
+        if stations2 == 0: return
 
         stations  = []
 
-        for s in stations2 :                          # extract station from client args
+        for s in stations2:                          # extract station from client args
            sta = s.split(CLIENT_FLAG_SEP)[0]
            stations.append(sta)
 
@@ -531,20 +531,20 @@ class ServerIntern(object):
 
         names  = Basic.formatStrings(stations, '%-8s')
         sep    = ' '
-        s1     = 'Running ' + str(len(names)) + ' clients :'
+        s1     = 'Running ' + str(len(names)) + ' clients:'
 
-        if(len(names)) <= 10 : Logfile.debug(s1, sep.join(names))
-        else :                   Logfile.debug(s1, sep.join(names[1:10]), sep.join(names[11:]))
+        if(len(names)) <= 10: Logfile.debug(s1, sep.join(names))
+        else:                   Logfile.debug(s1, sep.join(names[1:10]), sep.join(names[11:]))
 
     # -------------------------------------------------------------------------------------------------
 
     # find pid's in output of system command ps
 
-    def _filterClientPids(self, lines) :
+    def _filterClientPids(self, lines):
 
        pidList = []
 
-       for s in lines :
+       for s in lines:
           words = s.split()
           pid   = int(words[1])
           pidList.append(pid)
@@ -566,7 +566,7 @@ class ServerIntern(object):
 
         #print 'all names ', name, allNames
 
-        if not name in allNames :   return -1     # not running
+        if not name in allNames:   return -1     # not running
 
         pos     = allNames.index(name)
         allPids = self._filterClientPids(lines)
@@ -576,11 +576,11 @@ class ServerIntern(object):
     # -------------------------------------------------------------------------------------------------
     # find station names in output of system command ps
 
-    def _filterStationNames(self, lines) :
+    def _filterStationNames(self, lines):
 
         stations = []
 
-        for s in lines :
+        for s in lines:
            words = s.split()
            sta   = words [len(words) - 1]
            sta   = splitClientArgs(sta)[0]
@@ -603,29 +603,29 @@ class ServerIntern(object):
         pidList = self.getClientPids(pythonScript)
         nPid    = len(pidList)
 
-        if nPid == 0 : return nPid
+        if nPid == 0: return nPid
 
         Basic.killByPID(pidList)
 
         msg = 'kill ' + str(nPid) + ' processes'
-        Logfile.debug  (msg)
+        Logfile.debug(msg)
 
-    #   if Globals.isDebug() :
+    #   if Globals.isDebug():
     #      lines = findRunningClients()
     #
-    #      for s in lines : Logfile.add(s)
+    #      for s in lines: Logfile.add(s)
     #   endif
 
         Logfile.add(' ')
         time.sleep(3.0)
 
-    def killClient(self, stationName) :
+    def killClient(self, stationName):
 
         pid = self.getClientPid(stationName)
 
-        if pid == -1 : return False
+        if pid == -1: return False
 
-        #Logfile.debug('Error : Client ' + stationName + ' running')
+        #Logfile.debug('Error: Client ' + stationName + ' running')
         pidList = []
         pidList.append(pid)
         Basic.killByPID(pidList)
@@ -634,47 +634,47 @@ class ServerIntern(object):
 
     # -------------------------------------------------------------------------------------------------
 
-    def printTable2(self, headLine, names, maxNr = -1) :
+    def printTable2(self, headLine, names, maxNr = -1):
 
-        s = headLine + ' : ' + str(len(names))
+        s = headLine + ': ' + str(len(names))
 
-        if maxNr != -1 : s += ' / ' + str(maxNr)
+        if maxNr != -1: s += ' / ' + str(maxNr)
 
         Logfile.add(' ', s, ' ')
         line    = ''
 
-        for i in range(1, len(names)+1) :
+        for i in range(1, len(names)+1):
            line +=("%-10s" % names [i-1])
 
-           if(i % 5) == 0 : Logfile.add(line); line = ''
+           if(i % 5) == 0: Logfile.add(line); line = ''
         #endfor
 
         Logfile.add(line)
 
 
-    def printTable(self, headLine, names, maxNr = -1) :  # ??? noch nicht benutzt
+    def printTable(self, headLine, names, maxNr = -1):  # ??? noch nicht benutzt
 
-        s = headLine + ' : ' + str(len(names))
+        s = headLine + ': ' + str(len(names))
 
-        if maxNr != -1 : s += ' / ' + str(maxNr)
+        if maxNr != -1: s += ' / ' + str(maxNr)
 
         Logfile.add(' ', s, ' ')
 
         sameNet = []
         line    = ''
 
-        for i in range(0, len(names)) :
+        for i in range(0, len(names)):
            s = names[i]
            sameNet.append(s)
 
-           if DataTypes.isSameNetwork(sameNet[0], s) : continue
+           if DataTypes.isSameNetwork(sameNet[0], s): continue
 
            line = ''
 
-           for j in range(len(sameNet)) :
+           for j in range(len(sameNet)):
               line +=("%-10s" % sameNet[j])
 
-              if j != 0 and(j % 5) == 0 :
+              if j != 0 and(j % 5) == 0:
                  Logfile.add(line)
                  line = ''
            #endfor
@@ -682,14 +682,14 @@ class ServerIntern(object):
            sameNet = []
         #endfor
 
-        if Logfile != '' : Logfile.add(line)
+        if Logfile != '': Logfile.add(line)
 
         print '--------------------------------'
         self.printTable2(headLine, names)
 
     # -------------------------------------------------------------------------------------------------
 
-    def printStatistic_2(self, d) :
+    def printStatistic_2(self, d):
 
         finished       = list(set(DataTypes.toStationNames(d.finished)))
         withRetryFound = list(set(DataTypes.toStationNames(d.withRetryFound)))
@@ -707,37 +707,37 @@ class ServerIntern(object):
         anyDataFound = False
         withoutData  = []
 
-        for station in sorted(finished) :
-            if station in hasData : anyDataFound = True
-            else :                  withoutData.append(station)
+        for station in sorted(finished):
+            if station in hasData: anyDataFound = True
+            else:                  withoutData.append(station)
         #endfor
 
         net = list(set(DataTypes.toNetworkNames(withoutData)))
         netWithoutData = []
 
-        for s in net :
-            if not s in netWithData : netWithoutData.append(s)
+        for s in net:
+            if not s in netWithData: netWithoutData.append(s)
 
         self.printTable2('Networks with data', sorted(netWithData))
 
-        if len(netWithoutData) == 0 :
+        if len(netWithoutData) == 0:
            Logfile.add(' ','No Networks without data', ' ')
-        else :
+        else:
            self.printTable2('Networks without data', sorted(netWithoutData), len(netFinished))
 
-        if len(withoutData) == 0 :
+        if len(withoutData) == 0:
            Logfile.add('All stations with data')
-        else :
+        else:
            self.printTable2('Stations without data', sorted(withoutData), len(finished))
 
         # --------------------------------------------------------------------
 
-        if len(withRetryFound) > 0 :
-           Logfile.add(' ', 'With retry : ' + str(len(withRetryFound)), ' ')
+        if len(withRetryFound) > 0:
+           Logfile.add(' ', 'With retry: ' + str(len(withRetryFound)), ' ')
 
-           for station in sorted(withRetryFound) :
-               if station in hasData : s = '(Data)'
-               else :                  s = '       '
+           for station in sorted(withRetryFound):
+               if station in hasData: s = '(Data)'
+               else:                  s = '       '
 
                printMsg(station + s, ' ', withError.count(station))
            #endfor
@@ -747,14 +747,14 @@ class ServerIntern(object):
         Logfile.add(' ')
         return                        # ???
 
-        if len(notFound) == 0 : Logfile.add('All stations found')
-        else :
+        if len(notFound) == 0: Logfile.add('All stations found')
+        else:
            n = str(len(notFound))
-           Logfile.add('Not found : ' + n + ' after ' + str(N_RETRIES) + ' retries')
+           Logfile.add('Not found: ' + n + ' after ' + str(N_RETRIES) + ' retries')
 
         Logfile.add(' ')
 
-        for station in sorted(notFound) : Logfile.add(station)
+        for station in sorted(notFound): Logfile.add(station)
 
         # --------------------------------------------------------------------
 
@@ -771,71 +771,71 @@ intern = ServerIntern()
 #
 # -------------------------------------------------------------------------------------------------
 
-def printMsg(station, text, onlyErrorLog=False) :
+def printMsg(station, text, onlyErrorLog=False):
     printLines(station, [text], onlyErrorLog)
 
-def printLines(station, lines, onlyErrorLog=False) :
+def printLines(station, lines, onlyErrorLog=False):
 
     lines2 = []
 
-    for i in range(len(lines)) :
-        try :
+    for i in range(len(lines)):
+        try:
            s     = station if i == 0 else ' '
-           head  =("%-15s" % s) + ' : '
+           head  =("%-15s" % s) + ': '
            text  = lines[i]
 
-           if text [-1] == '\n' : line = head + text[:-1]
-           else :                 line = head + text
+           if text [-1] == '\n': line = head + text[:-1]
+           else:                 line = head + text
 
-        except : line = '???'
+        except: line = '???'
 
         lines2.append(line)
     #endfor
 
-    if onlyErrorLog : Logfile.onlyErrorLog(True)
+    if onlyErrorLog: Logfile.onlyErrorLog(True)
 
     Logfile.addLines(lines2)
 
-    if onlyErrorLog : Logfile.onlyErrorLog(True)
+    if onlyErrorLog: Logfile.onlyErrorLog(True)
 
 # -------------------------------------------------------------------------------------------------
-def splitClientArgs(argStr) :
+def splitClientArgs(argStr):
 
     sep  = CLIENT_FLAG_SEP
     args = []
 
-    if argStr.find(sep) == -1 : args.append(argStr)
-    else :                       args = argStr.split(sep)
+    if argStr.find(sep) == -1: args.append(argStr)
+    else:                       args = argStr.split(sep)
 
     return args
 
-def _joinArgs(args) :
+def _joinArgs(args):
 
     sep = CLIENT_FLAG_SEP
     strings = []
 
-    for s in args : strings.append(str(s))
+    for s in args: strings.append(str(s))
 
     return sep.join(strings)
 
-def joinClientArgs(args, args2= None) :
+def joinClientArgs(args, args2= None):
 
     args = _joinArgs(args)
-    if args2 != None : args +=(CLIENT_FLAG_SEP + _joinArgs(args2))
+    if args2 != None: args +=(CLIENT_FLAG_SEP + _joinArgs(args2))
 
     return args
 
 # -------------------------------------------------------------------------------------------------
 #  Check protocol file of client
 #
-def checkIsTimeOut(station, traceback) :              # ??? :  Erst mal Notbehelf
+def checkIsTimeOut(station, traceback):              # ???:  Erst mal Notbehelf
 
     err = ''
 
-    for i in range(len(traceback)) :
+    for i in range(len(traceback)):
         line = traceback[i]
 
-        #if 'ArcLinkException: Timeout waiting' in line :
+        #if 'ArcLinkException: Timeout waiting' in line:
            #return True
 
         #  getStationWaveformData.py", line 323, in make_irisrequest
@@ -844,22 +844,22 @@ def checkIsTimeOut(station, traceback) :              # ??? :  Erst mal Notbehel
         #  IOError: [Errno socket error] [Errno 104] Connection reset by peer
         #  IOError: [Errno socket error] [Errno 110] Connection timed out
 
-        if 'Connection timed out' in line :
+        if 'Connection timed out' in line:
            err = 'IOError: [Errno socket error] [Errno 110] Connection timed out'; break
 
-        if 'Connection reset by peer' in line :
+        if 'Connection reset by peer' in line:
            err = 'IOError: [Errno socket error] [Errno 104] Connection reset by peer'; break
 
         #  EOFError: telnet connection closed
 
-        if 'telnet connection closed' in line :
+        if 'telnet connection closed' in line:
            err = 'EOFError: telnet connection closed'; break
 
-        if 'clientSignalhandler' in line :
-           err = 'SignalHandler : Timeout';  break
+        if 'clientSignalhandler' in line:
+           err = 'SignalHandler: Timeout';  break
     #endfor
 
-    if err == '' : return False
+    if err == '': return False
 
     Logfile.setErrorLog(True)
     printMsg(station, err)

@@ -12,9 +12,9 @@ sys.path.append('Common/')
 
 # -------------------------------------------------------------------------------------------------
 
-def start() :
+def start():
 
-    if sys.argv[1] != 'new_version' : return False
+    if sys.argv[1] != 'new_version': return False
        
     #  python arraytool.py(0)  new_version(1) 
          
