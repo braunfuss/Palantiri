@@ -542,21 +542,20 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     winlen = cfg.winlen ()      # ('winlen')
     step   = cfg.step()         # ('step')
 
-    new_frequence   = cfg.newFrequency()          #  ('new_frequence')
-    forerun         = cfg.Int  ('forerun')
-    duration        = cfg.Int  ('duration')
-    gridspacing     = cfg.Float('gridspacing')
+    new_frequence = cfg.newFrequency()          #  ('new_frequence')
+    forerun = cfg.Int('forerun')
+    duration = cfg.Int('duration')
 
     nostat          = len (WaveformDict)
     traveltimes     = {}
     recordstarttime = ''
     minSampleCount  = 999999999
 
-    ntimes = int ((forerun + duration)/step)
-    nsamp  = int (winlen * new_frequence)
-    nstep  = int (step   * new_frequence)
+    ntimes = int((forerun + duration)/step)
+    nsamp = int(winlen * new_frequence)
+    nstep = int(step * new_frequence)
     from pyrocko import obspy_compat
-    from pyrocko import orthodrome, model
+    from pyrocko import model
     obspy_compat.plant()
 
     ############################################################################
@@ -568,41 +567,38 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
         py_trs.append(py_tr)
         for il in FilterMetaData:
-		if str(il) == str(trace):
-                        szo = model.Station(lat=il.lat, lon=il.lon,
-                                            station=il.sta, network=il.net,
-                                            channels=py_tr.channel,
-                                            elevation=il.ele, location=il.loc)
-			stations.append(szo) #right number of stations?
+            if str(il) == str(trace):
+                    szo = model.Station(lat=il.lat, lon=il.lon,
+                                        station=il.sta, network=il.net,
+                                        channels=py_tr.channel,
+                                        elevation=il.ele, location=il.loc)
+                    stations.append(szo)
 
 
-#==================================synthetic BeamForming=======================================
+#==================================synthetic BeamForming======================
 
+    if cfg.Bool('synthetic_test') is True:
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
 
-    if cfg.Bool('synthetic_test') == True:
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-
-        targets =[]
-    	for st in stations:
-
-    		target= Target(
-    		lat=st.lat,
-    		lon=st.lon,
-    		store_id=store_id,
-    		codes=(st.network, st.station, st.location, 'BHZ'),
-            quantity=cfg.quantity())
-    		targets.append(target)
-
+        targets = []
+        for st in stations:
+            target = Target(
+                    lat=st.lat,
+                    lon=st.lon,
+                    store_id=store_id,
+                    codes=(st.network, st.station, st.location, 'BHZ'),
+                    quantity=cfg.quantity())
+            targets.append(target)
 
         if syn_in.nsources() == 1:
-            if syn_in.use_specific_stf() == True:
-                stf=syn_in.stf()
+            if syn_in.use_specific_stf() is True:
+                stf = syn_in.stf()
                 exec(stf)
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
-                    source= RectangularSource(
+                    source = RectangularSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
                         depth=syn_in.depth_syn_0()*1000.,
@@ -615,8 +611,8 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                         slip=syn_in.slip_0(),
                         nucleation_y=syn_in.nucleation_y_0(),
                         stf=stf,
-                        time = util.str_to_time(syn_in.time_0()))
-            if syn_in.source() ==  'DCSource':
+                        time=util.str_to_time(syn_in.time_0()))
+            if syn_in.source() == 'DCSource':
                     source = DCSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
@@ -625,14 +621,14 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                         dip=syn_in.dip_0(),
                         rake=syn_in.rake_0(),
                         stf=stf,
-                        time = util.str_to_time(syn_in.time_0()),
-                    	magnitude=syn_in.magnitude_0())
+                        time=util.str_to_time(syn_in.time_0()),
+                        magnitude=syn_in.magnitude_0())
 
         else:
             sources = []
             for i in range(syn_in.nsources()):
-                if syn_in.use_specific_stf() == True:
-                    stf=syn_in.stf()
+                if syn_in.use_specific_stf() is True:
+                    stf = syn_in.stf()
                     exec(stf)
 
                 else:
