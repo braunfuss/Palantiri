@@ -9,10 +9,10 @@ import obspy.core
 
 # add local directories to import path                      #hs+
 
-sys.path.append ('Waveform/')
-sys.path.append ('Process/')
-sys.path.append ('Cluster/')
-sys.path.append ('Common/')
+sys.path.append('Waveform/')
+sys.path.append('Process/')
+sys.path.append('Cluster/')
+sys.path.append('Common/')
 
 import WaveformProgs
 import ProcessProgs
@@ -20,7 +20,7 @@ import ClusterProgs
 import CommonProgs
                                                             #hs-
 
-config = imp.load_source ('Config',os.path.join (os.getcwd(),'tools','config.py'))
+config = imp.load_source('Config',os.path.join(os.getcwd(),'tools','config.py'))
 
 logger = logging.getLogger(sys.argv[0])
 logger.setLevel(logging.DEBUG)
@@ -59,8 +59,8 @@ def folderContent(p):
            flags=0
 
            for i in files:
-                 if fnmatch.fnmatch (i,'*.config'):  flags += 1
-                 if fnmatch.fnmatch (i,'*.origin'):  flags += 1
+                 if fnmatch.fnmatch(i,'*.config'):  flags += 1
+                 if fnmatch.fnmatch(i,'*.origin'):  flags += 1
 
            if flags == 2:
                name = root.split('/')
@@ -81,7 +81,7 @@ def listEvents():
 
 # -------------------------------------------------------------------------------------------------
 
-def parseArguments (args):
+def parseArguments(args):
     '''
     parse arguments of main and entry script for arraytool
 
@@ -91,10 +91,10 @@ def parseArguments (args):
     dir = 'tools'
 
     #hs+
-    if WaveformProgs.start (config) :  return       #  sys.argv[1] : 'getstations' 'getdata'  'getmeta'
-    if ProcessProgs.start  (config) :  return       #                'process'
-    if ClusterProgs.start  (config) :  return       #                'cluster'
-    if CommonProgs.start   () :        return       #                'new_version  (for internal use)
+    if WaveformProgs.start(config) :  return       #  sys.argv[1] : 'getstations' 'getdata'  'getmeta'
+    if ProcessProgs.start (config) :  return       #                'process'
+    if ClusterProgs.start (config) :  return       #                'cluster'
+    if CommonProgs.start  () :        return       #                'new_version (for internal use)
     #hs-
 
     if sys.argv[1] == 'list':
@@ -102,31 +102,31 @@ def parseArguments (args):
 
     elif sys.argv[1] == 'process':            # nicht mehr benutzt
 
-        path = os.path.join (os.getcwd(),'events',sys.argv[2])
-        at   = os.path.join (os.getcwd(), dir,      'main.py')
+        path = os.path.join(os.getcwd(),'events',sys.argv[2])
+        at   = os.path.join(os.getcwd(), dir,      'main.py')
         cmd  = sys.executable+' '+at+' -f '+ path
 
-        os.chdir  (os.path.join(os.getcwd(),"tools"))
-        os.system (cmd)
+        os.chdir (os.path.join(os.getcwd(),"tools"))
+        os.system(cmd)
 
     elif sys.argv[1] == 'energy':
 
-        path = os.path.join (os.getcwd(),'events',sys.argv[2])
-        at   = os.path.join (os.getcwd(), dir,    'energy.py')
+        path = os.path.join(os.getcwd(),'events',sys.argv[2])
+        at   = os.path.join(os.getcwd(), dir,    'energy.py')
         cmd  = sys.executable+' '+at+' -f '+ path
 
-        os.chdir  (os.path.join (os.getcwd(),"tools"))
-        os.system (cmd)
+        os.chdir (os.path.join(os.getcwd(),"tools"))
+        os.system(cmd)
 
     elif sys.argv[1] == 'create':
 
-        at = os.path.join (os.getcwd(),dir,'create.py')
+        at = os.path.join(os.getcwd(),dir,'create.py')
         t  = ''
 
         for i in sys.argv[2:] : t +=i+'_'
 
         cmd = sys.executable+' '+at+' '+t
-        os.chdir (os.path.join (os.getcwd(),"tools"))
+        os.chdir(os.path.join(os.getcwd(),"tools"))
         os.system(cmd)
         '''
 
@@ -137,7 +137,7 @@ def parseArguments (args):
         print path
         cmd = sys.executable+' '+at+' -p '+ path
 
-        os.chdir (os.path.join(os.getcwd(),"tools"))
+        os.chdir(os.path.join(os.getcwd(),"tools"))
         os.system(cmd)
         '''
 
@@ -147,7 +147,7 @@ def parseArguments (args):
         path = os.path.join(os.getcwd(),'events',sys.argv[2])
         cmd  = sys.executable+' '+at+' -f '+ path
 
-        os.chdir (os.path.join (os.getcwd(),"tools"))
+        os.chdir(os.path.join(os.getcwd(),"tools"))
         os.system(cmd)
 
     elif sys.argv[1] == 'plotstations':
@@ -156,7 +156,7 @@ def parseArguments (args):
         path = os.path.join(os.getcwd(),'events',sys.argv[2])
         cmd  = sys.executable+' '+at+' -f '+ path
 
-        os.chdir (os.path.join(os.getcwd(),"tools"))
+        os.chdir(os.path.join(os.getcwd(),"tools"))
         os.system(cmd)
 
     elif sys.argv[1] == 'pyrocko_download':
@@ -165,7 +165,7 @@ def parseArguments (args):
         path = os.path.join(os.getcwd(),'events',sys.argv[2])
         cmd  = sys.executable+' '+at+' -f '+ path
 
-        os.chdir (os.path.join(os.getcwd(),"Waveform"))
+        os.chdir(os.path.join(os.getcwd(),"Waveform"))
         os.system(cmd)
 
 
@@ -174,7 +174,7 @@ def parseArguments (args):
         at  = os.path.join(os.getcwd(),dir,'eventsearch.py')
         cmd = sys.executable+' '+ at
 
-        os.system (cmd)
+        os.system(cmd)
 
     elif sys.argv[1] == 'plotresult':
 

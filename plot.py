@@ -192,7 +192,7 @@ def plot_scatter():
             #l = range(0,num.shape(data[:,2])[0])
             l = [i for i in range(1600) for _ in range(70)]
             l = sorted(range(100)*16)
-            size = (data[:,2]/np.max(data[:,2]))*300
+            size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
 
         #    for i in range(0,len(x)):
@@ -249,7 +249,7 @@ def plot_scatter():
             #l = range(0,num.shape(data[:,2])[0])
             l = [i for i in range(1600) for _ in range(70)]
             l = sorted(range(160)*10)
-            size = (data[:,2]/np.max(data[:,2]))*300
+            size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='winter_r')
 
     #        for i in range(0,len(x)):
@@ -744,7 +744,7 @@ def plot_sembmax():
 
     x, y = map(data[:,2], data[:,1])
     l = range(0,num.shape(data[:,2])[0])
-    size = (data[:,3]/np.max(data[:,3]))*300
+    size =(data[:,3]/np.max(data[:,3]))*300
     ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
     for i in range(0,len(x)):
         if data[i,3]> np.max(data[:,3])*0.05:
@@ -791,7 +791,7 @@ def plot_sembmax():
             if data[i,3]> np.max(data[:,3])*0.05:
                 plt.text(x[i],y[i],'%s' %i)
         l = range(0,num.shape(data[:,2])[0])
-        size = (data[:,3]/np.max(data[:,3]))*3000
+        size =(data[:,3]/np.max(data[:,3]))*3000
         ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
         xpixels = 1000
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
@@ -840,7 +840,7 @@ def plot_movingsembmax():
     x, y = map(data[:,2], data[:,1])
     size = num.shape(data[:,2])[0]
     l = range(0,size)
-    si = (data[:,3]/np.max(data[:,3]))*300
+    si =(data[:,3]/np.max(data[:,3]))*300
 
     scat = map.scatter(x,y,marker='o',c=l, cmap='jet', s=si)
     axcolor = 'lightgoldenrodyellow'
@@ -851,8 +851,8 @@ def plot_movingsembmax():
     def update(val):
         corr = scorr.val
         i = int(corr)
-        xx = np.vstack ((x, y))
-        scat.set_offsets (xx.T[i])
+        xx = np.vstack((x, y))
+        scat.set_offsets(xx.T[i])
         scat.set_facecolor(color[int(data[i,3]*1000)])
 
         draw()
@@ -894,7 +894,7 @@ def plot_movingsembmax():
         x, y = map(data[:,2], data[:,1])
         size = num.shape(data[:,2])[0]
         l = range(0,size)
-        si = (data[:,3]/np.max(data[:,3]))*300
+        si =(data[:,3]/np.max(data[:,3]))*300
         scat = map.scatter(x,y,marker='o',c=l, cmap='jet', s=si)
         axcolor = 'lightgoldenrodyellow'
         axamp = axes([0.2, 0.01, 0.65, 0.03])
@@ -904,8 +904,8 @@ def plot_movingsembmax():
         def update(val):
             corr = scorr.val
             i = int(corr)
-            xx = np.vstack ((x, y))
-            scat.set_offsets (xx.T[i])
+            xx = np.vstack((x, y))
+            scat.set_offsets(xx.T[i])
             scat.set_facecolor(color[int(data[i,3]*1000)])
 
             draw()
