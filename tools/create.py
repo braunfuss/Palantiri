@@ -39,13 +39,16 @@ def parseEvent(eventID):
 
     url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
     f = urllib.urlopen(url)
-    for i in f:
-        if i[0] != '#':
-            i = i.split('|')
-            time = i[1].replace(':','-').strip()
-            name = i[12].replace(' ','-').strip()
-            eventname =('%s_%s')%(name,time)
-    return eventname
+    try:
+        for i in f:
+            if i[0] != '#':
+                i = i.split('|')
+                time = i[1].replace(':','-').strip()
+                name = i[12].replace(' ','-').strip()
+                eventname =('%s_%s')%(name,time)
+        return eventname
+    except:
+        print('Event not retrivable from IRIS')
 
 
 def createWorkingDirectory(args):
