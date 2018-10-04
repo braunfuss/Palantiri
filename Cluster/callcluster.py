@@ -21,7 +21,7 @@ parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
 
 def init():
     
-    C      = config.Config(options.evpath)
+    C  = config.Config(options.evpath)
     Config = C.parseConfig('config')
     
     tests = int(Config['runs'])

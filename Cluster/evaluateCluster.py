@@ -34,11 +34,11 @@ class Result(object):
 
     def __init__(self,meanvalue,minvalue,centroidcount,usedstationcount,path):
 
-        self.meanvalue        = meanvalue
-        self.minvalue         = minvalue
-        self.centroidcount    = centroidcount
+        self.meanvalue= meanvalue
+        self.minvalue= minvalue
+        self.centroidcount= centroidcount
         self.usedstationcount = usedstationcount
-        self.path             = path
+        self.path= path
 
 # -------------------------------------------------------------------------------------------------
 
@@ -48,13 +48,13 @@ class BestSolution(object):
 
         self.station = station
         self.cluster = cluster
-        self.lat     = lat
-        self.lon     = lon
+        self.lat = lat
+        self.lon = lon
 
 # -------------------------------------------------------------------------------------------------
 
 def getStatistics(clusterresults):
-    p        = os.path.join(options.evpath,'stat.dat')
+    p= os.path.join(options.evpath,'stat.dat')
     fobjstat = open(p,'w')
     resDict  = {}
     for root,dirs,files in os.walk(clusterresults):
@@ -98,12 +98,12 @@ def getBestSolution(resultDictionary):
 
 def copyCluster2EventConfig(ClusterDict, evpath):
 
-    epath     = os.path.join('/',*evpath.split('/')[:-1])
-    t         = epath.split(os.path.sep)[-1]
-    fname     = t+'.config'
+    epath = os.path.join('/',*evpath.split('/')[:-1])
+    t= epath.split(os.path.sep)[-1]
+    fname = t+'.config'
     fullfname = os.path.join(epath,fname)
-    L         = []
-    fobj      = open(fullfname,'r')
+    L= []
+    fobj  = open(fullfname,'r')
 
     for index,line in enumerate(fobj):
         L.append(line)
@@ -152,8 +152,8 @@ def copyCluster2EventConfig(ClusterDict, evpath):
 def printBestSolution(solution):
 
     maxline = -100
-    L       = []
-    M       = []
+    L   = []
+    M   = []
 
     Logfile.add('eventpath: ', os.path.join(solution.path,'event.stations'))
     fobj = open(os.path.join(solution.path,'event.stations'),'r')
@@ -202,12 +202,12 @@ def copyAndShowBestSolution(solution):
 def filterBestSolution(solution):
 
     evp  = os.path.join('/',*solution.path.split('/')[:-2])
-    C    = Config(evp)
+    C= Config(evp)
     Conf = C.parseConfig('config')
     cfg  = ConfigObj(dict=Conf)
 
     SL   = []
-    M    = []
+    M= []
     fobj = open(os.path.join(solution.path, 'event.stations'),'r')
 
     for s in fobj:
@@ -215,8 +215,8 @@ def filterBestSolution(solution):
            line = s.split()
            net,sta,loc,comp = line[0].split('.')
 
-           slat    = line[1]
-           slon    = line[2]
+           slat= line[1]
+           slon= line[2]
            smember = line[3]
 
            M.append(smember)

@@ -20,7 +20,7 @@ import Basic                       # Own module with basic functions
 import Logfile                     # Implements logfile
 from   DataTypes import Station
 
-DATA_DIR         = 'data'                   # root name of data directory(relativ to event dir)
+DATA_DIR= 'data'                   # root name of data directory(relativ to event dir)
 FILE_NAME_FORMAT = '%s.%s.%s.%s.D.%s.%s'
 
 # -------------------------------------------------------------------------------------------------
@@ -30,7 +30,7 @@ def filename(trace, day):
     postfix = str("%03d" % day.julday)
 
     if type(trace) is obspy.core.trace.Trace:
-       t        = trace.stats
+       t= trace.stats
        filename =(FILE_NAME_FORMAT) %(t.network, t.station, t.location, t.channel, 
                                         t.starttime.year, postfix)
     else:
@@ -59,7 +59,7 @@ def getFileNames(eventDir=None):
 
 def getNetworks(eventDir=None):
 
-    files    = getFileNames(eventDir)
+    files= getFileNames(eventDir)
     networks = []
 
     for s in files:

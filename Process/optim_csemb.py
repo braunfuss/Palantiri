@@ -185,14 +185,14 @@ class FileSembMax(object):
     '''
     def __init__(self,istep,sembmaxX,sembmaxY,sembmax,usedarrays,delta,azi,deltakm):
 
-        self.istep      = istep
+        self.istep  = istep
         self.sembmaxX   = sembmaxX
         self.sembmaxY   = sembmaxY
-        self.sembmax    = sembmax
+        self.sembmax= sembmax
         self.usedarrays = usedarrays
-        self.delta      = delta
-        self.azi        = azi
-        self.deltakm    = deltakm
+        self.delta  = delta
+        self.azi= azi
+        self.deltakm= deltakm
 
     def get(self):
         return ('%d %.2f %.2f %f %d %03f %f %03f\n' % (self.istep,self.sembmaxX,self.sembmaxY,
@@ -212,8 +212,8 @@ def toAzimuth (latevent,lonevent,latsource,lonsource):
         lon2 = radians (lonevent);
 
        # Compute the angle.
-        x     =  sin(lon1-lon2 ) * cos(lat2);
-        y     =  cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2);
+        x =  sin(lon1-lon2 ) * cos(lat2);
+        y =  cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2);
         angle = -atan2 (x,y);
 
         if angle < 0.0 :
@@ -233,7 +233,7 @@ def writeSembMatricesSingleArray (SembList,Config,Origin,arrayfolder,ntimes,swit
     '''
     logger.info ('start write semblance matrices')
 
-    cfg    = ConfigObj (dict=Config)
+    cfg= ConfigObj (dict=Config)
     origin = OriginCfg (Origin)
 
     dimX   = cfg.dimX()         # ('dimx')
@@ -247,10 +247,10 @@ def writeSembMatricesSingleArray (SembList,Config,Origin,arrayfolder,ntimes,swit
     gridspacing = cfg.Float ('gridspacing')
     migpoints   = dimX * dimY
 
-    o_lat       = origin.lat()         # float (Origin['lat'])
-    o_lon       = origin.lon()         # float (Origin['lon'])
-    oLatul      = 0
-    oLonul      = 0
+    o_lat   = origin.lat()         # float (Origin['lat'])
+    o_lon   = origin.lon()         # float (Origin['lon'])
+    oLatul  = 0
+    oLonul  = 0
 
     z=0
 
@@ -286,9 +286,9 @@ def writeSembMatricesSingleArray (SembList,Config,Origin,arrayfolder,ntimes,swit
         fobj.write ('# ddepth: 0 ndepth: 1 \n')
 
         for j in range (migpoints):
-            x    = latv[j]
-            y    = lonv[j]
-            z    = origin.depth()         # float(Origin['depth'])
+            x= latv[j]
+            y= lonv[j]
+            z= origin.depth()         # float(Origin['depth'])
             semb = i[j]
 
             fobj.write ('%.2f %.2f %.2f %.20f\n' % (x,y,z,semb))
@@ -305,7 +305,7 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
     '''
     Logfile.add ('start collect in collectSemb')
 
-    cfg    = ConfigObj (dict=Config)
+    cfg= ConfigObj (dict=Config)
     origin = ConfigObj (dict=Origin)
 
     dimX   = cfg.dimX()         # ('dimx')
@@ -313,15 +313,15 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
     winlen = cfg.winlen ()      # ('winlen')
     step   = cfg.step()         # ('step')
 
-    latv        = []
-    lonv        = []
+    latv= []
+    lonv= []
 
     gridspacing = cfg.Float ('gridspacing')
     migpoints   = dimX * dimY
-    o_lat       = origin.lat()         # float (Origin['lat'])
-    o_lon       = origin.lon()         # float (Origin['lon'])
-    oLatul      = 0
-    oLonul      = 0
+    o_lat   = origin.lat()         # float (Origin['lat'])
+    o_lon   = origin.lon()         # float (Origin['lon'])
+    oLatul  = 0
+    oLonul  = 0
 
     z=0
 
@@ -351,12 +351,12 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
     sembmaxlatv   = num.ndarray (ntimes,dtype=float)
     sembmaxlonv   = num.ndarray (ntimes,dtype=float)
 
-    rc         = UTCDateTime(Origin['time'])
-    rcs        = '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
-    d          = rc.timestamp
+    rc= UTCDateTime(Origin['time'])
+    rcs= '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
+    d = rc.timestamp
     usedarrays = 5
 
-    folder      = Folder['semb']
+    folder  = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
@@ -380,8 +380,8 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
         origin = DataTypes.dictToLocation (Origin)
         uncert = num.std(i) #maybe not std?
         for j in range(migpoints):
-            x    = latv[j]
-            y    = lonv[j]
+            x= latv[j]
+            y= lonv[j]
             semb = i[j]
 
             fobj.write ('%.2f %.2f %.20f\n' % (x,y,semb))
@@ -392,7 +392,7 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
                 sembmaxY = y;
 
         delta = loc2degrees (Location (sembmaxX, sembmaxY), origin)
-        azi   = toAzimuth   (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+        azi   = toAzimuth (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a]   = sembmaxX
@@ -414,7 +414,7 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
     '''
     Logfile.add ('start collect in collectSemb')
 
-    cfg    = ConfigObj (dict=Config)
+    cfg= ConfigObj (dict=Config)
     origin = ConfigObj (dict=Origin)
 
     dimX   = cfg.dimX()         # ('dimx')
@@ -422,15 +422,15 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
     winlen = cfg.winlen ()      # ('winlen')
     step   = cfg.step()         # ('step')
 
-    latv        = []
-    lonv        = []
+    latv= []
+    lonv= []
 
     gridspacing = cfg.Float ('gridspacing')
     migpoints   = dimX * dimY
-    o_lat       = origin.lat()         # float (Origin['lat'])
-    o_lon       = origin.lon()         # float (Origin['lon'])
-    oLatul      = 0
-    oLonul      = 0
+    o_lat   = origin.lat()         # float (Origin['lat'])
+    o_lon   = origin.lon()         # float (Origin['lon'])
+    oLatul  = 0
+    oLonul  = 0
 
     z=0
 
@@ -460,12 +460,12 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
     sembmaxlatv   = num.ndarray (ntimes,dtype=float)
     sembmaxlonv   = num.ndarray (ntimes,dtype=float)
 
-    rc         = UTCDateTime(Origin['time'])
-    rcs        = '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
-    d          = rc.timestamp
+    rc= UTCDateTime(Origin['time'])
+    rcs= '%s-%s-%s_%02d:%02d:%02d'% (rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
+    d = rc.timestamp
     usedarrays = 5
 
-    folder      = Folder['semb']
+    folder  = Folder['semb']
     fobjsembmax = open (os.path.join (folder,'sembmax_%s.txt' % (switch)),'w')
 
     for a, i in enumerate(tmp):
@@ -490,8 +490,8 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
         origin = DataTypes.dictToLocation (Origin)
         uncert = num.std(i) #maybe not std?
         for j in range(migpoints):
-            x    = latv[j]
-            y    = lonv[j]
+            x= latv[j]
+            y= lonv[j]
             semb = i[j]
 
             fobj.write ('%.2f %.2f %.20f\n' % (x,y,semb))
@@ -502,7 +502,7 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
                 sembmaxY = y;
 
         delta = loc2degrees (Location (sembmaxX, sembmaxY), origin)
-        azi   = toAzimuth   (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+        azi   = toAzimuth (float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a]   = sembmaxX
@@ -550,13 +550,13 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     winlen = cfg.winlen ()      # ('winlen')
     step   = cfg.step()         # ('step')
 
-    new_frequence   = cfg.newFrequency()          #  ('new_frequence')
-    forerun         = cfg.Int  ('forerun')
-    duration        = cfg.Int  ('duration')
-    gridspacing     = cfg.Float('gridspacing')
+    new_frequence   = cfg.newFrequency()          #('new_frequence')
+    forerun= cfg.Int('forerun')
+    duration= cfg.Int('duration')
+    gridspacing = cfg.Float('gridspacing')
 
-    nostat          = len (WaveformDict)
-    traveltimes     = {}
+    nostat = len (WaveformDict)
+    traveltimes = {}
     recordstarttime = ''
     minSampleCount  = 999999999
 
@@ -673,10 +673,10 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
             minSampleCount = calcStreamMap[trace].stats.npts
 
     ############################################################################
-    traces     = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
+    traces = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
     traveltime = num.ndarray (shape=(len(calcStreamMap), dimX*dimY), dtype=float)
-    latv       = num.ndarray (dimX*dimY, dtype=float)
-    lonv       = num.ndarray (dimX*dimY, dtype=float)
+    latv   = num.ndarray (dimX*dimY, dtype=float)
+    lonv   = num.ndarray (dimX*dimY, dtype=float)
     ############################################################################
 
 
@@ -685,7 +685,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
     for key in calcStreamMap.iterkeys():
         streamID = key
-        c2       = 0
+        c2   = 0
 
         for o in calcStreamMap[key]:
             if c2 < minSampleCount:
@@ -705,7 +705,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         if not streamCounter in traveltimes :
            continue                              #hs : thread crashed before
 
-        g     = traveltimes[streamCounter]
+        g = traveltimes[streamCounter]
         dimZ  = g.dimZ
         mint  = g.mint
         maxt  = g.maxt
@@ -732,9 +732,9 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
 
     ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
-    nsamp     = winlen * new_frequence
+    nsamp = winlen * new_frequence
 
-    nstep     = int (step*new_frequence)
+    nstep = int (step*new_frequence)
     migpoints = dimX * dimY
 
     dimZ = 0
@@ -760,7 +760,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
 
     t1 = time.time()
-    traces_org     = traces.reshape     (1,nostat*minSampleCount)
+    traces_org = traces.reshape   (1,nostat*minSampleCount)
     traveltime_org = traveltime.reshape (1,nostat*dimX*dimY)
     USE_C_CODE = True
     try:
@@ -806,13 +806,13 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     winlen = cfg.winlen ()      # ('winlen')
     step   = cfg.step()         # ('step')
 
-    new_frequence   = cfg.newFrequency()          #  ('new_frequence')
-    forerun         = cfg.Int  ('forerun')
-    duration        = cfg.Int  ('duration')
-    gridspacing     = cfg.Float('gridspacing')
+    new_frequence   = cfg.newFrequency()          #('new_frequence')
+    forerun= cfg.Int('forerun')
+    duration= cfg.Int('duration')
+    gridspacing = cfg.Float('gridspacing')
 
-    nostat          = len (WaveformDict)
-    traveltimes     = {}
+    nostat = len (WaveformDict)
+    traveltimes = {}
     recordstarttime = ''
     minSampleCount  = 999999999
 
@@ -1047,10 +1047,10 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
             minSampleCount = calcStreamMap[trace].stats.npts
 
     ############################################################################
-    traces     = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
+    traces = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
     traveltime = num.ndarray (shape=(len(calcStreamMap), dimX*dimY), dtype=float)
-    latv       = num.ndarray (dimX*dimY, dtype=float)
-    lonv       = num.ndarray (dimX*dimY, dtype=float)
+    latv   = num.ndarray (dimX*dimY, dtype=float)
+    lonv   = num.ndarray (dimX*dimY, dtype=float)
     ############################################################################
 
 
@@ -1059,7 +1059,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
 
     for key in calcStreamMap.iterkeys():
         streamID = key
-        c2       = 0
+        c2   = 0
 
         for o in calcStreamMap[key]:
             if c2 < minSampleCount:
@@ -1079,7 +1079,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         if not streamCounter in traveltimes :
            continue                              #hs : thread crashed before
 
-        g     = traveltimes[streamCounter]
+        g = traveltimes[streamCounter]
         dimZ  = g.dimZ
         mint  = g.mint
         maxt  = g.maxt
@@ -1106,9 +1106,9 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
 
 
     ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
-    nsamp     = winlen * new_frequence
+    nsamp = winlen * new_frequence
 
-    nstep     = int (step*new_frequence)
+    nstep = int (step*new_frequence)
     migpoints = dimX * dimY
 
     dimZ = 0
@@ -1136,7 +1136,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
 #==================================semblance calculation========================================
 
     t1 = time.time()
-    traces     = traces.reshape     (1,nostat*minSampleCount)
+    traces = traces.reshape   (1,nostat*minSampleCount)
     traveltime = traveltime.reshape (1,nostat*dimX*dimY)
     USE_C_CODE = True
     try:
@@ -1195,7 +1195,7 @@ def optimization(*params, **args):
     ASL_syn = []
 
 
-    C      = config.Config (evpath)
+    C  = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
     if cfg.pyrocko_download() == True:
@@ -1279,13 +1279,13 @@ def solve(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
     # bounds given as (min,max)
 
     bounds = ((syn_in.mag_0_low(), syn_in.mag_0_high()),  # magnitude
-              (syn_in.strike_0_low(), syn_in.strike_0_high()),  # strike [deg.]
-              (syn_in.dip_0_low(), syn_in.dip_0_high()),  # dip [deg.]
-              (syn_in.rake_0_low(), syn_in.rake_0_high()),  # rake [deg.]
-              (syn_in.depth_0_low()*km, syn_in.depth_0_high()*km),  # depth [km]
-              (syn_in.north_shift_0_low()*km, syn_in.north_shift_0_high()*km),  # north shift from GCMT [km]
-              (syn_in.east_shift_0_low()*km, syn_in.east_shift_0_high()*km),  # east shift from GCMT [km]
-              (syn_in.time_0_low(), syn_in.time_0_high()))  # timeshift from GCMT [s]
+            (syn_in.strike_0_low(), syn_in.strike_0_high()),  # strike [deg.]
+            (syn_in.dip_0_low(), syn_in.dip_0_high()),  # dip [deg.]
+            (syn_in.rake_0_low(), syn_in.rake_0_high()),  # rake [deg.]
+            (syn_in.depth_0_low()*km, syn_in.depth_0_high()*km),  # depth [km]
+            (syn_in.north_shift_0_low()*km, syn_in.north_shift_0_high()*km),  # north shift from GCMT [km]
+            (syn_in.east_shift_0_low()*km, syn_in.east_shift_0_high()*km),  # east shift from GCMT [km]
+            (syn_in.time_0_low(), syn_in.time_0_high()))  # timeshift from GCMT [s]
     # optimize.differential_evolution of scipy is used for the optim.
     # Differential Evolution is stochastic in nature (does not use gradient methods)
     #to find the minimium, and can search large areas of candidate space, but often requires

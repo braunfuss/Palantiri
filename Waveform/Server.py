@@ -24,16 +24,16 @@ import DataTypes
 
 #      Constants
 #
-CLIENT_FLAG     = '-x'                            # options flag: if process is client
+CLIENT_FLAG = '-x'                            # options flag: if process is client
 
 
 CLIENT_FLAG_SEP = '%'
 
 #      Error code: return value of checkFkt
 
-RETRY_IT    = -1
+RETRY_IT= -1
 HAS_NO_DATA =  0
-HAS_DATA    =  1
+HAS_DATA=  1
 
 # -------------------------------------------------------------------------------------------------
 
@@ -46,11 +46,11 @@ class ServerCtrl(object):
     def __init__(self, nRetries = N_RETRIES, nParallel = N_PARALLEL, waitTime = WAIT_TIME,
                        printStat = False):
 
-        self.nRetries       = nRetries
-        self.nParallel      = nParallel
-        self.waitTime       = waitTime
+        self.nRetries   = nRetries
+        self.nParallel  = nParallel
+        self.waitTime   = waitTime
         self.printStatistic = printStat
-        self.ClientProc     = None
+        self.ClientProc = None
 
 #endClass
 
@@ -60,13 +60,13 @@ class ServerData(object):
 
     def __init__(self):
 
-        self.waiting        = []
-        self.running        = []
-        self.finished       = []
-        self.withError      = []
-        self.notFound       = []
+        self.waiting= []
+        self.running= []
+        self.finished   = []
+        self.withError  = []
+        self.notFound   = []
         self.withRetryFound = []
-        self.hasData        = []
+        self.hasData= []
 #endclass
 
 # -------------------------------------------------------------------------------------------------
@@ -105,11 +105,11 @@ class ClientThread(Thread):
     def __init__(self, cmd, stationName, tmpFile, protFile):
 
         Thread.__init__(self)
-        self.cmd         = cmd          # system command
-        self.execTime    = 0            # and its execution time
+        self.cmd= cmd          # system command
+        self.execTime= 0            # and its execution time
         self.stationName = stationName
-        self.tmpFile     = tmpFile      # stdout and stderr to this file while process is running
-        self.protFile    = protFile     # save it later to this file
+        self.tmpFile = tmpFile      # stdout and stderr to this file while process is running
+        self.protFile= protFile     # save it later to this file
         self.protLines   = None         # contents of the file
     # ---------------------------------------------------------------------------------------------
 
@@ -146,9 +146,9 @@ class ServerBase(object):
         if ctrl == None:  self.control = ServerCtrl()
         else:             self.control = ctrl
 
-        self.cnt        = 0
+        self.cnt= 0
         self.startCnt   = 0
-        self.d          = ServerData()
+        self.d = ServerData()
 
         self._init_2()
     #end
@@ -182,7 +182,7 @@ class ServerBase(object):
 
     def run(self, stationList, args=None):
 
-        self.cnt       = 0
+        self.cnt   = 0
         self.startCnt  = 0
 
         if len(stationList) == 0: return True
@@ -200,11 +200,11 @@ class ServerBase(object):
         try:
            self._serverLoop(stationList, args)
            endMsg = ''
-           ret    = True
+           ret= True
 
         except KeyboardInterrupt:
            endMsg = 'Program aborted by Control C'
-           ret    = False
+           ret= False
         #endTry
 
         Logfile.setErrorLog(True)
@@ -240,7 +240,7 @@ class ServerBase(object):
     # -------------------------------------------------------------------------------------------------
     def _checkProcess(self, client, nErrors):
 
-        lines    = client.protLines
+        lines= client.protLines
         execTime = client.execTime
 
         errorCode = self.checkFkt(client.stationName, nErrors, lines, execTime)
@@ -259,8 +259,8 @@ class ServerBase(object):
 
         #  ... and command line
 
-        file    = self.tmpFileName(stationName)
-        sep     = ' '
+        file= self.tmpFileName(stationName)
+        sep = ' '
 
 
         cmd = 'python '
@@ -290,9 +290,9 @@ class ServerBase(object):
     def _serverLoop(self, stationList, args):
 
         self.d.waiting = stationList
-        nStations      = len(stationList)
-        iMax           = min(self.control.nParallel, nStations)
-        nRunning       = 0
+        nStations  = len(stationList)
+        iMax  = min(self.control.nParallel, nStations)
+        nRunning   = 0
         Logfile.add(' ')
 
         #
@@ -530,8 +530,8 @@ class ServerIntern(object):
         #   Print names
 
         names  = Basic.formatStrings(stations, '%-8s')
-        sep    = ' '
-        s1     = 'Running ' + str(len(names)) + ' clients:'
+        sep= ' '
+        s1 = 'Running ' + str(len(names)) + ' clients:'
 
         if(len(names)) <= 10: Logfile.debug(s1, sep.join(names))
         else:                   Logfile.debug(s1, sep.join(names[1:10]), sep.join(names[11:]))
@@ -561,14 +561,14 @@ class ServerIntern(object):
 
     def getClientPid(self, name, pythonScript = sys.argv[0]):
 
-        lines    = self.findRunningClients(pythonScript)
+        lines= self.findRunningClients(pythonScript)
         allNames = self._filterStationNames(lines)
 
         #print 'all names ', name, allNames
 
         if not name in allNames:   return -1     # not running
 
-        pos     = allNames.index(name)
+        pos = allNames.index(name)
         allPids = self._filterClientPids(lines)
 
         return allPids [pos]
@@ -601,7 +601,7 @@ class ServerIntern(object):
 
         isDebug = False
         pidList = self.getClientPids(pythonScript)
-        nPid    = len(pidList)
+        nPid= len(pidList)
 
         if nPid == 0: return nPid
 
@@ -641,7 +641,7 @@ class ServerIntern(object):
         if maxNr != -1: s += ' / ' + str(maxNr)
 
         Logfile.add(' ', s, ' ')
-        line    = ''
+        line= ''
 
         for i in range(1, len(names)+1):
            line +=("%-10s" % names [i-1])
@@ -661,7 +661,7 @@ class ServerIntern(object):
         Logfile.add(' ', s, ' ')
 
         sameNet = []
-        line    = ''
+        line= ''
 
         for i in range(0, len(names)):
            s = names[i]
@@ -691,19 +691,19 @@ class ServerIntern(object):
 
     def printStatistic_2(self, d):
 
-        finished       = list(set(DataTypes.toStationNames(d.finished)))
+        finished   = list(set(DataTypes.toStationNames(d.finished)))
         withRetryFound = list(set(DataTypes.toStationNames(d.withRetryFound)))
-        notFound       = list(set(DataTypes.toStationNames(d.notFound)))
-        hasData        = list(set(DataTypes.toStationNames(d.hasData)))
-        withError      = list(set(DataTypes.toStationNames(d.withError)))
+        notFound   = list(set(DataTypes.toStationNames(d.notFound)))
+        hasData= list(set(DataTypes.toStationNames(d.hasData)))
+        withError  = list(set(DataTypes.toStationNames(d.withError)))
 
-        netFinished    = list(set(DataTypes.toNetworkNames(finished)))
-        netWithData    = list(set(DataTypes.toNetworkNames(hasData)))
+        netFinished= list(set(DataTypes.toNetworkNames(finished)))
+        netWithData= list(set(DataTypes.toNetworkNames(hasData)))
 
         Logfile.addDelim()
         Logfile.add(' ')
 
-        nFinished    = len(finished)
+        nFinished= len(finished)
         anyDataFound = False
         withoutData  = []
 
@@ -780,7 +780,7 @@ def printLines(station, lines, onlyErrorLog=False):
 
     for i in range(len(lines)):
         try:
-           s     = station if i == 0 else ' '
+           s = station if i == 0 else ' '
            head  =("%-15s" % s) + ': '
            text  = lines[i]
 

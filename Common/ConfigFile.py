@@ -17,8 +17,8 @@ class ConfigObj(object):
 
     def __init__(self, fileName=None, dict=None):
         self._fileName = fileName
-        self._dict     = dict
-        self._debug    = False
+        self._dict = dict
+        self._debug= False
 
     def __getitem__(self, key):
         return self._dict.__getitem__(key)
@@ -113,9 +113,9 @@ class ConfigObj(object):
     # ---------------------------------------------------------------------------------------------
 
     def Distance(self, key, maxVal = 40 * 1000): return self.UFloat(key, maxVal)
-    def Freq  (self, key, maxVal = 1000):      return self.UFloat(key, maxVal)
+    def Freq(self, key, maxVal = 1000):      return self.UFloat(key, maxVal)
     def Duration(self, key='duration'):          return self.UInt(key)
-    def Time  (self, key='time'):              return self.String(key)
+    def Time(self, key='time'):              return self.String(key)
 
     def lat (self):       return self.Float('lat')        # ??? range einbauen
     def lon (self):       return self.Float('lon')        # ???
@@ -200,7 +200,7 @@ class FilterCfg(ConfigObj):
         elif i == 2: strings = [str(self.l_fc()), str(self.l_ns()), self.Str('l_zph')]
         elif i == 3: strings = [str(self.h_fc()), str(self.h_ns()), self.Str('h_zph')]
 
-        name    = '_'.join(strings)
+        name= '_'.join(strings)
         return name
 
 #endclass
@@ -290,16 +290,16 @@ DEFAULT_CONFIG_FILE = 'global.conf'
 #
 #       Keys for global.conf
 #
-blacklist     = 'blacklist'
-duration      = 'duration'
+blacklist = 'blacklist'
+duration  = 'duration'
 keyfilefolder = 'keyfilefolder'
 
-mail          = 'mail'
-mindist       = 'mindist'
-maxdist       = 'maxdist'
+mail = 'mail'
+mindist   = 'mindist'
+maxdist   = 'maxdist'
 
 metaCatalog   = 'metacatalog'
-pwd           = 'pwd'
+pwd  = 'pwd'
 
 
 class GlobalConfigObj(ConfigObj):
@@ -373,7 +373,7 @@ def checkKeys(conf, keyList, optional=False):
 
     eventDir = Globals.EventDir()
     #print 'eventdir = ', eventDir
-    isOk     = True
+    isOk = True
 
     for key in list1:
         val = conf [key]

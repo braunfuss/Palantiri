@@ -322,7 +322,7 @@ def openTextFile(fileName, mode):
 def readTextFile(fileName, maxLines = -1):
 
     lines = []
-    fp    = openTextFile(fileName, 'r')
+    fp= openTextFile(fileName, 'r')
 
     if fp == None: return lines
 
@@ -381,7 +381,7 @@ def loadDump(fileName):
        Logfile.fileOpenError(fileName)
        return None                       # file not found: producing thread crashed
 
-    f    = open(fileName)
+    f= open(fileName)
     data = pickle.load(f)
     f.close()
     os.remove(fileName)

@@ -48,15 +48,15 @@ def getGain(streamID,MetaDict):
 
 def readWaveforms(stationList,tw,EventPath,Origin):
 
-    t2      = UTCDateTime(Origin.time)
+    t2  = UTCDateTime(Origin.time)
     sdspath = os.path.join(EventPath,'data',str(t2.year))
 
     Wdict = {}
 
     for i in stationList:
         streamData = i.getName() + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
-        entry      = os.path.join(sdspath,i.net,i.sta,i.comp+'.D',streamData)
-        tdiff      = tw['end']-tw['start']
+        entry  = os.path.join(sdspath,i.net,i.sta,i.comp+'.D',streamData)
+        tdiff  = tw['end']-tw['start']
 
         try:
             st = read(entry,format="MSEED",starttime=tw['start'],endtime=tw['end'],nearest_sample=True)
@@ -172,7 +172,7 @@ def filterWaveform_2(Config, wafeform, station) :
 
 def filterWaveform(Config, waveform, station) :
 
-    cfg    = FilterCfg(self.Config)
+    cfg= FilterCfg(self.Config)
     switch = cfg.filterswitch()              # 'filterswitch'
 
     if switch == 1:
@@ -188,7 +188,7 @@ def filterWaveform(Config, waveform, station) :
                                zerophase = bool(Config['zph2']))
     elif switch == 3:
       which = 'highpass'
-      waveform.filter(which, freq     = cfg.h_fc(),             # ['h_fc']
+      waveform.filter(which, freq = cfg.h_fc(),             # ['h_fc']
                               corners  = cfg.h_ns(),             # ['h_ns']
                               zerophase= bool(Config['h_zph']))
     else : return None
@@ -202,7 +202,7 @@ def processWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,switch,Xc
 
     Logfile.red('Start Processing')
 
-    cfg           = FilterCfg(Config)
+    cfg  = FilterCfg(Config)
     new_frequence = cfg.newFrequency()                #  ['new_frequence']
 
     vp,vs,rho = ttt.calcak135parameter(Event)
@@ -282,7 +282,7 @@ def processpyrockoWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,sw
     WaveformDict_obs = []
     obspy_compat.plant()
     Logfile.red('Start Processing')
-    cfg           = FilterCfg(Config)
+    cfg  = FilterCfg(Config)
     new_frequence = cfg.newFrequency()                #  ['new_frequence']
 
     traces = []

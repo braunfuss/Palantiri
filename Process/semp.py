@@ -23,7 +23,7 @@ semb_txt   = 'semb.txt'
 
 def startC_Code (nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
 
-        f    = [nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount]
+        f= [nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount]
         args = Basic.floatToString (f, delim= ',')
         path =  os.path.dirname (__file__)
 
@@ -38,13 +38,13 @@ class MyThread (Thread):
     def __init__ (self, nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount):
         Thread.__init__(self)
 
-        self.nostat    = nostat
-        self.nsamp     = nsamp
-        self.i         = i
-        self.nstep     = nstep
-        self.dimX      = dimX
-        self.dimY      = dimY
-        self.mint      = mint
+        self.nostat= nostat
+        self.nsamp = nsamp
+        self.i= i
+        self.nstep = nstep
+        self.dimX  = dimX
+        self.dimY  = dimY
+        self.mint  = mint
         self.new_freq  = new_freq
         self.minSampleCount = minSampleCount
 
@@ -80,16 +80,16 @@ def otest (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, 
        return otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
                             minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
     else :
-       return otest_py     (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
+       return otest_py   (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
                             minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
 
-def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
+def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
                latv_1, lonv_1, traveltime_1, trace_1) :
 
-    trace      = toMatrix (trace_1, minSampleCount)
+    trace  = toMatrix (trace_1, minSampleCount)
     traveltime = toMatrix (traveltime_1, dimX * dimY)
-    latv       = latv_1.tolist()
-    lonv       = lonv_1.tolist()
+    latv   = latv_1.tolist()
+    lonv   = lonv_1.tolist()
 
     '''
     Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
@@ -115,8 +115,8 @@ def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequen
 
             nomin += sum * sum
 
-            x    = latv[j]
-            y    = lonv[j]
+            x= latv[j]
+            y= lonv[j]
             semb = nomin / (float (nostat) * denom)
             backSemb[i][j] = semb
 
@@ -137,7 +137,7 @@ def otest_py  (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequen
 def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount,
                   latv_1, lonv_1, traveltime_1, trace_1) :
 
-    trace      = toMatrix (trace_1, minSampleCount)
+    trace  = toMatrix (trace_1, minSampleCount)
     traveltime = toMatrix (traveltime_1, dimX * dimY)
 
     Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount)
@@ -166,10 +166,10 @@ def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq
 def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount,
               latv_1, lonv_1, traveltime_1, trace_1) :
 
-    trace      = toMatrix (trace_1, minSampleCount)
+    trace  = toMatrix (trace_1, minSampleCount)
     traveltime = toMatrix (traveltime_1, dimX * dimY)
-    latv       = latv_1.tolist()
-    lonv       = lonv_1.tolist()
+    latv   = latv_1.tolist()
+    lonv   = lonv_1.tolist()
 
     Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
     Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
@@ -191,9 +191,9 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
     for i in range (ntimes) :
        #  loop over grid points
        #
-       sembmax     = 0
-       sembmaxX    = 0
-       sembmaxY    = 0
+       sembmax = 0
+       sembmaxX= 0
+       sembmaxY= 0
        backSemb[i] = startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
        for j in range (dimX * dimY):
@@ -211,7 +211,7 @@ def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, mi
 
 def execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
 
-    f     = [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount]
+    f = [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount]
     args  = Basic.floatToString (f, delim= ',')
     prog  = sys.executable + ' ' + __file__
     cmd   = prog  + ' ' + args
@@ -245,10 +245,10 @@ def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCou
        backSemb = execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
     else :
-       trace      = Basic.readMatrix (trace_txt,  nostat, minSampleCount, '%e')
+       trace  = Basic.readMatrix (trace_txt,  nostat, minSampleCount, '%e')
        traveltime = Basic.readMatrix (travel_txt, nostat, dimX * dimY, '%e')
-       latv       = Basic.readVector (latv_txt, '%e')
-       lonv       = Basic.readVector (lonv_txt, '%e')
+       latv   = Basic.readVector (latv_txt, '%e')
+       lonv   = Basic.readVector (lonv_txt, '%e')
 
 
        for j in range (dimX * dimY):

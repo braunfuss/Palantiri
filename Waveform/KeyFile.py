@@ -26,12 +26,12 @@ class KeyFileObj(object):
        else:               dir = dirName
 
        if fullName != None:
-          net     = DataTypes.toNetwork(fullName)
+          net = DataTypes.toNetwork(fullName)
           station = DataTypes.toStation(fullName)
 
        self.dirName  = dir
        self.fullName = net + '_' + station
-       self.key      = None
+       self.key  = None
 
    # ----------------------------------------------------------------------------------------------
 
@@ -80,13 +80,13 @@ class KeyFileObj(object):
 
    def read(self):
 
-       net      = DataTypes.toNetwork(self.fullName)
+       net  = DataTypes.toNetwork(self.fullName)
        station  = DataTypes.toStation(self.fullName)
-       fname    = self._keyfileName(net, station)
+       fname= self._keyfileName(net, station)
 
        if not os.path.isfile(fname): return None
 
-       lines    = Basic.readTextFile(fname)
+       lines= Basic.readTextFile(fname)
 
        if len(lines) == 0: return None
 
@@ -100,33 +100,33 @@ class KeyFileObj(object):
              line = lines [i].strip()
              #print 'line= ', line
 
-             w      = line.split('=')
-             key    = self._String(w[0])
+             w  = line.split('=')
+             key= self._String(w[0])
              _g_Key = key
-             val    = w[1]
+             val= w[1]
 
-             if   key ==  'KEY_VERSION'    : dummy        = self._Float(val)                #  0 KEY_VERSION='2.5'
-             elif key ==  'STAT_DESC'      : sta.site     = val                              #  1 STAT_DESC='Ganja, Azerbaijan'
-             elif key ==  'LATITUDE'       : sta.lat      = self._Float(val, -90.0, 90.0)  #  2 LATITUDE='40.6519'
-             elif key ==  'LONGITUDE'      : sta.lon      = self._Float(val,-180.0,360.0)  #  3 LONGITUDE='46.3297'
-             elif key ==  'ELEVATION'      : sta.ele      = self._Float(val)               #  4 ELEVATION='560.0'
-             elif key ==  'DATALOGGER'     : dummy        = self._String(val)               #  5 DATALOGGER='Q380-M'
-             elif key ==  'DATALOGGER_SN'  : dummy        = self._String(val)               #  6 DATALOGGER_SN='xxxx'
-             elif key ==  'SEISMOMETER1'   : dummy        = self._String(val)               #  7 SEISMOMETER1='STS-2N'
-             elif key ==  'SEISMOMETER_SN1': dummy        = self._String(val)               #  8 SEISMOMETER_SN1='yyyy'
-             elif key ==  'GAIN_MULT1'     : dummy        = self._Float(val)               #  9 GAIN_MULT1='1.0'
-             elif key ==  'SAMPLING1'      : dummy        = self._String(val)               # 10 SAMPLING1='20/40/80/100'
-             elif key ==  'DEPTH1'         : dummy        = self._Float(val)               # 11 DEPTH1='0.0'
-             elif key ==  'SEISMOMETER2'   : dummy        = self._String(val)               # 12 SEISMOMETER2=''
-             elif key ==  'SEISMOMETER_SN2': dummy        = self._String(val)               # 13 SEISMOMETER_SN2=''
-             elif key ==  'GAIN_MULT2'     : dummy        = self._String(val)               # 14 GAIN_MULT2=''
-             elif key ==  'SAMPLING2'      : dummy        = self._String(val)               # 15 SAMPLING2=''
-             elif key ==  'DEPTH2'         : dummy        = self._String(val)               # 16 DEPTH2=''
-             elif key ==  'START_DATE'     : dummy        = self._String(val)               # 17 START_DATE='1980/001'
-             elif key ==  'CONFIGURED'     : dummy        = self._String(val)               # 18 CONFIGURED='yes'
-             elif key ==  'PACKAGES'       : sta.provider = self._String(val) [1:-1]        # 19 PACKAGES='WEB_DC'
+             if   key ==  'KEY_VERSION'   : dummy= self._Float(val)                #  0 KEY_VERSION='2.5'
+             elif key ==  'STAT_DESC'     : sta.site = val                              #  1 STAT_DESC='Ganja, Azerbaijan'
+             elif key ==  'LATITUDE'      : sta.lat  = self._Float(val, -90.0, 90.0)  #  2 LATITUDE='40.6519'
+             elif key ==  'LONGITUDE'     : sta.lon  = self._Float(val,-180.0,360.0)  #  3 LONGITUDE='46.3297'
+             elif key ==  'ELEVATION'     : sta.ele  = self._Float(val)               #  4 ELEVATION='560.0'
+             elif key ==  'DATALOGGER'    : dummy= self._String(val)               #  5 DATALOGGER='Q380-M'
+             elif key ==  'DATALOGGER_SN' : dummy= self._String(val)               #  6 DATALOGGER_SN='xxxx'
+             elif key ==  'SEISMOMETER1'  : dummy= self._String(val)               #  7 SEISMOMETER1='STS-2N'
+             elif key ==  'SEISMOMETER_SN1': dummy= self._String(val)               #  8 SEISMOMETER_SN1='yyyy'
+             elif key ==  'GAIN_MULT1'    : dummy= self._Float(val)               #  9 GAIN_MULT1='1.0'
+             elif key ==  'SAMPLING1'     : dummy= self._String(val)               # 10 SAMPLING1='20/40/80/100'
+             elif key ==  'DEPTH1'        : dummy= self._Float(val)               # 11 DEPTH1='0.0'
+             elif key ==  'SEISMOMETER2'  : dummy= self._String(val)               # 12 SEISMOMETER2=''
+             elif key ==  'SEISMOMETER_SN2': dummy= self._String(val)               # 13 SEISMOMETER_SN2=''
+             elif key ==  'GAIN_MULT2'    : dummy= self._String(val)               # 14 GAIN_MULT2=''
+             elif key ==  'SAMPLING2'     : dummy= self._String(val)               # 15 SAMPLING2=''
+             elif key ==  'DEPTH2'        : dummy= self._String(val)               # 16 DEPTH2=''
+             elif key ==  'START_DATE'    : dummy= self._String(val)               # 17 START_DATE='1980/001'
+             elif key ==  'CONFIGURED'    : dummy= self._String(val)               # 18 CONFIGURED='yes'
+             elif key ==  'PACKAGES'      : sta.provider = self._String(val) [1:-1]        # 19 PACKAGES='WEB_DC'
 
-             else                          : #self._error('Invalid key ' + key)
+             else                         : #self._error('Invalid key ' + key)
                 Logfile.error('Invalid key ' + key)
 
              if key == END_FLAG:
@@ -192,7 +192,7 @@ def getNetworks(dirName=None):
     if dirName == None: dir = Globals.KeyfileFolder()
     else:               dir = dirName
 
-    files    = os.listdir(dir)
+    files= os.listdir(dir)
     networks = []
 
     for s in files:
@@ -229,10 +229,10 @@ def getProvider(dirName=None, net=None, station=None, fullName=None):
 def getSite(stationName):
 
     keyfolder = Globals.KeyfileFolder()
-    net       = DataTypes.toNetwork(stationName)
-    sta       = DataTypes.toStation(stationName)
-    keyfile   = KeyFileObj       (keyfolder, net,sta)
-    sta       = keyfile.read()
+    net   = DataTypes.toNetwork(stationName)
+    sta   = DataTypes.toStation(stationName)
+    keyfile   = KeyFileObj     (keyfolder, net,sta)
+    sta   = keyfile.read()
 
     if sta == None: site = None
     else:           site = sta.site + '(' + sta.provider + ')'
@@ -247,7 +247,7 @@ def isIRIS(dirName=None, net=None, station=None, fullName=None):
 
     provider = getProvider(dir, net,station, fullName)
 
-    if provider == PROV_IRIS  : return True
+    if provider == PROV_IRIS : return True
     if provider == PROV_WEB_DC: return False
 
     return False # ???

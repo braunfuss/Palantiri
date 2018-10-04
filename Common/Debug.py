@@ -9,7 +9,7 @@ import Logfile
               
 #      Global variables
 
-g_Level     = 0
+g_Level = 0
 g_showProcs = True
 
 # -------------------------------------------------------------------------------------------------

@@ -16,7 +16,7 @@ action = 'getstations'
 action = 'getmeta'
 
 events = 'NEAR-COAST-OF-NORTHERN-CHILE_2014-04-03T02-43-14'
-dir    = Basic.changeDirectory('..')
+dir= Basic.changeDirectory('..')
 #dir   = Globals.setEventDir(os.path.join(dir, Globals.EVENTS, events))
 
 if len(sys.argv) == 1:
@@ -27,7 +27,7 @@ if len(sys.argv) == 1:
       #sys.argv = [sys.argv[0], action, events, 'AK']
      
    config = imp.load_source('Config',os.path.join(os.getcwd(),'tools','config.py'))
-   cmd    = WaveformProgs.buildCommand(config)
+   cmd= WaveformProgs.buildCommand(config)
 
    oldArgs  = sys.argv
    sys.argv = cmd.split()

@@ -42,7 +42,7 @@ class GridElem(object):
         self.lat   = lat
         self.lon   = lon
         self.depth = depth
-        self.tt    = tt
+        self.tt= tt
         self.delta = delta
 
 # -------------------------------------------------------------------------------------------------
@@ -82,7 +82,7 @@ def filterStations(StationList,Config,Origin,network):
     for j in network:
         for i in StationList:
             if fnmatch.fnmatch(i.getcmpName(),j) :
-                pos    = Location(i.lat, i.lon)
+                pos= Location(i.lat, i.lon)
                 sdelta = loc2degrees(origin, pos)
                 if sdelta > minDist and sdelta < maxDist:
                     s = Station(i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain)
@@ -94,7 +94,7 @@ def filterStations(StationList,Config,Origin,network):
 
 def calctakeoff(Station,Event,Config):
 
-    de       = loc2degrees(Event, Station)
+    de   = loc2degrees(Event, Station)
     Phase = cake.PhaseDef('P')
     model = cake.load_model()
     arrivals= model.arrivals([de,de], phases=Phase, zstart=Event.depth*km)
@@ -149,9 +149,9 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
 
     phasename =('%sphase') %(os.path.basename(arrayname))
 
-    cfg         = ConfigObj(dict=Config)
-    dimX        = cfg.Int  ('dimx')
-    dimY        = cfg.Int  ('dimy')
+    cfg= ConfigObj(dict=Config)
+    dimX= cfg.Int('dimx')
+    dimY= cfg.Int('dimy')
     gridspacing = cfg.Float('gridspacing')
 
     o_lat   = float(Origin['lat'])
@@ -167,11 +167,11 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
     plane = False
 
     TTTGridMap = {}
-    LMINMAX    = []
+    LMINMAX= []
     GridArray  = {}
-    locStation = Location   (station.lat, station.lon)
-    sdelta     = loc2degrees(Location(o_lat, o_lon), locStation)
-   # tt         = obs_TravelTimes(sdelta, o_depth)
+    locStation = Location (station.lat, station.lon)
+    sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
+   # tt= obs_TravelTimes(sdelta, o_depth)
     #for k in tt:
 	#        if k['phase_name'] == Config[phasename] or k['phase_name'] ==('%sdiff')%(Config[phasename]):
 	#	         ttime = k ['time']
@@ -290,8 +290,8 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
 
     cfg = ConfigObj(dict=Config)
 
-    dimX        = cfg.Int  ('dimx')
-    dimY        = cfg.Int  ('dimy')
+    dimX= cfg.Int('dimx')
+    dimY= cfg.Int('dimy')
     gridspacing = cfg.Float('gridspacing')
 
     o_lat   = float(Origin['lat'])
@@ -304,7 +304,7 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
     oLonul = 0
 
     TTTGridMap = {}
-    LMINMAX    = []
+    LMINMAX= []
     GridArray  = {}
     locStation = Location(station.lat, station.lon)
 
@@ -339,7 +339,7 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
     p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     p.wait()
 
-    L      = []
+    L  = []
     output = open(outputpath,'r')
     'OUTPUT: ',outputpath
 
@@ -378,7 +378,7 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
 
     mint = float(min(LMINMAX))
     maxt = float(max(LMINMAX))
-    k    = MinTMaxT(mint,maxt)
+    k= MinTMaxT(mint,maxt)
 
     TTTGridMap [station.getName()] = TTTGrid(o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)
 
@@ -398,9 +398,9 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
 
 def calcak135parameter(Event):
 
-    vp     = 0
-    vs     = 0
-    rho    = 0
+    vp = 0
+    vs = 0
+    rho= 0
     tmprho = 0
     tmpvp  = 0
     tmpvs  = 0
@@ -435,16 +435,16 @@ def calcak135parameter(Event):
             fobj.seek(0)
             begin = x
             end   = x+1
-            I     = []
+            I = []
 
             for counter,line in enumerate(fobj):
                 if counter == begin:  I.append(line)
                 if counter == end:    I.append(line)
 
-            dist      = float(I[1].split()[0]) - float(I[0].split()[0])
+            dist  = float(I[1].split()[0]) - float(I[0].split()[0])
             rhodist   = float(I[1].split()[1]) - float(I[0].split()[1])
-            vpdist    = float(I[1].split()[2]) - float(I[0].split()[2])
-            vsdist    = float(I[1].split()[3]) - float(I[0].split()[3])
+            vpdist= float(I[1].split()[2]) - float(I[0].split()[2])
+            vsdist= float(I[1].split()[3]) - float(I[0].split()[3])
             depthdist = float(depth)           - float(I[0].split()[0])
 
             rhofact = rhodist/dist
@@ -513,7 +513,7 @@ def dubcup(rho, vp,vs,stri,dip, rak, azi, phi):
     rad5   =        sin(drak)       * cos(2.0 * ddip) * sin(dazi-dstri);
     rad6   =  0.5 * cos(drak)       * sin(ddip)       * sin(2.0 *(dazi-dstri));
     rad7   = -0.5 * sin(drak)       * sin(2.0 * ddip) *(1.0-rad4);
-    ph     = float(phi * d2r);
+    ph = float(phi * d2r);
     radra1 = sin(2.0 * ph);
 
     #/* SV waves at source */

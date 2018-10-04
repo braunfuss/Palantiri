@@ -20,14 +20,14 @@ ABORT_TOKEN = MSG_TOKEN + ' ABORT '
                
 #      Global variables
 
-g_ProtLineNr    = 1              # current linenumber in runtime log
+g_ProtLineNr= 1              # current linenumber in runtime log
 
-g_RuntimeLog    = None           # Filename
+g_RuntimeLog= None           # Filename
 g_UseRunTimeLog = True           # output enabled ?
-g_ErrorLog      = None
+g_ErrorLog  = None
 g_UseErrorLog   = False
 
-g_IsVisible     = True           # Output to terminal
+g_IsVisible = True           # Output to terminal
 
 #      Defines
 
@@ -65,7 +65,7 @@ def init(runTimeLog=None, errorLog=None, startMsg=None):
     #  create and open runtime logfile and error log
     #
     if runTimeLog == None:
-       postfix1     = datetime.datetime.now().strftime("-%Y-%m-%d-%H-%M")
+       postfix1 = datetime.datetime.now().strftime("-%Y-%m-%d-%H-%M")
        g_RuntimeLog = initFile(postfix=postfix1)
 
     else:
@@ -86,7 +86,7 @@ def init(runTimeLog=None, errorLog=None, startMsg=None):
           #endfor
 
           if len(lines2) > 0:
-             os.remove  (g_ErrorLog)
+             os.remove(g_ErrorLog)
              Basic.writeTextFile(g_ErrorLog, lines2)
     #endif
 
@@ -122,7 +122,7 @@ def initFile(fileName=None, postfix=''):
     # cut logfile to last n lines   ???
     #
     lines = Basic.readTextFile(log1)
-    n     = len(lines)
+    n = len(lines)
     #print 'n = ', n
 
     if n > MAX_LINES:

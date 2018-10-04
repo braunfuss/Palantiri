@@ -23,7 +23,7 @@ def semblancestalta (sembmaxvaluevector,sembmaxlatvector,sembmaxlonvector):
     data=np.array(sembmaxvaluevector, dtype=np.float64)
 
     #stats = Stats()                  #hs
-    #stats.network    = 'BW'          #hs
+    #stats.network= 'BW'          #hs
     #stats['station'] = 'MANZ'        #hs
 
     tr = Trace(data,header=None)

@@ -159,7 +159,7 @@ def createFolder(EventPath):
     if os.access(os.getcwd(), os.W_OK):
         basedir   = os.path.join(EventPath,'work')
         sembdir   = os.path.join(basedir, 'semblance')
-        ascdir    = os.path.join(basedir, 'asc')
+        ascdir= os.path.join(basedir, 'asc')
         mseeddir  = os.path.join(basedir, 'mseed')
 
         Folder['base']  = basedir
@@ -176,11 +176,11 @@ def createFolder(EventPath):
 # -------------------------------------------------------------------------------------------------
 
 def filterStations(StationList, Config, Origin):
-    F       = []
-    cfg     = ConfigObj(dict=Config)
+    F   = []
+    cfg = ConfigObj(dict=Config)
 
     minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
-    origin           = DataTypes.dictToLocation(Origin)
+    origin  = DataTypes.dictToLocation(Origin)
 
     Logfile.red('Filter stations with configured parameters')
 
@@ -195,7 +195,7 @@ def filterStations(StationList, Config, Origin):
 
 def checkStationAroundInitialCentroid(station,Config,StationMetaList):
 
-    cfg       = ConfigObj(dict=Config)
+    cfg   = ConfigObj(dict=Config)
     initDist  = cfg.Float('initialstationdistance')
     counter   = 0
 
@@ -208,10 +208,10 @@ def checkStationAroundInitialCentroid(station,Config,StationMetaList):
 
 def addOK(station,stationList,Config,MetaList):
 
-    cfg       = ConfigObj(dict=Config)
+    cfg   = ConfigObj(dict=Config)
     minDist   = cfg.Distance('centroidmindistance')
     minAround = cfg.UInt('minstationaroundinitialcluster')
-    t       = 0
+    t   = 0
 
     for i in stationList:
         sdelta = loc2degrees(station, i)
@@ -242,7 +242,7 @@ def createRandomInitialCentroids(Config,StationMetaList):
     Logfile.red('Begin initial centroid search')
 
     initialCentroids = []
-    usedIndexes      = []
+    usedIndexes  = []
     random.seed(time.clock())
 
     if len(StationMetaList) == 0:                                 #hs
@@ -254,7 +254,7 @@ def createRandomInitialCentroids(Config,StationMetaList):
     while len(initialCentroids) != int(Config['maxcluster']):
 
             randomIndex = random.randint(0, len(StationMetaList)-1)
-            #flag       = alreadyUsedIndex(randomIndex,usedIndexes)
+            #flag   = alreadyUsedIndex(randomIndex,usedIndexes)
             usedIndexes.append(randomIndex)
 
             #if len(usedIndexes) == len(StationMetaList):
@@ -295,14 +295,14 @@ def stationBelongToCluster(Config, CentroidList, StationMetaList):
 
     for i in StationMetaList:
         mind = 100000
-        c    = 0
+        c= 0
 
         for j in CentroidList:
             delta =  loc2degrees(j, i)
             c     += 1
 
             if mind > delta:
-                mind     = delta
+                mind = delta
                 i.member = c
         #endfor
 
@@ -386,7 +386,7 @@ def deleteFarStations(CentroidList, StationClusterList,Config):
 
 def filterClusterStationMinimumNumber(CentroidList, StationClusterList, Config):
 
-    newCentroidList       = []
+    newCentroidList   = []
     newStationClusterList = []
 
     for i in CentroidList:
@@ -433,8 +433,8 @@ def calcMinValue(CentroidList):
 
     for i in CentroidList:
         for j in CentroidList:
-            delta     = loc2degrees(i, j)
-            x         =(delta - mCD)
+            delta = loc2degrees(i, j)
+            x=(delta - mCD)
             sumdelta += math.pow( x, 2 )
 
     minval = sumdelta / len(CentroidList)
@@ -472,8 +472,8 @@ def write4Plot(Config,Origin,StationClusterList,CentroidList,Folder,flag):
     fobjstation.close()
 
     fobjcentroid = open(os.path.join(p,'event.statistic'),'w')
-    mCD          = calcMeanCentroidDistance(CentroidList)
-    mv           = calcMinValue(CentroidList)
+    mCD = calcMeanCentroidDistance(CentroidList)
+    mv  = calcMinValue(CentroidList)
 
     fobjcentroid.write(str(mCD)+' '+str(mv)+' '+str(len(CentroidList))+' '+str(len(StationClusterList))+'\n')
     fobjcentroid.close()
@@ -554,7 +554,7 @@ class ClusterMain(MainObj):
         parser = OptionParser(usage="%prog -f Eventpath ")
         parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
 
-        (options, args) = parser.parse_args()
+      (options, args) = parser.parse_args()
         self.eventpath = options.evpath
 
         Basic.checkExistsDir(self.eventpath, isAbort=True)
@@ -566,11 +566,11 @@ class ClusterMain(MainObj):
 
     def process(self):
 
-        t          = time.time()
-        C          = config.Config(self.eventpath)
-        Config     = C.parseConfig('config')
+        t = time.time()
+        C = config.Config(self.eventpath)
+        Config = C.parseConfig('config')
         cfg = ConfigObj(dict=Config)
-        Origin     = C.parseConfig('origin')
+        Origin = C.parseConfig('origin')
         if cfg.pyrocko_download() == True:
             if cfg.quantity() == 'displacement':
                 disp = True

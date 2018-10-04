@@ -30,7 +30,7 @@ class Xcorr(object):
     
     def __init__(self,Origin,StationMeta,EventPath):
 
-        self.Origin      = Origin
+        self.Origin  = Origin
         self.StationMeta = StationMeta
         self.EventPath   = EventPath
 
@@ -39,11 +39,11 @@ class Xcorr(object):
     def traveltimes(self):
         
         Logfile.red ('Enter AUTOMATIC FILTER')
-        T     = []
+        T = []
         Wdict = {}
         
         for i in self.StationMeta:        
-            de = loc2degrees     (self.Origin, i)
+            de = loc2degrees   (self.Origin, i)
             tt = obs_TravelTimes (de, self.Origin.depth)
 
             if tt[0]['phase_name'] == 'P':
@@ -53,7 +53,7 @@ class Xcorr(object):
             #print i,i.getName(),i.lat,i.lon,time
         
             tw = self.calculateTimeWindows (time)
-            w  = self.readWaveformsCross   (i,tw)
+            w  = self.readWaveformsCross (i,tw)
             Wdict [i.getName()] = w
         #endfor
 
@@ -80,7 +80,7 @@ class Xcorr(object):
 
         for i in Waveform:
             i.detrend ("simple")
-            i.filter  ("bandpass", freqmin=0.05, freqmax=1, corners=3, zerophase=False)
+            i.filter("bandpass", freqmin=0.05, freqmax=1, corners=3, zerophase=False)
 
         return Waveform
     # ----------------------------------------------------------------------------------------------
@@ -94,7 +94,7 @@ class Xcorr(object):
         datet  = datet.split('-')
         year   = datet[0].strip()
         month  = datet[1]
-        day    = datet[2]
+        day= datet[2]
         #timep = ts[1][:-1]
      
         julday  = UTCDateTime (int(year),int(month),int(day)).julday
@@ -105,7 +105,7 @@ class Xcorr(object):
             station.loc =''
 
         streamData = station.net+'.'+station.sta+'.'+station.loc+'.'+station.comp+'.D.'+str(year)+'.'+str(julday)
-        entry      = os.path.join (sdspath,station.net,station.sta,station.comp+'.D',streamData)
+        entry  = os.path.join (sdspath,station.net,station.sta,station.comp+'.D',streamData)
         #print entry
         st = read (entry,format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
         #print st
@@ -131,8 +131,8 @@ class Xcorr(object):
 
         for stream in StreamDict.iterkeys():
             #print stream, StreamDict[stream][0]
-            a,b              = obspy.signal.cross_correlation.xcorr (ref, StreamDict[stream][0], 100)
-            shift            = a / StreamDict[stream][0].stats.sampling_rate
+            a,b = obspy.signal.cross_correlation.xcorr (ref, StreamDict[stream][0], 100)
+            shift   = a / StreamDict[stream][0].stats.sampling_rate
             corrDict[stream] = shift
             #print 'Index: ',a, ' Value: ',b,' ----> ',stream
 

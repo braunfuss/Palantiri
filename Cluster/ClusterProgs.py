@@ -52,16 +52,16 @@ def start(config):
     if sys.argv[1] == 'cluster':
        intern.checkProgramParameter(3,4)
 
-       at      = os.path.join(os.getcwd(),'Cluster', 'callcluster.py')    # directory of python scripts
+       at  = os.path.join(os.getcwd(),'Cluster', 'callcluster.py')    # directory of python scripts
        workDir = [Globals.EventDir(), 'tmp2', 'cluster']                   # ???
        workDir = ['Cluster']
-       cmd     = sys.executable + ' ' + at + ' -f ' + Globals.EventDir()
+       cmd = sys.executable + ' ' + at + ' -f ' + Globals.EventDir()
 
     else: 
        return False  
 
     Basic.changeDirectory(workDir)         # create working directory 
-   #Basic.removeFiles  ('.')             # ... and empty it
+   #Basic.removeFiles('.')             # ... and empty it
 
     os.system(cmd)
     return True

@@ -8,10 +8,10 @@ class MainObj (object) :
 
    def __init__ (self, externClass, version, runTimeLog=None, errorLog=None) :
 
-       self.version    = version
+       self.version= version
        self.runTimeLog = runTimeLog
        self.errorLog   = errorLog
-       self.extern     = externClass
+       self.extern = externClass
 
    def run (self) :
 
@@ -63,8 +63,8 @@ class ExternMainObj (MainObj) :
 def startTest (action, workingDir) :
 
     events   = 'NEAR-COAST-OF-NORTHERN-CHILE_2014-04-03T02-43-14'
-    dir      = os.getcwd()
-    dir      = Globals.setEventDir (os.path.join (dir,Globals.EVENTS, events))
+    dir  = os.getcwd()
+    dir  = Globals.setEventDir (os.path.join (dir,Globals.EVENTS, events))
 
     args = [sys.argv[0], action, '-f', dir]
 

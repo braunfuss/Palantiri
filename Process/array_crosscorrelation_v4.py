@@ -108,7 +108,7 @@ class Xcorr(object):
 
         Logfile.add(' ORIGIN TIME %s' % UTCDateTime(self.Origin.time))
         Logfile.add(' OVERALL TIME WINDOW: %s - %s' %(tw['start'],      tw['end']))
-        Logfile.add(' XCROSS TIME WINDOW : %s - %s' %(tw['xcorrstart'], tw['xcorrend']))
+        Logfile.add(' XCROSS TIME WINDOW: %s - %s' %(tw['xcorrstart'], tw['xcorrend']))
 
         return tw
 
@@ -229,7 +229,7 @@ class Xcorr(object):
         st= read(entry, format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
         if len(st.get_gaps()) > 0:
             st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-        snr  = self.signoise  (st[0], ttime, entry)
+        snr  = self.signoise(st[0], ttime, entry)
         stream = self.filterWaveform(st)
 
 
@@ -272,7 +272,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise  (st[0], ttime, entry)
+                    #snr  = self.signoise(st[0], ttime, entry)
                     snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                    tmax=traces_station.tmin+ttime-20.,
                                                    inplace=False)
@@ -322,7 +322,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise  (st[0], ttime, entry)
+                    #snr  = self.signoise(st[0], ttime, entry)
                     snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                    tmax=traces_station.tmin+ttime-20.,
                                                    inplace=False)
@@ -344,7 +344,7 @@ class Xcorr(object):
 
         Logfile.red('Enter AUTOMATIC CROSSCORRELATION ')
         Logfile.red('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++\n ')
-        T     = []
+        T = []
         Wdict = {}
         SNR   = {}
         Config = self.Config
@@ -352,7 +352,7 @@ class Xcorr(object):
         for i in self.StationMeta:
 
             Logfile.red('read in %s '%(i))
-            de = loc2degrees  (self.Origin, i)
+            de = loc2degrees(self.Origin, i)
     	    Phase = cake.PhaseDef('P')
             model = cake.load_model()
             if cfg.colesseo_input() == True:
@@ -397,16 +397,16 @@ class Xcorr(object):
 
     def readWaveformsPicker(self,station, tw, Origin, ttime):
 
-        t2      = UTCDateTime(self.Origin.time)
+        t2  = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath,'data', str(t2.year))
 
         if station.loc == '--':
             station.loc = ''
 
-        staName    = station.net + '.'   + station.sta  + '.' + station.loc + '.' + station.comp
+        staName= station.net + '.'   + station.sta  + '.' + station.loc + '.' + station.comp
         streamData = staName     + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
-        entry      = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
-        st         = read(entry, format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
+        entry  = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+        st= read(entry, format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
 
         if len(st.get_gaps()) > 0:
             st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
@@ -444,7 +444,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise  (st[0], ttime, entry)
+                    #snr  = self.signoise(st[0], ttime, entry)
                     stream = self.filterWaveform(st)
 
 
@@ -489,7 +489,7 @@ class Xcorr(object):
 
                     if len(st.get_gaps()) > 0:
                         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise  (st[0], ttime, entry)
+                    #snr  = self.signoise(st[0], ttime, entry)
                     snr_trace= traces_station.chop(tmin=traces_station.tmin,
                                                    tmax=traces_station.tmin+ttime-20.,
                                                    inplace=False)
@@ -519,8 +519,8 @@ class Xcorr(object):
         name =('%s.%s.%s.%s') %(RefWaveform[0].stats.network, RefWaveform[0].stats.station,
                                   RefWaveform[0].stats.location,RefWaveform[0].stats.channel)
 
-        i     = self.searchMeta(name,self.StationMeta)
-        de    = loc2degrees  (self.Origin, i)
+        i = self.searchMeta(name,self.StationMeta)
+        de= loc2degrees(self.Origin, i)
         ptime = 0
 
         Phase = cake.PhaseDef('P')
@@ -589,7 +589,7 @@ class Xcorr(object):
         if int(self.Config['autoxcorrcorrectur']) == 1:
             try:
 
-                refmarkername     = os.path.join(self.EventPath,('%s-marker') %(os.path.basename(self.AF)))
+                refmarkername = os.path.join(self.EventPath,('%s-marker') %(os.path.basename(self.AF)))
                 fobjrefmarkername = open(refmarkername,'w')
                 fobjrefmarkername.write('# Snuffler Markers File Version 0.2\n')
                 fobjrefmarkername.write(('phase: %s 0 %s    None           None         None         XWStart        None False\n')%(tw['xcorrstart'].strftime('%Y-%m-%d %H:%M:%S.%f'),name))
@@ -607,7 +607,7 @@ class Xcorr(object):
 
 
                 selection = float(raw_input('Enter self picked phase in seconds: '))
-                tdiff     = selection-self.mintforerun
+                tdiff = selection-self.mintforerun
 
                 refname = os.path.basename(self.AF)+'-shift.mseed'
                 trP.stats.starttime = trP.stats.starttime - selection
@@ -711,7 +711,7 @@ class Xcorr(object):
         else:                                   t = self.Config [alternativeref]
 
         corrDict = {}
-        ref      = StreamDict[t][0].data
+        ref  = StreamDict[t][0].data
         Logfile.red('Reference Station of %s for Xcorr Procedure %s' %(os.path.basename(self.AF),t))
         Logfile.red('Enter Xcorr Procedure ')
         for stream in StreamDict.iterkeys():
@@ -732,8 +732,8 @@ class Xcorr(object):
     def runXcorr(self):
 
         CD,ref,WD = self.doXcorr()
-        onset     = 0
-        #onset    = self.refTrigger(ref,self.EventPath,self.StationMeta)
+        onset = 0
+        #onset= self.refTrigger(ref,self.EventPath,self.StationMeta)
         tdiff,triggerobject = self.refTrigger(ref)
 
         fCD = self.filterCorrDict(CD,onset)

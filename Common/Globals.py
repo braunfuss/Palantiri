@@ -19,7 +19,7 @@ import ConfigFile
 #      Global variables
 
 isClient   = False                        # is client process ?
-isDebug    = False                        # debug mode ?
+isDebug= False                        # debug mode ?
 
 ConfigDict  = None                        # Configuration file as dictionary   
 ProtFileDir = None                        # directory for protocol files
@@ -99,9 +99,9 @@ def init(configFileName = None):
 
        if ConfigDict == None:  return False
 
-    #obj     = ConfigFile.GlobCfg()
+    #obj = ConfigFile.GlobCfg()
     #isDebug = obj.Bool('debug', '0')
-    key     = 'DEBUG_FLAG'
+    key = 'DEBUG_FLAG'
 
     if not os.environ.has_key(key): isDebug = False
     else:                            isDebug =(os.environ [key].strip() == '1')

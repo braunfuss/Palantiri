@@ -7,7 +7,7 @@ stacking of seismic signal in one place.
 
 :license:
     GNU Lesser General Public License, Version 3
-    (https://www.gnu.org/copyleft/lesser.html)
+  (https://www.gnu.org/copyleft/lesser.html)
 """
 from __future__ import absolute_import
 from __future__ import division

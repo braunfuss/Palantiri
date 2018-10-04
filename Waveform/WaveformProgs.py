@@ -14,26 +14,26 @@ import Globals
 import NewVersion
 
 
-def Usage(action) : return 'arraytool.py ' + action + ' event_name'
+def Usage(action): return 'arraytool.py ' + action + ' event_name'
 
-class Intern(object) :
+class Intern(object):
 
-    def __init__(self, action) :  self.action = action
+    def __init__(self, action):  self.action = action
 
-    def error(self, text) :
+    def error(self, text):
 
-        print('\nError : ' + text + '\n')
-        print('Usage : ' + Usage(self.action))
+        print('\nError: ' + text + '\n')
+        print('Usage: ' + Usage(self.action))
         sys.exit('\n*** Program aborted ***')
 
-    def checkProgramParameter(self, nMinParams, nMaxParams) :
+    def checkProgramParameter(self, nMinParams, nMaxParams):
 
         eventName = sys.argv[2]
 
         NewVersion.check()                                        # Check if software version(s) ok
 
-        if len(sys.argv) < nMinParams : self.error('event name missing')
-        if len(sys.argv) > nMaxParams : self.error('Too many parameters')
+        if len(sys.argv) < nMinParams: self.error('event name missing')
+        if len(sys.argv) > nMaxParams: self.error('Too many parameters')
 
         if not Globals.checkEventDirParameter(eventName):          # Exists event directory ?
            
@@ -46,9 +46,9 @@ class Intern(object) :
 
 # -------------------------------------------------------------------------------------------------
 
-def buildCommand(config) :
+def buildCommand(config):
 
-    dir    = 'Waveform'                                  # directory of local python scripts
+    dir= 'Waveform'                                  # directory of local python scripts
     action = sys.argv[1]
     intern = Intern(action)
 
@@ -70,7 +70,7 @@ def buildCommand(config) :
         at   = os.path.join(os.getcwd(), dir, 'getStationWaveformData.py')
         cmd  = sys.executable + ' ' + at + ' -f ' + Globals.EventDir()
         
-        if len(sys.argv) > 3 :  cmd +=(' -n ' + sys.argv[3])                # specific network
+        if len(sys.argv) > 3:  cmd +=(' -n ' + sys.argv[3])                # specific network
 
     elif action == 'getmeta':
         
@@ -79,28 +79,28 @@ def buildCommand(config) :
         intern.checkProgramParameter(3,4)
 
         path   = Globals.EventDir()                                          # event directory
-        at     = os.path.join(os.getcwd(), dir, 'ev_meta_mt4.py')
-        C      = config.Config(path)
+        at = os.path.join(os.getcwd(), dir, 'ev_meta_mt4.py')
+        C  = config.Config(path)
         Origin = C.parseConfig('origin')
 
         d   = obspy.core.utcdatetime.UTCDateTime(Origin['time'])
         jd  = "%03d" % d.julday
         cmd =('%s %s -p %s -y %s -d %s' )%(sys.executable,at, path, str(d.year), str(jd))
         
-        if len(sys.argv) > 3 :  cmd +=(' -n ' + sys.argv[3])               # specific network
+        if len(sys.argv) > 3:  cmd +=(' -n ' + sys.argv[3])               # specific network
 
-    else : 
+    else: 
        return None
     
     return cmd  
 
 # -------------------------------------------------------------------------------------------------
 
-def start(config) :
+def start(config):
 
     cmd = buildCommand(config)
 
-    if cmd == None : return False
+    if cmd == None: return False
 
     os.chdir(os.path.join(os.getcwd(), "tools"))                 # ??? Directory aendern
     os.system(cmd)

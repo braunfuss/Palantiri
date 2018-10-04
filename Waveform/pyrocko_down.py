@@ -32,8 +32,8 @@ def main(args):
     parser.add_option("-m","--sdsfolder", type="string", dest="sdsfolder", help="sdsfolder")
     parser.add_option("-s","--station",   type="string", dest="stationversion", help="stationversion")
     parser.add_option("-f","--evpath",    type="string", dest="eventpath", help="eventpath")
-    parser.add_option("-x","--dummy",     type="string", dest="station",   help="dummy")    #hs : client flag
-    parser.add_option("-n","--dummy2",    type="string", dest="network",   help="dummy2")   #hs : single network
+    parser.add_option("-x","--dummy",     type="string", dest="station",   help="dummy")    #hs: client flag
+    parser.add_option("-n","--dummy2",    type="string", dest="network",   help="dummy2")   #hs: single network
 
     return parser.parse_args(args)
 
@@ -58,7 +58,7 @@ Config = C.parseConfig('config')
 
 filter = FilterCfg(Config)
 
-cfg     = ConfigObj(dict=Config)
+cfg = ConfigObj(dict=Config)
 minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
 
 ev = Event(Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )

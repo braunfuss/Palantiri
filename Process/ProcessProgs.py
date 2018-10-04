@@ -54,17 +54,17 @@ def start(config):
          
        intern.checkProgramParameter(3,3)
 
-       path    = Globals.EventDir()
-       at      = os.path.join(os.getcwd(),'Process', 'main.py')      # python script
+       path= Globals.EventDir()
+       at  = os.path.join(os.getcwd(),'Process', 'main.py')      # python script
        workDir = [path, 'tmp2', 'process']          # ???
        workDir = ['tmpProcess']
-       cmd     = sys.executable + ' ' + at + ' -f ' + path
+       cmd = sys.executable + ' ' + at + ' -f ' + path
 
     else: 
        return False  
 
     Basic.changeDirectory(workDir)         # create and/or change working directory 
-   #Basic.removeFiles  ('.')             # ... and empty it
+   #Basic.removeFiles('.')             # ... and empty it
 
     os.system(cmd)
     return True

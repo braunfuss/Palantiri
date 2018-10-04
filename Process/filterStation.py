@@ -54,8 +54,8 @@ def readWaveformsCross(station, tw, EventPath, Origin):
     #Wdict = {}
 
     streamData = station.getName()+'.D.'+str(year)+'.'+str(julday)
-    entry      = os.path.join(sdspath,station.net,station.sta,station.comp+'.D',streamData)
-    st         = read(entry,format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
+    entry  = os.path.join(sdspath,station.net,station.sta,station.comp+'.D',streamData)
+    st= read(entry,format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
 
     if len(st.getGaps()) > 0:
         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
@@ -72,8 +72,8 @@ def traveltimes(MetaDict,Config,Event,Folder,evpath):
     T = []
 
     for i in MetaDict:
-        delta = loc2degrees  (Event, i)
-        tt    = obs_TravelTimes(delta, Event.depth)
+        delta = loc2degrees(Event, i)
+        tt= obs_TravelTimes(delta, Event.depth)
 
         if tt[0]['phase_name'] == Config['ttphase']:
            time = tt[0]['time']

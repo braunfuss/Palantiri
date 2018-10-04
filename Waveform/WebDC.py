@@ -6,20 +6,20 @@ import  Globals
 import  Logfile
 
 # -------------------------------------------------------------------------------------------------
-# used by getStationList.py :
+# used by getStationList.py:
 
-def _getFromCatalog(network) :
+def _getFromCatalog(network):
 
     return None
 
     # spaeter ???
 
-    dir      = os.path.join(Globals.EventDir(), "keyfiles_catalog")
-    files    = os.listdir(dir)
+    dir  = os.path.join(Globals.EventDir(), "keyfiles_catalog")
+    files= os.listdir(dir)
     selected = []
 
-    for file in files :
-        if file.startwith('station_' + network + '_') :
+    for file in files:
+        if file.startwith('station_' + network + '_'):
            selected.append(file)
     #endfor
 
@@ -29,35 +29,35 @@ def getNetworkInventory(network, user1):
         '''
         Retrieve all stations from one WEBDC network
 
-        :type network: str
-        :param network: name of network to search for station
+       :type network: str
+       :param network: name of network to search for station
         '''
 
         inv  = None
         isOk = False
 
-        for i in range(5) :
-            try :
+        for i in range(5):
+            try:
                client = Client(user=user1)                                            #hs
                #client  = Client(user=user1, timeout=100)                             #hs
-               inv     = client.getInventory(network, '*', '*', '*', restricted=None,permanent=None)
-               isOk    = True
+               inv = client.getInventory(network, '*', '*', '*', restricted=None,permanent=None)
+               isOk= True
                break
 
-            except :
+            except:
               return None
         #endfor
 
-        if not isOk :  return None   # return _getFromCatalog(network)
-        else :         return inv
+        if not isOk:  return None   # return _getFromCatalog(network)
+        else:         return inv
 
 
-# used by ev_meta.py :
+# used by ev_meta.py:
 
-def getInventory(station, usermail_1, key_1) :
+def getInventory(station, usermail_1, key_1):
 
     client = Client(user=usermail_1, dcid_keys=key_1)
-    inv    = client.getInventory(station.net, station.sta, loc, station.comp, instruments=True)
+    inv= client.getInventory(station.net, station.sta, loc, station.comp, instruments=True)
 
     return inv
 
@@ -68,8 +68,8 @@ def parseInventory(Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
 
-        :type Dict: dictionary
-        :param Dict: network dictionary with all station information
+       :type Dict: dictionary
+       :param Dict: network dictionary with all station information
         '''
 
         StationList = []
@@ -79,10 +79,10 @@ def parseInventory(Dict):
             t = i.split('.')
 
             if len(t) == 2:
-                net    = t[0]
-                sta    = t[1]
-                lat    = Dict[i]['latitude']
-                lon    = Dict[i]['longitude']
+                net= t[0]
+                sta= t[1]
+                lat= Dict[i]['latitude']
+                lon= Dict[i]['longitude']
                 elev   = Dict[i]['elevation']
                 site   = Dict[i]['description']
                 tstart = Dict[i]['start']
@@ -98,24 +98,24 @@ def parseInventory(Dict):
 # -------------------------------------------------------------------------------------------------
 # used by getStationList.py
 
-def getNetworks(user1, start, end) :
+def getNetworks(user1, start, end):
     '''
     Return dictionary of available networks via Arclink
 
-    :type start: obspy.core.utcdatetime.UTCDateTime
-    :param start: Start date and time
-    :type end: obspy.core.utcdatetime.UTCDateTime
-    :param end: End date and time
+   :type start: obspy.core.utcdatetime.UTCDateTime
+   :param start: Start date and time
+   :type end: obspy.core.utcdatetime.UTCDateTime
+   :param end: End date and time
     '''
 
-    for i in range(3) :
+    for i in range(3):
        Logfile.add(' ','Waiting for dictionary of available geofon networks(via Arclink) ....')
 
-       try :
-          L        = []
+       try:
+          L= []
           client  = Client(user = user1)                           #hs
           #client = Client(user = user1, timeout=20)               #hs
-          t       = client.getNetworks(start,end)
+          t   = client.getNetworks(start,end)
 
           for index,i in enumerate(t.iterkeys()):
              z = i.split('.')
@@ -124,7 +124,7 @@ def getNetworks(user1, start, end) :
           L = list(set(L))
           break
 
-       except :
+       except:
           Logfile.exception('getGeofonNetworks')
           Logfile.exception('Retry access')
           L = []
@@ -140,12 +140,12 @@ def listNetworks():
     Download available networks via Geofon kml file
     '''
 
-    L    = []
+    L= []
     URL  = 'http://geofon.gfz-potsdam.de/waveform/archive/index.php?type=p'     # permanent
-    s    = 'download latest GEOFON network tables :'
+    s= 'download latest GEOFON network tables:'
 
-    if not Basic.existsHTML_Page(URL, s, withComment = True) :
-       Logfile.error('Cannot find url :', URL)
+    if not Basic.existsHTML_Page(URL, s, withComment = True):
+       Logfile.error('Cannot find url:', URL)
        return L
 
     Logfile.add(' ',s, URL)
@@ -153,11 +153,11 @@ def listNetworks():
     tmpFile = os.path.join(Globals.ProtFileDir, 'geofon_index.txt')
     lines   = Basic.readURL(URL, tmpFile)
 
-    for line in lines :
+    for line in lines:
         word = 'network='
 
-        if 'station.php' in line and word in line :
-           pos     = line.find(word) + len(word)
+        if 'station.php' in line and word in line:
+           pos = line.find(word) + len(word)
            network = line [pos: pos+2]
            L.append(network)
 

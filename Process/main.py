@@ -68,7 +68,7 @@ def initModule () :
     parser = OptionParser(usage="%prog -f Eventpath ")
     parser.add_option ("-f", "--evpath", type="string", dest="evpath", help="evpath")
 
-    (options, args) = parser.parse_args()
+  (options, args) = parser.parse_args()
 
     if options.evpath == None:
        parser.error ("non existing eventpath")
@@ -83,7 +83,7 @@ def initModule () :
 def processLoop():
 
     #==================================get meta info==========================================
-    C      = config.Config (evpath)
+    C  = config.Config (evpath)
     Origin = C.parseConfig ('origin')
     try:
         Syn_in = C.parseConfig ('syn')
@@ -106,7 +106,7 @@ def processLoop():
     #==================================do prerequiries========================================
     Folder = C.createFolder()
 
-    C.cpSkeleton  (Folder,Config)
+    C.cpSkeleton(Folder,Config)
     C.writeConfig (Config,Origin,Folder)
 
     filter = FilterCfg (Config)
@@ -144,8 +144,8 @@ def processLoop():
 
         default = 0
         strike  = origin.strike (default)        # Origin.get ('strike', default)
-        dip     = origin.dip    (default)        # Origin.get ('dip',    default)
-        rake    = origin.rake   (default)        # Origin.get ('rake',   default)
+        dip = origin.dip  (default)        # Origin.get ('dip',    default)
+        rake= origin.rake (default)        # Origin.get ('rake',   default)
 
         ev = Event (origin.lat(), origin.lon(), origin.depth(), origin.time(),
                     strike = strike,dip=dip,rake=rake)
@@ -157,23 +157,23 @@ def processLoop():
 
     XDict   = {}
     RefDict = {}
-    SL      = {}
+    SL  = {}
     if cfg.Int('xcorr') == 1:
 
-        newFreq                = str (filter.newFrequency())
+        newFreq   = str (filter.newFrequency())
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
-        rp                     = os.path.join (Folder['semb'], fobjreferenceshiftname)
-        fobjpickleshiftname    = newFreq + '_' + filtername + '.xcorrpkl'
-        ps                     = os.path.join (Folder['semb'], fobjpickleshiftname)
+        rp= os.path.join (Folder['semb'], fobjreferenceshiftname)
+        fobjpickleshiftname= newFreq + '_' + filtername + '.xcorrpkl'
+        ps= os.path.join (Folder['semb'], fobjpickleshiftname)
 
         if (os.path.isfile(rp) and os.path.getsize(rp) != 0 and os.path.isfile(ps) and os.path.getsize(ps) != 0):
             Logfile.add ('file exits : ' + rp)
             Logfile.add ('load refshifts')
 
-            f             = open(rp)
-            RefDict       = pickle.load(f)
-            x             = open(ps)
-            XDict         = pickle.load(x)
+            f= open(rp)
+            RefDict   = pickle.load(f)
+            x= open(ps)
+            XDict= pickle.load(x)
             xcorrnetworks = cfg.String ('networks').split(',')
 
             for i in xcorrnetworks:
@@ -183,8 +183,8 @@ def processLoop():
             xcorrnetworks = cfg.String ('networks').split(',')
             for i in xcorrnetworks:
                 W = {}
-                refshift    = 0
-                network     = cfg.String(i).split('|')
+                refshift= 0
+                network = cfg.String(i).split('|')
                 FilterMeta  = ttt.filterStations (Meta,Config,Origin,network)
                 arrayfolder = os.path.join (Folder['semb'],i)
 
@@ -200,7 +200,7 @@ def processLoop():
 
                 XDict[i]   = W
                 RefDict[i] = triggerobject.tdiff
-                SL[i]      = len(network)
+                SL[i]  = len(network)
             #endfor
 
             fobjrefshift = open (rp,'w')
@@ -243,7 +243,7 @@ def processLoop():
 
                cmd = ('%s arraytool.py process %s') % (sys.executable,event)
                Logfile.add ('cmd = ' + cmd)
-               os.system   (cmd)
+               os.system (cmd)
                sys.exit()
 
            else:
@@ -301,8 +301,8 @@ def processLoop():
             #==================================loop over arrays=======================================
             ASL = []
             weights = []
-            networks     = Config['networks'].split(',')
-            counter      = 1
+            networks = Config['networks'].split(',')
+            counter  = 1
             TriggerOnset = []
             Wdfs = []
             for i in networks:
@@ -386,25 +386,25 @@ def processLoop():
                     else:
                         Wd = waveform.readWaveformsPyrocko (FilterMeta, tw, evpath,
                                                             ev)
-                #    Wdf = waveform.processpyrockoWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+                #    Wdf = waveform.processpyrockoWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
                 elif cfg.colesseo_input() == True:
-                    Wd = waveform.readWaveforms_colesseo     (FilterMeta, tw, evpath, ev, C)
+                    Wd = waveform.readWaveforms_colesseo   (FilterMeta, tw, evpath, ev, C)
                 else:
-                    Wd = waveform.readWaveforms     (FilterMeta, tw, evpath, ev)
-                Wdf = waveform.processWaveforms  (Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+                    Wd = waveform.readWaveforms   (FilterMeta, tw, evpath, ev)
+                Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
                 Wdfs.append(Wdf)
 
                 C.writeStationFile(FilterMeta,Folder,counter)
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
 
-                t1        = time.time()
+                t1= time.time()
                 if cfg.optimize() == True:
                     optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
                 else:
                     arraySemb, weight = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                t2        = time.time()
+                t2= time.time()
                 Logfile.add ('CALC took %0.3f sec' % (t2-t1))
                 weights.append(weight)
                 ASL.append(arraySemb)
@@ -460,7 +460,7 @@ class ProcessMain (MainObj) :
         file = 'ak135.model'
 
         if not os.path.isfile (file) :
-           source = os.path.join   ('..','tools', file)
+           source = os.path.join ('..','tools', file)
            Basic.checkFileExists (source, isAbort = True)
            shutil.copy (source, file)
 
