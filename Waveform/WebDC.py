@@ -8,24 +8,24 @@ import  Logfile
 # -------------------------------------------------------------------------------------------------
 # used by getStationList.py :
 
-def _getFromCatalog (network) :
+def _getFromCatalog(network) :
 
     return None
 
     # spaeter ???
 
-    dir      = os.path.join (Globals.EventDir(), "keyfiles_catalog")
-    files    = os.listdir (dir)
+    dir      = os.path.join(Globals.EventDir(), "keyfiles_catalog")
+    files    = os.listdir(dir)
     selected = []
 
     for file in files :
-        if file.startwith ('station_' + network + '_') :
-           selected.append (file)
+        if file.startwith('station_' + network + '_') :
+           selected.append(file)
     #endfor
 
 
 
-def getNetworkInventory (network, user1):
+def getNetworkInventory(network, user1):
         '''
         Retrieve all stations from one WEBDC network
 
@@ -38,9 +38,9 @@ def getNetworkInventory (network, user1):
 
         for i in range(5) :
             try :
-               client = Client (user=user1)                                            #hs
-               #client  = Client (user=user1, timeout=100)                             #hs
-               inv     = client.getInventory (network, '*', '*', '*', restricted=None,permanent=None)
+               client = Client(user=user1)                                            #hs
+               #client  = Client(user=user1, timeout=100)                             #hs
+               inv     = client.getInventory(network, '*', '*', '*', restricted=None,permanent=None)
                isOk    = True
                break
 
@@ -48,23 +48,23 @@ def getNetworkInventory (network, user1):
               return None
         #endfor
 
-        if not isOk :  return None   # return _getFromCatalog (network)
+        if not isOk :  return None   # return _getFromCatalog(network)
         else :         return inv
 
 
 # used by ev_meta.py :
 
-def getInventory (station, usermail_1, key_1) :
+def getInventory(station, usermail_1, key_1) :
 
-    client = Client (user=usermail_1, dcid_keys=key_1)
-    inv    = client.getInventory (station.net, station.sta, loc, station.comp, instruments=True)
+    client = Client(user=usermail_1, dcid_keys=key_1)
+    inv    = client.getInventory(station.net, station.sta, loc, station.comp, instruments=True)
 
     return inv
 
 # -------------------------------------------------------------------------------------------------
 # used by getStationList.py
 
-def parseInventory (Dict):
+def parseInventory(Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
 
@@ -88,9 +88,9 @@ def parseInventory (Dict):
                 tstart = Dict[i]['start']
                 tend   = Dict[i]['end']
 
-#               newSta = Station (net,sta,lat,lon,elev,site,start=tstart,end=tend)                #hs
-                newSta = Station (net,sta,lat,lon,elev,site,start=tstart,end=tend, provider=prov) #hs
-                StationList.append (newSta)
+#               newSta = Station(net,sta,lat,lon,elev,site,start=tstart,end=tend)                #hs
+                newSta = Station(net,sta,lat,lon,elev,site,start=tstart,end=tend, provider=prov) #hs
+                StationList.append(newSta)
         #endfor
 
         return StationList
@@ -98,7 +98,7 @@ def parseInventory (Dict):
 # -------------------------------------------------------------------------------------------------
 # used by getStationList.py
 
-def getNetworks (user1, start, end) :
+def getNetworks(user1, start, end) :
     '''
     Return dictionary of available networks via Arclink
 
@@ -108,25 +108,25 @@ def getNetworks (user1, start, end) :
     :param end: End date and time
     '''
 
-    for i in range (3) :
-       Logfile.add (' ','Waiting for dictionary of available geofon networks (via Arclink) ....')
+    for i in range(3) :
+       Logfile.add(' ','Waiting for dictionary of available geofon networks(via Arclink) ....')
 
        try :
           L        = []
-          client  = Client (user = user1)                           #hs
-          #client = Client (user = user1, timeout=20)               #hs
-          t       = client.getNetworks (start,end)
+          client  = Client(user = user1)                           #hs
+          #client = Client(user = user1, timeout=20)               #hs
+          t       = client.getNetworks(start,end)
 
-          for index,i in enumerate (t.iterkeys()):
+          for index,i in enumerate(t.iterkeys()):
              z = i.split('.')
-             L.append (z[0])
+             L.append(z[0])
 
-          L = list (set(L))
+          L = list(set(L))
           break
 
        except :
-          Logfile.exception ('getGeofonNetworks')
-          Logfile.exception ('Retry access')
+          Logfile.exception('getGeofonNetworks')
+          Logfile.exception('Retry access')
           L = []
           continue
     #endfor
@@ -135,7 +135,7 @@ def getNetworks (user1, start, end) :
 
 # -------------------------------------------------------------------------------------------------
 
-def listNetworks ():
+def listNetworks():
     '''
     Download available networks via Geofon kml file
     '''
@@ -144,22 +144,22 @@ def listNetworks ():
     URL  = 'http://geofon.gfz-potsdam.de/waveform/archive/index.php?type=p'     # permanent
     s    = 'download latest GEOFON network tables :'
 
-    if not Basic.existsHTML_Page (URL, s, withComment = True) :
-       Logfile.error ('Cannot find url :', URL)
+    if not Basic.existsHTML_Page(URL, s, withComment = True) :
+       Logfile.error('Cannot find url :', URL)
        return L
 
-    Logfile.add (' ',s, URL)
+    Logfile.add(' ',s, URL)
 
-    tmpFile = os.path.join  (Globals.ProtFileDir, 'geofon_index.txt')
-    lines   = Basic.readURL (URL, tmpFile)
+    tmpFile = os.path.join (Globals.ProtFileDir, 'geofon_index.txt')
+    lines   = Basic.readURL(URL, tmpFile)
 
     for line in lines :
         word = 'network='
 
         if 'station.php' in line and word in line :
-           pos     = line.find (word) + len(word)
+           pos     = line.find(word) + len(word)
            network = line [pos: pos+2]
-           L.append (network)
+           L.append(network)
 
-    L = list (set(L))
+    L = list(set(L))
     return L

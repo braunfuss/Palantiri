@@ -3,12 +3,12 @@ import os
 import sys
 import platform
 
-WINDOWS = (platform.system() == 'Windows')
+WINDOWS =(platform.system() == 'Windows')
 
 # add local directories to import path
 
-sys.path.append ('../tools/')
-sys.path.append ('../Common/')
+sys.path.append('../tools/')
+sys.path.append('../Common/')
 
 from   optparse import OptionParser
 import logging
@@ -57,8 +57,8 @@ import  WebDC                      # Arclink client
 
 HAS_DATA = 'has data'
 
-def printMsg (station, text=' ') :
-    try    :  Server.printMsg (Logfile.MSG_TOKEN + station, text)
+def printMsg(station, text=' ') :
+    try    :  Server.printMsg(Logfile.MSG_TOKEN + station, text)
     except :  dummy = 1
 
 # -------------------------------------------------------------------------------------------------
@@ -102,7 +102,7 @@ class Station(object):
         self.start = start;  self.end     = end;     self.provider = provider
 
     def __str__(self):
-        return ('%s.%s')%(self.net,self.station)
+        return('%s.%s')%(self.net,self.station)
 
 # -------------------------------------------------------------------------------------------------
 #
@@ -145,11 +145,11 @@ class NetworkList(object):
         Returns list of available IRIS networks
         '''
         inetworks = self._listIrisNetworks()
-        inetworks = list (set (inetworks))
+        inetworks = list(set(inetworks))
 
-        self._filterStationsBlacklist (inetworks)
+        self._filterStationsBlacklist(inetworks)
 
-        return sorted (inetworks)
+        return sorted(inetworks)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -164,15 +164,15 @@ class NetworkList(object):
         if WINDOWS : gnetworks3 = []  # ??? noch fuer Windows einbauen
         else :
            t = UTCDateTime(self.otime)
-           gnetworks3 = self._getGeofonNetworks (t-10, t+10)
+           gnetworks3 = self._getGeofonNetworks(t-10, t+10)
 
-        gnetworks.extend (gnetworks2)
-        gnetworks.extend (gnetworks3)
-        gnetworks = list (set(gnetworks))
+        gnetworks.extend(gnetworks2)
+        gnetworks.extend(gnetworks3)
+        gnetworks = list(set(gnetworks))
 
-        self._filterStationsBlacklist (gnetworks)
+        self._filterStationsBlacklist(gnetworks)
 
-        return sorted (gnetworks)
+        return sorted(gnetworks)
 # -------------------------------------------------------------------------------------------------
 
     def _listIrisNetworks(self):
@@ -184,52 +184,52 @@ class NetworkList(object):
         URL  = 'http://www.fdsn.org/networks/?type=csv'                             #9.12.2015
         s    = 'download latest IRIS permanent network tables : '
 
-        if Basic.existsHTML_Page (URL, s, withComment = True) :
-           Logfile.add (' ', s, URL)
-           datareader = csv.reader (urllib2.urlopen (URL))
+        if Basic.existsHTML_Page(URL, s, withComment = True) :
+           Logfile.add(' ', s, URL)
+           datareader = csv.reader(urllib2.urlopen(URL))
 
-           for row in datareader : data.append (row[0])
+           for row in datareader : data.append(row[0])
         #endif
 
         URL = 'http://www.iris.edu/SeismiQuery/bin/tempNetsExcel.php'
         s   = 'download latest IRIS temporary network tables : '
 
-        if Basic.existsHTML_Page (URL, withComment = True) :
-           Logfile.add (' ', s, URL)
+        if Basic.existsHTML_Page(URL, withComment = True) :
+           Logfile.add(' ', s, URL)
 
-           tempnetname = Globals.TempFileName ('allTempNetstemp.xls')
-           tmpcsv      = Globals.TempFileName ('allTempNetstemp.csv')
+           tempnetname = Globals.TempFileName('allTempNetstemp.xls')
+           tmpcsv      = Globals.TempFileName('allTempNetstemp.csv')
 
-           u = urllib2.urlopen (URL)
+           u = urllib2.urlopen(URL)
 
-           localFile = open (tempnetname, 'w')
-           localFile.write  (u.read())
-           localFile.close  ()
+           localFile = open(tempnetname, 'w')
+           localFile.write (u.read())
+           localFile.close ()
 
            try :
               if WINDOWS :
-                 wb = xlrd.open_workbook (tempnetname)
+                 wb = xlrd.open_workbook(tempnetname)
 
               else :
-                 os.system (('in2csv  %s > %s') % (tempnetname,tmpcsv))
-                 datareader = csv.reader (open (tmpcsv, 'rb'), delimiter=",")
+                 os.system(('in2csv  %s > %s') %(tempnetname,tmpcsv))
+                 datareader = csv.reader(open(tmpcsv, 'rb'), delimiter=",")
 
               for row in datareader:
-                  if len (row[0]) == 2 : data.append (row[0])
+                  if len(row[0]) == 2 : data.append(row[0])
 
            except :
-              Logfile.error ('Cannot convert to cvs file')
+              Logfile.error('Cannot convert to cvs file')
 
-           if os.path.isfile (tmpcsv) :       os.remove (tmpcsv)
-           if os.path.isfile (tempnetname) :  os.remove (tempnetname)
+           if os.path.isfile(tmpcsv) :       os.remove(tmpcsv)
+           if os.path.isfile(tempnetname) :  os.remove(tempnetname)
         #endif
 
-        data = sorted (list (set(data)))
+        data = sorted(list(set(data)))
         return data
 
 # -------------------------------------------------------------------------------------------------
 
-    def _listGeofonNetworks2 (self):
+    def _listGeofonNetworks2(self):
         '''
         Download available WEBDC networks from EIDA
         '''
@@ -238,36 +238,36 @@ class NetworkList(object):
         URL = 'http://www.orfeus-eu.org/Data-info/eida-station-overview.txt'
         s   = 'download latest EIDA network tables :'
 
-        if not Basic.existsHTML_Page (URL, withComment = True) :
+        if not Basic.existsHTML_Page(URL, withComment = True) :
            return L
 
-        Logfile.add (' ', s, URL)
+        Logfile.add(' ', s, URL)
 
-        #nettxt = urllib2.urlopen (URL)                                              #hs
-        tmpFile = Globals.TempFileName ('eida_index.txt')                            #hs
-        nettxt  = Basic.readURL (URL, tmpFile)                                       #hs
+        #nettxt = urllib2.urlopen(URL)                                              #hs
+        tmpFile = Globals.TempFileName('eida_index.txt')                            #hs
+        nettxt  = Basic.readURL(URL, tmpFile)                                       #hs
 
         for line in nettxt:
             line = line.split()
 
-            if line[5] == 'OPEN': L.append (line[0])
+            if line[5] == 'OPEN': L.append(line[0])
         #endfor
 
-        L = sorted (list (set(L)))
+        L = sorted(list(set(L)))
         return L
 # -------------------------------------------------------------------------------------------------
 
-    def _listGeofonNetworks_old (self):                     #hs : Code von Lutz - nicht mehr benutzt
+    def _listGeofonNetworks_old(self):                     #hs : Code von Lutz - nicht mehr benutzt
         '''
         Download available networks via Geofon kml file
         '''
 
         URL = 'http://geofon.gfz-potsdam.de/waveform/archive/kml.php'
-        Logfile.add (' ','download latest GEOFON network tables :')
+        Logfile.add(' ','download latest GEOFON network tables :')
 
         L = []
-        kml_file = urllib2.urlopen (URL)
-        baum     = etree.parse (kml_file)
+        kml_file = urllib2.urlopen(URL)
+        baum     = etree.parse(kml_file)
         tag_dict = baum.getroot()
 
         for eintrag in tag_dict.getchildren():
@@ -276,15 +276,15 @@ class NetworkList(object):
                     if i.tag == '{http://www.opengis.net/kml/2.2}name' :  L.append(i.text)
         return L
 
-    def _listGeofonNetworks (self):                         #hs : new routine : replaces ..._old
+    def _listGeofonNetworks(self):                         #hs : new routine : replaces ..._old
         '''
         Download available networks via Geofon kml file
         '''
-        return WebDC.listNetworks ()
+        return WebDC.listNetworks()
 
 # -------------------------------------------------------------------------------------------------
 
-    def _getGeofonNetworks (self,start,end):
+    def _getGeofonNetworks(self,start,end):
         '''
         Return dictionary of available networks via Arclink
 
@@ -293,11 +293,11 @@ class NetworkList(object):
         :type end: obspy.core.utcdatetime.UTCDateTime
         :param end: End date and time
         '''
-        return WebDC.getNetworks (self.mail, start, end)
+        return WebDC.getNetworks(self.mail, start, end)
 
 # -------------------------------------------------------------------------------------------------
 
-    def _filterStationsBlacklist (self,NList):
+    def _filterStationsBlacklist(self,NList):
         '''
         Delete blacklisted networks from network list
 
@@ -313,7 +313,7 @@ class NetworkList(object):
 
 RETRY_ACCESS = 'Retry access'
 
-def getNetworkInventory (network):
+def getNetworkInventory(network):
         '''
         Retrieve all stations from one WEBDC network
 
@@ -321,7 +321,7 @@ def getNetworkInventory (network):
         :param network: name of network to search for station
         '''
 
-        inv = WebDC.getNetworkInventory (network, 'ehlert@geo.uni-potsdam.de')
+        inv = WebDC.getNetworkInventory(network, 'ehlert@geo.uni-potsdam.de')
 
         if inv == None : print RETRY_ACCESS
 
@@ -329,7 +329,7 @@ def getNetworkInventory (network):
 
 # -------------------------------------------------------------------------------------------------
 
-def parseInventory (Dict):
+def parseInventory(Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
 
@@ -353,41 +353,41 @@ def parseInventory (Dict):
                 tstart = Dict[i]['start']
                 tend   = Dict[i]['end']
 
-#               newSta = Station (net,sta,lat,lon,elev,site,start=tstart,end=tend)                #hs
-                newSta = Station (net,sta,lat,lon,elev,site,start=tstart,end=tend, provider=prov) #hs
-                StationList.append (newSta)
+#               newSta = Station(net,sta,lat,lon,elev,site,start=tstart,end=tend)                #hs
+                newSta = Station(net,sta,lat,lon,elev,site,start=tstart,end=tend, provider=prov) #hs
+                StationList.append(newSta)
         #endfor
 
         return StationList
 
-def parseInventory_new (Dict):
+def parseInventory_new(Dict):
         '''
         Parses Network dictionary from WEBDC networks to retrieve available stations
 
         :type Dict: dictionary
         :param Dict: network dictionary with all station information
         '''
-        return WebDC.parseInventory (Dict)
+        return WebDC.parseInventory(Dict)
 
 # -------------------------------------------------------------------------------------------------
 
-def buildGeofonMsg (stationobject, text=None) :
+def buildGeofonMsg(stationobject, text=None) :
 
-    start = str (stationobject.start).split ('T')[0]
-    end   = str (stationobject.end).split   ('T')[0]
-    now   = str (UTCDateTime (datetime.now())).split ('T')[0]
+    start = str(stationobject.start).split('T')[0]
+    end   = str(stationobject.end).split  ('T')[0]
+    now   = str(UTCDateTime(datetime.now())).split('T')[0]
 
     if end.strip() == now.strip() : end = '           '
 
-    s = start + ' - ' + end + '  ' + toStr (stationobject.site)
+    s = start + ' - ' + end + '  ' + toStr(stationobject.site)
 
-    if text != None : s += (' (' + text +')')
+    if text != None : s +=('(' + text +')')
 
     return s
 
 # -------------------------------------------------------------------------------------------------
 
-def filterStationsTimeGeofon (stationList, parameter):
+def filterStationsTimeGeofon(stationList, parameter):
         '''
         Filter stations via time attribute
 
@@ -397,30 +397,30 @@ def filterStationsTimeGeofon (stationList, parameter):
         :param parameter: list of parameter used filter routines
         '''
 
-        t0      = UTCDateTime (parameter['time'])
+        t0      = UTCDateTime(parameter['time'])
         msgList = []
         errList = []
         G       = []
 
         for stationobject in stationList:
             if stationobject.end == None:
-                stationobject.end = UTCDateTime (datetime.now())
+                stationobject.end = UTCDateTime(datetime.now())
 
-            if UTCDateTime (stationobject.end) > t0 and UTCDateTime (stationobject.start) < t0 :
-               msgList.append (buildGeofonMsg (stationobject))
-               G.append (stationobject)
+            if UTCDateTime(stationobject.end) > t0 and UTCDateTime(stationobject.start) < t0 :
+               msgList.append(buildGeofonMsg(stationobject))
+               G.append(stationobject)
 
-            else : msgList.append (buildGeofonMsg (stationobject))
+            else : msgList.append(buildGeofonMsg(stationobject))
         #endfor
 
         #   Print stations with time interval
 
-        if len (msgList) > 0 :
-           printMsg (' ')
-           printMsg ('GEOFON network ')
+        if len(msgList) > 0 :
+           printMsg(' ')
+           printMsg('GEOFON network ')
 
-           for i in range (len (stationList)) :
-               printMsg (str (stationList[i]), msgList[i])
+           for i in range(len(stationList)) :
+               printMsg(str(stationList[i]), msgList[i])
 
            print HAS_DATA
         #endfor
@@ -428,14 +428,14 @@ def filterStationsTimeGeofon (stationList, parameter):
         return G
 # -------------------------------------------------------------------------------------------------
 
-def create_dir (directory):
+def create_dir(directory):
     '''
     Creates recursively directorys with access control
 
     :type directory: str
     :param directory: name of the path to be created
     '''
-    if os.access (directory, os.W_OK): return True
+    if os.access(directory, os.W_OK): return True
 
     try:
         os.makedirs(directory)
@@ -445,13 +445,13 @@ def create_dir (directory):
 
 # -------------------------------------------------------------------------------------------------
 
-def toStr (s) :
-    try : return str (s)
+def toStr(s) :
+    try : return str(s)
     except : return '???'
 
 # -------------------------------------------------------------------------------------------------
 
-def filterStationsDistance (stationList, parameter):
+def filterStationsDistance(stationList, parameter):
         '''
         Filters stationslist via distance attribute
 
@@ -464,8 +464,8 @@ def filterStationsDistance (stationList, parameter):
         D = []
 
         for stationobject in stationList:
-            sdelta = locations2degrees (parameter['elat'], parameter['elon'],
-                                        float (stationobject.lat), float (stationobject.lon))
+            sdelta = locations2degrees(parameter['elat'], parameter['elon'],
+                                        float(stationobject.lat), float(stationobject.lon))
 
             if sdelta > parameter['minDist'] and sdelta < parameter['maxDist']:
                D.append(stationobject)
@@ -474,22 +474,22 @@ def filterStationsDistance (stationList, parameter):
         return D
 # -------------------------------------------------------------------------------------------------
 
-def buildIRISMsg (stationobject, start, end, text) :
+def buildIRISMsg(stationobject, start, end, text) :
 
-    start = ('%s-%s-%s') % (start[0],start[1],start[2])
-    end   = ('%s-%s-%s') % (end[0],  end[1],  end[2])
-    now   = str (UTCDateTime (datetime.now())).split ('T')[0]
+    start =('%s-%s-%s') %(start[0],start[1],start[2])
+    end   =('%s-%s-%s') %(end[0],  end[1],  end[2])
+    now   = str(UTCDateTime(datetime.now())).split('T')[0]
 
     if end.strip() == now.strip() : end = '           '
 
-    s = start + ' - ' + end + '  ' + toStr (stationobject.site)
+    s = start + ' - ' + end + '  ' + toStr(stationobject.site)
 
-    if text != None : s += (' (' + text +')')
+    if text != None : s +=('(' + text +')')
 
     return s
 
 
-def filterStationsTimeIRIS (stationList, parameter):
+def filterStationsTimeIRIS(stationList, parameter):
     '''
     Filters stations via time attribute
 
@@ -499,45 +499,45 @@ def filterStationsTimeIRIS (stationList, parameter):
     :param parameter: list of parameter used filter routines
     '''
 
-    t0      = UTCDateTime (parameter['time'])
+    t0      = UTCDateTime(parameter['time'])
     msgList = []
     F       = []
 
     for stationobject in stationList:
-        t = stationobject.atime.split ('-')
-        z = stationobject.rtime.split ('-')
+        t = stationobject.atime.split('-')
+        z = stationobject.rtime.split('-')
 
         if len(t) == 2:
             start = t[0].split('/')
             end   = t[1].split('/')
-            s     = ('%s-%s-%sT00:00:00.0Z') % (start[0],start[1],start[2])
-            e     = ('%s-%s-%sT00:00:00.0Z') % (end[0],  end[1],  end[2])
+            s     =('%s-%s-%sT00:00:00.0Z') %(start[0],start[1],start[2])
+            e     =('%s-%s-%sT00:00:00.0Z') %(end[0],  end[1],  end[2])
 
             if  UTCDateTime(e) > t0 and UTCDateTime(s) < t0 :
-                msgList.append (buildIRISMsg (stationobject, start, end, 'ARDATA'))
-                F.append (stationobject)
+                msgList.append(buildIRISMsg(stationobject, start, end, 'ARDATA'))
+                F.append(stationobject)
             else :
-                msgList.append (buildIRISMsg (stationobject, start, end, 'ARDATA - outside'))
+                msgList.append(buildIRISMsg(stationobject, start, end, 'ARDATA - outside'))
 
         if len(z) == 2:
             start = z[0].split('/')
             end   = z[1].split('/')
-            s     = ('%s-%s-%sT00:00:00.0Z') % (start[0],start[1],start[2])
-            e     = ('%s-%s-%sT00:00:00.0Z') % (end[0],  end[1],  end[2])
+            s     =('%s-%s-%sT00:00:00.0Z') %(start[0],start[1],start[2])
+            e     =('%s-%s-%sT00:00:00.0Z') %(end[0],  end[1],  end[2])
 
             if  UTCDateTime(e) >= t0 and UTCDateTime(s) <= t0 :
-                msgList.append (buildIRISMsg (stationobject, start, end, 'RTDATA'))
-                F.append (stationobject)
+                msgList.append(buildIRISMsg(stationobject, start, end, 'RTDATA'))
+                F.append(stationobject)
             else :
-                msgList.append (buildIRISMsg (stationobject, start, end, 'RTDATA - outside'))
+                msgList.append(buildIRISMsg(stationobject, start, end, 'RTDATA - outside'))
     #endfor
 
-    if len (msgList) > 0 :
-       printMsg (' ')
-       printMsg ('IRIS network ')
+    if len(msgList) > 0 :
+       printMsg(' ')
+       printMsg('IRIS network ')
 
-       for i in range (len (stationList)) :
-           try    : printMsg (str (stationList[i]), msgList [i])
+       for i in range(len(stationList)) :
+           try    : printMsg(str(stationList[i]), msgList [i])
            except : continue
 
        print HAS_DATA                                                 #hs ???
@@ -547,7 +547,7 @@ def filterStationsTimeIRIS (stationList, parameter):
 
 # -------------------------------------------------------------------------------------------------
 
-def parseXML (request):
+def parseXML(request):
     '''
     Parse XML representation of IRIS networks to retrieve station information
 
@@ -561,10 +561,10 @@ def parseXML (request):
     prov    = KeyFile.PROV_IRIS
 
     try:
-            doc = xml.dom.minidom.parse (urllib2.urlopen(request))
+            doc = xml.dom.minidom.parse(urllib2.urlopen(request))
 
             for node in doc.getElementsByTagName("station"):
-                net   = str (node.getAttribute("net"))
+                net   = str(node.getAttribute("net"))
                 sta   = node.getAttribute("sta")
                 lat   = node.getAttribute("lat")
                 lon   = node.getAttribute("lon")
@@ -573,16 +573,16 @@ def parseXML (request):
                 rtime = node.getAttribute("rtdata")
                 site  = node.getAttribute("site")
 
-#               newSta = Station (net,sta,lat,lon,elev,site,atime,rtime)                  #hs
-                newSta = Station (net,sta,lat,lon,elev,site,atime,rtime, provider=prov)   #hs
-                StationList.append (newSta)
+#               newSta = Station(net,sta,lat,lon,elev,site,atime,rtime)                  #hs
+                newSta = Station(net,sta,lat,lon,elev,site,atime,rtime, provider=prov)   #hs
+                StationList.append(newSta)
     except:
-        Logfile.error ("NOT PARSABLE " + request)
+        Logfile.error("NOT PARSABLE " + request)
 
     return StationList
 # -------------------------------------------------------------------------------------------------
 
-def geofonMt (geofonnetwork,pid,parameter):
+def geofonMt(geofonnetwork,pid,parameter):
         '''
         Function to retrieve network information for WEBDC networks
 
@@ -594,19 +594,19 @@ def geofonMt (geofonnetwork,pid,parameter):
         :param parameter: list of parameter used filter routines
         '''
 
-        SDict = getNetworkInventory (geofonnetwork)
+        SDict = getNetworkInventory(geofonnetwork)
         T     = []
 
         if SDict != None :
-           S     = parseInventory (SDict)
-           D     = filterStationsDistance   (S,parameter)
-           T     = filterStationsTimeGeofon (D,parameter)
+           S     = parseInventory(SDict)
+           D     = filterStationsDistance  (S,parameter)
+           T     = filterStationsTimeGeofon(D,parameter)
 
         return T
 
 # -------------------------------------------------------------------------------------------------
 
-def irisMt (irisnetwork,pid,parameter):
+def irisMt(irisnetwork,pid,parameter):
     '''
     Function to retrieve network information for IRIS networks
 
@@ -618,15 +618,15 @@ def irisMt (irisnetwork,pid,parameter):
     :param parameter: list of parameter used filter routines
     '''
 
-    S = parseXML (irisnetwork)
-    D = filterStationsDistance (S,parameter)
-    T = filterStationsTimeIRIS (D,parameter)
+    S = parseXML(irisnetwork)
+    D = filterStationsDistance(S,parameter)
+    T = filterStationsTimeIRIS(D,parameter)
 
     return T
 
 # -------------------------------------------------------------------------------------------------
 
-def checkProcessError (station, nErrors, lines, execTime = None) :
+def checkProcessError(station, nErrors, lines, execTime = None) :
 
     errCode = Server.RETRY_IT
     #errCode = Server.HAS_NO_DATA
@@ -637,13 +637,13 @@ def checkProcessError (station, nErrors, lines, execTime = None) :
     n  = 2 * len(t1)
 
     for s in lines :
-        if t1 in s : Logfile.add (s[n:-1])
+        if t1 in s : Logfile.add(s[n:-1])
 
-    Logfile.add (' ')
+    Logfile.add(' ')
 
     #   Check if errors in log
     #
-    for lineNr in range (len (lines)) :
+    for lineNr in range(len(lines)) :
        line  = lines [lineNr]
        isEnd = False
        s     = ' '
@@ -653,7 +653,7 @@ def checkProcessError (station, nErrors, lines, execTime = None) :
        if 'MAX_REQUESTS' in line :
           errCode = Server.RETRY_IT
           s =  'UserWarning: MAX_REQUESTS exceeded - breaking current request loop'
-          s += ' (' + str(nErrors) + ')'
+          s += '(' + str(nErrors) + ')'
 
        elif 'deprecated' in line : s = ' '             # ignore ObsPyDeprecation Warning   #15.7.2016
 
@@ -672,26 +672,26 @@ def checkProcessError (station, nErrors, lines, execTime = None) :
        elif 'Traceback' in line :                 # client aborted with traceback info
           sn = []
 
-          for i in range (0,300) :
-              if lineNr+i >= len (lines) : break         #10.12.2015
+          for i in range(0,300) :
+              if lineNr+i >= len(lines) : break         #10.12.2015
               if 'KeyboardInterrupt' in lines [lineNr+i] : sn = []; break
-             #if lineNr+i >= len (lines) : break         #10.12.2015
+             #if lineNr+i >= len(lines) : break         #10.12.2015
 
-              sn.append (lines [lineNr+i])
+              sn.append(lines [lineNr+i])
           #endfor
 
-          if Server.checkIsTimeOut (station, sn) :       # Traceback shows timeout
+          if Server.checkIsTimeOut(station, sn) :       # Traceback shows timeout
          #if True :
-             Logfile.error ('Retry access later')
+             Logfile.error('Retry access later')
              errCode = Server.RETRY_IT
 
           else :                                         # Traceback --> log
-             Server.printLines (station, sn, onlyErrorLog=True)
+             Server.printLines(station, sn, onlyErrorLog=True)
 
           isEnd = True
        #endif
 
-       if s != ' ' : Server.printMsg (station, s)
+       if s != ' ' : Server.printMsg(station, s)
        if isEnd    : break
     #endwhile
 
@@ -699,25 +699,25 @@ def checkProcessError (station, nErrors, lines, execTime = None) :
 
 # --------------------------------------------------------------------------------------------------
 
-def init (options) :
+def init(options) :
 
-    isClient = (options.args != None)
+    isClient =(options.args != None)
 
     Globals.isClient = isClient
-    Debug.init ()
+    Debug.init()
 
     if not isClient :
-       if not Logfile.init (startMsg = VERSION_STRING) : return False
+       if not Logfile.init(startMsg = VERSION_STRING) : return False
 
-       Basic.checkExistsDir (options.evpath, isAbort=True)
+       Basic.checkExistsDir(options.evpath, isAbort=True)
 
-    Globals.setEventDir  (options.evpath)
+    Globals.setEventDir (options.evpath)
 
-    return Globals.init ()
+    return Globals.init()
 
 # --------------------------------------------------------------------------------------------------
 
-def checkConfigFile (conf) :
+def checkConfigFile(conf) :
 
     mail          = ConfigFile.mail
     pwd           = ConfigFile.pwd
@@ -727,14 +727,14 @@ def checkConfigFile (conf) :
     blackList     = ConfigFile.blacklist
 
     keyList = [mail, pwd, duration, minDist, maxDist]
-    ConfigFile.checkKeys (conf, keyList)
+    ConfigFile.checkKeys(conf, keyList)
 
     keyList = [blackList]
-    ConfigFile.checkKeys (conf, keyList, optional=True)
+    ConfigFile.checkKeys(conf, keyList, optional=True)
 
 # --------------------------------------------------------------------------------------------------
 
-def run_parallel (options) :
+def run_parallel(options) :
 
     '''
     Starts station search procedure
@@ -742,54 +742,54 @@ def run_parallel (options) :
     :type options: instance
     :param options: parameter to initialize the networklist class
     '''
-    isClient = (options.args != None)
+    isClient =(options.args != None)
 
-    if not init (options) :
+    if not init(options) :
        return False
 
     if isClient :                                       #        Run client
 
-       clt = StationListClient (options)
-       clt.run ()
+       clt = StationListClient(options)
+       clt.run()
        return True
 
     else :                                              #         Run server
        #    Create directory for clients
        #
-       clientDir = os.path.join (options.evpath, 'keyfiles-' + str (time.time()))
+       clientDir = os.path.join(options.evpath, 'keyfiles-' + str(time.time()))
 
-       Logfile.add ('Create keyfile directory ', clientDir, ' ')
-       create_dir  (clientDir)
+       Logfile.add('Create keyfile directory ', clientDir, ' ')
+       create_dir (clientDir)
 
        #  Build network list
        #
-       C      = config.Config (options.evpath)
-       Origin = C.parseConfig ('origin')
+       C      = config.Config(options.evpath)
+       Origin = C.parseConfig('origin')
        Conf   = Globals.ConfigDict
 
-       checkConfigFile (Conf)
+       checkConfigFile(Conf)
 
-       globalCfg = ConfigObj (dict = Conf)
-       originCfg = ConfigObj (dict = Origin)
+       globalCfg = ConfigObj(dict = Conf)
+       originCfg = ConfigObj(dict = Origin)
 
-       ot       = originCfg.Time()                          # str   (Origin['time'])
+       ot       = originCfg.Time()                          # str  (Origin['time'])
        elat     = originCfg.lat()                           # Origin['lat']
        elon     = originCfg.lon()                           # Origin['lon']
 
-       minDist  = globalCfg.Distance ('mindist')            # Conf  ['mindist']
-       maxDist  = globalCfg.Distance ('maxdist')            # Conf  ['maxdist']
-       duration = globalCfg.Duration ()                     # Conf  ['duration']
+       minDist  = globalCfg.Distance('mindist')            # Conf  ['mindist']
+       maxDist  = globalCfg.Distance('maxdist')            # Conf  ['maxdist']
+       duration = globalCfg.Duration()                     # Conf  ['duration']
 
        paramList = [ot, maxDist,minDist,elat,elon]
 
        BL = []
 
        if 'blacklist' in Conf :
-          K  = (Conf ['blacklist']).split(',')
+          K  =(Conf ['blacklist']).split(',')
           BL = ['# Network Code']
           BL.extend(K)
 
-       T = NetworkList (ot,elat,elon,minDist,maxDist,duration, blacklist = BL,mail=Conf['mail'])
+       T = NetworkList(ot,elat,elon,minDist,maxDist,duration, blacklist = BL,mail=Conf['mail'])
 
        SERVER_NAME = 'network'
 
@@ -798,15 +798,15 @@ def run_parallel (options) :
        inetworks = T.getIRISList()
       #inetworks = ['BF']
 
-       if len (inetworks) == 0 :  Logfile.error ('No iris networks found')
+       if len(inetworks) == 0 :  Logfile.error('No iris networks found')
        else :
-          args = Server.joinClientArgs ([IRIS_TAG, clientDir], paramList)
-          ctrl = Server.ServerCtrl (nRetries = 1, nParallel=1, waitTime=1.0, printStat=False)
-          srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
+          args = Server.joinClientArgs([IRIS_TAG, clientDir], paramList)
+          ctrl = Server.ServerCtrl(nRetries = 1, nParallel=1, waitTime=1.0, printStat=False)
+          srv  = Server.ServerBase(SERVER_NAME, checkProcessError, ctrl)
 
           #if WINDOWS : srv.control.ClientProc = MainProc
 
-          if not srv.run (inetworks, args) : return False
+          if not srv.run(inetworks, args) : return False
        #endif
 
        #       Handle Geofon networks
@@ -816,46 +816,46 @@ def run_parallel (options) :
       #gnetworks = ['FR']
       #gnetworks = []
 
-       if len (gnetworks) == 0 :
-          Logfile.error ('No geofon networks found')
+       if len(gnetworks) == 0 :
+          Logfile.error('No geofon networks found')
 
        else :
           #     Access network infos now from Geofo
           #
-          args = Server.joinClientArgs ([GEOFON_TAG, clientDir], paramList)
-          ctrl = Server.ServerCtrl (nRetries = 4, nParallel=1, waitTime=2.0, printStat=False)
-          srv  = Server.ServerBase (SERVER_NAME, checkProcessError, ctrl)
+          args = Server.joinClientArgs([GEOFON_TAG, clientDir], paramList)
+          ctrl = Server.ServerCtrl(nRetries = 4, nParallel=1, waitTime=2.0, printStat=False)
+          srv  = Server.ServerBase(SERVER_NAME, checkProcessError, ctrl)
 
           #if WINDOWS : srv.control.ClientProc = MainProc
 
-          if not srv.run (gnetworks, args) : return False
+          if not srv.run(gnetworks, args) : return False
        #endif
 
        #    Print statistic
 
-       nIres  = len (inetworks)
-       nWebDC = len (gnetworks)
+       nIres  = len(inetworks)
+       nWebDC = len(gnetworks)
        nAll   = nIres + nWebDC
 
-       if nIres  != 0 : Logfile.add (' ', 'Processed ' + str(nIres)  + ' IRES networks')
-       if nWebDC != 0 : Logfile.add (     'Processed ' + str(nWebDC) + ' WEBDC networks')
+       if nIres  != 0 : Logfile.add(' ', 'Processed ' + str(nIres)  + ' IRES networks')
+       if nWebDC != 0 : Logfile.add(     'Processed ' + str(nWebDC) + ' WEBDC networks')
 
-       if nAll == 0 : return Logfile.error ('No networks found')
+       if nAll == 0 : return Logfile.error('No networks found')
 
        if   nIres  == 0 : err = 'No IRIS network found'
        elif nWebDC == 0 : err = 'No WEBDC network found'
        else :             err = None
 
-       if err != None : Logfile.add (err)
+       if err != None : Logfile.add(err)
 
        # showNextStep
        #
        evpath        = options.evpath.split('/')[-1]
        keyfoldername = clientDir.split('/')[-1]
 
-       Logfile.add (' ', 'NEXT PROCESSING STEP:', ' ')
-       Logfile.add ('   1) change keyfolder value in global.conf to ' + keyfoldername)
-       Logfile.add ('   2) python arraytool.py getdata ' + evpath, ' ')
+       Logfile.add(' ', 'NEXT PROCESSING STEP:', ' ')
+       Logfile.add('   1) change keyfolder value in global.conf to ' + keyfoldername)
+       Logfile.add('   2) python arraytool.py getdata ' + evpath, ' ')
 
        return True
     #endif  # end of server
@@ -867,41 +867,41 @@ def run_parallel (options) :
 IRIS_TAG   = 'i'
 GEOFON_TAG = 'g_'
 
-class StationListClient (Server.ClientBase) :
+class StationListClient(Server.ClientBase) :
 
-    def __init__ (self, options) :
+    def __init__(self, options) :
 
         print 'Start client ', options.args
-        args  = Server.splitClientArgs (options.args)
+        args  = Server.splitClientArgs(options.args)
 
         self.net     = args[0]
         self.tag     = args[1]
         self.dirname = args[2]
         ot           = args[3]
-        maxDist      = float (args[4])
-        minDist      = float (args[5])
-        elat         = float (args[6])
-        elon         = float (args[7])
+        maxDist      = float(args[4])
+        minDist      = float(args[5])
+        elat         = float(args[6])
+        elon         = float(args[7])
 
         self.param = {'time':ot,   'maxDist':maxDist, 'minDist':minDist,
                       'elat':elat, 'elon':elon }
 
-        Server.ClientBase.__init__ (self, self.net)
+        Server.ClientBase.__init__(self, self.net)
 
-    def _run (self) :  # called direct from ClientBase
+    def _run(self) :  # called direct from ClientBase
 
-        if   self.tag == IRIS_TAG :   stationList = irisMt   (self.net, -1, self.param)
-        elif self.tag == GEOFON_TAG : stationList = geofonMt (self.net, -1, self.param)
+        if   self.tag == IRIS_TAG :   stationList = irisMt  (self.net, -1, self.param)
+        elif self.tag == GEOFON_TAG : stationList = geofonMt(self.net, -1, self.param)
         else :                        assert False
 
-        stationList = list (set (stationList))
+        stationList = list(set(stationList))
 
         for stat in stationList :
             # Write dummy Key Files with reduced station information
             #
-            keyfile = KeyFile.KeyFileObj (self.dirname, stat.net, stat.station)
-            keyfile.write (stat)
-            #keyfile.read  ()
+            keyfile = KeyFile.KeyFileObj(self.dirname, stat.net, stat.station)
+            keyfile.write(stat)
+            #keyfile.read ()
         #endfor
 
         if len(stationList) > 0 :  print HAS_DATA
@@ -910,30 +910,30 @@ class StationListClient (Server.ClientBase) :
 
 # -------------------------------------------------------------------------------------------------
 
-def main (args):
+def main(args):
     '''
     Parse commandline arguments
 
     :type args: list
     :param args: List of commandline arguments to parse for the parameter of the program
     '''
-    parser = OptionParser (usage="%prog -f eventpath ")
+    parser = OptionParser(usage="%prog -f eventpath ")
 
-    parser.add_option ("-f", "--evpath", type="string", dest="evpath", help="evpath")
-    parser.add_option ("-x", "--dummy",  type="string", dest="args",   help="dummy")   #hs : client flag
+    parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
+    parser.add_option("-x", "--dummy",  type="string", dest="args",   help="dummy")   #hs : client flag
 
     return parser.parse_args(args)
 
 # --------------------------------------------------------------------------------------------------
 
-def MainProc () :
+def MainProc() :
 
-     options,args = main (sys.argv)
-     run_parallel (options)
+     options,args = main(sys.argv)
+     run_parallel(options)
 
      if not options.args :                          # server
-        Logfile.showLabel ('Program finished')
+        Logfile.showLabel('Program finished')
 
 if __name__ == '__main__':
 
-   MainProc ()
+   MainProc()

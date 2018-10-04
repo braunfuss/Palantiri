@@ -4,12 +4,12 @@ import sys
 import logging
 import platform
 
-WINDOWS = (platform.system() == 'Windows')
+WINDOWS =(platform.system() == 'Windows')
 
 # add local directories to import path
 
-sys.path.append ('../tools/')
-sys.path.append ('../Common/')
+sys.path.append('../tools/')
+sys.path.append('../Common/')
 
 from  obspy.core.stream       import Stream
 from  obspy.core              import read
@@ -35,7 +35,7 @@ import  times
 
 # --------------------------------------------------------------------------------------------------
 
-def readWaveformsCross (station, tw, EventPath, Origin):
+def readWaveformsCross(station, tw, EventPath, Origin):
 
     time = Origin.time
     ts   = time.split('T')
@@ -54,8 +54,8 @@ def readWaveformsCross (station, tw, EventPath, Origin):
     #Wdict = {}
 
     streamData = station.getName()+'.D.'+str(year)+'.'+str(julday)
-    entry      = os.path.join (sdspath,station.net,station.sta,station.comp+'.D',streamData)
-    st         = read (entry,format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
+    entry      = os.path.join(sdspath,station.net,station.sta,station.comp+'.D',streamData)
+    st         = read(entry,format="MSEED", starttime=tw['start'], endtime=tw['end'], nearest_sample=True)
 
     if len(st.getGaps()) > 0:
         st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
@@ -66,14 +66,14 @@ def readWaveformsCross (station, tw, EventPath, Origin):
     return stream
 # --------------------------------------------------------------------------------------------------
 
-def traveltimes (MetaDict,Config,Event,Folder,evpath):
+def traveltimes(MetaDict,Config,Event,Folder,evpath):
 
-    Logfile.red ('Enter AUTOMATIC FILTER')
+    Logfile.red('Enter AUTOMATIC FILTER')
     T = []
 
     for i in MetaDict:
-        delta = loc2degrees     (Event, i)
-        tt    = obs_TravelTimes (delta, Event.depth)
+        delta = loc2degrees    (Event, i)
+        tt    = obs_TravelTimes(delta, Event.depth)
 
         if tt[0]['phase_name'] == Config['ttphase'] :
            time = tt[0]['time']
@@ -82,8 +82,8 @@ def traveltimes (MetaDict,Config,Event,Folder,evpath):
         mint = min(T)
         maxt = max(T)
         
-        tw = times.calculateTimeWindows (mint,maxt,Config,Event)
-        readWaveformsCross (i,tw,evpath,Event)
+        tw = times.calculateTimeWindows(mint,maxt,Config,Event)
+        readWaveformsCross(i,tw,evpath,Event)
     #endfor
 
-    Logfile.red ('Exit AUTOMATIC FILTER')
+    Logfile.red('Exit AUTOMATIC FILTER')

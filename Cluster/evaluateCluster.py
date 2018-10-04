@@ -4,8 +4,8 @@ import sys
 
 # add local directories to import path
 
-sys.path.append ('../tools/')
-sys.path.append ('../Common/')
+sys.path.append('../tools/')
+sys.path.append('../Common/')
 
 from   optparse import OptionParser
 import logging
@@ -53,21 +53,21 @@ class BestSolution(object):
 
 # -------------------------------------------------------------------------------------------------
 
-def getStatistics (clusterresults):
-    p        = os.path.join (options.evpath,'stat.dat')
-    fobjstat = open (p,'w')
+def getStatistics(clusterresults):
+    p        = os.path.join(options.evpath,'stat.dat')
+    fobjstat = open(p,'w')
     resDict  = {}
-    for root,dirs,files in os.walk (clusterresults):
+    for root,dirs,files in os.walk(clusterresults):
         for i in files:
             if i == 'event.statistic':
-                fname  = os.path.join (root,i)
-                bspath = os.path.join ('/',*fname.split('/')[:-1])
-                fobj   = open (fname,'r')
+                fname  = os.path.join(root,i)
+                bspath = os.path.join('/',*fname.split('/')[:-1])
+                fobj   = open(fname,'r')
 
                 for line in fobj:
                     line = line.split()
-                    resDict[fname] = Result (line[0],line[1],line[2],line[3],bspath)
-                    fobjstat.write (('%s:  %s  %s  %s  %s\n')%(fname,line[0],line[1],line[2],line[3]))
+                    resDict[fname] = Result(line[0],line[1],line[2],line[3],bspath)
+                    fobjstat.write(('%s:  %s  %s  %s  %s\n')%(fname,line[0],line[1],line[2],line[3]))
                 #endfor
                     print resDict
 
@@ -96,23 +96,23 @@ def getBestSolution(resultDictionary):
     return L[0]
 # -------------------------------------------------------------------------------------------------
 
-def copyCluster2EventConfig (ClusterDict, evpath):
+def copyCluster2EventConfig(ClusterDict, evpath):
 
-    epath     = os.path.join ('/',*evpath.split('/')[:-1])
-    t         = epath.split  (os.path.sep)[-1]
+    epath     = os.path.join('/',*evpath.split('/')[:-1])
+    t         = epath.split (os.path.sep)[-1]
     fname     = t+'.config'
-    fullfname = os.path.join (epath,fname)
+    fullfname = os.path.join(epath,fname)
     L         = []
-    fobj      = open (fullfname,'r')
+    fobj      = open(fullfname,'r')
 
     for index,line in enumerate(fobj):
         L.append(line)
 
-        if fnmatch.fnmatch (line,'*array parameter*'):
+        if fnmatch.fnmatch(line,'*array parameter*'):
             #print index,line
             firstend = index+1
 
-        if fnmatch.fnmatch (line,'*beamforming method*'):
+        if fnmatch.fnmatch(line,'*beamforming method*'):
             #print index,line
             secondbegin = index
     #endfor
@@ -122,8 +122,8 @@ def copyCluster2EventConfig (ClusterDict, evpath):
     Confpart1 = L [:firstend]
     Confpart2 = L [secondbegin:]
 
-    fobj = open (fullfname,'w')
-    fobj.write  (''.join(Confpart1))
+    fobj = open(fullfname,'w')
+    fobj.write (''.join(Confpart1))
     #print Confpart1
     nlist=''
 
@@ -137,14 +137,14 @@ def copyCluster2EventConfig (ClusterDict, evpath):
     for i in ClusterDict.iterkeys():
         if len(ClusterDict[i]) > 0:
             aname = 'r'+str(i)
-            fobj.write (('%s=%s\n')%(aname,ClusterDict[i][:-1]))
-            fobj.write (('%srefstation=\n')%(aname))
-            fobj.write (('%sphase=P\n')%(aname))
+            fobj.write(('%s=%s\n')%(aname,ClusterDict[i][:-1]))
+            fobj.write(('%srefstation=\n')%(aname))
+            fobj.write(('%sphase=P\n')%(aname))
     #endfor
 
-    fobj.write ('\n')
-    fobj.write (''.join(Confpart2))
-    fobj.close ()
+    fobj.write('\n')
+    fobj.write(''.join(Confpart2))
+    fobj.close()
     #print Confpart2
 
 # -------------------------------------------------------------------------------------------------
@@ -155,13 +155,13 @@ def printBestSolution(solution):
     L       = []
     M       = []
 
-    Logfile.add ('eventpath: ', os.path.join (solution.path,'event.stations'))
-    fobj = open (os.path.join(solution.path,'event.stations'),'r')
+    Logfile.add('eventpath: ', os.path.join(solution.path,'event.stations'))
+    fobj = open(os.path.join(solution.path,'event.stations'),'r')
 
     for line in fobj:
         line = line.split()
-        M.append (int(line[3]))
-        L.append (BestSolution(line[0],line[3],line[1],line[2]))
+        M.append(int(line[3]))
+        L.append(BestSolution(line[0],line[3],line[1],line[2]))
 
     fobj.close()
 
@@ -190,25 +190,25 @@ def printBestSolution(solution):
 
 # -------------------------------------------------------------------------------------------------
 
-def copyAndShowBestSolution (solution):
+def copyAndShowBestSolution(solution):
 
     dest = solution.path
-    src  = os.path.join ('/',*solution.path.split('/')[:-4])
-    src  = os.path.join (src,'skeleton','clusterplot.sh')
+    src  = os.path.join('/',*solution.path.split('/')[:-4])
+    src  = os.path.join(src,'skeleton','clusterplot.sh')
 
 
 # -------------------------------------------------------------------------------------------------
 
 def filterBestSolution(solution):
 
-    evp  = os.path.join ('/',*solution.path.split('/')[:-2])
-    C    = Config (evp)
-    Conf = C.parseConfig ('config')
-    cfg  = ConfigObj (dict=Conf)
+    evp  = os.path.join('/',*solution.path.split('/')[:-2])
+    C    = Config(evp)
+    Conf = C.parseConfig('config')
+    cfg  = ConfigObj(dict=Conf)
 
     SL   = []
     M    = []
-    fobj = open (os.path.join (solution.path, 'event.stations'),'r')
+    fobj = open(os.path.join(solution.path, 'event.stations'),'r')
 
     for s in fobj:
        try :
@@ -219,23 +219,23 @@ def filterBestSolution(solution):
            slon    = line[2]
            smember = line[3]
 
-           M.append  (smember)
-           SL.append (Station (net,sta,loc,comp,lat=slat,lon=slon,member=smember))
+           M.append (smember)
+           SL.append(Station(net,sta,loc,comp,lat=slat,lon=slon,member=smember))
 
        except :
-           Logfile.exception ('filterBestSolution', '<' + s + '>')
+           Logfile.exception('filterBestSolution', '<' + s + '>')
            continue
     #endfor
 
     fobj.close()
 
-    M = list (set(M))
+    M = list(set(M))
 
-    Logfile.add ('number of clusters ' + str (len(M)),
-                 'number of stations ' + str (len(SL)))
+    Logfile.add('number of clusters ' + str(len(M)),
+                 'number of stations ' + str(len(SL)))
 
-    kd = obs_kilometer2degrees (cfg.Distance ('intraclusterdistance'))
-    Logfile.add ('icd ' + str(kd))
+    kd = obs_kilometer2degrees(cfg.Distance('intraclusterdistance'))
+    Logfile.add('icd ' + str(kd))
 
     maxdist = -1
 
@@ -245,7 +245,7 @@ def filterBestSolution(solution):
         for k in SL:
             if i.member == '8' and k.member == '8':
                if i.getName() != k.getName():
-                  delta = loc2degrees (i, k)
+                  delta = loc2degrees(i, k)
 
                   if delta > maxdist:  maxdist = delta
 

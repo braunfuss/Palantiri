@@ -45,7 +45,7 @@ class Station(object):
         return self.net+'.'+self.sta+'.'+self.loc+'.'+self.comp
 
     def __str__(self):
-        return ('%s.%s.%s.%s')%(self.net,self.sta,self.loc,self.comp)
+        return('%s.%s.%s.%s')%(self.net,self.sta,self.loc,self.comp)
 
     def __eq__(self, other):
         return self.getName() == other.getName()
@@ -86,7 +86,7 @@ class Config(object):
 
     def parseConfig(self,suffix):
         '''
-        method to parse config files (origin,config)
+        method to parse config files(origin,config)
         return Configdictionary
         '''
         cDict = {}
@@ -129,7 +129,7 @@ class Config(object):
                         if fnmatch.fnmatch(comp,'*HZ'):
                             MetaL.append(Station(net,sta,loc,comp,lat,lon,ele,dip,azi,gain))
 
-            logger.info('\033[31m %d ENTRIES IN METAFILE FOUND \033[0m \n' % (len(MetaL)))
+            logger.info('\033[31m %d ENTRIES IN METAFILE FOUND \033[0m \n' %(len(MetaL)))
         except:
             logger.info('\033[31m METAFILE NOT READABLE \033[0m \n')
 
@@ -178,12 +178,12 @@ class Config(object):
             try:
             	if float(i.gain) == 0:
                 	print 'GAIN IS ZERO ',i
-                	search = ('%s.%s.%s')%(i.net,i.sta,i.loc)
+                	search =('%s.%s.%s')%(i.net,i.sta,i.loc)
                	 	DL.append(search)
                	 	LL.append(i)
     	    except:
-		i.gain = (np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
-                search = ('%s.%s.%s')%(i.net,i.sta,i.loc)
+		i.gain =(np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
+                search =('%s.%s.%s')%(i.net,i.sta,i.loc)
                 DL.append(search)
                 LL.append(i)
 
@@ -191,7 +191,7 @@ class Config(object):
         if len(DL) > 0:
             for i in DL:
                 for j in MetaList:
-                    metaname = ('%s.%s.%s')%(j.net,j.sta,j.loc)
+                    metaname =('%s.%s.%s')%(j.net,j.sta,j.loc)
                     if i != metaname:
                         ML.append(j)
         else:
@@ -235,7 +235,7 @@ class Config(object):
 
     def cpSkeleton(self,FolderDict,ConfigDict):
         '''
-        method to copy skeleton scripts (plotting) to event folder
+        method to copy skeleton scripts(plotting) to event folder
         '''
         logger.info('\033[31m Copy plotting scripts \033[0m \n')
 

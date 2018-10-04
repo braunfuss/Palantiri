@@ -28,7 +28,7 @@ def to_cartesian(items, reflatlon):
         dz = elevation - depth
         lat = item.lat/180.*num.pi
         z = r_earth+dz*num.sin(lat)
-        res[item.nsl()[:2]] = (x, y, z)
+        res[item.nsl()[:2]] =(x, y, z)
     return res
 
 
@@ -58,17 +58,17 @@ class BeamForming(Object):
         :param timing: CakeTiming. Uses the definition without the offset.
         :param fn_dump_center: filename to where center stations shall be dumped
         :param fn_beam: filename of beam trace
-        :param model: earthmodel to use (optional)
-        :param earthmodel to use (optional)
-        :param network: network code (optional)
-        :param station: station code (optional)
+        :param model: earthmodel to use(optional)
+        :param earthmodel to use(optional)
+        :param network: network code(optional)
+        :param station: station code(optional)
         '''
         logger.debug('start beam forming')
         stations = self.stations
         network_code = kwargs.get('responses', None)
         network_code = kwargs.get('network', '')
         station_code = kwargs.get('station', 'STK')
-        c_station_id = (network_code, station_code)
+        c_station_id =(network_code, station_code)
         
         lat_c, lon_c, z_c = self.c_lat_lon_z
 
@@ -84,7 +84,7 @@ class BeamForming(Object):
         if event:
             mod = cake.load_model(crust2_profile=(event.lat, event.lon))
             dist = ortho.distance_accurate50m(event, self.station_c)
-            ray = timing.t(mod, (event.depth, dist), get_ray=True)
+            ray = timing.t(mod,(event.depth, dist), get_ray=True)
             if ray is None:
                 logger.error('None of defined phases available at beam station:\n %s' % self.station_c)
                 return
@@ -194,7 +194,7 @@ class BeamForming(Object):
             tr.set_codes(network=n[:2], station=s[:5], location=l[:2], channel=c[:3])
             newids = tr.nslc_id
             if cmp(oldids, newids) != 0:
-                logger.warn('nslc id truncated: %s to %s' % ('.'.join(oldids), '.'.join(newids)))
+                logger.warn('nslc id truncated: %s to %s' %('.'.join(oldids), '.'.join(newids)))
 
     def snuffle(self):
         '''Scrutinize the shifted traces.'''
@@ -216,7 +216,7 @@ class BeamForming(Object):
             elevations[i] = s.elevation
 
         z = num.mean(elevations-depths)
-        return (lats.mean()*180/num.pi, lons.mean()*180/num.pi, z)
+        return(lats.mean()*180/num.pi, lons.mean()*180/num.pi, z)
 
     def plot(self, fn='beam_shifts.png'):
         stations = self.stations
@@ -236,11 +236,11 @@ class BeamForming(Object):
 
             try:
                 sizes[i] = self.t_shifts[nsl[:2]]
-                stat_labels.append('%s' % ('.'.join(nsl)))
+                stat_labels.append('%s' %('.'.join(nsl)))
             except AttributeError:
                 self.fail('Run the snuffling first')
             except KeyError:
-                stat_labels.append('%s' % ('.'.join(nsl)))
+                stat_labels.append('%s' %('.'.join(nsl)))
                 continue
             finally:
                 i += 1

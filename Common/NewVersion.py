@@ -13,7 +13,7 @@ DIRECTORIES = ['Cluster','Process','Waveform']
 # -------------------------------------------------------------------------------------------------
 # Generate all new files 'Version.py' for all 'directories'
 
-def generate () :
+def generate() :
 
     user = Basic.getUserName()
 
@@ -22,17 +22,17 @@ def generate () :
     print '\n' + VERSION_STRING + '\n' + user + '\n'
 
     for dir in DIRECTORIES :
-        file = os.path.join (os.getcwd(),dir, 'Version.py')
+        file = os.path.join(os.getcwd(),dir, 'Version.py')
         print 'file = ', file
 
-        fp = open (file, 'w')
+        fp = open(file, 'w')
 
         if fp == None :
            print 'Cannot open file ' + file
            continue
 
-        fp.write (versionLine() + '\n')
-        fp.close ()
+        fp.write(versionLine() + '\n')
+        fp.close()
     #endfor
 
     print ' '
@@ -48,24 +48,24 @@ def check() :
     lines = []
 
     for dir in DIRECTORIES :
-        file = os.path.join (os.getcwd(),dir, 'Version.py')
+        file = os.path.join(os.getcwd(),dir, 'Version.py')
 
-        fp = open (file, 'r')
+        fp = open(file, 'r')
 
         if fp == None : 
            print 'Cannot open file ' + file
-           sys.exit (1)
+           sys.exit(1)
    
         line = fp.readline()
-        lines.append (line[:-1])
-        fp.close ()
+        lines.append(line[:-1])
+        fp.close()
     #endfor
 
 # -------------------------------------------------------------------------------------------------    
         
 if __name__ == "__main__" :
 
-    generate ()
+    generate()
 
     
 

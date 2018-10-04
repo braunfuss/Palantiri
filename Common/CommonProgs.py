@@ -4,7 +4,7 @@ import sys
 
 #   add local directories to import path
                    
-sys.path.append ('Common/')
+sys.path.append('Common/')
 
 #   import from Common
 
@@ -12,15 +12,15 @@ sys.path.append ('Common/')
 
 # -------------------------------------------------------------------------------------------------
 
-def start () :
+def start() :
 
     if sys.argv[1] != 'new_version' : return False
        
-    #  python arraytool.py (0)  new_version (1) 
+    #  python arraytool.py(0)  new_version(1) 
          
-    at = os.path.join (os.getcwd(),'Common', 'NewVersion.py')      # python script
+    at = os.path.join(os.getcwd(),'Common', 'NewVersion.py')      # python script
 
-    os.system (sys.executable + ' ' + at)
+    os.system(sys.executable + ' ' + at)
     return True
 
 

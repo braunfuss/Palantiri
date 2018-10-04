@@ -2,8 +2,8 @@ from pyrocko.client import fdsn, catalog
 import os
 from pyrocko import util, io, trace, model, gf
 import sys
-sys.path.append ('../tools/')
-sys.path.append ('../Common/')
+sys.path.append('../tools/')
+sys.path.append('../Common/')
 import config
 import Globals                     # Own global data
 import Basic                       # Own module with basic functions
@@ -23,17 +23,17 @@ from pyrocko.io import stationxml
 
 
 
-def main (args):
+def main(args):
 
-    parser = OptionParser (usage="\npython %prog -t 2009-12-31T12:23:34 -d 5 -m SDS -k key -s all/acq")
+    parser = OptionParser(usage="\npython %prog -t 2009-12-31T12:23:34 -d 5 -m SDS -k key -s all/acq")
 
-    parser.add_option ("-t","--time",      type="string", dest="time",      help="time")
-    parser.add_option ("-d","--duration",  type="string", dest="duration",  help="duration in min")
-    parser.add_option ("-m","--sdsfolder", type="string", dest="sdsfolder", help="sdsfolder")
-    parser.add_option ("-s","--station",   type="string", dest="stationversion", help="stationversion")
-    parser.add_option ("-f","--evpath",    type="string", dest="eventpath", help="eventpath")
-    parser.add_option ("-x","--dummy",     type="string", dest="station",   help="dummy")    #hs : client flag
-    parser.add_option ("-n","--dummy2",    type="string", dest="network",   help="dummy2")   #hs : single network
+    parser.add_option("-t","--time",      type="string", dest="time",      help="time")
+    parser.add_option("-d","--duration",  type="string", dest="duration",  help="duration in min")
+    parser.add_option("-m","--sdsfolder", type="string", dest="sdsfolder", help="sdsfolder")
+    parser.add_option("-s","--station",   type="string", dest="stationversion", help="stationversion")
+    parser.add_option("-f","--evpath",    type="string", dest="eventpath", help="eventpath")
+    parser.add_option("-x","--dummy",     type="string", dest="station",   help="dummy")    #hs : client flag
+    parser.add_option("-n","--dummy2",    type="string", dest="network",   help="dummy2")   #hs : single network
 
     return parser.parse_args(args)
 
@@ -41,31 +41,31 @@ def globalConf():
 
     cDict  = {}
     parser = SafeConfigParser()
-    parser.read (os.path.join ('..', 'global.conf'))
+    parser.read(os.path.join('..', 'global.conf'))
 
     for section_name in parser.sections():
         for name, value in parser.items(section_name) : cDict[name] = value
 
     return cDict
 
-options,args = main (sys.argv)
-Basic.checkExistsDir (options.eventpath, isAbort=True)
-Globals.setEventDir  (options.eventpath)
-C      = config.Config (options.eventpath)
-Origin = C.parseConfig ('origin')
+options,args = main(sys.argv)
+Basic.checkExistsDir(options.eventpath, isAbort=True)
+Globals.setEventDir (options.eventpath)
+C      = config.Config(options.eventpath)
+Origin = C.parseConfig('origin')
 Conf   = globalConf()
-Config = C.parseConfig ('config')
+Config = C.parseConfig('config')
 
-filter = FilterCfg (Config)
+filter = FilterCfg(Config)
 
-cfg     = ConfigObj (dict=Config)
-minDist, maxDist = cfg.FloatRange ('mindist', 'maxdist')
+cfg     = ConfigObj(dict=Config)
+minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
 
-ev = Event (Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )
+ev = Event(Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )
 event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=float(ev.depth)*1000., time=util.str_to_time(ev.time))
-newFreq                = float (filter.newFrequency())
+newFreq                = float(filter.newFrequency())
 options.time           = Origin ['time']
-options.duration       = int (Conf['duration'])
+options.duration       = int(Conf['duration'])
 sdspath = os.path.join(options.eventpath,'data')
 tmin = util.str_to_time(ev.time)-600.
 tmax = util.str_to_time(ev.time)+1800.
@@ -92,11 +92,11 @@ selection_iris = fdsn.make_data_selection(nstations_iris, tmin, tmax)
 request_waveform_iris = fdsn.dataselect(site=site, selection=selection_iris)
 
 # write the incoming data stream to 'traces.mseed'
-with open(os.path.join (sdspath,'traces_iris.mseed'), 'wb') as file:
+with open(os.path.join(sdspath,'traces_iris.mseed'), 'wb') as file:
     file.write(request_waveform_iris.read())
 print('traces written')
 # request meta data
-traces_iris = io.load(os.path.join (sdspath,'traces_iris.mseed'))
+traces_iris = io.load(os.path.join(sdspath,'traces_iris.mseed'))
 
 stations_real_iris = []
 gaps= []
@@ -110,16 +110,16 @@ for re in remove:
     for st in stations_real_iris:
         if st.station == re:
             stations_real_iris.remove(st)
-model.dump_stations(stations_real_iris, os.path.join (sdspath,'stations_iris.txt'))
+model.dump_stations(stations_real_iris, os.path.join(sdspath,'stations_iris.txt'))
 
 request_response = fdsn.station(
     site=site, selection=selection_iris, level='response')
 # save the response in YAML and StationXML format
-request_response.dump(filename=os.path.join (sdspath,'responses_iris.yml'))
-request_response.dump_xml (filename=os.path.join (sdspath,'responses_iris.xml'))
-sx = stationxml.load_xml(filename=os.path.join (sdspath,'responses_iris.xml'))
+request_response.dump(filename=os.path.join(sdspath,'responses_iris.yml'))
+request_response.dump_xml(filename=os.path.join(sdspath,'responses_iris.xml'))
+sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_iris.xml'))
 pyrocko_stations = sx.get_pyrocko_stations()
-#model.dump_stations(stations_real, os.path.join (sdspath,'stations2.txt'))
+#model.dump_stations(stations_real, os.path.join(sdspath,'stations2.txt'))
 
 # Loop through retrieved waveforms and request meta information
 # for each trace
@@ -127,7 +127,7 @@ event_origin = gf.Source(
 lat=event.lat,
 lon=event.lon)
 
-traces_iris = io.load(os.path.join (sdspath,'traces_iris.mseed'))
+traces_iris = io.load(os.path.join(sdspath,'traces_iris.mseed'))
 
 
 displacement_iris = []
@@ -156,12 +156,12 @@ for tr in traces_iris:
                 pass
 
 
-io.save(displacement_iris, os.path.join (sdspath,'traces_restituted_iris.mseed'))
-model.dump_stations(stations_disp_iris, os.path.join (sdspath,'stations_disp_iris.txt'))
+io.save(displacement_iris, os.path.join(sdspath,'traces_restituted_iris.mseed'))
+model.dump_stations(stations_disp_iris, os.path.join(sdspath,'stations_disp_iris.txt'))
 
 site = 'geofon'
-minDist, maxDist = cfg.FloatRange ('mindist', 'maxdist')
-diffDist = (maxDist - minDist)/6.
+minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
+diffDist =(maxDist - minDist)/6.
 displacement_geofon = []
 stations_disp_geofon = []
 stations_real_geofon = []
@@ -177,11 +177,11 @@ for l in range(0,6):
     request_waveform_geofon = fdsn.dataselect(site=site, selection=selection_geofon)
 
     # write the incoming data stream to 'traces.mseed'
-    with open(os.path.join (sdspath,'traces_geofon_part%s.mseed' %l), 'wb') as file:
+    with open(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l), 'wb') as file:
         file.write(request_waveform_geofon.read())
     print('traces written')
     # request meta data
-    traces_geofon = io.load(os.path.join (sdspath,'traces_geofon_part%s.mseed' %l))
+    traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
 
     for tr in traces_geofon:
         for st in stations_geofon:
@@ -193,13 +193,13 @@ for l in range(0,6):
         for st in stations_real_geofon:
             if st.station == re:
                 stations_real_geofon.remove(st)
-    model.dump_stations(stations_real_geofon, os.path.join (sdspath,'stations_geofon_part%s.txt' %l))
+    model.dump_stations(stations_real_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
     request_response = fdsn.station(
         site=site, selection=selection_geofon, level='response')
     # save the response in YAML and StationXML format
-    request_response.dump(filename=os.path.join (sdspath,'responses_geofon_part%s.yml'%l))
-    request_response.dump_xml (filename=os.path.join (sdspath,'responses_geofon_part%s.xml'%l))
-    sx = stationxml.load_xml(filename=os.path.join (sdspath,'responses_geofon_part%s.xml'%l))
+    request_response.dump(filename=os.path.join(sdspath,'responses_geofon_part%s.yml'%l))
+    request_response.dump_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
+    sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
     pyrocko_stations = sx.get_pyrocko_stations()
     # Loop through retrieved waveforms and request meta information
     # for each trace
@@ -207,7 +207,7 @@ for l in range(0,6):
     lat=event.lat,
     lon=event.lon)
 
-    traces_geofon = io.load(os.path.join (sdspath,'traces_geofon_part%s.mseed' %l))
+    traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
 
     for tr in traces_geofon:
         for station in stations_real_geofon:
@@ -233,8 +233,8 @@ for l in range(0,6):
                     pass
     minDist = minDist+diffDist
 
-io.save(displacement_geofon, os.path.join (sdspath,'traces_restituted_geofon.mseed'))
-model.dump_stations(stations_disp_geofon, os.path.join (sdspath,'stations_disp_geofon.txt'))
+io.save(displacement_geofon, os.path.join(sdspath,'traces_restituted_geofon.mseed'))
+model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_disp_geofon.txt'))
 
 stations_all  = stations_real_iris+stations_real_geofon
 for stg in stations_real_geofon:
@@ -247,8 +247,8 @@ for stg in stations_real_geofon:
         else:
             pass
 traces_all = traces_iris+traces_geofon
-io.save(traces_all, os.path.join (sdspath,'traces.mseed'))
-model.dump_stations(stations_all, os.path.join (sdspath,'stations.txt'))
+io.save(traces_all, os.path.join(sdspath,'traces.mseed'))
+model.dump_stations(stations_all, os.path.join(sdspath,'stations.txt'))
 
 stations_all_disp = stations_disp_iris+stations_disp_geofon
 for stg in stations_disp_geofon:
@@ -261,5 +261,5 @@ for stg in stations_disp_geofon:
         else:
             pass
 traces_all_disp = displacement_iris+displacement_geofon
-io.save(traces_all_disp, os.path.join (sdspath,'traces_restituted.mseed'))
-model.dump_stations(stations_all_disp, os.path.join (sdspath,'stations_disp.txt'))
+io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
+model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))

@@ -7,12 +7,12 @@ import os
 import sys
 import platform
 
-WINDOWS = (platform.system() == 'Windows')
+WINDOWS =(platform.system() == 'Windows')
 
 # add local directories to import path 
 
-sys.path.append ('../tools/')                     
-sys.path.append ('../Common/')
+sys.path.append('../tools/')                     
+sys.path.append('../Common/')
                   
 import cPickle as pickle
 
@@ -29,12 +29,12 @@ from ttt import MinTMaxT
 
 # -------------------------------------------------------------------------------------------------
 
-def deserializeTTT (numproc):
+def deserializeTTT(numproc):
 
         L = []
 
         for i in range(numproc) :
-            data = Basic.loadDump (str(i)+'-ttt.pkl')
+            data = Basic.loadDump(str(i)+'-ttt.pkl')
 
             if data != None : L.append(data)
         #endfor
@@ -48,21 +48,21 @@ def deserializeTTT (numproc):
 
 # -------------------------------------------------------------------------------------------------
 
-def deserializeMinTMaxT (numproc):
+def deserializeMinTMaxT(numproc):
 
         L = []
 
         for i in range(numproc):
-            data = Basic.loadDump ('minmax-'+str(i)+'.pkl')
+            data = Basic.loadDump('minmax-'+str(i)+'.pkl')
 
             if data != None : L.append(data)
         #endfor
 
-        mint = min ([x.mint for x in L])
-        maxt = max ([x.maxt for x in L])
+        mint = min([x.mint for x in L])
+        maxt = max([x.maxt for x in L])
 
 #        for i in range(numproc):
- #           os.remove ('minmax-'+str(i)+'.pkl')
+ #           os.remove('minmax-'+str(i)+'.pkl')
         
         return mint,maxt
 
@@ -73,7 +73,7 @@ def deserializeSembDict(numproc):
         L = []
 
         for i in range(numproc):
-            data = Basic.loadDump ('sembDict-'+str(i)+'.pkl')
+            data = Basic.loadDump('sembDict-'+str(i)+'.pkl')
 
             if data != None : L.append(data)
         #endfor
@@ -87,14 +87,14 @@ def deserializeSembDict(numproc):
     
 # -------------------------------------------------------------------------------------------------
 
-def deserializeSemb_unused (numproc):
+def deserializeSemb_unused(numproc):
             print 'ENTER DES SEMB\n'
 
             L = []
         #for i in range(numproc):
             fname = '1-semb.pkl'
             print fname
-            data = Basic.loadDump (fname)
+            data = Basic.loadDump(fname)
 
             L.append(data)
 
@@ -111,12 +111,12 @@ def deserializeSemb_unused (numproc):
             return L
 # -------------------------------------------------------------------------------------------------
     
-def deserializeSembMaxFile (numproc):
+def deserializeSembMaxFile(numproc):
 
     L = []
 
     for i in range(numproc):
-        data = Basic.loadDump ('sembMAX-'+str(i)+'.pkl')
+        data = Basic.loadDump('sembMAX-'+str(i)+'.pkl')
 
         if data != None :  L.append(data)
     #endfor
