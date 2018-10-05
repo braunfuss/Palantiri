@@ -143,14 +143,14 @@ def plot_movie():
 
 
 def plot_scatter():
-    if len(sys.argv)<4:
-        print("missing input arrayname")
+    if len(sys.argv)<5:
+        print("missing input arrayname and or depth")
     else:
         if sys.argv[3] == 'combined':
-            rel = 'events/'+ str(sys.argv[1]) + '/work-a/semblance/'
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             import matplotlib
             matplotlib.rcParams.update({'font.size': 32})
-            pathlist = Path(rel).glob('1-13*.ASC')
+            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
@@ -159,7 +159,7 @@ def plot_scatter():
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
-            pathlist = Path(rel).glob('1-13*.ASC')
+            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
             #    try:
@@ -170,7 +170,6 @@ def plot_scatter():
             eastings = data[:,1]
             northings =  data[:,0]
             plt.figure()
-	    print(np.shape(data[:,2]))
 #            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
 #                    resolution='h',epsg = 4269)
             map = Basemap( projection='cyl',\
@@ -189,9 +188,9 @@ def plot_scatter():
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
 
-            #l = range(0,num.shape(data[:,2])[0])
-            l = [i for i in range(1600) for _ in range(70)]
-            l = sorted(range(100)*16)
+            l = range(0,num.shape(data[:,2])[0])
+            #l = [i for i in range(1600) for _ in range(70)]
+            #l = sorted(range(100)*16)
             size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
 
@@ -216,7 +215,7 @@ def plot_scatter():
 
             plt.show()
 
-            pathlist = Path(rel).glob('0-6*.ASC')
+            pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
             #    try:
@@ -273,6 +272,22 @@ def plot_scatter():
 
             plt.show()
 
+def beampower():
+        from pyrocko import trace, io
+        rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('r*/beam.mseed')
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                tr_bp = io.load(path_in_str)[0]
+                tr_bp.ydata = tr_bp.ydata*0.
+        pathlist = Path(rel).glob('r*/beam.mseed')
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                tr = io.load(path_in_str)[0]
+                tr.ydata = abs(tr.ydata)
+                tr_bp.add(tr)
+        trace.snuffle(tr_bp)
+
 def plot_integrated():
     if len(sys.argv)<4:
         print("missing input arrayname")
@@ -291,8 +306,6 @@ def plot_integrated():
                         datamax = data[:, 2]
             pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
-            print np.shape(data_int)
-
             for path in sorted(pathlist):
             #    try:
                     path_in_str = str(path)
@@ -1094,3 +1107,5 @@ else:
         plot_integrated_kite()
     elif sys.argv[2] == 'integrated_scatter':
         plot_scatter()
+    elif sys.argv[2] == 'beampower':
+        beampower()
