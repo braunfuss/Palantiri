@@ -280,7 +280,7 @@ def plot_integrated():
         if sys.argv[3] == 'combined':
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
 
-            pathlist = Path(rel).glob('0-16*.ASC')
+            pathlist = Path(rel).glob('0-*.ASC')
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
@@ -289,7 +289,7 @@ def plot_integrated():
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
-            pathlist = Path(rel).glob('0-16*.ASC')
+            pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             print np.shape(data_int)
 
@@ -352,7 +352,7 @@ def plot_integrated():
 
             plt.show()
 
-            pathlist = Path(rel).glob('0-13*.ASC')
+            pathlist = Path(rel).glob('1-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
             #    try:
