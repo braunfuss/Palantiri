@@ -38,7 +38,7 @@ r2d = 1./d2r
 # -------------------------------------------------------------------------------------------------
 
 class GridElem(object):
-    def __init__(self, lat, lon, depth, tt ,delta):
+    def __init__(self, lat, lon, depth, tt, delta):
         self.lat   = lat
         self.lon   = lon
         self.depth = depth
@@ -228,7 +228,7 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                 if o==0 and j==0: Lonul = oLonul
                 de = loc2degrees(Location(oLatul, oLonul), locStation)
                 arrivals = model.arrivals([de, de], phases=Phase,
-                                          zstart=o_depth*km, zstop=0.)
+                                          zstart=o_depth*km)
             try:
                 ttime = arrivals[0].t
             except:
