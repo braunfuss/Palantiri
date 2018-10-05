@@ -28,7 +28,7 @@ def init():
     parser.read(confname)
     for section_name in parser.sections():
         for name, value in parser.items(section_name):
-            cDict[name]=value
+            cDict[name] = value
 
     logger.info('\033[31m Global Configuration %s \033[0m \n'%(cDict))
     return cDict
@@ -49,6 +49,7 @@ def parseEvent(eventID):
         return eventname
     except:
         print('Event not retrivable from IRIS')
+
 
 
 def createWorkingDirectory(args):
