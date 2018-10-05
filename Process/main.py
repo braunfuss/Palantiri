@@ -68,7 +68,7 @@ def initModule () :
     parser = OptionParser(usage="%prog -f Eventpath ")
     parser.add_option ("-f", "--evpath", type="string", dest="evpath", help="evpath")
 
-  (options, args) = parser.parse_args()
+    (options, args) = parser.parse_args()
 
     if options.evpath == None:
        parser.error ("non existing eventpath")
