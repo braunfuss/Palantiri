@@ -215,7 +215,6 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                     print '\033[31myou tried phase %s\033[0m'%(Config[phasename])
                     raise Exception("\033[31mILLEGAL: phase definition\033[0m")
     else:
-
         for i in xrange(dimX):
             oLatul = o_lat -((dimX-1)/2) * gridspacing + i * gridspacing
 
@@ -229,34 +228,33 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                 de = loc2degrees(Location(oLatul, oLonul), locStation)
                 arrivals = model.arrivals([de, de], phases=Phase,
                                           zstart=o_depth*km)
-            try:
-                ttime = arrivals[0].t
-            except:
                 try:
-                    arrivals = model.arrivals([de, de], phases=Phase,
-                                              zstart=o_depth*km-2.5,
-                                              zstop=o_depth*km+2.5,
-                                              refine=True)
                     ttime = arrivals[0].t
                 except:
-                    tt = obs_TravelTimes(de, o_depth)
-                    l = tt[0]
-                    ttime = l.time
+                    try:
+                        arrivals = model.arrivals([de, de], phases=Phase,
+                                                  zstart=o_depth*km-2.5,
+                                                  zstop=0.,
+                                                  refine=True)
+                        ttime = arrivals[0].t
+                    except:
+                        tt = obs_TravelTimes(de, o_depth)
+                        l = tt[0]
+                        ttime = l.time
 
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth,ttime,de)
                 LMINMAX.append(ttime)
                 if int(Config['xcorr']) == 1:
-                    ttime = ttime-float(Xcorrshift[station.getName()].shift)\
-                     - Refshift
+                            ttime = ttime-float(Xcorrshift[station.getName()].shift)\
+                             - Refshift
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
-
                 if ttime == 0:
-                    print '\033[31mAvailable phases for station %s in range %f deegree\033[0m'%(station,de)
-                    print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
-                    print '\033[31myou tried phase %s\033[0m'%(Config[phasename])
+                            print '\033[31mAvailable phases for station %s in range %f deegree\033[0m'%(station,de)
+                            print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
+                            print '\033[31myou tried phase %s\033[0m'%(Config[phasename])
 
-                    raise Exception("\033[31mILLEGAL: phase definition\033[0m")
+                            raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
     mint = min(LMINMAX)
     maxt = max(LMINMAX)

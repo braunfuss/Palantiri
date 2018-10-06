@@ -579,7 +579,13 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if cfg.Bool('synthetic_test') is True:
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        recordstarttimes = []
+        for tracex in calcStreamMap.iterkeys():
+                recordstarttimes.append(calcStreamMap[tracex].stats.starttime.timestamp)
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tracex])
+                tmin=tr_org.tmin
 
+        #tmin= num.min(recordstarttimes)
         targets = []
         for st in stations:
             target = Target(
@@ -587,6 +593,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     lon=st.lon,
                     store_id=store_id,
                     codes=(st.network, st.station, st.location, 'BHZ'),
+                    tmin=-1900,
+                    tmax=3900,
+                    interpolation='multilinear',
                     quantity=cfg.quantity())
             targets.append(target)
 
@@ -665,31 +674,40 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         synthetic_traces = response.pyrocko_traces()
         if cfg.Bool('synthetic_test_add_noise') is True:
             from noise_addition import add_noise
+            trs_orgs = []
+            calcStreamMapsyn = calcStreamMap.copy()
+            #from pyrocko import trace
+            for tracex in calcStreamMapsyn.iterkeys():
+                    for trl in synthetic_traces:
+                        if str(trl.name()[4:12])== str(tracex[4:]):
+                            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
+                            tr_org.downsample_to(2.0)
+                            trs_orgs.append(tr_org)
             store_id = syn_in.store()
             engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-            synthetic_traces = add_noise(synthetic_traces, engine, event,
+            synthetic_traces = add_noise(trs_orgs, engine, source.pyrocko_event(),
                                          stations,
                                          store_id, phase_def='P')
-        l = 0
         trs_org = []
         trs_orgs = []
         fobj = os.path.join(arrayfolder, 'shift.dat')
         xy = num.loadtxt(fobj, usecols=1, delimiter=',')
         calcStreamMapsyn = calcStreamMap.copy()
+        #from pyrocko import trace
+        for tracex in calcStreamMapsyn.iterkeys():
+                for trl in synthetic_traces:
+                    if str(trl.name()[4:12])== str(tracex[4:]):
+                        mod = trl
 
-        for trace in calcStreamMapsyn.iterkeys():
-                mod = synthetic_traces[l] ##corect order?
-                recordstarttime = calcStreamMapsyn[trace].stats.starttime.timestamp
-                recordendtime = calcStreamMapsyn[trace].stats.endtime.timestamp
-                mod.shift(recordstarttime-mod.tmin)
-                extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[trace])
-                #tr_org.shift(xy[l])
-                synthetic_obs_tr = obspy_compat.to_obspy_trace(extracted)
-                calcStreamMapsyn[trace]=synthetic_obs_tr
-                trs_orgs.append(tr_org)
-                trs_org.append(extracted)
-                l = l+1
+                        recordstarttime = calcStreamMapsyn[tracex].stats.starttime.timestamp
+                        recordendtime = calcStreamMapsyn[tracex].stats.endtime.timestamp
+                        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
+                        trs_orgs.append(tr_org)
+
+                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
+                        synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
+                        calcStreamMapsyn[tracex] = synthetic_obs_tr
+                        trs_org.append(tr_org_add)
         calcStreamMap = calcStreamMapsyn
 
     if cfg.Bool('shift_by_phase_pws') == True:
