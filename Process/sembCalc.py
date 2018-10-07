@@ -444,9 +444,10 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
 
 
     tmp=1
+    weight_norm = num.sum(weights)
     for a, w in zip(SembList, weights):
         if num.mean(a)>0:
-            tmp *= a*w
+            tmp *= a*(w/weight_norm)
 
     sembmaxvaluev = num.ndarray(ntimes,dtype=float)
     sembmaxlatv   = num.ndarray(ntimes,dtype=float)
@@ -895,7 +896,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
        print('traces',traces,type(traces))
        print('traveltime',traveltime,type(traveltime))
 
-#==================================compressed sensing========================================
+#==================================compressed sensing=================================
 
     try:
     	cs = cfg.cs()

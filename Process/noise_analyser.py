@@ -1,4 +1,3 @@
-
 from pyrocko.client import catalog
 
 import logging
@@ -6,10 +5,7 @@ import numpy as num
 from pyrocko.guts import Int, Bool, Float, String
 from pyrocko.gf.meta import OutOfBounds
 
-logger = logging.getLogger('grond.analysers.NoiseAnalyser')
-
-
-guts_prefix = 'grond'
+logger = logging.getLogger('NoiseAnalyser')
 
 
 def get_phase_arrival_time(engine, source, station, wavename, store_id):
@@ -72,7 +68,6 @@ def seismic_noise_variance(traces, engine, event, stations,
     ev_ws = []
     for tr, station in zip(traces, stations):
         stat_w = 1.
-
         if tr is None:
             var_ds.append(0.)
             ev_ws.append(0.)
@@ -87,7 +82,10 @@ def seismic_noise_variance(traces, engine, event, stations,
                     time_range=(
                         arrival_time-pre_event_noise_duration-50.*60.,
                         arrival_time),
-                    magmin=5.,)
+                        magmin = 4.)
+                ev_sum = 0.
+                for ev in events:
+                    ev_sum += ev.magnitude
                 for ev in events:
                     try:
                         arrival_time_pre = get_phase_arrival_time(
@@ -96,7 +94,6 @@ def seismic_noise_variance(traces, engine, event, stations,
                             station=station,
                             wavename=phase_def,
                             store_id=store_id)
-
                         if arrival_time_pre > arrival_time \
                                 - pre_event_noise_duration \
                                 and arrival_time_pre < arrival_time:
@@ -110,12 +107,11 @@ def seismic_noise_variance(traces, engine, event, stations,
                         if arrival_time_pre > arrival_time-30.*60.\
                                 and arrival_time_pre < arrival_time - \
                                 pre_event_noise_duration:
-                            stat_w *= 0.5
+                            stat_w *= 0.5*(ev.magnitude/ev.sum)
                             logger.info(
                                 'Noise analyser found event %s possibly '
                                 'contaminating the noise' % ev.name)
-
-                            # this should be magnitude dependent
+                            # 0.5 arbitrary
                     except Exception:
                         pass
             ev_ws.append(stat_w)
@@ -124,8 +120,8 @@ def seismic_noise_variance(traces, engine, event, stations,
                 vtrace_var = num.nanvar(tr.ydata)
                 var_ds.append(vtrace_var)
             else:
-                win = arrival_time - (arrival_time -
-                                      pre_event_noise_duration)
+                win = arrival_time -(arrival_time -
+                                    pre_event_noise_duration)
                 win_len = win/nwindows
                 v_traces_w = []
                 for i in range(0, nwindows):
@@ -139,8 +135,6 @@ def seismic_noise_variance(traces, engine, event, stations,
     var_ds = num.array(var_ds, dtype=num.float)
     ev_ws = num.array(ev_ws, dtype=num.float)
     return var_ds, ev_ws
-
-
 
 
 def analyse(traces, engine, event, stations,
