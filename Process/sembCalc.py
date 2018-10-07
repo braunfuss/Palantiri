@@ -74,7 +74,6 @@ class CombiSource(gf.Source):
 
 
 
-
 class CakeTiming(Object):
     '''Calculates and caches phase arrivals.
     :param fallback_time: returned, when no phase arrival was found for the
@@ -722,7 +721,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     calcStreamMapshifted[trace]=tr
         calcStreamMap = calcStreamMapshifted
 
-    if cfg.Bool('shift_by_phase_cc') == True:
+    if cfg.Bool('shift_by_phase_cc') is True:
         from stacking import align_traces
         calcStreamMapshifted= calcStreamMap.copy()
         list_tr = []
@@ -735,14 +734,14 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                     tr_org.shift(shift)
                     shifted = obspy_compat.to_obspy_trace(tr_org)
-                    calcStreamMapshifted[trace]=shifted
+                    calcStreamMapshifted[trace] = shifted
         calcStreamMap = calcStreamMapshifted
 
-    if cfg.Bool('shift_by_phase_onset') == True:
-    	pjoin = os.path.join
-    	timeev = util.str_to_time(ev.time)
-    	trs_orgs= []
-        calcStreamMapshifted= calcStreamMap.copy()
+    if cfg.Bool('shift_by_phase_onset') is True:
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.iterkeys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
@@ -756,31 +755,30 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         directory = arrayfolder
         bf = BeamForming(stations, traces, normalize=True)
         shifted_traces = bf.process(event=event,
-                  timing=timing,
-                  fn_dump_center=pjoin(directory, 'array_center.pf'),
-                  fn_beam=pjoin(directory, 'beam.mseed'))
+                                    timing=timing,
+                                    fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                    fn_beam=pjoin(directory, 'beam.mseed'))
         i = 0
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
         for trace in calcStreamMapshifted.iterkeys():
             recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
             recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
             mod = shifted_traces[i]
             extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
             shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
-            calcStreamMapshifted[trace]=shifted_obs_tr
+            calcStreamMapshifted[trace] = shifted_obs_tr
             i = i+1
 
         calcStreamMap = calcStreamMapshifted
 
-
     weight = 1.
-    if cfg.Bool('weight_by_noise') == True:
+    if cfg.Bool('weight_by_noise') is True:
         from noise_analyser import analyse
-    	pjoin = os.path.join
-    	timeev = util.str_to_time(ev.time)
-    	trs_orgs= []
-        calcStreamMapshifted= calcStreamMap.copy()
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.iterkeys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
@@ -797,11 +795,11 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                   fn_dump_center=pjoin(directory, 'array_center.pf'),
                   fn_beam=pjoin(directory, 'beam.mseed'))
         i = 0
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
         weight = analyse(shifted_traces, engine, event, stations,
-         100., store_id, nwindows=1,
-         check_events=True, phase_def='P')
+                         100., store_id, nwindows=1,
+                         check_events=True, phase_def='P')
 
     for trace in calcStreamMap.iterkeys():
         recordstarttime = calcStreamMap[trace].stats.starttime
@@ -811,12 +809,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         if calcStreamMap[trace].stats.npts < minSampleCount:
             minSampleCount = calcStreamMap[trace].stats.npts
 
-    ############################################################################
+    ###########################################################################
     traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount), dtype=float)
     traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY), dtype=float)
     latv   = num.ndarray(dimX*dimY, dtype=float)
     lonv   = num.ndarray(dimX*dimY, dtype=float)
-    ############################################################################
+    ###########################################################################
 
 
     c=0
