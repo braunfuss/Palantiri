@@ -704,7 +704,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
                         calcStreamMapsyn[tracex] = synthetic_obs_tr
                         trs_org.append(tr_org_add)
-                        print(tr_org_add)
         calcStreamMap = calcStreamMapsyn
 
     if cfg.Bool('shift_by_phase_pws') == True:
