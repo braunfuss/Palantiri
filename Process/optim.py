@@ -832,22 +832,21 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
                                             elevation=il.ele, location=il.loc)
 			stations.append(szo) #right number of stations?
 
-
     store_id = syn_in.store()
     engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
 
-        targets = []
-        for st in stations:
-            target = Target(
-                    lat=st.lat,
-                    lon=st.lon,
-                    store_id=store_id,
-                    codes=(st.network, st.station, st.location, 'BHZ'),
-                    tmin=-1900,
-                    tmax=3900,
-                    interpolation='multilinear',
-                    quantity=cfg.quantity())
-            targets.append(target)
+    targets = []
+    for st in stations:
+        target = Target(
+                lat=st.lat,
+                lon=st.lon,
+                store_id=store_id,
+                codes=(st.network, st.station, st.location, 'BHZ'),
+                tmin=-1900,
+                tmax=3900,
+                interpolation='multilinear',
+                quantity=cfg.quantity())
+        targets.append(target)
 
         if syn_in.nsources() == 1:
             if syn_in.use_specific_stf() is True:

@@ -386,7 +386,20 @@ def plot_integrated():
             #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
-
+            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            desired=[3,4]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            desired=[7,8,9]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0],event_cor[0][0])
+            ax = plt.gca()
+            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+            beach1 = beach(np1, xy=(x, y), width=0.09)
+            ax.add_collection(beach1)
             xpixels = 1000
             try:
                 map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
@@ -432,9 +445,20 @@ def plot_integrated():
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
-
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
+            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            desired=[3,4]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            desired=[7,8,9]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0],event_cor[0][0])
+            ax = plt.gca()
+            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+            beach1 = beach(np1, xy=(x, y), width=0.09)
+            ax.add_collection(beach1)
             plt.colorbar()
             plt.title(path_in_str)
             xpixels = 1000

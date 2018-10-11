@@ -679,7 +679,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             #from pyrocko import trace
             for tracex in calcStreamMapsyn.iterkeys():
                     for trl in synthetic_traces:
-                        if str(trl.name()[4:12])== str(tracex[4:]):
+                        if str(trl.name()[4:12])== str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
                             tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
                             tr_org.downsample_to(2.0)
                             trs_orgs.append(tr_org)
@@ -691,23 +691,20 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         trs_org = []
         trs_orgs = []
         fobj = os.path.join(arrayfolder, 'shift.dat')
-        xy = num.loadtxt(fobj, usecols=1, delimiter=',')
         calcStreamMapsyn = calcStreamMap.copy()
-        #from pyrocko import trace
         for tracex in calcStreamMapsyn.iterkeys():
                 for trl in synthetic_traces:
-                    if str(trl.name()[4:12])== str(tracex[4:]):
+                    if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
                         mod = trl
-
                         recordstarttime = calcStreamMapsyn[tracex].stats.starttime.timestamp
                         recordendtime = calcStreamMapsyn[tracex].stats.endtime.timestamp
                         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
                         trs_orgs.append(tr_org)
-
                         tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
                         calcStreamMapsyn[tracex] = synthetic_obs_tr
                         trs_org.append(tr_org_add)
+                        print(tr_org_add)
         calcStreamMap = calcStreamMapsyn
 
     if cfg.Bool('shift_by_phase_pws') == True:
@@ -729,7 +726,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         for trace in calcStreamMapshifted.iterkeys():
             tr_org = calcStreamMapshifted[trace]
             list_tr.append(tr_org)
-        shifts, ccs = align_traces(list_tr, 10)
+        shifts, ccs = align_traces(list_tr, 10, master=False)
         for shift in shifts:
             for trace in calcStreamMapshifted.iterkeys():
                     tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
@@ -792,9 +789,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         directory = arrayfolder
         bf = BeamForming(stations, traces, normalize=True)
         shifted_traces = bf.process(event=event,
-                  timing=timing,
-                  fn_dump_center=pjoin(directory, 'array_center.pf'),
-                  fn_beam=pjoin(directory, 'beam.mseed'))
+                                    timing=timing,
+                                    fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                    fn_beam=pjoin(directory, 'beam.mseed'))
         i = 0
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])

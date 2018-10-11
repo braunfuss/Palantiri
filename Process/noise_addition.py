@@ -3,13 +3,8 @@ import logging
 import numpy as num
 from pyrocko.guts import Int, Bool, Float, String
 from pyrocko.gf.meta import OutOfBounds
-from grond.dataset import NotFound
 from pyrocko import io, trace, pile
 
-logger = logging.getLogger('grond.analysers.NoiseAnalyser')
-
-
-guts_prefix = 'grond'
 
 
 def get_phase_arrival_time(engine, source, station, wavename, store_id):
@@ -38,7 +33,7 @@ def get_phase_arrival_time(engine, source, station, wavename, store_id):
     return store.t(wavename, (depth, dist)) + source.time
 
 
-def add_noise(traces, engine, event, stations, store,
+def add_noise(traces, engine, event, stations, store_id,
               phase_def='P'):
     '''
     Calculate variance of noise (half an hour) before P-Phase onset, and check
@@ -66,13 +61,13 @@ def add_noise(traces, engine, event, stations, store,
                 engine=engine, source=event,
                 station=station, wavename=phase_def,
                 store_id=store_id)
-            extracted = tr.chop(tr.tmin, arrival_time-10,
+            extracted = tr.chop(tr.tmin, arrival_time-15,
                                 inplace=False)
 
             mean = num.mean(extracted.ydata)
             var = num.var(extracted.ydata)
             noise_data = num.random.normal(loc=mean,
             scale=var, size=num.shape(tr.ydata))
-            tr.add(noise_data)
+            tr.ydata = tr.ydata+(noise_data)
             noised_traces.append(tr)
     return noised_traces

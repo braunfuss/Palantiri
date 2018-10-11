@@ -687,10 +687,18 @@ class Xcorr(object):
         fCD = {}
 
         dsfactor = float(self.Config['xcorrtreshold'])
-        for stream in CorrDict.iterkeys():
-            if abs(CorrDict[stream].value) >= dsfactor:
+        syn_test = int(self.Config['synthetic_test'])
+
+        if syn_test == 1:
+            for stream in CorrDict.iterkeys():
                 fCD[stream] = CorrDict[stream]
                 fCD[stream].value = fCD[stream].value
+
+        else:
+            for stream in CorrDict.iterkeys():
+                if abs(CorrDict[stream].value) >= dsfactor:
+                    fCD[stream] = CorrDict[stream]
+                    fCD[stream].value = fCD[stream].value
 
         return fCD
 
@@ -733,7 +741,6 @@ class Xcorr(object):
 
         CD,ref,WD = self.doXcorr()
         onset = 0
-        #onset= self.refTrigger(ref,self.EventPath,self.StationMeta)
         tdiff,triggerobject = self.refTrigger(ref)
 
         fCD = self.filterCorrDict(CD,onset)

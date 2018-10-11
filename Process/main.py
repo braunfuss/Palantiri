@@ -284,7 +284,7 @@ def processLoop():
     filters = int(filters)
     Logfile.add ('working on ' + Config['networks'])
 
-    #==================================loop over depth=======================================
+    #==================================loop over depth======================
     for filterindex in xrange(0,filters):
         for depthindex in xrange(start,stop, step):
 
@@ -296,9 +296,9 @@ def processLoop():
                         strike = strike,dip=dip,rake=rake)
             Logfile.add ('WORKDEPTH: ' + str (Origin['depth']))
 
-            #==================================do prerequiries========================================
+            #==================================do prerequiries===============
 
-            #==================================loop over arrays=======================================
+            #==================================loop over arrays================
             ASL = []
             weights = []
             networks = Config['networks'].split(',')
