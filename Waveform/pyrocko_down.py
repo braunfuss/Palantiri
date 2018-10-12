@@ -67,6 +67,8 @@ newFreq = float(filter.newFrequency())
 options.time = Origin ['time']
 options.duration = int(Conf['duration'])
 sdspath = os.path.join(options.eventpath,'data')
+model.dump_events(event, sdspath+'event.pf')
+
 tmin = util.str_to_time(ev.time)-600.
 tmax = util.str_to_time(ev.time)+1800.
 
