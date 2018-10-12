@@ -125,6 +125,8 @@ class ConfigObj(object):
     def dimY(self):       return self.UInt('dimy')
     def winlen(self):       return self.Float('winlen')
     def step(self):       return self.UInt('step')
+    def winlen_f2(self):       return self.Float('winlen_f2')
+    def step_f2(self):       return self.UInt('step_f2')
     def cs(self):       return self.UInt('compressed_sensing')
     def synthetic_test(self): return self.Bool('synthetic_test')
     def shift_by_phase_onset(self): return self.Bool('shift_by_phase_onset')
