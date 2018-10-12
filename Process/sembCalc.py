@@ -229,8 +229,12 @@ def writeSembMatricesSingleArray(SembList,Config,Origin,arrayfolder,ntimes,switc
 
     dimX   = cfg.dimX()         #('dimx')
     dimY   = cfg.dimY()         #('dimy')
-    winlen = cfg.winlen()      #('winlen')
-    step   = cfg.step()         #('step')
+    if switch == 0:
+        winlen = cfg.winlen()      #('winlen')
+        step   = cfg.step()         #('step')
+    if switch == 1:
+        winlen = cfg.winlen_f2()      #('winlen')
+        step   = cfg.step_f2()         #('step')
 
     latv   = []
     lonv   = []
@@ -301,8 +305,12 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     dimX   = cfg.dimX()         #('dimx')
     dimY   = cfg.dimY()         #('dimy')
-    winlen = cfg.winlen()      #('winlen')
-    step   = cfg.step()         #('step')
+    if switch == 0:
+        winlen = cfg.winlen()      #('winlen')
+        step   = cfg.step()         #('step')
+    if switch == 1:
+        winlen = cfg.winlen_f2()      #('winlen')
+        step   = cfg.step_f2()         #('step')
 
     latv= []
     lonv= []

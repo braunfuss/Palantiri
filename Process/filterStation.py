@@ -1,10 +1,8 @@
-
 import os
 import sys
 import logging
 import platform
 
-WINDOWS =(platform.system() == 'Windows')
 
 # add local directories to import path
 
@@ -81,8 +79,8 @@ def traveltimes(MetaDict,Config,Event,Folder,evpath):
 
         mint = min(T)
         maxt = max(T)
-        
-        tw = times.calculateTimeWindows(mint,maxt,Config,Event)
+
+        tw = times.calculateTimeWindows(mint,maxt,Config,Event, switch)
         readWaveformsCross(i,tw,evpath,Event)
     #endfor
 

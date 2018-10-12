@@ -1,5 +1,3 @@
-
-#import logging
 import sys
 
 # add local directories to import path
@@ -7,25 +5,22 @@ sys.path.append ('../Common/')
 
 from obspy.core.utcdatetime import UTCDateTime
 
-#logger = logging.getLogger(sys.argv[0])
 import Logfile
 
-def calculateTimeWindows(mint,maxt,Config,Origin):
+def calculateTimeWindows(mint,maxt,Config,Origin, switch):
 
     tw = {}
     st = str(Origin.time)[:-1]
 
-    #tw['start'] = UTCDateTime(UTCDateTime(st)+(mint-int(Config['forerun'])-int(Config['security'])))
-    #tw['end'] = UTCDateTime(UTCDateTime(st)+(maxt+int(Config['duration'])+int(Config['winlen'])+int(Config['security'])))
+    if switch == 0:
+        winlen = float(Config['winlen'])      #('winlen')
+    if switch == 1:
+        winlen = float(Config['winlen_f2'])      #('winlen')
 
     tw['start'] = UTCDateTime(UTCDateTime(st)+(mint-float(Config['forerun'])))
-    tw['end']   = UTCDateTime(UTCDateTime(st)+(maxt+float(Config['duration'])+float(Config['winlen'])))
+    tw['end']   = UTCDateTime(UTCDateTime(st)+(maxt+float(Config['duration'])+winlen))
 
-    timespan = UTCDateTime(UTCDateTime(st)+(maxt+float(Config['duration'])+float(Config['winlen']))) - UTCDateTime(UTCDateTime(st)+(mint-int(Config['forerun'])))
-
-    #logger.info ('\033[31m ORIGIN TIME %s \033[0m'% UTCDateTime(st))
-    #logger.info ('\033[31m TIME WINDOW: %s - %s \033[0m' % (tw['start'], tw['end']) )
-    #logger.info( '\033[31m TIME SPAN: %s \033[0m' % (timespan/60))
+    timespan = UTCDateTime(UTCDateTime(st)+(maxt+float(Config['duration'])+winlen)) - UTCDateTime(UTCDateTime(st)+(mint-int(Config['forerun'])))
 
     Logfile.red ('ORIGIN TIME %s ' % UTCDateTime(st))
     Logfile.red ('TIME WINDOW: %s - %s ' % (tw['start'], tw['end']) )

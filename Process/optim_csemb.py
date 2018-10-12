@@ -1241,7 +1241,7 @@ def optimization(*params, **args):
 
         switch = filterindex
 
-        tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
+        tw  = times.calculateTimeWindows (mint,maxt,Config,ev, switch)
         Wdf = Wdfs[l]
         semb_syn = doCalc_syn (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                      Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in,

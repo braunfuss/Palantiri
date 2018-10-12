@@ -377,7 +377,7 @@ def processLoop():
 
                 switch = filterindex
 
-                tw  = times.calculateTimeWindows (mint,maxt,Config,ev)
+                tw  = times.calculateTimeWindows (mint,maxt,Config,ev, switch)
                 if cfg.pyrocko_download() == True:
                     if cfg.quantity() == 'displacement':
                         Wd = waveform.readWaveformsPyrocko_restituted (FilterMeta,
