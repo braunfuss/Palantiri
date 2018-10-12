@@ -4,7 +4,6 @@ from mpl_toolkits.basemap import Basemap
 import numpy as num
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.basemap import Basemap
 import os
 from pathlib import Path
 import sys
@@ -17,6 +16,7 @@ import csv
 from obspy.imaging.beachball import beach
 import matplotlib.colors as colors
 import matplotlib.tri as tri
+from pyrocko import trace, io, model
 
 def plot_cluster():
 
@@ -276,14 +276,6 @@ def plot_scatter():
             l = sorted(range(160)*10)
             size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='winter_r')
-
-    #        for i in range(0,len(x)):
-    #            if data[i,2]> np.max(data[:,2])*0.05:
-    #                plt.text(x[i],y[i],'%s' %i)
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
-
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
-
             #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
@@ -298,7 +290,6 @@ def plot_scatter():
             plt.show()
 
 def beampower():
-        from pyrocko import trace, io
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('r*/beam.mseed')
         for path in sorted(pathlist):
@@ -315,6 +306,37 @@ def beampower():
         bp_diff_tr = tr_bp.copy()
         bp_diff_tr.ydata = num.diff(tr_bp.ydata)
         trace.snuffle(tr_bp_diff)
+
+def spec(tr):
+        f, a = tr.spectrum(pad_to_pow2=True)
+        return (f, a)
+
+def inspect_spectrum():
+        from pyrocko import cake
+        event = model.load_events('events/'+ str(sys.argv[1]) + '/data/event.pf')[0]
+        rel = 'events/'+ str(sys.argv[1]) + '/data/'
+        traces = io.load(rel+'traces.mseed')
+        stations = model.load_stations(rel+'stations.txt')
+        earth = cake.load_model('ak135-f-continental.m')
+        print event.depth
+        for tr in traces:
+            for st in stations:
+                if tr.station == st.station and tr.location == st.location:
+                        distances = [st.distance_to(event)* cake.m2d, st.distance_to(event)* cake.m2d]
+                        Phase = cake.PhaseDef('P')
+                        rays = earth.arrivals(
+                            phases=Phase,
+                            distances=distances,
+                            zstart=event.depth*2,
+                            zstop=0.0)
+                        time = rays[0].t+event.time
+                        #tr = tr.chop(time-20, time+30, inplace=False)
+                        tr.ydata = tr.ydata.astype(num.float)
+                        tr.ydata -= tr.ydata.mean()
+                        tr_spec, a = spec(tr)
+                        tr.ydata = abs(a)
+
+        trace.snuffle(traces)
 
 
 def plot_integrated():
@@ -1160,3 +1182,5 @@ else:
         plot_scatter()
     elif sys.argv[2] == 'beampower':
         beampower()
+    elif sys.argv[2] == 'inspect_spectrum':
+        inspect_spectrum()
