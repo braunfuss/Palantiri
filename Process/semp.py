@@ -156,7 +156,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
 
         Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
-     backSemb = backSemb/num.max(backSemb)
+        backSemb = backSemb/num.max(num.max(backSemb))
     return backSemb
 
 # -------------------------------------------------------------------------------------------------
