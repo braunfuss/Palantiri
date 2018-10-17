@@ -333,10 +333,12 @@ def processLoop():
 
 
                 isParallel = False                          #10.12.2015
-
+                TTTGridMap = []
+                mint = []
+                maxt = []
                 try:
                     f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'rb')
-                    print "loading travel time grid"
+                    print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
                     TTTGridMap,mint,maxt = pickle.load(f)
                     f.close()
                     print "loading of travel time grid sucessful"

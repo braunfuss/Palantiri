@@ -104,7 +104,7 @@ class Xcorr(object):
         tw['end'] = tw['start'] + 200
 
         tw['xcorrstart'] = UTCDateTime(UTCDateTime(st) +(mint - self.mintforerun))
-        tw['xcorrend'] = tw['xcorrstart'] + 20
+        tw['xcorrend'] = tw['xcorrstart'] + 40
 
         Logfile.add(' ORIGIN TIME %s' % UTCDateTime(self.Origin.time))
         Logfile.add(' OVERALL TIME WINDOW: %s - %s' %(tw['start'],      tw['end']))
@@ -712,7 +712,6 @@ class Xcorr(object):
         for i in SNRDict.iterkeys():
             Logfile.add('doXcorr: STREAM: ' + i + ' SNR: ' + str(SNRDict[i]))
 
-       #alternativeref = os.path.join(*self.AF.split('/')[-1:])    + 'refstation'   #hs
         alternativeref = os.path.join(*self.AF.split(os.sep)[-1:]) + 'refstation'   #hs
 
         if self.Config [alternativeref] == '': t = t
@@ -723,11 +722,12 @@ class Xcorr(object):
         Logfile.red('Reference Station of %s for Xcorr Procedure %s' %(os.path.basename(self.AF),t))
         Logfile.red('Enter Xcorr Procedure ')
         for stream in StreamDict.iterkeys():
-           xcorrshiftvalue = StreamDict[stream][0].stats.npts/10
-           a, b  = obspy.signal.cross_correlation.xcorr(ref, StreamDict[stream][0], xcorrshiftvalue)
+           xcorrshiftvalue = StreamDict[stream][0].stats.npts/3
+           print(xcorrshiftvalue)
+           a, b  = obspy.signal.cross_correlation.xcorr(ref, StreamDict[stream][0], 0)
            shift = a / StreamDict[stream][0].stats.sampling_rate
            corrDict[stream] = Corr(shift, b, a)
-
+           corrDict[stream].value = abs(corrDict[stream].value)
            msg =  'Index: ' + str(a) + ' Value: ' +str(b) + ' ----> '
            msg +=(str(stream) + str(StreamDict[stream][0].stats.sampling_rate) + ' SHIFT IN TIME: ' + str(shift))
            Logfile.add(msg)

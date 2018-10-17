@@ -120,6 +120,7 @@ class ConfigObj(object):
     def lat (self):       return self.Float('lat')        # ??? range einbauen
     def lon (self):       return self.Float('lon')        # ???
     def depth(self):       return self.Float('depth')      # ???
+    def inspect_semb(self): return self.Bool('inspect_semb')
 
     def dimX(self):       return self.UInt('dimx')
     def dimY(self):       return self.UInt('dimy')

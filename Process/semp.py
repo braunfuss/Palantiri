@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-
+import numpy as num
 from threading import Thread
 
 
@@ -72,22 +72,33 @@ def toMatrix (npVector, nColumns) :
 
 
 def otest (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
-               latv_1, lonv_1, traveltime_1, trace_1) :
-
+               latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
    #if USE_C_CODE  :
-    USE_C_CODE = True
+    USE_C_CODE = False
     if USE_C_CODE == True :
        return otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
                             minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
     else :
        return otest_py   (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
-                            minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
+                            minSampleCount, latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time)
+
+def t2ind_fast(t, tdelta, snap=round):
+    return int(int((t/tdelta)*(10**0))/(10.**0))
+
+def t2ind(t, tdelta, snap=round):
+    return int(snap(t/tdelta))
 
 def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
-               latv_1, lonv_1, traveltime_1, trace_1) :
-
+               latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
+    from pyrocko import obspy_compat
+    obspy_compat.plant()
+    trs_orgs  = []
+    for tr in calcStreamMap:
+       tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+       trs_orgs.append(tr_org)
     trace  = toMatrix (trace_1, minSampleCount)
     traveltime = toMatrix (traveltime_1, dimX * dimY)
+
     latv   = latv_1.tolist()
     lonv   = lonv_1.tolist()
 
@@ -97,6 +108,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
     Basic.writeVector (latv_txt,   latv, '%e')
     Basic.writeVector (lonv_txt,   lonv, '%e')
     '''
+    snap= (round, round)
 
     backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
     for i in range (ntimes) :
@@ -106,21 +118,36 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
         for j in range (dimX * dimY):
             semb = 0; nomin = 0; denom = 0
 
-            for l in range (int (nsamp)) :
-               sum = 0
-               for k in range (nostat) :
-                   relstart = int ((traveltime[k][j] - mint) * new_frequence + 0.5) + i * nstep
-                   sum     += trace[k][relstart + l]
-                   denom   += trace[k][relstart + l] * trace[k][relstart + l]
+            sums = 0
+            shifted = []
 
-            nomin += sum * sum
+            for k in range (nostat) :
+                relstart = traveltime[k][j]
+                tr = trs_orgs[k]
+
+                tmin = time+relstart+(i*nstep)-mint
+                tmax = time+relstart+(i*nstep)-mint+nsamp
+                ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+                iend = min(
+                    tr.data_len(),
+                    t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
+                data = tr.ydata[ibeg:iend]
+
+                sums += (data)
+
+            sum = num.sum(abs(sums))
+
+            denom = sum**2
+            nomin = sum
 
             x= latv[j]
             y= lonv[j]
-            semb = nomin / (float (nostat) * denom)
-            backSemb[i][j] = semb
 
+            semb = nomin / (float (nostat) * denom)
+            semb = sum
+            backSemb[i][j] = sum #sum oder back?
             if semb > sembmax :
+
                sembmax  = semb   # search for maximum and position of maximum on semblance
                                  # grid for given time step
                sembmaxX = latv[j]

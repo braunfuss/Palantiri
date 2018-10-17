@@ -234,15 +234,17 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                     try:
                         arrivals = model.arrivals([de, de], phases=Phase,
                                                   zstart=o_depth*km-2.5,
-                                                  zstop=0.,
+                                                  zstop=o_depth*km-2.5,
                                                   refine=True)
                         ttime = arrivals[0].t
                     except:
-                        tt = obs_TravelTimes(de, o_depth)
-                        l = tt[0]
-                        ttime = l.time
+                        arrivals = model.arrivals([de, de], phases=Phase,
+                                                  zstart=o_depth*km-2.5,
+                                                  zstop=0.,
+                                                  refine=True)
+                        ttime = arrivals[0].t
 
-                GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth,ttime,de)
+                GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
                 if int(Config['xcorr']) == 1:
                             ttime = ttime-float(Xcorrshift[station.getName()].shift)\

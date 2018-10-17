@@ -12,6 +12,7 @@ import Logfile
 import  DataTypes
 from DataTypes import Location
 from ObspyFkt import loc2degrees
+from pyrocko import orthodrome
 from ConfigFile import ConfigObj, OriginCfg, SynthCfg
 import time
 import numpy as num
@@ -299,7 +300,6 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
     method to collect semblance matrizes from all processes and write them to file for each timestep
     '''
     Logfile.add('start collect in collectSemb')
-
     cfg= ConfigObj(dict=Config)
     origin = ConfigObj(dict=Origin)
 
@@ -358,7 +358,19 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     folder  = Folder['semb']
     fobjsembmax = open(os.path.join(folder,'sembmax_%s.txt' %(switch)),'w')
+    origin = DataTypes.dictToLocation(Origin)
+    #import  Basic
+    #org_cor =  Basic.dictToLocation(origin)
+    for a, i in enumerate(tmp):
+        for j in range(migpoints):
+            x= latv[j]
+            y= lonv[j]
+            delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
+            semb = i[j]*(1./delta**2)
+
     norm = num.max(num.max(tmp, axis=1))
+
+
 
 
     for a, i in enumerate(tmp):
@@ -380,11 +392,14 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
         sembmaxX = 0
         sembmaxY = 0
 
-        origin = DataTypes.dictToLocation(Origin)
         uncert = num.std(i) #maybe not std?
+        delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
+        azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+
         for j in range(migpoints):
             x= latv[j]
             y= lonv[j]
+
             semb = i[j]/norm
             fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
 
@@ -393,7 +408,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
                 sembmaxX = x;
                 sembmaxY = y;
 
-        delta = loc2degrees(Location(sembmaxX, sembmaxY), origin)
+        delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
         azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
@@ -405,7 +420,9 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
     fobjsembmax.close()
 
     trigger.writeSembMaxValue(sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    trigger.semblancestalta(sembmaxvaluev,sembmaxlatv,sembmaxlonv)
+    inspect_semb = cfg.Bool('inspect_semb')
+    if inspect_semb is True:
+        trigger.semblancestalta(sembmaxvaluev,sembmaxlatv,sembmaxlonv)
     return sembmaxvaluev
 
 def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
@@ -543,7 +560,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' %(Gmint,Gmaxt))
 
     cfg = ConfigObj(dict=Config)
-
+    timeev = util.str_to_time(ev.time)
     dimX   = cfg.dimX()         #('dimx')
     dimY   = cfg.dimY()         #('dimy')
     winlen = cfg.winlen()      #('winlen')
@@ -601,7 +618,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     lon=st.lon,
                     store_id=store_id,
                     codes=(st.network, st.station, st.location, 'BHZ'),
-                    tmin=-1900,
+                    tmin=-3900,
                     tmax=3900,
                     interpolation='multilinear',
                     quantity=cfg.quantity())
@@ -678,7 +695,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             magnitude=syn_in.magnitude_1(i)))
             source = CombiSource(subsources=sources)
         response = engine.process(source, targets)
-
+        timeev = util.str_to_time(syn_in.time_0())
         synthetic_traces = response.pyrocko_traces()
         if cfg.Bool('synthetic_test_add_noise') is True:
             from noise_addition import add_noise
@@ -698,6 +715,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                          store_id, phase_def='P')
         trs_org = []
         trs_orgs = []
+        from pyrocko import trace
         fobj = os.path.join(arrayfolder, 'shift.dat')
         calcStreamMapsyn = calcStreamMap.copy()
         for tracex in calcStreamMapsyn.iterkeys():
@@ -766,15 +784,16 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         i = 0
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for trace in calcStreamMapshifted.iterkeys():
-            recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
-            recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
-            mod = shifted_traces[i]
-            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
-            shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
-            calcStreamMapshifted[trace] = shifted_obs_tr
-            i = i+1
-
+        for tracex in calcStreamMapshifted.iterkeys():
+                for trl in shifted_traces:
+                    if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
+                        mod = trl
+                        recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
+                        recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
+                        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
+                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
+                        shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
+                        calcStreamMapshifted[tracex] = shifted_obs_tr
         calcStreamMap = calcStreamMapshifted
 
     weight = 1.
@@ -876,121 +895,123 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
     nsamp = winlen * new_frequence
 
-    nstep = int(step*new_frequence)
+    nstep = step*new_frequence
     migpoints = dimX * dimY
 
     dimZ = 0
-    new_frequence = cfg.newFrequency()              # ['new_frequence']
     maxp = int(Config['ncore'])
+
+
 
 
     Logfile.add('PROCESS %d  NTIMES: %d' %(flag,ntimes))
 
     if False :
-       print('nostat ',nostat,type(nostat))
-       print('nsamp ',nsamp,type(nsamp))
-       print('ntimes ',ntimes,type(ntimes))
-       print('nstep ',nstep,type(nstep))
-       print('dimX ',dimX,type(dimX))
-       print('dimY ',dimY,type(dimY))
-       print('mint ',Gmint,type(mint))
-       print('new_freq ',new_frequence,type(new_frequence))
-       print('minSampleCount ',minSampleCount,type(minSampleCount))
-       print('latv ',latv,type(latv))
-       print('traces',traces,type(traces))
-       print('traveltime',traveltime,type(traveltime))
+        print('nostat ',nostat,type(nostat))
+        print('nsamp ',nsamp,type(nsamp))
+        print('ntimes ',ntimes,type(ntimes))
+        print('nstep ',nstep,type(nstep))
+        print('dimX ',dimX,type(dimX))
+        print('dimY ',dimY,type(dimY))
+        print('mint ',Gmint,type(mint))
+        print('new_freq ',new_frequence,type(new_frequence))
+        print('minSampleCount ',minSampleCount,type(minSampleCount))
+        print('latv ',latv,type(latv))
+        print('traces',traces,type(traces))
+        print('traveltime',traveltime,type(traveltime))
 
-#==================================compressed sensing=================================
-
+#===================compressed sensing=================================
     try:
-    	cs = cfg.cs()
+        cs = cfg.cs()
     except:
-    	cs = 0
+        cs = 0
     if cs == 1:
-    	    csmaxvaluev = num.ndarray(ntimes,dtype=float)
-    	    csmaxlatv   = num.ndarray(ntimes,dtype=float)
-    	    csmaxlonv   = num.ndarray(ntimes,dtype=float)
-	    folder  = Folder['semb']
-            fobjcsmax = open(os.path.join(folder,'csmax_%s.txt' %(switch)),'w')
-	    traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
-	    traveltime2 = toMatrix(traveltimes, dimX * dimY)  # for relstart
-	    traveltime = traveltime.reshape(dimX*dimY,nostat)
-	    import matplotlib as mpl
-	    import scipy.optimize as spopt
-	    import scipy.fftpack as spfft
-	    import scipy.ndimage as spimg
-	    import cvxpy as cvx
-	    import matplotlib.pyplot as plt
-	    A = spfft.idct(traveltime, norm='ortho', axis=0)
-	    #A = traveltime
-	    n =(nostat*dimX*dimY)
-	    vx = cvx.Variable(dimX*dimY)
-	    res = cvx.Variable(1)
-	    objective = cvx.Minimize(cvx.norm(res, 1))
-	    back2 = num.zeros([dimX,dimY])
-	    l = int(nsamp)
-            fobj  = open(os.path.join(folder,'%s-%s_%03d.cs' %(switch,Origin['depth'],l)),'w')
+        csmaxvaluev = num.ndarray(ntimes,dtype=float)
+        csmaxlatv   = num.ndarray(ntimes,dtype=float)
+        csmaxlonv   = num.ndarray(ntimes,dtype=float)
+        folder  = Folder['semb']
+        fobjcsmax = open(os.path.join(folder,'csmax_%s.txt' %(switch)),'w')
+        traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
+        traveltime2 = toMatrix(traveltimes, dimX * dimY)  # for relstart
+        traveltime = traveltime.reshape(dimX*dimY,nostat)
+        import matplotlib as mpl
+        import scipy.optimize as spopt
+        import scipy.fftpack as spfft
+        import scipy.ndimage as spimg
+        import cvxpy as cvx
+        import matplotlib.pyplot as plt
+        A = spfft.idct(traveltime, norm='ortho', axis=0)
+        #A = traveltime
+        n =(nostat*dimX*dimY)
+        vx = cvx.Variable(dimX*dimY)
+        res = cvx.Variable(1)
+        objective = cvx.Minimize(cvx.norm(res, 1))
+        back2 = num.zeros([dimX,dimY])
+        l = int(nsamp)
+        fobj  = open(os.path.join(folder,'%s-%s_%03d.cs' %(switch,Origin['depth'],l)),'w')
+        for i in range(ntimes):
+            ydata = []
+            try:
+                for tr in traces:
+                        relstart = int((dimX*dimY - mint) * new_frequence + 0.5) + i * nstep
+                        tr=spfft.idct(tr[relstart+i:relstart+i+dimX*dimY], norm='ortho', axis=0)
 
+                        ydata.append(tr)
+                        ydata = num.asarray(ydata)
+                        ydata = ydata.reshape(dimX*dimY,nostat)
 
-	    for i in range(ntimes) :
-	    		    ydata = []
-                            try:
-			    	    for tr in traces:
-						relstart = int((dimX*dimY - mint) * new_frequence + 0.5) + i * nstep
-						tr=spfft.idct(tr[relstart+i:relstart+i+dimX*dimY], norm='ortho', axis=0)
+                        constraints = [res == cvx.sum_entries( 0+ num.sum([ydata[:,x]-A[:,x]*vx  for x in range(nostat) ]) ) ]
 
-						ydata.append(tr)
-				    ydata = num.asarray(ydata)
-				    ydata = ydata.reshape(dimX*dimY,nostat)
-				    #print num.shape(A), num.shape(vx), num.shape(ydata)
+                        prob = cvx.Problem(objective, constraints)
+                        result = prob.solve(verbose=False, max_iters=200)
 
-				    constraints = [res == cvx.sum_entries( 0+ num.sum([ydata[:,x]-A[:,x]*vx  for x in range(nostat) ]) ) ]
-				   # constraints = [0 <= ydata[0,:]- A*vx]
-				   # constraints = [A[0,:]*vx == ydata[0,:]]
-				    prob = cvx.Problem(objective, constraints)
-				    result = prob.solve(verbose=False, max_iters=200)
+                        x = num.array(vx.value)
+                        x = num.squeeze(x)
+                        back1= x.reshape(dimX,dimY)
+                        sig = spfft.idct(x, norm='ortho', axis=0)
+                        back2 = back2 + back1
+                        xs = num.array(res.value)
+                        xs = num.squeeze(xs)
+                        max_cs = num.max(back1)
+                        idx = num.where(back1==back1.max())
+                        csmaxvaluev[i] = max_cs
+                        csmaxlatv[i]   = latv[idx[0]]
+                        csmaxlonv[i]   = lonv[idx[1]]
+                        fobj.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
+                        fobjcsmax.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
+                fobj.close()
+                fobjcsmax.close()
 
-				    x = num.array(vx.value)
-				    x = num.squeeze(x)
-				    back1= x.reshape(dimX,dimY)
-				    sig = spfft.idct(x, norm='ortho', axis=0)
-				    back2 = back2 + back1
-				    xs = num.array(res.value)
-				    xs = num.squeeze(xs)
-				    max_cs = num.max(back1)
-				    idx = num.where(back1==back1.max())
-				    csmaxvaluev[i] = max_cs
-				    csmaxlatv[i]   = latv[idx[0]]
-				    csmaxlonv[i]   = lonv[idx[1]]
-				    fobj.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
-				    fobjcsmax.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
-                            except:
-			            pass
-	    fobj.close()
-	    fobjcsmax.close()
+            except:
+                pass
 
 #==================================semblance calculation========================================
 
     t1 = time.time()
     traces = traces.reshape(1,nostat*minSampleCount)
     traveltime = traveltime.reshape(1,nostat*dimX*dimY)
-    USE_C_CODE = True
-    try:
-        if USE_C_CODE :
-            import Cm
-            import CTrig
-            start_time = time.time()
-            k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                          minSampleCount,latv,lonv,traveltime,traces)
-            print("--- %s seconds ---" %(time.time() - start_time))
-        else :
-            start_time = time.time()
-            k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltime,traces)                       #hs
-            print("--- %s seconds ---" %(time.time() - start_time))
-    except:
-        print "loaded tttgrid has probably wrong dimensions or stations, delete\
-                ttgrid or exchange"
+    USE_C_CODE = False
+    #try:
+    if USE_C_CODE :
+        import Cm
+        import CTrig
+        start_time = time.time()
+        k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                      minSampleCount,latv,lonv,traveltime,traces)
+        print("--- %s seconds ---" %(time.time() - start_time))
+    else :
+        start_time = time.time()
+        ntimes = int((forerun + duration)/step)
+        nsamp = int(winlen)
+        nstep = int(step)
+        Gmint = cfg.Int('forerun')
+
+        k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                  minSampleCount,latv,lonv,traveltime,traces, calcStreamMap, timeev)                       #hs
+        print("--- %s seconds ---" %(time.time() - start_time))
+    #except:
+    #    print "loaded tttgrid has probably wrong dimensions or stations, delete\
+    #            ttgrid or exchange"
 
     t2 = time.time()
 
@@ -998,7 +1019,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
 
     partSemb = k
-
     partSemb  = partSemb.reshape(ntimes,migpoints)
 
 
