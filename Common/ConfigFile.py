@@ -121,6 +121,7 @@ class ConfigObj(object):
     def lon (self):       return self.Float('lon')        # ???
     def depth(self):       return self.Float('depth')      # ???
     def inspect_semb(self): return self.Bool('inspect_semb')
+    def array_response(self): return self.Bool('array_response')
 
     def dimX(self):       return self.UInt('dimx')
     def dimY(self):       return self.UInt('dimy')
@@ -233,6 +234,8 @@ class SynthCfg(ConfigObj):
 
     def lat_0(self): return self.Float('lat_0')
     def lon_0(self): return self.Float('lon_0')
+    def north_shift_0(self): return self.Float('north_shift_0')
+    def east_shift_0(self): return self.Float('east_shift_0')
     def strike_0(self): return self.Float('strike_0')
     def dip_0 (self): return self.Float('dip_0')
     def rake_0(self): return self.Float('rake_0')
@@ -271,6 +274,8 @@ class SynthCfg(ConfigObj):
 
     def lat_1(self,i): return self.Float(('lat_%s' % i))
     def lon_1(self,i): return self.Float(('lon_%s' % i))
+    def north_shift_1(self,i): return self.Float(('north_shift_%s' % i))
+    def east_shift_1(self,i): return self.Float(('east_shift_%s' % i))
     def strike_1(self,i): return self.Float(('strike_%s' % i))
     def depth_syn_1(self,i): return self.Float(('depth_%s' % i))
     def dip_1(self,i): return self.Float(('dip_%s' % i))

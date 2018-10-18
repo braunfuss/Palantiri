@@ -45,7 +45,6 @@ class CombiSource(gf.Source):
                 [subsource.lat for subsource in subsources], dtype=num.float)
             lons = num.array(
                 [subsource.lon for subsource in subsources], dtype=num.float)
-
             assert num.all(lats == lats[0]) and num.all(lons == lons[0])
             lat, lon = lats[0], lons[0]
 
@@ -366,7 +365,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
             x= latv[j]
             y= lonv[j]
             delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-            semb = i[j]*(1./delta**2)
+            semb = i[j]#*(1./delta**2)
 
     norm = num.max(num.max(tmp, axis=1))
 
@@ -634,6 +633,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     source = RectangularSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
+                        east_shift=float(syn_in.east_shift_0())*1000.,
+                        north_shift=float(syn_in.north_shift_0())*1000.,
                         depth=syn_in.depth_syn_0()*1000.,
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
@@ -649,6 +650,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     source = DCSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
+                        east_shift=float(syn_in.east_shift_0())*1000.,
+                        north_shift=float(syn_in.north_shift_0())*1000.,
                         depth=syn_in.depth_syn_0()*1000.,
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
@@ -670,6 +673,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         sources.append(RectangularSource(
                             lat=float(syn_in.lat_1(i)),
                             lon=float(syn_in.lon_1(i)),
+                            east_shift=float(syn_in.east_shift_1(i))*1000.,
+                            north_shift=float(syn_in.north_shift_1(i))*1000.,
                             depth=syn_in.depth_syn_1(i)*1000.,
                             strike=syn_in.strike_1(i),
                             dip=syn_in.dip_1(i),
@@ -683,10 +688,13 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             time=util.str_to_time(syn_in.time_1(i))))
 
                 if syn_in.source() == 'DCSource':
+                        print float(syn_in.lat_1(i)), float(syn_in.lon_1(i))
                         sources.append(DCSource(
                             lat=float(syn_in.lat_1(i)),
                             lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_1(i)*1000.,
+                            east_shift=float(syn_in.east_shift_1(i))*1000.,
+                            north_shift=float(syn_in.north_shift_1(i))*1000.,
+                            depth=syn_in.depth_syn_1(i)*1000.,
                             strike=syn_in.strike_1(i),
                             dip=syn_in.dip_1(i),
                             rake=syn_in.rake_1(i),
@@ -825,6 +833,36 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def='P')
 
+    if cfg.Bool('array_response') is True:
+        from obspy.signal import array_analysis
+        from obspy.core import stream
+        ntimesr = int((forerun + duration)/step)
+        nsampr = int(winlen)
+        nstepr = int(step)
+        sll_x=-3.0
+        slm_x=3.0
+        sll_y=-3.0
+        slm_y=3.0
+        sl_s=0.03,
+        # sliding window properties
+
+        # frequency properties
+        frqlow=1.0,
+        frqhigh=8.0
+        prewhiten=0
+        # restrict output
+        semb_thres=-1e9
+        vel_thres=-1e9
+        stime=stime
+        etime=etime
+        stream_arr = stream.Stream()
+        for trace in calcStreamMapshifted.iterkeys():
+            stream_arr.append(calcStreamMapshifted[trace])
+        results = array_analysis.array_processing(stream_arr, nsamp, nstep,\
+                                                  sll_x, slm_x, sll_y, slm_y,\
+                                                   sl_s, semb_thres, vel_thres, \
+                                                   frqlow, frqhigh, stime, \
+                                                   etime, prewhiten)
     for trace in calcStreamMap.iterkeys():
         recordstarttime = calcStreamMap[trace].stats.starttime
         d = calcStreamMap[trace].stats.starttime
