@@ -301,6 +301,8 @@ def processLoop():
             #==================================loop over arrays================
             ASL = []
             weights = []
+            array_centers = []
+
             networks = Config['networks'].split(',')
             counter  = 1
             TriggerOnset = []
@@ -404,11 +406,13 @@ def processLoop():
                     optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
                 else:
-                    arraySemb, weight = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                    arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                    TTTGridMAP = []
                 t2= time.time()
                 Logfile.add ('CALC took %0.3f sec' % (t2-t1))
                 weights.append(weight)
+                array_centers.append(array_center)
                 ASL.append(arraySemb)
                 counter +=1
 
@@ -434,7 +438,7 @@ def processLoop():
                                              workdepth, filterindex, Wdfs)
             if ASL:
                 Logfile.red ('collect semblance matrices from all arrays')
-                sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
+                sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch, array_centers)
                 if cfg.Bool('weight_by_noise') == True:
                     sembCalc.collectSembweighted(ASL,Config,Origin,Folder,ntimes,len(networks),switch, weights)
 

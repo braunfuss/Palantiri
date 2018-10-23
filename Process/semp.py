@@ -97,6 +97,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
        trs_orgs.append(tr_org)
     trace  = toMatrix (trace_1, minSampleCount)
+    traveltime = []
     traveltime = toMatrix (traveltime_1, dimX * dimY)
 
     latv   = latv_1.tolist()
@@ -120,7 +121,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
 
             sums = 0
             shifted = []
-
+            relstart = []
             for k in range (nostat) :
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
@@ -132,8 +133,13 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
                     tr.data_len(),
                     t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
                 data = tr.ydata[ibeg:iend]
-
-                sums += (data)
+                try:
+                    sums += (data)
+                except:
+                    print(tmin, tmax)
+                    print(tr.tmax, tr.tmin)
+                    print relstart
+                    tr.snuffle()
 
             sum = num.sum(abs(sums))
 

@@ -63,9 +63,7 @@ class CombiSource(gf.Source):
     def discretize_basesource(self, store, target=None):
 
         dsources = []
-        t0 = self.subsources[0].time
         for sf in self.subsources:
-            assert t0 == sf.time
             ds = sf.discretize_basesource(store, target)
             ds.m6s *= sf.get_factor()
             dsources.append(ds)
@@ -294,7 +292,7 @@ def writeSembMatricesSingleArray(SembList,Config,Origin,arrayfolder,ntimes,switc
 
 # -------------------------------------------------------------------------------------------------
 
-def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
+def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_centers):
     '''
     method to collect semblance matrizes from all processes and write them to file for each timestep
     '''
@@ -340,7 +338,15 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
                lonv.append(oLonul)
 
     tmp=1
+    origin = DataTypes.dictToLocation(Origin)
+    i = 0
+
     for a in SembList:
+        x = array_centers[i][0]
+        y = array_centers[i][1]
+        delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
+        a = a*((1./delta**2)*1.e+15)
+        i = i+1
         if num.mean(a)>0:
             tmp *= a
     #sys.exit()
@@ -357,15 +363,13 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     folder  = Folder['semb']
     fobjsembmax = open(os.path.join(folder,'sembmax_%s.txt' %(switch)),'w')
-    origin = DataTypes.dictToLocation(Origin)
     #import  Basic
     #org_cor =  Basic.dictToLocation(origin)
     for a, i in enumerate(tmp):
         for j in range(migpoints):
             x= latv[j]
             y= lonv[j]
-            delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-            semb = i[j]#*(1./delta**2)
+            semb = i[j]
 
     norm = num.max(num.max(tmp, axis=1))
 
@@ -586,17 +590,21 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     stations = []
     py_trs = []
+    lats = []
+    lons = []
     for trace in calcStreamMap.iterkeys():
         py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
         py_trs.append(py_tr)
         for il in FilterMetaData:
             if str(il) == str(trace):
-                    szo = model.Station(lat=il.lat, lon=il.lon,
+                    szo = model.Station(lat=float(il.lat), lon=float(il.lon),
                                         station=il.sta, network=il.net,
                                         channels=py_tr.channel,
                                         elevation=il.ele, location=il.loc)
                     stations.append(szo)
-
+                    lats.append(float(il.lat))
+                    lons.append(float(il.lon))
+    array_center = [num.mean(lats), num.mean(lons)]
 
 #==================================synthetic BeamForming======================
 
@@ -688,7 +696,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             time=util.str_to_time(syn_in.time_1(i))))
 
                 if syn_in.source() == 'DCSource':
-                        print float(syn_in.lat_1(i)), float(syn_in.lon_1(i))
                         sources.append(DCSource(
                             lat=float(syn_in.lat_1(i)),
                             lon=float(syn_in.lon_1(i)),
@@ -863,6 +870,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                                    sl_s, semb_thres, vel_thres, \
                                                    frqlow, frqhigh, stime, \
                                                    etime, prewhiten)
+        timestemp = results[0]
+        relative_relpow = results[1]
+        absolute_relpow = results[2]
+
     for trace in calcStreamMap.iterkeys():
         recordstarttime = calcStreamMap[trace].stats.starttime
         d = calcStreamMap[trace].stats.starttime
@@ -872,8 +883,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             minSampleCount = calcStreamMap[trace].stats.npts
 
     ###########################################################################
+
     traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount), dtype=float)
     traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY), dtype=float)
+
     latv   = num.ndarray(dimX*dimY, dtype=float)
     lonv   = num.ndarray(dimX*dimY, dtype=float)
     ###########################################################################
@@ -899,7 +912,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 traveltimes[streamCounter] = TTTGridMap[key]
             else:
                 "NEIN", streamID, key
-
 
         if not streamCounter in traveltimes :
            continue                              #hs : thread crashed before
@@ -956,7 +968,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         print('minSampleCount ',minSampleCount,type(minSampleCount))
         print('latv ',latv,type(latv))
         print('traces',traces,type(traces))
-        print('traveltime',traveltime,type(traveltime))
 
 #===================compressed sensing=================================
     try:
@@ -1027,25 +1038,26 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     t1 = time.time()
     traces = traces.reshape(1,nostat*minSampleCount)
-    traveltime = traveltime.reshape(1,nostat*dimX*dimY)
+
+
+    traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
     USE_C_CODE = False
     #try:
-    if USE_C_CODE :
+    if USE_C_CODE:
         import Cm
         import CTrig
         start_time = time.time()
         k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltime,traces)
+                      minSampleCount,latv,lonv,traveltimes,traces)
         print("--- %s seconds ---" %(time.time() - start_time))
-    else :
+    else:
         start_time = time.time()
         ntimes = int((forerun + duration)/step)
         nsamp = int(winlen)
         nstep = int(step)
         Gmint = cfg.Int('forerun')
-
         k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                  minSampleCount,latv,lonv,traveltime,traces, calcStreamMap, timeev)                       #hs
+                  minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
         print("--- %s seconds ---" %(time.time() - start_time))
     #except:
     #    print "loaded tttgrid has probably wrong dimensions or stations, delete\
@@ -1060,4 +1072,4 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     partSemb  = partSemb.reshape(ntimes,migpoints)
 
 
-    return partSemb, weight
+    return partSemb, weight, array_center
