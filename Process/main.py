@@ -402,13 +402,16 @@ def processLoop():
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
 
                 t1= time.time()
+                f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'rb')
+                print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
+                TTTGridMap,mint,maxt = pickle.load(f)
+                f.close()
                 if cfg.optimize() == True:
                     optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
                 else:
                     arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                    TTTGridMAP = []
                 t2= time.time()
                 Logfile.add ('CALC took %0.3f sec' % (t2-t1))
                 weights.append(weight)
@@ -427,6 +430,7 @@ def processLoop():
                     fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
 
                 fobjarraynetwork.close()
+                TTTGridMAP = []
             if cfg.optimize_all() == True:
                 import optim_csemb
                 from optim_csemb import solve

@@ -268,8 +268,6 @@ def writeSembMatricesSingleArray(SembList,Config,Origin,arrayfolder,ntimes,switc
     d   = rc.timestamp
 
     for a, i in enumerate(SembList):
-        #logger.info('timestep %d' % a)
-
         fobj = open(os.path.join(arrayfolder,'%s-%s_%03d.ASC' %(switch,Origin['depth'],a)),'w')
         fobj.write('# %s , %s\n' %(d,rcs))
         fobj.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
@@ -340,16 +338,44 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     tmp=1
     origin = DataTypes.dictToLocation(Origin)
     i = 0
-
+    azis = []
     for a in SembList:
         x = array_centers[i][0]
         y = array_centers[i][1]
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
         a = a*((1./delta**2)*1.e+15)
+        azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),x, y))
         i = i+1
+
+    min_coor = num.zeros([i,2])
+    i = 0
+    for a in SembList:
+        deltas = []
+        x = array_centers[i][0]
+        y = array_centers[i][1]
+        for k in range(0,len(latv)):
+            delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k])
+            deltas.append(orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k]))
+            if delta <= num.min(deltas):
+                min_coor[i]= [latv[k], lonv[k]]
+        i = i+1
+    array_overlap = num.average(min_coor, axis=0)
+    delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0], array_overlap[1], origin.lat, origin.lon)
+
+    print(min_coor)
+    print(array_overlap)
+
+    print(delta_center)
+    diff_center_lat = origin.lat-array_overlap[0]
+    diff_center_lon = origin.lon-array_overlap[1]
+    print(diff_center_lat)
+    print(diff_center_lon)
+    #sys.exit()
+
+
+    for a in SembList:
         if num.mean(a)>0:
             tmp *= a
-    #sys.exit()
 
     sembmaxvaluev = num.ndarray(ntimes,dtype=float)
     sembmaxlatv   = num.ndarray(ntimes,dtype=float)
@@ -363,25 +389,17 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
 
     folder  = Folder['semb']
     fobjsembmax = open(os.path.join(folder,'sembmax_%s.txt' %(switch)),'w')
-    #import  Basic
-    #org_cor =  Basic.dictToLocation(origin)
     for a, i in enumerate(tmp):
         for j in range(migpoints):
-            x= latv[j]
-            y= lonv[j]
             semb = i[j]
 
     norm = num.max(num.max(tmp, axis=1))
-
-
-
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
 
 
         fobj  = open(os.path.join(folder,'%s-%s_%03d.ASC' %(switch,Origin['depth'],a)),'w')
-        #fobj = open(os.path.join(folder, '%03d.ASC'    % a),'w')
 
         fobj.write('# %s , %s\n' %(d,rcs))
         fobj.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
@@ -400,8 +418,8 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         for j in range(migpoints):
-            x= latv[j]
-            y= lonv[j]
+            x= latv[j]#-diff_center_lat/2.
+            y= lonv[j]#-diff_center_lon/2.
 
             semb = i[j]/norm
             fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
@@ -442,8 +460,8 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
     winlen = cfg.winlen()      #('winlen')
     step   = cfg.step()         #('step')
 
-    latv= []
-    lonv= []
+    latv = []
+    lonv = []
 
     gridspacing = cfg.Float('gridspacing')
     migpoints   = dimX * dimY
@@ -625,8 +643,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     lon=st.lon,
                     store_id=store_id,
                     codes=(st.network, st.station, st.location, 'BHZ'),
-                    tmin=-3900,
-                    tmax=3900,
+                    tmin=-6900,
+                    tmax=6900,
                     interpolation='multilinear',
                     quantity=cfg.quantity())
             targets.append(target)
@@ -917,14 +935,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            continue                              #hs : thread crashed before
 
         g = traveltimes[streamCounter]
-        dimZ  = g.dimZ
-        mint  = g.mint
-        maxt  = g.maxt
-        Latul = g.Latul
-        Lonul = g.Lonul
-        Lator = g.Lator
-        Lonor = g.Lonor
-
+        dimZ = g.dimZ
+        mint = g.mint
         gridElem = g.GridArray
 
         for x in range(dimX):
@@ -941,8 +953,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     #endfor
 
-
-    ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
+    ################ CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ########
     nsamp = winlen * new_frequence
 
     nstep = step*new_frequence
@@ -950,9 +961,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     dimZ = 0
     maxp = int(Config['ncore'])
-
-
-
 
     Logfile.add('PROCESS %d  NTIMES: %d' %(flag,ntimes))
 
@@ -976,9 +984,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         cs = 0
     if cs == 1:
         csmaxvaluev = num.ndarray(ntimes,dtype=float)
-        csmaxlatv   = num.ndarray(ntimes,dtype=float)
-        csmaxlonv   = num.ndarray(ntimes,dtype=float)
-        folder  = Folder['semb']
+        csmaxlatv  = num.ndarray(ntimes,dtype=float)
+        csmaxlonv  = num.ndarray(ntimes,dtype=float)
+        folder = Folder['semb']
         fobjcsmax = open(os.path.join(folder,'csmax_%s.txt' %(switch)),'w')
         traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
         traveltime2 = toMatrix(traveltimes, dimX * dimY)  # for relstart
@@ -990,7 +998,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         import cvxpy as cvx
         import matplotlib.pyplot as plt
         A = spfft.idct(traveltime, norm='ortho', axis=0)
-        #A = traveltime
         n =(nostat*dimX*dimY)
         vx = cvx.Variable(dimX*dimY)
         res = cvx.Variable(1)
@@ -1042,31 +1049,32 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
     USE_C_CODE = False
-    #try:
-    if USE_C_CODE:
-        import Cm
-        import CTrig
-        start_time = time.time()
-        k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltimes,traces)
-        print("--- %s seconds ---" %(time.time() - start_time))
-    else:
-        start_time = time.time()
-        ntimes = int((forerun + duration)/step)
-        nsamp = int(winlen)
-        nstep = int(step)
-        Gmint = cfg.Int('forerun')
-        k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                  minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
-        print("--- %s seconds ---" %(time.time() - start_time))
-    #except:
-    #    print "loaded tttgrid has probably wrong dimensions or stations, delete\
-    #            ttgrid or exchange"
+    try:
+        if USE_C_CODE:
+            import Cm
+            import CTrig
+            start_time = time.time()
+            k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                          minSampleCount,latv,lonv,traveltimes,traces)
+            print("--- %s seconds ---" %(time.time() - start_time))
+        else:
+            start_time = time.time()
+            ntimes = int((forerun + duration)/step)
+            nsamp = int(winlen)
+            nstep = int(step)
+            Gmint = cfg.Int('forerun')
+            k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                      minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
+            print("--- %s seconds ---" %(time.time() - start_time))
+    except ValueError:
+            k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                          minSampleCount,latv,lonv,traveltimes,traces)
+            print "loaded tttgrid has probably wrong dimensions or stations,\
+                    delete ttgrid or exchange is recommended"
 
     t2 = time.time()
 
     Logfile.add('%s took %0.3f s' %('CALC:',(t2-t1)))
-
 
     partSemb = k
     partSemb  = partSemb.reshape(ntimes,migpoints)

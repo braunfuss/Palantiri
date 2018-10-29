@@ -128,18 +128,22 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
 
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
-                ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
-                iend = min(
-                    tr.data_len(),
-                    t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
-                data = tr.ydata[ibeg:iend]
                 try:
-                    sums += (data)
+                    ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+                    iend = min(
+                        tr.data_len(),
+                        t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
                 except:
-                    print(tmin, tmax)
-                    print(tr.tmax, tr.tmin)
-                    print relstart
-                    tr.snuffle()
+                    print(tmin, tmax, tr.tmin, tr.tmax)
+                    print tr.deltat
+                    print tr.tmin
+                    print tr.tmax
+                    print(relstart)
+                    print(mint)
+                    print(time)
+                data = tr.ydata[ibeg:iend]
+                sums += (data)
+
 
             sum = num.sum(abs(sums))
 
@@ -163,6 +167,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
         Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
     backSemb = backSemb/num.max(num.max(backSemb))
+
 
     return backSemb
 
