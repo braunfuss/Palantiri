@@ -134,7 +134,7 @@ def writeSynFile(path,ev_id):
             fobj.write('store = store_id\n')
             fobj.write('store_superdirs = dir of store\n')
             fobj.write('use_specific_stf = 0\n')
-            fobj.write('stf = gf.HalfSinusoidSTF()\n')
+            fobj.write('stf = stf=gf.HalfSinusoidSTF()\n')
             fobj.write('source = RectangularSource\n')
 
     fobj.close()
