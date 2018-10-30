@@ -165,6 +165,9 @@ def resampleWaveform(Waveform, end_frequence):
           Waveform.resample(end_frequence)
           return Waveform
 
+def resampledummy(Waveform, end_frequence):
+
+          return Waveform
 # -------------------------------------------------------------------------------------------------
 
 def filterWaveform_2(Config, wafeform, station) :
@@ -274,6 +277,18 @@ def processWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,switch,Xc
 
             if Config ['export_resampled'].capitalize() == 'True':
                writeWaveform(Folder,i,WaveformDict[i],'R',network)
+
+    return WaveformDict
+
+
+def processdummyWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,switch,Xcorr):
+
+
+    for index,i in enumerate(WaveformDict):
+
+        #resampling
+        j = resampledummy(WaveformDict[i][0],2.)
+        WaveformDict[i] = j
 
     return WaveformDict
 

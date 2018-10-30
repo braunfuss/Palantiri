@@ -13,7 +13,7 @@ import  DataTypes
 from DataTypes import Location
 from ObspyFkt import loc2degrees
 from pyrocko import orthodrome
-from ConfigFile import ConfigObj, OriginCfg, SynthCfg
+from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 import time
 import numpy as num
 from collections import OrderedDict, defaultdict
@@ -418,8 +418,8 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         for j in range(migpoints):
-            x= latv[j]#-diff_center_lat/2.
-            y= lonv[j]#-diff_center_lon/2.
+            x= latv[j]-diff_center_lat/2.
+            y= lonv[j]-diff_center_lon/2.
 
             semb = i[j]/norm
             fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
@@ -581,6 +581,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' %(Gmint,Gmaxt))
 
     cfg = ConfigObj(dict=Config)
+    cfg_f  = FilterCfg(Config)
+
     timeev = util.str_to_time(ev.time)
     dimX   = cfg.dimX()         #('dimx')
     dimY   = cfg.dimY()         #('dimy')
@@ -758,6 +760,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         recordstarttime = calcStreamMapsyn[tracex].stats.starttime.timestamp
                         recordendtime = calcStreamMapsyn[tracex].stats.endtime.timestamp
                         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
+                        if switch == 0:
+                            tr_org.bandpass(4,cfg_f.flo(), cfg_f.fhi())
+                        elif switch == 1:
+                            tr_org.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
                         trs_orgs.append(tr_org)
                         tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)

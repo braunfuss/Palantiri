@@ -395,8 +395,12 @@ def processLoop():
                     Wd = waveform.readWaveforms_colesseo   (FilterMeta, tw, evpath, ev, C)
                 else:
                     Wd = waveform.readWaveforms   (FilterMeta, tw, evpath, ev)
-                Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-                Wdfs.append(Wdf)
+                if cfg.Bool('synthetic_test') is True:
+                    Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+                    Wdfs.append(Wdf)
+                else:
+                    Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+                    Wdfs.append(Wdf)
 
                 C.writeStationFile(FilterMeta,Folder,counter)
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
