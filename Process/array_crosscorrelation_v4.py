@@ -251,22 +251,20 @@ class Xcorr(object):
         else:
             traces = io.load(self.EventPath+'/data/traces.mseed')
 
+
         for tr in traces:
               tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
               if tr_name == str(station):
                     traces_station = tr
-
                     es = obspy_compat.to_obspy_trace(traces_station)
                     streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
 
                     entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
-
                     #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
                     st = obspy.Stream()
                     st.extend([es])
                     stream = ''
                     snr = ''
-
                     if station.loc == '--':
                         station.loc = ''
 
@@ -279,14 +277,13 @@ class Xcorr(object):
                     snr = num.var(snr_trace.ydata)
                     stream = self.filterWaveform(st)
 
-
                     xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
                     stream.write(xname,format='MSEED')
                     stream.trim(tw['xcorrstart'], tw['xcorrend'])
                     return stream, snr
 
               else:
-                    pass
+                    print('Waveform missing!')
 
 
     def readWaveformsCross_colesseo(self, station, tw, ttime):
@@ -418,11 +415,13 @@ class Xcorr(object):
     def readWaveformsPicker_pyrocko(self,station, tw, Origin, ttime):
 
         obspy_compat.plant()
-
+        cfg = ConfigObj(dict=self.Config)
         t2 = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath, 'data')
-
-        traces = io.load(self.EventPath+'/data/traces.mseed')
+        if cfg.quantity() == 'displacement':
+            traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
+        else:
+            traces = io.load(self.EventPath+'/data/traces.mseed')
         for tr in traces:
               tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
               if tr_name == str(station):
@@ -723,7 +722,6 @@ class Xcorr(object):
         Logfile.red('Enter Xcorr Procedure ')
         for stream in StreamDict.iterkeys():
            xcorrshiftvalue = StreamDict[stream][0].stats.npts/3
-           print(xcorrshiftvalue)
            a, b  = obspy.signal.cross_correlation.xcorr(ref, StreamDict[stream][0], 0)
            shift = a / StreamDict[stream][0].stats.sampling_rate
            corrDict[stream] = Corr(shift, b, a)

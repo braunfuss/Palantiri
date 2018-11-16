@@ -106,7 +106,7 @@ def processLoop():
     #==================================do prerequiries========================================
     Folder = C.createFolder()
 
-    C.cpSkeleton(Folder,Config)
+    #C.cpSkeleton(Folder,Config)
     C.writeConfig (Config,Origin,Folder)
 
     filter = FilterCfg (Config)

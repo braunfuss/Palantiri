@@ -338,44 +338,45 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     tmp=1
     origin = DataTypes.dictToLocation(Origin)
     i = 0
+
+    #for a in SembList:
+    #    tmp = num.zeros(num.shape(a))
     azis = []
     for a in SembList:
         x = array_centers[i][0]
         y = array_centers[i][1]
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-        a = a*((1./delta**2)*1.e+15)
-        azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),x, y))
+        #a = a*((1./delta**2)*1.e+15)
+        tmp *= a
+
+        #azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),x, y))
         i = i+1
 
-    min_coor = num.zeros([i,2])
-    i = 0
-    for a in SembList:
-        deltas = []
-        x = array_centers[i][0]
-        y = array_centers[i][1]
-        for k in range(0,len(latv)):
-            delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k])
-            deltas.append(orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k]))
-            if delta <= num.min(deltas):
-                min_coor[i]= [latv[k], lonv[k]]
-        i = i+1
-    array_overlap = num.average(min_coor, axis=0)
-    delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0], array_overlap[1], origin.lat, origin.lon)
+    #min_coor = num.zeros([i,2])
+    #i = 0
+    #for a in SembList:
+    #    deltas = []
+#        x = array_centers[i][0]
+#        y = array_centers[i][1]
+#        for k in range(0,len(latv)):
+#            delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k])
+#            deltas.append(orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k]))
+#            if delta <= num.min(deltas):
+#                min_coor[i]= [latv[k], lonv[k]]
+#        i = i+1
+#    array_overlap = num.average(min_coor, axis=0)
+#    delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0], array_overlap[1], origin.lat, origin.lon)
 
-    print(min_coor)
-    print(array_overlap)
+#    print(array_overlap)
 
-    print(delta_center)
-    diff_center_lat = origin.lat-array_overlap[0]
-    diff_center_lon = origin.lon-array_overlap[1]
-    print(diff_center_lat)
-    print(diff_center_lon)
-    #sys.exit()
-
-
-    for a in SembList:
-        if num.mean(a)>0:
-            tmp *= a
+#    print(delta_center)
+#    diff_center_lat = origin.lat-array_overlap[0]
+#    diff_center_lon = origin.lon-array_overlap[1]
+#    print(diff_center_lat)
+#    print(diff_center_lon)
+    #for a in SembList:
+        #if num.mean(a)>0:
+    #        tmp *= a
 
     sembmaxvaluev = num.ndarray(ntimes,dtype=float)
     sembmaxlatv   = num.ndarray(ntimes,dtype=float)
@@ -386,18 +387,67 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     d = rc.timestamp
 
     usedarrays = arrays
-
     folder  = Folder['semb']
     fobjsembmax = open(os.path.join(folder,'sembmax_%s.txt' %(switch)),'w')
-    for a, i in enumerate(tmp):
-        for j in range(migpoints):
-            semb = i[j]
-
     norm = num.max(num.max(tmp, axis=1))
+    max_p = 0.
+    sum_i = 0.
+    for a, i in enumerate(tmp):
+        if a<1:
+            sum_i *= i
+    for a, i in enumerate(tmp):
+        if a<1:
+            max = num.max(sum_i[:])
+            for j in range(migpoints):
+                if i[j] > num.max(i[:])*0.9 and i[j] > max_p:
+                    latvmax = latv[j]
+                    lonvmax = lonv[j]
+                    max_p = i[j]
+
+#    delta_lat = origin.lat-latvmax
+#    delta_lon = origin.lon-lonvmax
+
+    #for a, i in enumerate(tmp):
+    #    max_pos = [l for l, k in enumerate(i) if k == i.max()][0]
+#        delta_lat = origin.lat-latv[max_pos]
+#        delta_lon = origin.lon-lonv[max_pos]
+    for j in range(migpoints):
+                latv[j] = latv[j]#+delta_lat
+                lonv[j] = lonv[j]#+delta_lon
+        #        latv.append(latv[j]-delta_lat)
+        #        lonv.append(lonv[j]-delta_lon)
+
+    #nix = []
+    #for a, i in enumerate(tmp):
+    #    for j in range(migpoints):
+    #            if i[j]/norm > num.max(sum_i/norm)*0.4:
+    #                if j in nix:
+    #                    pass
+    #                else:
+    #                    latv[j] = latv[j]+delta_lat
+    #                    lonv[j] = lonv[j]+delta_lon
+    #                    nix.append(j)
+                #if i[j]/norm > num.max(sum_i/norm)*0.4:
+                #    print('yes')
+                #    delta_lat = origin.lat-latv[j]
+                #    delta_lon = origin.lon-lonv[j]
+                #    print delta_lat, delta_lon, latvmax, lonvmax
+                #    print latv[j], lonv[j], origin.lat, origin.lon
+                #    ix = num.where(latv[j]+delta_lat)[0][0]
+                #    iy = num.where(lonv[j]+delta_lon)[0][0]
+                #    lat = latv[j].copy()
+                #    lon = lonv[j].copy()
+                #    latv[j] = latv[ix]
+                ##    lonv[j] =  lonv[iy]
+                #    lonv[iy]
+                #    #latv[j] = latv[j]+delta_lat
+                    #lonv[j] = lonv[j]+delta_lon
+                #    print latv[j], lonv[j]
+#
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
-
+        print(a)
 
         fobj  = open(os.path.join(folder,'%s-%s_%03d.ASC' %(switch,Origin['depth'],a)),'w')
 
@@ -414,15 +464,24 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         sembmaxY = 0
 
         uncert = num.std(i) #maybe not std?
-        delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-        azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
-
         for j in range(migpoints):
-            x= latv[j]-diff_center_lat/2.
-            y= lonv[j]-diff_center_lon/2.
 
+            x= latv[j]#+delta_lat
+            y= lonv[j]#+delta_lon
+        #    if i[j]/norm > num.max(i[:]/norm)*0.1:
+        #            delta_lat = origin.lat-latv[max_pos]
+        #            delta_lon = origin.lon-lonv[max_pos]
+        #            print delta_lat, delta_lon, latv[max_pos], lonv[max_pos]
+        #            print latv[j], lonv[j], origin.lat, origin.lon
+            #        x = latv[j]+delta_lat
+        #            y = lonv[j]+delta_lon
+        #            print x, y
             semb = i[j]/norm
             fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
+        #    xd= latv[j]-delta_lat
+    #        yd= lonv[j]-delta_lon
+#            sembd = 0.
+#            fobj.write('%.2f %.2f %.20f\n' %(xd,yd,sembd))
 
             if  semb > sembmax:
                 sembmax  = semb;# search for maximum and position of maximum on semblance grid for given time step
@@ -639,6 +698,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
         #tmin= num.min(recordstarttimes)
         targets = []
+        sources = []
         for st in stations:
             target = Target(
                     lat=st.lat,
@@ -658,7 +718,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
-                    source = RectangularSource(
+                    sources.append(RectangularSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
                         east_shift=float(syn_in.east_shift_0())*1000.,
@@ -673,9 +733,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         slip=syn_in.slip_0(),
                         nucleation_y=syn_in.nucleation_y_0(),
                         stf=stf,
-                        time=util.str_to_time(syn_in.time_0()))
+                        time=util.str_to_time(syn_in.time_0())))
             if syn_in.source() == 'DCSource':
-                    source = DCSource(
+                    sources.append(DCSource(
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
                         east_shift=float(syn_in.east_shift_0())*1000.,
@@ -686,10 +746,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         rake=syn_in.rake_0(),
                         stf=stf,
                         time=util.str_to_time(syn_in.time_0()),
-                        magnitude=syn_in.magnitude_0())
+                        magnitude=syn_in.magnitude_0()))
 
         else:
-            sources = []
             for i in range(syn_in.nsources()):
                 if syn_in.use_specific_stf() is True:
                     stf = syn_in.stf()
@@ -728,10 +787,19 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             stf=stf,
                             time=util.str_to_time(syn_in.time_1(i)),
                             magnitude=syn_in.magnitude_1(i)))
-            source = CombiSource(subsources=sources)
-        response = engine.process(source, targets)
+            #source = CombiSource(subsources=sources)
+        synthetic_traces = []
+        for source in sources:
+            response = engine.process(source, targets)
+            synthetic_traces_source = response.pyrocko_traces()
+            if not synthetic_traces:
+                synthetic_traces = synthetic_traces_source
+            else:
+                for trsource, tr in zip(synthetic_traces_source, synthetic_traces):
+                        tr.add(trsource)
+            from pyrocko import trace as trld
+            #trld.snuffle(synthetic_traces)
         timeev = util.str_to_time(syn_in.time_0())
-        synthetic_traces = response.pyrocko_traces()
         if cfg.Bool('synthetic_test_add_noise') is True:
             from noise_addition import add_noise
             trs_orgs = []
@@ -1055,28 +1123,28 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
     USE_C_CODE = False
-    try:
-        if USE_C_CODE:
-            import Cm
-            import CTrig
-            start_time = time.time()
-            k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                          minSampleCount,latv,lonv,traveltimes,traces)
-            print("--- %s seconds ---" %(time.time() - start_time))
-        else:
-            start_time = time.time()
-            ntimes = int((forerun + duration)/step)
-            nsamp = int(winlen)
-            nstep = int(step)
-            Gmint = cfg.Int('forerun')
-            k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
-            print("--- %s seconds ---" %(time.time() - start_time))
-    except ValueError:
-            k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                          minSampleCount,latv,lonv,traveltimes,traces)
-            print "loaded tttgrid has probably wrong dimensions or stations,\
-                    delete ttgrid or exchange is recommended"
+    #try:
+    if USE_C_CODE:
+        import Cm
+        import CTrig
+        start_time = time.time()
+        k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                      minSampleCount,latv,lonv,traveltimes,traces)
+        print("--- %s seconds ---" %(time.time() - start_time))
+    else:
+        start_time = time.time()
+        ntimes = int((forerun + duration)/step)
+        nsamp = int(winlen)
+        nstep = int(step)
+        Gmint = cfg.Int('forerun')
+        k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                  minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
+        print("--- %s seconds ---" %(time.time() - start_time))
+    #except ValueError:
+    #        k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+    #                      minSampleCount,latv,lonv,traveltimes,traces)
+        #    print "loaded tttgrid has probably wrong dimensions or stations,\
+    #                delete ttgrid or exchange is recommended"
 
     t2 = time.time()
 

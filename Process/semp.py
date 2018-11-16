@@ -3,8 +3,8 @@ import sys
 import time
 import numpy as num
 from threading import Thread
-
-
+from obspy.signal.headers import clibsignal
+from obspy import Stream, Trace
 # add local directories to import path
 sys.path.append ('../Common/')
 
@@ -12,7 +12,7 @@ import numpy as np          #    Import from NumPy
 
 import Logfile              #    Import from common
 import Basic
-
+import ctypes as C
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -20,6 +20,29 @@ latv_txt   = 'latv.txt'
 lonv_txt   = 'lonv.txt'
 semb_txt   = 'semb.txt'
 
+def xcorr(tr1, tr2, shift_len, full_xcorr=False):
+
+    from obspy.core.util.deprecation_helpers import ObsPyDeprecationWarning
+    if min(len(tr1), len(tr2)) - 2 * shift_len <= 0:
+        msg = "shift_len too large. The underlying C code would silently " + \
+              "use shift_len/2 which we want to avoid."
+        raise ValueError(msg)
+    tr1 = np.ascontiguousarray(tr1, np.float32)
+    tr2 = np.ascontiguousarray(tr2, np.float32)
+    corp = np.empty(2 * shift_len + 1, dtype=np.float64, order='C')
+
+    shift = C.c_int()
+    coe_p = C.c_double()
+
+    res = clibsignal.X_corr(tr1, tr2, corp, shift_len, len(tr1), len(tr2),
+                            C.byref(shift), C.byref(coe_p))
+    if res:
+        raise MemoryError
+
+    if full_xcorr:
+        return shift.value, coe_p.value, corp
+    else:
+        return shift.value, coe_p.value
 
 def startC_Code (nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
 
@@ -118,14 +141,15 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
 
         for j in range (dimX * dimY):
             semb = 0; nomin = 0; denom = 0
-
+            sums_cc = 0
             sums = 0
             shifted = []
             relstart = []
-            for k in range (nostat) :
+            relstarts = nostat
+            cc_data = []
+            for k in range (nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
-
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
                 try:
@@ -134,28 +158,24 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
                         tr.data_len(),
                         t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
                 except:
-                    print(tmin, tmax, tr.tmin, tr.tmax)
-                    print tr.deltat
-                    print tr.tmin
-                    print tr.tmax
-                    print(relstart)
-                    print(mint)
-                    print(time)
+                    print('Loaded traveltime grid wrong!')
+
                 data = tr.ydata[ibeg:iend]
-                sums += (data)
+                try:
+                    sums += (data) ##put gradient on top
+                except:
+                    pass
+                relstarts -= (relstart)
 
-
-            sum = num.sum(abs(sums))
-
+            #for dat in cc_data:
+        #        sums_cc +=xcorr(cc_data[0],dat,0)[1]
+            sum = abs(num.sum(((sums))))
+        #    sum = sums_cc
             denom = sum**2
             nomin = sum
-
-            x= latv[j]
-            y= lonv[j]
-
-            semb = nomin / (float (nostat) * denom)
             semb = sum
-            backSemb[i][j] = sum #sum oder back?
+
+            backSemb[i][j] = sum
             if semb > sembmax :
 
                sembmax  = semb   # search for maximum and position of maximum on semblance
@@ -163,13 +183,12 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
                sembmaxX = latv[j]
                sembmaxY = lonv[j]
 
-
         Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
+
     backSemb = backSemb/num.max(num.max(backSemb))
 
-
-    return backSemb
+    return abs(backSemb)
 
 # -------------------------------------------------------------------------------------------------
 
