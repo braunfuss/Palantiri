@@ -1,4 +1,5 @@
-# seismoBat
+# Palantiri
+
 ### A seismological backprojection array tool
 
 
