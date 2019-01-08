@@ -67,10 +67,14 @@ newFreq = float(filter.newFrequency())
 options.time = Origin ['time']
 options.duration = int(Conf['duration'])
 sdspath = os.path.join(options.eventpath,'data')
+try:
+    os.mkdir(sdspath)
+except:
+    pass
 model.dump_events([event], sdspath+'event.pf')
 
-tmin = util.str_to_time(ev.time)-600.
-tmax = util.str_to_time(ev.time)+1800.
+tmin = util.str_to_time(ev.time)-500.
+tmax = util.str_to_time(ev.time)+1600.
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
     extra = {}
@@ -250,20 +254,29 @@ for stg in stations_real_geofon:
                 pass
         else:
             pass
-traces_all = traces_iris+traces_geofon
+try:
+    traces_all = traces_iris+traces_geofon
+else:
+    traces_all = traces_iris
 io.save(traces_all, os.path.join(sdspath,'traces.mseed'))
 model.dump_stations(stations_all, os.path.join(sdspath,'stations.txt'))
 
-stations_all_disp = stations_disp_iris+stations_disp_geofon
-for stg in stations_disp_geofon:
-    for sti in stations_disp_iris:
-        if sti.station == stg.station and sti.location == stg.location:
-            try:
-                stations_all_disp.remove(sti)
-            except:
+try:
+    stations_all_disp = stations_disp_iris+stations_disp_geofon
+    for stg in stations_disp_geofon:
+        for sti in stations_disp_iris:
+            if sti.station == stg.station and sti.location == stg.location:
+                try:
+                    stations_all_disp.remove(sti)
+                except:
+                    pass
+            else:
                 pass
-        else:
-            pass
-traces_all_disp = displacement_iris+displacement_geofon
-io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
-model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
+    traces_all_disp = displacement_iris+displacement_geofon
+    io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
+    model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
+else:
+    stations_all_disp = stations_disp_iris
+    traces_all_disp = displacement_iris
+    io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
+    model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
