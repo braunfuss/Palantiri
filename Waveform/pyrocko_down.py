@@ -73,8 +73,8 @@ except:
     pass
 model.dump_events([event], sdspath+'event.pf')
 
-tmin = util.str_to_time(ev.time)-500.
-tmax = util.str_to_time(ev.time)+1800.
+tmin = util.str_to_time(ev.time)
+tmax = util.str_to_time(ev.time)+3600.
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
     extra = {}
@@ -89,85 +89,103 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
 
     return sx.get_pyrocko_stations()
 
-site = 'iris'
-stations_iris = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
 
-nstations_iris = [s for s in stations_iris]
+stations_sites = []
+stations_real_sites = []
+stations_disp_sites = []
+displacement_sites = []
+traces_sites = []
+sites = ['iris','orfeus', 'resif', 'usp', 'bgr', 'ingv', 'geonet', 'ethz', 'ncedc', 'knmi', 'usgs', 'isc', 'ipgp', 'koeri']
+for site in sites:
+    try:
+        stations_site = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
+        if not stations_sites:
+            stations_sites = stations_site
+        else:
+            stations_sites = stations_sites + stations_site
 
-selection_iris = fdsn.make_data_selection(nstations_iris, tmin, tmax)
-request_waveform_iris = fdsn.dataselect(site=site, selection=selection_iris)
+        nstations_site = [s for s in stations_site]
 
-# write the incoming data stream to 'traces.mseed'
-with open(os.path.join(sdspath,'traces_iris.mseed'), 'wb') as file:
-    file.write(request_waveform_iris.read())
-print('traces written')
-# request meta data
-traces_iris = io.load(os.path.join(sdspath,'traces_iris.mseed'))
+        selection_site = fdsn.make_data_selection(nstations_site, tmin, tmax)
+        request_waveform_site = fdsn.dataselect(site=site, selection=selection_site)
 
-stations_real_iris = []
-gaps= []
-for tr in traces_iris:
-    for st in stations_iris:
-        if tr.station == st.station and tr.location == st.location:
-                stations_real_iris.append(st)
-                gaps.append(st.station)
-remove =[x for x in gaps if gaps.count(x) > 1]
-for re in remove:
-    for st in stations_real_iris:
-        if st.station == re:
-            stations_real_iris.remove(st)
-model.dump_stations(stations_real_iris, os.path.join(sdspath,'stations_iris.txt'))
+        # write the incoming data stream to 'traces.mseed'
+        with open(os.path.join(sdspath,'traces_%s.mseed' %site), 'wb') as file:
+            file.write(request_waveform_site.read())
+        print('traces written')
+        # request meta data
+        traces_site = io.load(os.path.join(sdspath,'traces_%s.mseed'%site))
+        if not traces_sites:
+            traces_sites = traces_site
+        else:
+            traces_sites = traces_sites+traces_site
+        gaps= []
+        for tr in traces_site:
+            for st in stations_site:
+                if tr.station == st.station and tr.location == st.location:
+                        stations_real_sites.append(st)
+                        gaps.append(st.station)
+        remove =[x for x in gaps if gaps.count(x) > 1]
+        for re in remove:
+            for st in stations_real_site:
+                if st.station == re:
+                    stations_real_site.remove(st)
+        model.dump_stations(stations_real_site, os.path.join(sdspath,'stations_%s.txt'%site))
 
-request_response = fdsn.station(
-    site=site, selection=selection_iris, level='response')
-# save the response in YAML and StationXML format
-request_response.dump(filename=os.path.join(sdspath,'responses_iris.yml'))
-request_response.dump_xml(filename=os.path.join(sdspath,'responses_iris.xml'))
-sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_iris.xml'))
-pyrocko_stations = sx.get_pyrocko_stations()
-#model.dump_stations(stations_real, os.path.join(sdspath,'stations2.txt'))
+        request_response = fdsn.station(
+            site=site, selection=selection_site, level='response')
+        # save the response in YAML and StationXML format
+        request_response.dump(filename=os.path.join(sdspath,'responses_%s.yml'%site))
+        request_response.dump_xml(filename=os.path.join(sdspath,'responses_%s.xml'%site))
+        sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_%s.xml'%site))
+        pyrocko_stations = sx.get_pyrocko_stations()
+        #model.dump_stations(stations_real, os.path.join(sdspath,'stations2.txt'))
 
-# Loop through retrieved waveforms and request meta information
-# for each trace
-event_origin = gf.Source(
-lat=event.lat,
-lon=event.lon)
+        # Loop through retrieved waveforms and request meta information
+        # for each trace
+        event_origin = gf.Source(
+        lat=event.lat,
+        lon=event.lon)
 
-traces_iris = io.load(os.path.join(sdspath,'traces_iris.mseed'))
-
-
-displacement_iris = []
-stations_disp_iris = []
-for tr in traces_iris:
-    for station in stations_real_iris:
-        if tr.station == station.station and tr.location == station.location:
-            try:
-                polezero_response = request_response.get_pyrocko_response(
-                nslc=tr.nslc_id,
-                timespan=(tr.tmin, tr.tmax),
-                fake_input_units='M')
-                # *fake_input_units*: required for consistent responses throughout entire
-                # data set
-
-                # deconvolve transfer function
-                restituted = tr.transfer(
-                tfade=2.,
-                freqlimits=(0.01, 0.1, 1., 2.),
-                transfer_function=polezero_response,
-                invert=True)
-
-                displacement_iris.append(restituted)
-                stations_disp_iris.append(station)
-            except:
-                pass
+        traces_site = io.load(os.path.join(sdspath,'traces_%s.mseed'%site))
 
 
-io.save(displacement_iris, os.path.join(sdspath,'traces_restituted_iris.mseed'))
-model.dump_stations(stations_disp_iris, os.path.join(sdspath,'stations_disp_iris.txt'))
+        displacement_site = []
+        stations_disp_site = []
+        for tr in traces_site:
+            for station in stations_real_site:
+                if tr.station == station.station and tr.location == station.location:
+                    try:
+                        polezero_response = request_response.get_pyrocko_response(
+                        nslc=tr.nslc_id,
+                        timespan=(tr.tmin, tr.tmax),
+                        fake_input_units='M')
+                        # *fake_input_units*: required for consistent responses throughout entire
+                        # data set
+
+                        # deconvolve transfer function
+                        restituted = tr.transfer(
+                        tfade=2.,
+                        freqlimits=(0.01, 0.1, 1., 2.),
+                        transfer_function=polezero_response,
+                        invert=True)
+
+                        displacement_site.append(restituted)
+                        displacement_sites.append(restituted)
+
+                        stations_disp_site.append(station)
+                        stations_disp_sites.append(station)
+                    except:
+                        pass
+
+        io.save(displacement_site, os.path.join(sdspath,'traces_restituted_%s.mseed'%site))
+        model.dump_stations(stations_disp_site, os.path.join(sdspath,'stations_disp_%s.txt'%site))
+    except:
+        pass
 
 site = 'geofon'
 minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
-diffDist =(maxDist - minDist)/6.
+diffDist =(maxDist - minDist)/9.
 displacement_geofon = []
 stations_disp_geofon = []
 stations_real_geofon = []
@@ -240,7 +258,7 @@ try:
                         pass
 except:
 
-    for l in range(0,6):
+    for l in range(0,9):
         maxDist = minDist+diffDist
         stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
 
@@ -308,9 +326,9 @@ except:
 io.save(displacement_geofon, os.path.join(sdspath,'traces_restituted_geofon.mseed'))
 model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_disp_geofon.txt'))
 
-stations_all  = stations_real_iris+stations_real_geofon
+stations_all  = stations_sites+stations_geofon
 for stg in stations_real_geofon:
-    for sti in stations_real_iris:
+    for sti in stations_real_sites:
         if sti.station == stg.station and sti.location == stg.location:
             try:
                 stations_all.remove(sti)
@@ -319,16 +337,16 @@ for stg in stations_real_geofon:
         else:
             pass
 try:
-    traces_all = traces_iris+traces_geofon
+    traces_all = traces_sites+traces_geofon
 except:
-    traces_all = traces_iris
+    traces_all = traces_sites
 io.save(traces_all, os.path.join(sdspath,'traces.mseed'))
 model.dump_stations(stations_all, os.path.join(sdspath,'stations.txt'))
 
 try:
-    stations_all_disp = stations_disp_iris+stations_disp_geofon
+    stations_all_disp = stations_disp_sites+stations_disp_geofon
     for stg in stations_disp_geofon:
-        for sti in stations_disp_iris:
+        for sti in stations_disp_sites:
             if sti.station == stg.station and sti.location == stg.location:
                 try:
                     stations_all_disp.remove(sti)
@@ -336,11 +354,11 @@ try:
                     pass
             else:
                 pass
-    traces_all_disp = displacement_iris+displacement_geofon
+    traces_all_disp = displacement_sites+displacement_geofon
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
 except:
-    stations_all_disp = stations_disp_iris
-    traces_all_disp = displacement_iris
+    stations_all_disp = stations_disp_sites
+    traces_all_disp = displacement_sites
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
