@@ -251,39 +251,41 @@ class Xcorr(object):
         else:
             traces = io.load(self.EventPath+'/data/traces.mseed')
 
+        found = False
+        while found is False:
+            for tr in traces:
+                  tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
+                  if tr_name == str(station):
+                        traces_station = tr
+                        es = obspy_compat.to_obspy_trace(traces_station)
+                        streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
 
-        for tr in traces:
-              tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
-              if tr_name == str(station):
-                    traces_station = tr
-                    es = obspy_compat.to_obspy_trace(traces_station)
-                    streamData = station.net + '.' + station.sta + '.' + station.loc + '.' + station.comp + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
+                        entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
+                        #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
+                        st = obspy.Stream()
+                        st.extend([es])
+                        stream = ''
+                        snr = ''
+                        if station.loc == '--':
+                            station.loc = ''
 
-                    entry = os.path.join(sdspath, station.net, station.sta, station.comp + '.D', streamData)
-                    #stl = es.trim(starttime=tw['start'], endtime=tw['end'])
-                    st = obspy.Stream()
-                    st.extend([es])
-                    stream = ''
-                    snr = ''
-                    if station.loc == '--':
-                        station.loc = ''
+                        if len(st.get_gaps()) > 0:
+                            st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
+                        #snr  = self.signoise(st[0], ttime, entry)
+                        snr_trace= traces_station.chop(tmin=traces_station.tmin,
+                                                       tmax=traces_station.tmin+ttime-20.,
+                                                       inplace=False)
+                        snr = num.var(snr_trace.ydata)
+                        stream = self.filterWaveform(st)
 
-                    if len(st.get_gaps()) > 0:
-                        st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
-                    #snr  = self.signoise(st[0], ttime, entry)
-                    snr_trace= traces_station.chop(tmin=traces_station.tmin,
-                                                   tmax=traces_station.tmin+ttime-20.,
-                                                   inplace=False)
-                    snr = num.var(snr_trace.ydata)
-                    stream = self.filterWaveform(st)
+                        xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
+                        stream.write(xname,format='MSEED')
+                        stream.trim(tw['xcorrstart'], tw['xcorrend'])
+                        found = True
+                        return stream, snr
 
-                    xname  = os.path.join(self.AF,(streamData+'_all.mseed'))
-                    stream.write(xname,format='MSEED')
-                    stream.trim(tw['xcorrstart'], tw['xcorrend'])
-                    return stream, snr
-
-              else:
-                    print('Waveform missing!')
+        if found is False:
+                    print('Waveform missing!', tr_name, str(station))
 
 
     def readWaveformsCross_colesseo(self, station, tw, ttime):
