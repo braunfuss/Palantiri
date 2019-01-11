@@ -124,7 +124,7 @@ def equi(m, centerlon, centerlat, radius, *args, **kwargs):
 
     X,Y = m(X,Y)
     plt.plot(X,Y,color='gray',**kwargs)
-	
+
 def plot_cluster():
 
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
@@ -175,7 +175,7 @@ def plot_cluster():
         except:
             plt.text(x,y,'r'+str(data[0])[0:2], fontsize=12)
             pass
-        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]    
+        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
         x,y=map(lon_0,lat_0)
         degree_sign= u'\N{DEGREE SIGN}'
         x2,y2 = map(lon_0,lat_0-20)
@@ -349,15 +349,6 @@ def plot_scatter():
             # implement based on delta t sampling coloring
             size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
-
-        #    for i in range(0,len(x)):
-        #        if data[i,2]> np.max(data[:,2])*0.05:
-        #            plt.text(x[i],y[i],'%s' %i)
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
-
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
-
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
 
@@ -402,12 +393,10 @@ def plot_scatter():
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
 
-            #l = range(0,num.shape(data[:,2])[0])
             l = [i for i in range(1600) for _ in range(70)]
             l = sorted(range(160)*10)
             size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='winter_r')
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
             ax = plt.gca()
@@ -461,7 +450,6 @@ def inspect_spectrum():
                             zstart=event.depth*2,
                             zstop=0.0)
                         time = rays[0].t+event.time
-                        #tr = tr.chop(time-20, time+30, inplace=False)
                         tr.ydata = tr.ydata.astype(num.float)
                         tr.ydata -= tr.ydata.mean()
                         tr_spec, a = spec(tr)
@@ -503,7 +491,6 @@ def plot_integrated():
                         if k>data_int[i]:
                             data_int[i]= k
                         i = i+1
-                    #data_int += np.nan_to_num(data[:,2])
 
             eastings = data[:,1]
             northings =  data[:,0]
@@ -524,19 +511,12 @@ def plot_integrated():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
-
-            #mask = np.ma.masked_where(data_int < 0.4, data_int)
-            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.085)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             levels = np.arange(0., 1.05, 0.025)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='cool')
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
-
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
             event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
@@ -591,8 +571,6 @@ def plot_integrated():
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
 
-            #mask = np.ma.masked_where(data_int < 0.4, data_int)
-            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
@@ -657,36 +635,23 @@ def plot_integrated_timestep():
             northings =  data[:,0]
             plt.figure()
 
-#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-#                    resolution='h',epsg = 4269)
-            map = Basemap( projection='cyl',\
-                    llcrnrlon=95.25, \
-                    llcrnrlat=37, \
-                    urcrnrlon=97.25, \
-                    urcrnrlat=38, \
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
                     resolution='h',epsg = 4269)
-            parallels = np.arange(37,38,1.)
-            meridians = np.arange(95.5,97.5,0.5)
+
             xpixels = 1000
-           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
 
-            #mask = np.ma.masked_where(data_int < 0.4, data_int)
-            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
 
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
 
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar()
             plt.title(path_in_str)
 
@@ -701,7 +666,6 @@ def plot_integrated_timestep():
             pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
-            #    try:
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
@@ -710,44 +674,27 @@ def plot_integrated_timestep():
             northings =  data[:,0]
             plt.figure()
 
-#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-#                    resolution='h',epsg = 4269)
-            map = Basemap( projection='cyl',\
-                    llcrnrlon=95.25, \
-                    llcrnrlat=37, \
-                    urcrnrlon=97.25, \
-                    urcrnrlat=38, \
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
                     resolution='h',epsg = 4269)
-            parallels = np.arange(37,38,1.)
-            meridians = np.arange(95.5,97.5,0.5)
+
             xpixels = 1000
-           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
             import matplotlib.colors as colors
             import matplotlib.tri as tri
-            #mask = np.ma.masked_where(data_int < 0.4, data_int)
-            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
+
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
 
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar()
             plt.title(path_in_str)
-            ax = plt.gca()
-            np1 = [116, 61, 91]
-            x, y = map(96.476,37.529)
 
-            beach1 = beach(np1, xy=(x, y), width=0.05)
-            ax.add_collection(beach1)
             xpixels = 1000
             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
 
@@ -1191,16 +1138,9 @@ def integrated_scatter():
             northings =  data[:,0]
             plt.figure()
 
-#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-#                    resolution='h',epsg = 4269)
-            map = Basemap( projection='cyl',\
-                    llcrnrlon=95.25, \
-                    llcrnrlat=37, \
-                    urcrnrlon=97.25, \
-                    urcrnrlat=38, \
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
                     resolution='h',epsg = 4269)
-            parallels = np.arange(37,38,1.)
-            meridians = np.arange(95.5,97.5,0.5)
+
             xpixels = 1000
            # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
@@ -1208,17 +1148,8 @@ def integrated_scatter():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
-            #import matplotlib.colors as colors
-            #import matplotlib.tri as tri
-            #mask = np.ma.masked_where(data_int < 0.4, data_int)
-            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
 
-
-            #plt.tricontourf(triang, data_int, cmap='YlOrRd')
-		            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
 	    plt.scatter(x, y, data[:,2])
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar()
             plt.title(path_in_str)
             ax = plt.gca()
@@ -1244,16 +1175,9 @@ def integrated_scatter():
             northings =  data[:,0]
             plt.figure()
 
-#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-#                    resolution='h',epsg = 4269)
-            map = Basemap( projection='cyl',\
-                    llcrnrlon=95.25, \
-                    llcrnrlat=37, \
-                    urcrnrlon=97.25, \
-                    urcrnrlat=38, \
-                    resolution='h',epsg = 4269)
-            parallels = np.arange(37,38,1.)
-            meridians = np.arange(95.5,97.5,0.5)
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                   resolution='h',epsg = 4269)
+
             xpixels = 1000
            # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
@@ -1261,19 +1185,14 @@ def integrated_scatter():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
             import matplotlib.colors as colors
             import matplotlib.tri as tri
-            #mask = np.ma.masked_where(data_int < 0.4, data_int)
-            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
-            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
 
-            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar()
             plt.title(path_in_str)
             ax = plt.gca()
@@ -1284,7 +1203,6 @@ def integrated_scatter():
             ax.add_collection(beach1)
             xpixels = 1000
             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-
             plt.show()
 
 
