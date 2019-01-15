@@ -346,10 +346,12 @@ def plot_scatter():
             mins = np.max(data[:,2])
 
             l = range(0,num.shape(data[:,2])[0])
-            # implement based on delta t sampling coloring
             size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
-            plt.colorbar(orientation="horizontal")
+            cb = plt.colorbar(orientation="horizontal")
+            cb.outline.set_visible(False)
+            cb.set_ticks([])
+            cb.set_label('Time ->',fontsize=22)
             plt.title(path_in_str)
 
             xpixels = 1000
@@ -397,7 +399,10 @@ def plot_scatter():
             l = sorted(range(160)*10)
             size =(data[:,2]/np.max(data[:,2]))*300
             ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='winter_r')
-            plt.colorbar(orientation="horizontal")
+            cb = plt.colorbar(orientation="horizontal")
+            cb.outline.set_visible(False)
+            cb.set_ticks([])
+            cb.set_label('Time ->',fontsize=22)
             plt.title(path_in_str)
             ax = plt.gca()
             xpixels = 1000
@@ -1111,13 +1116,13 @@ def plot_semb():
 
 
 def integrated_scatter():
-    if len(sys.argv)<4:
+    if len(sys.argv)<3:
         print("missing input arrayname")
     else:
         if sys.argv[3] == 'combined':
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
 
-            pathlist = Path(rel).glob('1-13*.ASC')
+            pathlist = Path(rel).glob('0-*.ASC')
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
@@ -1126,7 +1131,7 @@ def integrated_scatter():
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
-            pathlist = Path(rel).glob('1-13*.ASC')
+            pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
             #    try:
@@ -1138,32 +1143,48 @@ def integrated_scatter():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max (northings),
                     resolution='h',epsg = 4269)
 
             xpixels = 1000
-           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+
             eastings, northings = map(eastings, northings)
+            parallels = num.arange(num.min(northings),num.max(northings),0.2)
+            meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
 
-	    plt.scatter(x, y, data[:,2])
-            plt.colorbar()
+            l = range(0,num.shape(data[:,2])[0])
+            size =(data[:,2]/np.max(data[:,2]))*300
+            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
+            cb = plt.colorbar(orientation="horizontal")
+            cb.outline.set_visible(False)
+            cb.set_ticks([])
+            cb.set_label('Time ->',fontsize=22)
             plt.title(path_in_str)
             ax = plt.gca()
-            np1 = [116, 61, 91]
-            x, y = map(96.476,37.529)
-
-            beach1 = beach(np1, xy=(x, y), width=0.05)
+            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            desired=[3,4]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            desired=[7,8,9]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0],event_cor[0][0])
+            ax = plt.gca()
+            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+            beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
             ax.add_collection(beach1)
             xpixels = 1000
             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
 
             plt.show()
 
-            pathlist = Path(rel).glob('0-13*.ASC')
+            pathlist = Path(rel).glob('1-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
             #    try:
@@ -1175,36 +1196,47 @@ def integrated_scatter():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                   resolution='h',epsg = 4269)
+
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max (northings),
+                    resolution='h',epsg = 4269)
 
             xpixels = 1000
-           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+
             eastings, northings = map(eastings, northings)
+            parallels = num.arange(num.min(northings),num.max(northings),0.2)
+            meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            import matplotlib.colors as colors
-            import matplotlib.tri as tri
-            triang = tri.Triangulation(x, y)
-            isbad = np.less(data_int, 0.01)
-            mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
-            triang.set_mask(mask)
-            plt.tricontourf(triang, data_int, cmap='YlOrRd')
 
-            plt.colorbar()
+            l = range(0,num.shape(data[:,2])[0])
+            size =(data[:,2]/np.max(data[:,2]))*300
+            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
+            cb = plt.colorbar(orientation="horizontal")
+            cb.outline.set_visible(False)
+            cb.set_ticks([])
+            cb.set_label('Time ->',fontsize=22)
             plt.title(path_in_str)
             ax = plt.gca()
-            np1 = [116, 61, 91]
-            x, y = map(96.476,37.529)
-
-            beach1 = beach(np1, xy=(x, y), width=0.05)
+            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            desired=[3,4]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            desired=[7,8,9]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0],event_cor[0][0])
+            ax = plt.gca()
+            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+            beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
             ax.add_collection(beach1)
             xpixels = 1000
             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-            plt.show()
 
+            plt.show()
 
 if len(sys.argv)<3:
     print("input: eventname plot_name,\
@@ -1228,6 +1260,8 @@ else:
     elif sys.argv[2] == 'integrated_kite':
         plot_integrated_kite()
     elif sys.argv[2] == 'integrated_scatter':
+        integrated_scatter()
+    elif sys.argv[2] == 'scatter':
         plot_scatter()
     elif sys.argv[2] == 'beampower':
         beampower()
