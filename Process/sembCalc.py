@@ -1105,8 +1105,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         max_cs = num.max(back1)
                         idx = num.where(back1==back1.max())
                         csmaxvaluev[i] = max_cs
-                        csmaxlatv[i]   = latv[idx[0]]
-                        csmaxlonv[i]   = lonv[idx[1]]
+                        csmaxlatv[i] = latv[idx[0]]
+                        csmaxlonv[i] = lonv[idx[1]]
                         fobj.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
                         fobjcsmax.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
                 fobj.close()
@@ -1116,6 +1116,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 pass
 
 #==================================semblance calculation========================================
+
 
     t1 = time.time()
     traces = traces.reshape(1,nostat*minSampleCount)
@@ -1140,11 +1141,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
                   minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
         print("--- %s seconds ---" %(time.time() - start_time))
-    #except ValueError:
-    #        k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-    #                      minSampleCount,latv,lonv,traveltimes,traces)
-        #    print "loaded tttgrid has probably wrong dimensions or stations,\
-    #                delete ttgrid or exchange is recommended"
 
     t2 = time.time()
 

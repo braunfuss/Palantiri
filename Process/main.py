@@ -304,9 +304,13 @@ def processLoop():
             array_centers = []
 
             networks = Config['networks'].split(',')
-            counter  = 1
+            counter = 1
             TriggerOnset = []
             Wdfs = []
+            FilterMetas = []
+            TTTgrids = {}
+            mints = []
+            maxts = []
             for i in networks:
 
                 arrayname = i
@@ -317,7 +321,6 @@ def processLoop():
 
                 FilterMeta = ttt.filterStations (Meta,Config,Origin,network)
 
-                                        #if len(FilterMeta) < 3: continue              #hs : wieder rein
                 if len(FilterMeta)  < 3: continue
 
                 W = XDict[i]
@@ -328,7 +331,6 @@ def processLoop():
                 Logfile.add ('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
                          % (Config['dimx'],Config['dimy'],Config['gridspacing']))
 
-                ##############=======================PARALLEL===========================================
 
                 Logfile.red ('Calculating Traveltime Grid')
                 t1 = time.time()
@@ -345,39 +347,36 @@ def processLoop():
                     f.close()
                     print "loading of travel time grid sucessful"
                 except:
+                    print "loading of travel time grid unsucessful, will now calculate the grid:"
+                    if isParallel :                                            #hs
+                       maxp = 6                                               #hs
+                       po   = multiprocessing.Pool(maxp)
 
-                        print "loading of travel time grid unsucessful, will now calculate the grid:"
-                        if isParallel :                                            #hs
-                          # maxp = int (Config['ncore'])
-                           maxp = 6                                               #hs
-                           po   = multiprocessing.Pool(maxp)
+                       for i in xrange(len(FilterMeta)):
+                           po.apply_async (ttt.calcTTTAdv,(Config,FilterMeta[i],Origin,i,arrayname,W,refshift))
 
-                           for i in xrange(len(FilterMeta)):
-                               po.apply_async (ttt.calcTTTAdv,(Config,FilterMeta[i],Origin,i,arrayname,W,refshift))
+                           po.close()
+                           po.join()
+                    else:                                                                           #hs+
+                        for i in xrange(len(FilterMeta)):
+                            t1 = time.time()
+                            ttt.calcTTTAdv (Config,FilterMeta[i],Origin,i,arrayname,W,refshift)
 
-                               po.close()
-                               po.join()
+                            Logfile.add ('ttt.calcTTTAdv : ' + str(time.time() - t1) + ' sec.')
+                            #endif                                                                           #hs-
 
-                        else:                                                                           #hs+
-                            for i in xrange(len(FilterMeta)):
-                                t1 = time.time()
-                                ttt.calcTTTAdv (Config,FilterMeta[i],Origin,i,arrayname,W,refshift)
+                    assert len(FilterMeta) > 0
 
-                                Logfile.add ('ttt.calcTTTAdv : ' + str(time.time() - t1) + ' sec.')
-                                #endif                                                                           #hs-
-
-                        assert len(FilterMeta) > 0
-
-                        TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
-                        mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
-                        f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'wb')
-                        print "dumping the traveltime grid for this array"
-                        pickle.dump([TTTGridMap,mint,maxt], f)
-                        f.close()
+                    TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
+                    mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
+                    f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'wb')
+                    print "dumping the traveltime grid for this array"
+                    pickle.dump([TTTGridMap,mint,maxt], f)
+                    f.close()
 
 
                 t2 = time.time()
-                Logfile.red ('%s took %0.3f s' % ('TTT', (t2-t1)))
+                Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
                 switch = filterindex
 
@@ -390,17 +389,16 @@ def processLoop():
                     else:
                         Wd = waveform.readWaveformsPyrocko (FilterMeta, tw, evpath,
                                                             ev)
-                #    Wdf = waveform.processpyrockoWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
                 elif cfg.colesseo_input() == True:
                     Wd = waveform.readWaveforms_colesseo   (FilterMeta, tw, evpath, ev, C)
                 else:
                     Wd = waveform.readWaveforms   (FilterMeta, tw, evpath, ev)
                 if cfg.Bool('synthetic_test') is True:
                     Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-                    Wdfs.append(Wdf)
+                    Wdfs.extend(Wdf)
                 else:
                     Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-                    Wdfs.append(Wdf)
+                    Wdfs.extend(Wdf)
 
                 C.writeStationFile(FilterMeta,Folder,counter)
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
@@ -410,20 +408,20 @@ def processLoop():
                 print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
                 TTTGridMap,mint,maxt = pickle.load(f)
                 f.close()
-                if cfg.optimize() == True:
-                    optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                else:
-                    arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                t2= time.time()
-                Logfile.add ('CALC took %0.3f sec' % (t2-t1))
-                weights.append(weight)
-                array_centers.append(array_center)
-                ASL.append(arraySemb)
-                counter +=1
+                print(num.shape(TTTGridMap))
 
-                sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
+                if cfg.Bool('combine_all') is False:
+
+                    if cfg.optimize() == True:
+                        optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                     Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                    else:
+                        arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                     Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                        weights.append(weight)
+                        array_centers.append(array_center)
+                        ASL.append(arraySemb)
+                        sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
 
                 fileName = os.path.join (arrayfolder,'stations.txt')
                 Logfile.add ('Write to file ' + fileName)
@@ -434,7 +432,38 @@ def processLoop():
                     fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
 
                 fobjarraynetwork.close()
-                TTTGridMAP = []
+                t2= time.time()
+                Logfile.add ('CALC took %0.3f sec' % (t2-t1))
+                counter +=1
+
+                TTTgrids.update(TTTGridMap)
+                mints.append(mint)
+                maxts.append(maxt)
+                FilterMetas.extend(FilterMeta)
+                TTTGridMap = []
+
+            if cfg.Bool('combine_all') is True:
+
+                if cfg.pyrocko_download() == True:
+                    if cfg.quantity() == 'displacement':
+                        Wd = waveform.readWaveformsPyrocko_restituted (FilterMetas,
+                                                                        tw, evpath,
+                                                                         ev)
+                    else:
+                        Wd = waveform.readWaveformsPyrocko (FilterMetas, tw, evpath,
+                                                            ev)
+                elif cfg.colesseo_input() == True:
+                    Wd = waveform.readWaveforms_colesseo   (FilterMetas, tw, evpath, ev, C)
+                else:
+                    Wd = waveform.readWaveforms   (FilterMetas, tw, evpath, ev)
+                if cfg.Bool('synthetic_test') is True:
+                    Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMetas, ev, switch, W)
+                else:
+                    Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMetas, ev, switch, W)
+                mint = num.min(mints)
+                maxt = num.max(maxts)
+                arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMetas,mint,maxt,TTTgrids,
+                                             Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
             if cfg.optimize_all() == True:
                 import optim_csemb
                 from optim_csemb import solve

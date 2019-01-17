@@ -141,6 +141,7 @@ class ConfigObj(object):
     def colesseo_input(self): return self.Bool('colesseo_input')
     def optimize(self): return self.Bool('optimize')
     def optimize_all(self): return self.Bool('optimize_all')
+    def combine_all(self): return self.Bool('combine_all')
     def colosseo_scenario_yml(self):       return self.Str('colosseo_scenario_yml')
     def weight_by_noise(self): return self.Bool('weight_by_noise')
 
