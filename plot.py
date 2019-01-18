@@ -142,7 +142,7 @@ def plot_cluster():
     map = Basemap(width=21000000,height=21000000,
                 resolution='l',projection='aeqd',\
                 lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
-    map.drawcoastlines()
+    map.fillcontinents(zorder=-1)
     map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
     map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
     x, y = map(event_cor[1][0],event_cor[0][0])
