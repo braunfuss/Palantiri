@@ -17,6 +17,8 @@ from obspy.imaging.beachball import beach
 import matplotlib.colors as colors
 import matplotlib.tri as tri
 from pyrocko import trace, io, model
+from matplotlib.colors import LinearSegmentedColormap
+
 w=25480390.0
 
 def shoot(lon, lat, azimuth, maxdist=None):
@@ -302,7 +304,7 @@ def plot_movie():
                     pass
 
 
-def plot_scatter():
+def integrated_scatter():
     if len(sys.argv)<5:
         print("missing input arrayname and or depth")
     else:
@@ -312,19 +314,31 @@ def plot_scatter():
             matplotlib.rcParams.update({'font.size': 32})
             pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             maxs = 0.
+            counter = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     max = np.max(data[:, 2])
+                    counter =+ 1
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
+
             pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             data_int = num.zeros(num.shape(data[:, 2]))
+            data_old = num.zeros(num.shape(data[:, 2]))
+            time_grid = num.zeros(num.shape(data[:, 2]))
+            counter = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
+                    for i in range(0, num.shape(data[:, 2])[0]):
+                        if data[i,2] >= data_old[i]:
+                            time_grid[i] = time_grid[i]+counter
+
+                    data_old = np.nan_to_num(data[:,2])
+                    counter =+ 1
 
             eastings = data[:,1]
             northings = data[:,0]
@@ -344,10 +358,9 @@ def plot_scatter():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
+            size =(data_int/np.max(data_int))*300
 
-            l = range(0,num.shape(data[:,2])[0])
-            size =(data[:,2]/np.max(data[:,2]))*300
-            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
+            ps = map.scatter(x,y,marker='o',c=time_grid, s=size, cmap='autumn_r')
             cb = plt.colorbar(orientation="horizontal")
             cb.outline.set_visible(False)
             cb.set_ticks([])
@@ -363,12 +376,21 @@ def plot_scatter():
 
             plt.show()
 
-            pathlist = Path(rel).glob('0-*.ASC')
+            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             data_int = num.zeros(num.shape(data[:, 2]))
+            data_old = num.zeros(num.shape(data[:, 2]))
+            time_grid = num.zeros(num.shape(data[:, 2]))
+            counter = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
+                    for i in range(0, num.shape(data[:, 2])[0]):
+                        if data[i,2] >= data_old[i]:
+                            time_grid[i] = time_grid[i]+counter
+
+                    data_old = np.nan_to_num(data[:,2])
+                    counter =+ 1
 
             eastings = data[:,1]
             northings =  data[:,0]
@@ -397,8 +419,8 @@ def plot_scatter():
 
             l = [i for i in range(1600) for _ in range(70)]
             l = sorted(range(160)*10)
-            size =(data[:,2]/np.max(data[:,2]))*300
-            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='winter_r')
+            size =(data_int/np.max(data_int))*300
+            ps = map.scatter(x,y,marker='o',c=time_grid, s=size, cmap='autumn_r')
             cb = plt.colorbar(orientation="horizontal")
             cb.outline.set_visible(False)
             cb.set_ticks([])
@@ -1115,7 +1137,7 @@ def plot_semb():
         pass
 
 
-def integrated_scatter():
+def plot_scatter():
     if len(sys.argv)<3:
         print("missing input arrayname")
     else:
@@ -1128,16 +1150,25 @@ def integrated_scatter():
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     max = np.max(data[:, 2])
+                    counter =+ 1
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
-            pathlist = Path(rel).glob('0-*.ASC')
+
+            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
             data_int = num.zeros(num.shape(data[:, 2]))
+            data_old = num.zeros(num.shape(data[:, 2]))
+            time_grid = num.zeros(num.shape(data[:, 2]))
+            counter = 0.
             for path in sorted(pathlist):
-            #    try:
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
+                    for i in range(0, num.shape(data[:, 2])[0]):
+                        if data[i,2] >= data_old[i]:
+                            time_grid[i] = time_grid[i]+counter
+                    data_old = np.nan_to_num(data[:,2])
+                    counter =+ 1
 
             eastings = data[:,1]
             northings =  data[:,0]
@@ -1155,11 +1186,30 @@ def integrated_scatter():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
+            data_old = num.zeros(num.shape(data[:, 2]))
+            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
+            i=0
+            for path in sorted(pathlist):
+                path_in_str = str(path)
+                i = i+1
 
-            l = range(0,num.shape(data[:,2])[0])
-            size =(data[:,2]/np.max(data[:,2]))*300
-            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
-            cb = plt.colorbar(orientation="horizontal")
+            colors = iter(cm.rainbow(np.linspace(0, 1, i)))
+            cs =[]
+            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    size =(data[:,2])*300
+                    c = next(colors)
+                    ps = map.scatter(x,y,marker='o',c=c, s=size, cmap='autumn_r')
+                    data_old = np.nan_to_num(data[:,2])
+                    cs.append(c)
+            cmap_name = 'my_list'
+            cms = LinearSegmentedColormap.from_list(
+                cmap_name, cs, N=i)
+            sm = plt.cm.ScalarMappable(cmap=cms, norm=plt.Normalize(vmin=0, vmax=1))
+            sm._A = []
+            cb = plt.colorbar(sm, orientation="horizontal")
             cb.outline.set_visible(False)
             cb.set_ticks([])
             cb.set_label('Time ->',fontsize=22)
@@ -1209,11 +1259,30 @@ def integrated_scatter():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
+            data_old = num.zeros(num.shape(data[:, 2]))
+            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
+            i=0
+            for path in sorted(pathlist):
+                path_in_str = str(path)
+                i = i+1
 
-            l = range(0,num.shape(data[:,2])[0])
-            size =(data[:,2]/np.max(data[:,2]))*300
-            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
-            cb = plt.colorbar(orientation="horizontal")
+            colors = iter(cm.rainbow(np.linspace(0, 1, i)))
+            cs =[]
+            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    size =(data[:,2])*300
+                    c = next(colors)
+                    ps = map.scatter(x,y,marker='o',c=c, s=size, cmap='autumn_r')
+                    data_old = np.nan_to_num(data[:,2])
+                    cs.append(c)
+            cmap_name = 'my_list'
+            cms = LinearSegmentedColormap.from_list(
+                cmap_name, cs, N=i)
+            sm = plt.cm.ScalarMappable(cmap=cms, norm=plt.Normalize(vmin=0, vmax=1))
+            sm._A = []
+            cb = plt.colorbar(sm, orientation="horizontal")
             cb.outline.set_visible(False)
             cb.set_ticks([])
             cb.set_label('Time ->',fontsize=22)
