@@ -56,10 +56,6 @@ class ConfigObj(object):
 
         assert default == None or default >= 0
         val = self.Int(key, default)
-
-        if val < 0:                         self._error(key, str(val) + ' < 0')
-        if maxVal != None and val > maxVal: self._error(key, str(val) + ' > ' + str(maxVal))
-
         return val
 
     def Float(self, key, default=None):
