@@ -476,7 +476,10 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
             #        x = latv[j]+delta_lat
         #            y = lonv[j]+delta_lon
         #            print x, y
-            semb = i[j]/norm
+            if cfg.Bool('norm_all') is True:
+                semb = i[j]/norm
+            else:
+                semb = i[j]
             fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
         #    xd= latv[j]-delta_lat
     #        yd= lonv[j]-delta_lon
@@ -484,7 +487,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
 #            fobj.write('%.2f %.2f %.20f\n' %(xd,yd,sembd))
 
             if  semb > sembmax:
-                sembmax  = semb;# search for maximum and position of maximum on semblance grid for given time step
+                sembmax  = semb;#
                 sembmaxX = x;
                 sembmaxY = y;
 
