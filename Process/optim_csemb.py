@@ -843,129 +843,129 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     store_id = syn_in.store()
     engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
 
-        targets = []
-        for st in stations:
-            target = Target(
-                    lat=st.lat,
-                    lon=st.lon,
-                    store_id=store_id,
-                    codes=(st.network, st.station, st.location, 'BHZ'),
-                    tmin=-1900,
-                    tmax=3900,
-                    interpolation='multilinear',
-                    quantity=cfg.quantity())
-            targets.append(target)
+    targets = []
+    for st in stations:
+        target = Target(
+                lat=st.lat,
+                lon=st.lon,
+                store_id=store_id,
+                codes=(st.network, st.station, st.location, 'BHZ'),
+                tmin=-1900,
+                tmax=3900,
+                interpolation='multilinear',
+                quantity=cfg.quantity())
+        targets.append(target)
 
-        if syn_in.nsources() == 1:
+    if syn_in.nsources() == 1:
+        if syn_in.use_specific_stf() is True:
+            stf = syn_in.stf()
+            exec(stf)
+        else:
+            stf = STF()
+        if syn_in.source() == 'RectangularSource':
+                source = RectangularSource(
+                    lat=float(syn_in.lat_0()),
+                    lon=float(syn_in.lon_0()),
+                    depth=syn_in.depth_syn_0()*1000.,
+                    strike=syn_in.strike_0(),
+                    dip=syn_in.dip_0(),
+                    rake=syn_in.rake_0(),
+                    width=syn_in.width_0()*1000.,
+                    length=syn_in.length_0()*1000.,
+                    nucleation_x=syn_in.nucleation_x_0(),
+                    slip=syn_in.slip_0(),
+                    nucleation_y=syn_in.nucleation_y_0(),
+                    stf=stf,
+                    time=util.str_to_time(syn_in.time_0()))
+        if syn_in.source() == 'DCSource':
+                source = DCSource(
+                    lat=float(syn_in.lat_0()),
+                    lon=float(syn_in.lon_0()),
+                    depth=syn_in.depth_syn_0()*1000.,
+                    strike=syn_in.strike_0(),
+                    dip=syn_in.dip_0(),
+                    rake=syn_in.rake_0(),
+                    stf=stf,
+                    time=util.str_to_time(syn_in.time_0()),
+                    magnitude=syn_in.magnitude_0())
+
+    else:
+        sources = []
+        for i in range(syn_in.nsources()):
             if syn_in.use_specific_stf() is True:
                 stf = syn_in.stf()
                 exec(stf)
+
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
-                    source = RectangularSource(
-                        lat=float(syn_in.lat_0()),
-                        lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0()*1000.,
-                        strike=syn_in.strike_0(),
-                        dip=syn_in.dip_0(),
-                        rake=syn_in.rake_0(),
-                        width=syn_in.width_0()*1000.,
-                        length=syn_in.length_0()*1000.,
-                        nucleation_x=syn_in.nucleation_x_0(),
-                        slip=syn_in.slip_0(),
-                        nucleation_y=syn_in.nucleation_y_0(),
+                    sources.append(RectangularSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        depth=syn_in.depth_syn_1(i)*1000.,
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
+                        width=syn_in.width_1(i)*1000.,
+                        length=syn_in.length_1(i)*1000.,
+                        nucleation_x=syn_in.nucleation_x_1(i),
+                        slip=syn_in.slip_1(i),
+                        nucleation_y=syn_in.nucleation_y_1(i),
                         stf=stf,
-                        time=util.str_to_time(syn_in.time_0()))
+                        time=util.str_to_time(syn_in.time_1(i))))
+
             if syn_in.source() == 'DCSource':
-                    source = DCSource(
-                        lat=float(syn_in.lat_0()),
-                        lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0()*1000.,
-                        strike=syn_in.strike_0(),
-                        dip=syn_in.dip_0(),
-                        rake=syn_in.rake_0(),
+                    sources.append(DCSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        depth=syn_in.depth_1(i)*1000.,
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
                         stf=stf,
-                        time=util.str_to_time(syn_in.time_0()),
-                        magnitude=syn_in.magnitude_0())
+                        time=util.str_to_time(syn_in.time_1(i)),
+                        magnitude=syn_in.magnitude_1(i)))
+        source = CombiSource(subsources=sources)
+    response = engine.process(source, targets)
 
-        else:
-            sources = []
-            for i in range(syn_in.nsources()):
-                if syn_in.use_specific_stf() is True:
-                    stf = syn_in.stf()
-                    exec(stf)
-
-                else:
-                    stf = STF()
-                if syn_in.source() == 'RectangularSource':
-                        sources.append(RectangularSource(
-                            lat=float(syn_in.lat_1(i)),
-                            lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_syn_1(i)*1000.,
-                            strike=syn_in.strike_1(i),
-                            dip=syn_in.dip_1(i),
-                            rake=syn_in.rake_1(i),
-                            width=syn_in.width_1(i)*1000.,
-                            length=syn_in.length_1(i)*1000.,
-                            nucleation_x=syn_in.nucleation_x_1(i),
-                            slip=syn_in.slip_1(i),
-                            nucleation_y=syn_in.nucleation_y_1(i),
-                            stf=stf,
-                            time=util.str_to_time(syn_in.time_1(i))))
-
-                if syn_in.source() == 'DCSource':
-                        sources.append(DCSource(
-                            lat=float(syn_in.lat_1(i)),
-                            lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_1(i)*1000.,
-                            strike=syn_in.strike_1(i),
-                            dip=syn_in.dip_1(i),
-                            rake=syn_in.rake_1(i),
-                            stf=stf,
-                            time=util.str_to_time(syn_in.time_1(i)),
-                            magnitude=syn_in.magnitude_1(i)))
-            source = CombiSource(subsources=sources)
-        response = engine.process(source, targets)
-
-        synthetic_traces = response.pyrocko_traces()
-        if cfg.Bool('synthetic_test_add_noise') is True:
-            from noise_addition import add_noise
-            trs_orgs = []
-            calcStreamMapsyn = calcStreamMap.copy()
-            #from pyrocko import trace
-            for tracex in calcStreamMapsyn.iterkeys():
-                    for trl in synthetic_traces:
-                        if str(trl.name()[4:12])== str(tracex[4:]):
-                            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
-                            tr_org.downsample_to(2.0)
-                            trs_orgs.append(tr_org)
-            store_id = syn_in.store()
-            engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-            synthetic_traces = add_noise(trs_orgs, engine, source.pyrocko_event(),
-                                         stations,
-                                         store_id, phase_def='P')
-        trs_org = []
+    synthetic_traces = response.pyrocko_traces()
+    if cfg.Bool('synthetic_test_add_noise') is True:
+        from noise_addition import add_noise
         trs_orgs = []
-        fobj = os.path.join(arrayfolder, 'shift.dat')
-        xy = num.loadtxt(fobj, usecols=1, delimiter=',')
         calcStreamMapsyn = calcStreamMap.copy()
         #from pyrocko import trace
         for tracex in calcStreamMapsyn.iterkeys():
                 for trl in synthetic_traces:
-                    if str(trl.name()[4:12])== str(tracex[4:]):
-                        mod = trl
-
-                        recordstarttime = calcStreamMapsyn[tracex].stats.starttime.timestamp
-                        recordendtime = calcStreamMapsyn[tracex].stats.endtime.timestamp
+                    if str(trl.name()[4:12]) == str(tracex[4:]):
                         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
+                        tr_org.downsample_to(2.0)
                         trs_orgs.append(tr_org)
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        synthetic_traces = add_noise(trs_orgs, engine, source.pyrocko_event(),
+                                     stations,
+                                     store_id, phase_def='P')
+    trs_org = []
+    trs_orgs = []
+    fobj = os.path.join(arrayfolder, 'shift.dat')
+    xy = num.loadtxt(fobj, usecols=1, delimiter=',')
+    calcStreamMapsyn = calcStreamMap.copy()
+    #from pyrocko import trace
+    for tracex in calcStreamMapsyn.iterkeys():
+            for trl in synthetic_traces:
+                if str(trl.name()[4:12])== str(tracex[4:]):
+                    mod = trl
 
-                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
-                        synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
-                        calcStreamMapsyn[tracex] = synthetic_obs_tr
-                        trs_org.append(tr_org_add)
-        calcStreamMap = calcStreamMapsyn
+                    recordstarttime = calcStreamMapsyn[tracex].stats.starttime.timestamp
+                    recordendtime = calcStreamMapsyn[tracex].stats.endtime.timestamp
+                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
+                    trs_orgs.append(tr_org)
+
+                    tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
+                    synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
+                    calcStreamMapsyn[tracex] = synthetic_obs_tr
+                    trs_org.append(tr_org_add)
+    calcStreamMap = calcStreamMapsyn
 
     if cfg.Bool('shift_by_phase_pws') == True:
         calcStreamMapshifted= calcStreamMap.copy()
