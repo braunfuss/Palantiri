@@ -110,7 +110,7 @@ def processLoop():
     C.writeConfig (Config,Origin,Folder)
 
     filter = FilterCfg (Config)
-    ntimes  = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    ntimes = int ((abs(cfg.UInt ('forerun')) + cfg.UInt ('duration') ) / cfg.UInt ('step') )
     origin = OriginCfg (Origin)
 
     if cfg.colesseo_input() == True:
@@ -464,6 +464,10 @@ def processLoop():
                 maxt = num.max(maxts)
                 arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMetas,mint,maxt,TTTgrids,
                                              Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                ASL.append(arraySemb)
+                weights.append(weight)
+                array_centers.append(array_center)
+                sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
             if cfg.optimize_all() == True:
                 import optim_csemb
                 from optim_csemb import solve
@@ -473,6 +477,7 @@ def processLoop():
                                              Folder,Origin,ntimes,switch, ev,arrayfolder,
                                              syn_in, ASL, sembmax, evpath, XDict, RefDict,
                                              workdepth, filterindex, Wdfs)
+
             if ASL:
                 Logfile.red ('collect semblance matrices from all arrays')
                 sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch, array_centers)
