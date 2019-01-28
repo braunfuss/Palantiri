@@ -227,8 +227,17 @@ def plot_movie():
                     eastings = data[:,1]
                     northings =  data[:,0]
                     plt.figure()
-                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                            resolution='h')
+
+                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                                  llcrnrlat=num.min(northings),
+                                  urcrnrlon=num.max(eastings),
+                                  urcrnrlat=num.max(northings),
+                                  resolution='h', epsg=3395)
+                    ratio_lat = num.max(northings)/num.min(northings)
+                    ratio_lon = num.max(eastings)/num.min(eastings)
+
+                    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+
                     parallels = np.arange(num.min(northings),num.max(northings),0.2)
                     meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
                     xpixels = 1000
@@ -251,8 +260,16 @@ def plot_movie():
                         eastings = data[:,1]
                         northings =  data[:,0]
                         plt.figure()
-                        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                                resolution='h')
+
+                        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                                      llcrnrlat=num.min(northings),
+                                      urcrnrlon=num.max(eastings),
+                                      urcrnrlat=num.max(northings),
+                                      resolution='h', epsg=3395)
+                        ratio_lat = num.max(northings)/num.min(northings)
+                        ratio_lon = num.max(eastings)/num.min(eastings)
+
+                        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
                         parallels = np.arange(num.min(northings),num.max(northings),0.2)
                         meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
                         xpixels = 1000
@@ -280,12 +297,15 @@ def plot_movie():
                     eastings = data[:,1]
                     northings =  data[:,0]
                     plt.figure()
-                    map = Basemap(projection='merc',
-                                  llcrnrlon=num.min(eastings),
+                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
                                   llcrnrlat=num.min(northings),
                                   urcrnrlon=num.max(eastings),
                                   urcrnrlat=num.max(northings),
-                                  resolution='h')
+                                  resolution='h', epsg=3395)
+                    ratio_lat = num.max(northings)/num.min(northings)
+                    ratio_lon = num.max(eastings)/num.min(eastings)
+
+                    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
                     parallels = np.arange(num.min(northings),num.max(northings),0.2)
                     meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
@@ -302,7 +322,6 @@ def plot_movie():
                 except:
                     plt.close()
                     pass
-
 
 def integrated_scatter():
     if len(sys.argv)<5:
@@ -342,16 +361,21 @@ def integrated_scatter():
 
             eastings = data[:,1]
             northings = data[:,0]
+            xpixels = 1000
+
             plt.figure()
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h',epsg = 4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
-            xpixels = 1000
 
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
@@ -368,12 +392,10 @@ def integrated_scatter():
             plt.title(path_in_str)
 
             xpixels = 1000
-            try:
-                map.arcgisimage(service='World_Shaded_Relief',
-                                xpixels=xpixels, verbose=False)
-            except:
-                pass
-
+            eastings = data[:,1]
+            northings = data[:,0]
+            map.arcgisimage(service='World_Shaded_Relief',
+                            xpixels=xpixels, verbose=False)
             plt.show()
 
             pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
@@ -400,7 +422,11 @@ def integrated_scatter():
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h',epsg=4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
@@ -527,7 +553,11 @@ def plot_integrated():
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h',epsg=4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
@@ -587,7 +617,11 @@ def plot_integrated():
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h',epsg=4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
@@ -662,8 +696,15 @@ def plot_integrated_timestep():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                    resolution='h',epsg = 4269)
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                          llcrnrlat=num.min(northings),
+                          urcrnrlon=num.max(eastings),
+                          urcrnrlat=num.max(northings),
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             xpixels = 1000
             eastings, northings = map(eastings, northings)
@@ -701,8 +742,15 @@ def plot_integrated_timestep():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                    resolution='h',epsg = 4269)
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                          llcrnrlat=num.min(northings),
+                          urcrnrlon=num.max(eastings),
+                          urcrnrlat=num.max(northings),
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             xpixels = 1000
             eastings, northings = map(eastings, northings)
@@ -760,7 +808,11 @@ def plot_integrated_kite():
             eastings1 = np.arange(scd.frame.llLon,scd.frame.llLon+scd.frame.dE*scd.frame.cols,scd.frame.dE)
             northings1 = np.arange(scd.frame.llLat,scd.frame.llLat+scd.frame.dN*scd.frame.rows,scd.frame.dN)
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings1),llcrnrlat=num.min(northings1),urcrnrlon=num.max(eastings1),urcrnrlat=num.max(northings1),
-                    resolution='h',epsg = 4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
             parallels = np.arange(num.min(northings1),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings1),num.max(eastings),0.2)
             xpixels = 1000
@@ -800,7 +852,11 @@ def plot_integrated_kite():
             northings =  data[:,0]
             plt.figure()
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings1),llcrnrlat=num.min(northings1),urcrnrlon=num.max(eastings1),urcrnrlat=num.max(northings1),
-                    resolution='h',epsg = 4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
             parallels = np.arange(num.min(northings1),num.max(northings1),0.2)
             meridians = np.arange(num.min(eastings1),num.max(eastings1),0.2)
             xpixels = 1000
@@ -831,7 +887,11 @@ def plot_integrated_kite():
             northings =  data[:,0]
             plt.figure()
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings1),llcrnrlat=num.min(northings1),urcrnrlon=num.max(eastings1),urcrnrlat=num.max(northings1),
-                    resolution='h',epsg = 4269)
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
             parallels = np.arange(num.min(northings1),num.max(northings1),0.2)
             meridians = np.arange(num.min(eastings1),num.max(eastings1),0.2)
             xpixels = 1000
@@ -879,8 +939,15 @@ def plot_moving():
                     pass
             pathlist = Path(rel).glob('**/*.ASC')
 
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                resolution='h')
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                      llcrnrlat=num.min(northings),
+                      urcrnrlon=num.max(eastings),
+                      urcrnrlat=num.max(northings),
+                      resolution='h', epsg=3395)
+        ratio_lat = num.max(northings)/num.min(northings)
+        ratio_lon = num.max(eastings)/num.min(eastings)
+
+        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
         parallels = np.arange(num.min(northings),num.max(northings),0.2)
         meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
@@ -912,8 +979,15 @@ def plot_sembmax():
     eastings = data[:,2]
     northings =  data[:,1]
 
-    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-            resolution='h',epsg = 4269)
+    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                  llcrnrlat=num.min(northings),
+                  urcrnrlon=num.max(eastings),
+                  urcrnrlat=num.max(northings),
+                  resolution='h', epsg=3395)
+    ratio_lat = num.max(northings)/num.min(northings)
+    ratio_lon = num.max(eastings)/num.min(eastings)
+
+    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
     desired=[3,4]
     with open(event, 'r') as fin:
@@ -955,8 +1029,15 @@ def plot_sembmax():
         eastings = data[:,2]
         northings =  data[:,1]
 
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                resolution='h',epsg = 4269)
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                      llcrnrlat=num.min(northings),
+                      urcrnrlon=num.max(eastings),
+                      urcrnrlat=num.max(northings),
+                      resolution='h', epsg=3395)
+        ratio_lat = num.max(northings)/num.min(northings)
+        ratio_lon = num.max(eastings)/num.min(eastings)
+
+        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
         event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
         desired=[3,4]
@@ -1003,8 +1084,15 @@ def plot_movingsembmax():
     eastings = data[:,2]
     northings =  data[:,1]
     xpixels = 1000
-    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-            resolution='h',epsg = 4269)
+    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                  llcrnrlat=num.min(northings),
+                  urcrnrlon=num.max(eastings),
+                  urcrnrlat=num.max(northings),
+                  resolution='h', epsg=3395)
+    ratio_lat = num.max(northings)/num.min(northings)
+    ratio_lon = num.max(eastings)/num.min(eastings)
+
+    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
     X,Y = np.meshgrid(eastings, northings)
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
@@ -1057,8 +1145,15 @@ def plot_movingsembmax():
         eastings = data[:,2]
         northings =  data[:,1]
         xpixels = 1000
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
-                resolution='h',epsg = 4269)
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                      llcrnrlat=num.min(northings),
+                      urcrnrlon=num.max(eastings),
+                      urcrnrlat=num.max(northings),
+                      resolution='h', epsg=3395)
+        ratio_lat = num.max(northings)/num.min(northings)
+        ratio_lon = num.max(eastings)/num.min(eastings)
+
+        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
         event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
         desired=[3,4]
         with open(event, 'r') as fin:
@@ -1174,8 +1269,15 @@ def plot_scatter():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max (northings),
-                    resolution='h',epsg = 4269)
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                          llcrnrlat=num.min(northings),
+                          urcrnrlon=num.max(eastings),
+                          urcrnrlat=num.max(northings),
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             xpixels = 1000
 
@@ -1247,8 +1349,15 @@ def plot_scatter():
             plt.figure()
 
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max (northings),
-                    resolution='h',epsg = 4269)
+            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                          llcrnrlat=num.min(northings),
+                          urcrnrlon=num.max(eastings),
+                          urcrnrlat=num.max(northings),
+                          resolution='h', epsg=3395)
+            ratio_lat = num.max(northings)/num.min(northings)
+            ratio_lon = num.max(eastings)/num.min(eastings)
+
+            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
             xpixels = 1000
 
