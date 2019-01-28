@@ -105,12 +105,13 @@ def processLoop():
 
     #==================================do prerequiries========================================
     Folder = C.createFolder()
-
-    #C.cpSkeleton(Folder,Config)
     C.writeConfig (Config,Origin,Folder)
 
     filter = FilterCfg (Config)
-    ntimes = int ((abs(cfg.UInt ('forerun')) + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    if cfg.UInt ('forerun')>0:
+        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    else:
+        ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
     origin = OriginCfg (Origin)
 
     if cfg.colesseo_input() == True:

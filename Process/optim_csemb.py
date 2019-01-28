@@ -560,8 +560,10 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     recordstarttime = ''
     minSampleCount  = 999999999
 
-    ntimes = int ((forerun + duration)/step)
-    nsamp  = int (winlen * new_frequence)
+    if cfg.UInt ('forerun')>0:
+        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    else:
+        ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )    nsamp  = int (winlen * new_frequence)
     nstep  = int (step   * new_frequence)
     from pyrocko import obspy_compat
     from pyrocko import orthodrome, model
@@ -816,7 +818,10 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     recordstarttime = ''
     minSampleCount  = 999999999
 
-    ntimes = int ((forerun + duration)/step)
+    if cfg.UInt ('forerun')>0:
+        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    else:
+        ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
     nsamp  = int (winlen * new_frequence)
     nstep  = int (step   * new_frequence)
     from pyrocko import obspy_compat

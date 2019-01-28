@@ -660,7 +660,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     recordstarttime = ''
     minSampleCount  = 999999999
 
-    ntimes = int((abs(forerun) + duration)/step)
+    if cfg.UInt ('forerun')>0:
+        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    else:
+        ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
     nsamp = int(winlen * new_frequence)
     nstep = int(step * new_frequence)
     from pyrocko import obspy_compat
@@ -1137,7 +1140,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         print("--- %s seconds ---" %(time.time() - start_time))
     else:
         start_time = time.time()
-        ntimes = int((abs(forerun) + duration)/step)
+        if cfg.UInt ('forerun')>0:
+            ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+        else:
+            ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
         nsamp = int(winlen)
         nstep = int(step)
         Gmint = cfg.Int('forerun')
