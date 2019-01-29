@@ -501,14 +501,10 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
 
     fobjsembmax.close()
 
-    fobj_cum  = open(os.path.join(folder,'semb_cum.ASC' %(switch,Origin['depth'],a)),'w')
-    fobj_cum.write('# %s , %s\n' %(d,rcs))
-    fobj_cum.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
-    fobj_cum.write('# southwestlat: %.2f dlat: %f nlat: %f \n'%(Latul,gridspacing,dimX))
-    fobj_cum.write('# \n')
-    fobj_cum.write('# ddepth: 0 ndepth: 1 \n')
-    fobj_cum.write('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
-    fobj.write('%.2f %.2f %.20f\n' %(x,y,semb_cum))
+    fobj_cum  = open(os.path.join(folder,'semb_cum_%s.ASC' %switch),'w')
+    for x,y,sembcums in zip(latv,lonv,semb_cum):
+        fobj_cum.write('%.2f %.2f %.20f\n' %(x,y,sembcums))
+    fobj_cum.close()
 
     trigger.writeSembMaxValue(sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
 
