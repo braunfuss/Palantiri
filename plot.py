@@ -18,6 +18,14 @@ import matplotlib.colors as colors
 import matplotlib.tri as tri
 from pyrocko import trace, io, model
 from matplotlib.colors import LinearSegmentedColormap
+sys.path.append ('Common/')
+import  ConfigFile
+from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
+import  Globals
+global  evpath
+sys.path.append ('tools/')
+import config
+
 
 w=25480390.0
 
@@ -974,6 +982,12 @@ def plot_moving():
         plt.show()
 
 def plot_sembmax():
+    evpath = 'events/'+ str(sys.argv[1])
+    C  = config.Config (evpath)
+    Config = C.parseConfig ('config')
+    cfg = ConfigObj (dict=Config)
+    step = cfg.UInt ('step')
+    step2 = cfg.UInt ('step_f2')
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
     data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     eastings = data[:,2]
@@ -986,7 +1000,6 @@ def plot_sembmax():
                   resolution='h', epsg=3395)
     ratio_lat = num.max(northings)/num.min(northings)
     ratio_lon = num.max(eastings)/num.min(eastings)
-
     map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
     desired=[3,4]
@@ -1006,22 +1019,21 @@ def plot_sembmax():
 
     eastings, northings = map(X, Y)
     map.drawcoastlines(color='b',linewidth=1)
-
     x, y = map(data[:,2], data[:,1])
-    l = range(0,num.shape(data[:,2])[0])
     size =(data[:,3]/np.max(data[:,3]))*300
+    l = num.linspace(0,len(data[:,2])*step,len(data[:,2]))
+
     ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
     for i in range(0,len(x)):
         if data[i,3]> np.max(data[:,3])*0.05:
             plt.text(x[i],y[i],'%s' %i)
     xpixels = 1000
     map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-    parallels = num.arange(num.min(northings),num.max(northings),0.2)
-    meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
-    map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-    map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
+    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
+    #map.drawmeridians(meridians,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
+    #map.drawparallels(parallels,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
     cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
-    plt.savefig(rel+'semblance_max_0.pdf', bbox_inches='tight')
     plt.show()
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
@@ -1062,15 +1074,15 @@ def plot_sembmax():
         for i in range(0,len(x)):
             if data[i,3]> np.max(data[:,3])*0.05:
                 plt.text(x[i],y[i],'%s' %i)
-        l = range(0,num.shape(data[:,2])[0])
+        l = num.linspace(0,len(data[:,2])*step2,len(data[:,2]))
         size =(data[:,3]/np.max(data[:,3]))*3000
         ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
         xpixels = 1000
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
         parallels = num.arange(num.min(northings),num.max(northings),0.2)
         meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
-        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+        #map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        #map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
         cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
         plt.savefig(rel+'semblance_max_1.pdf', bbox_inches='tight')
         plt.show()
@@ -1205,23 +1217,31 @@ def plot_movingsembmax():
 
 def plot_semb():
     import matplotlib
+    evpath = 'events/'+ str(sys.argv[1])
+    C  = config.Config (evpath)
+    Config = C.parseConfig ('config')
+    cfg = ConfigObj (dict=Config)
+    step = cfg.UInt ('step')
+    step2 = cfg.UInt ('step_f2')
     matplotlib.rcParams.update({'font.size': 22})
     rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
     astf = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     astf_data = astf[:, 3]
     fig = plt.figure()
-    plt.plot(astf_data ,'k')
+    l = num.linspace(0,len(astf_data)*step,len(astf_data))
+    plt.plot(l, astf_data ,'k')
     plt.ylabel('Semblance', fontsize=22)
     plt.xlabel('Time [s]', fontsize=22)
     plt.savefig(rel+'semblance_0.pdf', bbox_inches='tight')
     plt.show()
     try:
+        l = num.linspace(0,len(astf_data)*step2,len(astf_data))
         rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         astf = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
         fig = plt.figure()
         astf_data = astf[:, 3]
 
-        plt.plot(astf_data, 'k')
+        plt.plot(l, astf_data, 'k')
         plt.ylabel('Beampower', fontsize=22)
 
         plt.xlabel('Time [s]', fontsize=22)
@@ -1418,7 +1438,7 @@ def plot_scatter():
 
 if len(sys.argv)<3:
     print("input: eventname plot_name,\
-     available plot_name: movie, sembmax, semblance, interactive_max, cluster")
+     available plot_name: movie, sembmax, nce, interactive_max, cluster")
 else:
     event = sys.argv[1]
     if sys.argv[2] == 'movie':
