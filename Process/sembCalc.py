@@ -501,7 +501,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
 
     fobjsembmax.close()
 
-    fobj_cum  = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth']),'w')
+    fobj_cum  = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
     for x,y,sembcums in zip(latv,lonv,semb_cum):
         fobj_cum.write('%.2f %.2f %.20f\n' %(x,y,sembcums))
     fobj_cum.close()
