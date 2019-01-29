@@ -392,6 +392,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     norm = num.max(num.max(tmp, axis=1))
     max_p = 0.
     sum_i = 0.
+
     for a, i in enumerate(tmp):
         if a<1:
             sum_i *= i
@@ -403,7 +404,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
                     latvmax = latv[j]
                     lonvmax = lonv[j]
                     max_p = i[j]
-
+    semb_cum = num.zeros(num.shape(i))
 #    delta_lat = origin.lat-latvmax
 #    delta_lon = origin.lon-lonvmax
 
@@ -447,10 +448,7 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
-        print(a)
-
         fobj  = open(os.path.join(folder,'%s-%s_%03d.ASC' %(switch,Origin['depth'],a)),'w')
-
         fobj.write('# %s , %s\n' %(d,rcs))
         fobj.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
         fobj.write('# \n')
@@ -458,12 +456,12 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
         fobj.write('# ddepth: 0 ndepth: 1 \n')
 
-
         sembmax  = 0
         sembmaxX = 0
         sembmaxY = 0
 
         uncert = num.std(i) #maybe not std?
+        semb_cum =+ i
         for j in range(migpoints):
 
             x= latv[j]#+delta_lat
@@ -500,9 +498,20 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n' %(a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
         fobj.close()
 
+
     fobjsembmax.close()
 
+    fobj_cum  = open(os.path.join(folder,'semb_cum.ASC' %(switch,Origin['depth'],a)),'w')
+    fobj_cum.write('# %s , %s\n' %(d,rcs))
+    fobj_cum.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
+    fobj_cum.write('# southwestlat: %.2f dlat: %f nlat: %f \n'%(Latul,gridspacing,dimX))
+    fobj_cum.write('# \n')
+    fobj_cum.write('# ddepth: 0 ndepth: 1 \n')
+    fobj_cum.write('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
+    fobj.write('%.2f %.2f %.20f\n' %(x,y,semb_cum))
+
     trigger.writeSembMaxValue(sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
+
     inspect_semb = cfg.Bool('inspect_semb')
     if inspect_semb is True:
         trigger.semblancestalta(sembmaxvaluev,sembmaxlatv,sembmaxlonv)
