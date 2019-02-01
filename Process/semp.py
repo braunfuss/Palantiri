@@ -117,8 +117,9 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
     obspy_compat.plant()
     trs_orgs  = []
     for tr in calcStreamMap:
-        trs_orgs.append(tr_org)
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        trs_orgs.append(tr_org)
+
     trace  = toMatrix (trace_1, minSampleCount)
     traveltime = []
     traveltime = toMatrix (traveltime_1, dimX * dimY)
