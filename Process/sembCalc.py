@@ -17,7 +17,7 @@ from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 import time
 import numpy as num
 from collections import OrderedDict, defaultdict
-from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
+from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
 from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
 km = 1000.
@@ -758,7 +758,22 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         stf=stf,
                         time=util.str_to_time(syn_in.time_0()),
                         magnitude=syn_in.magnitude_0()))
-
+            if syn_in.source() == 'MTSource':
+                    sources.append(MTSource(
+                        lat=float(syn_in.lat_0()),
+                        lon=float(syn_in.lon_0()),
+                        east_shift=float(syn_in.east_shift_0())*1000.,
+                        north_shift=float(syn_in.north_shift_0())*1000.,
+                        depth=syn_in.depth_syn_0()*1000.,
+                        rmnn=syn_in.rmnn,
+                        rmee=syn_in.rmee,
+                        rmdd=syn_in.rmdd,
+                        rmne=syn_in.rmne,
+                        rmnd=syn_in.rmnd,
+                        rmed=syn_in.rmed,
+                        duation=syn_in.duration,
+                        time=util.str_to_time(syn_in.time_0()),
+                        magnitude=syn_in.magnitude_0()))
         else:
             for i in range(syn_in.nsources()):
                 if syn_in.use_specific_stf() is True:

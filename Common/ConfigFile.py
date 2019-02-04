@@ -140,6 +140,7 @@ class ConfigObj(object):
     def combine_all(self): return self.Bool('combine_all')
     def colosseo_scenario_yml(self):       return self.Str('colosseo_scenario_yml')
     def weight_by_noise(self): return self.Bool('weight_by_noise')
+    def norm_all(self): return self.Bool('norm_all')
 
     # ---------------------------------------------------------------------------------------------
 
@@ -242,6 +243,13 @@ class SynthCfg(ConfigObj):
     def nucleation_x_0(self): return self.Float('nucleation_x_0')
     def nucleation_y_0(self): return self.Float('nucleation_y_0')
     def slip_0(self): return self.Float('slip_0')
+    def rmnn(self): return self.Float('rmnn')
+    def rmee(self): return self.Float('rmee')
+    def rmdd(self): return self.Float('rmdd')
+    def rmne(self): return self.Float('rmne')
+    def rmnd(self): return self.Float('rmnd')
+    def rmed(self): return self.Float('rmed')
+    def duration(self): return self.Float('duration')
     def magnitude_0(self): return self.Float('magnitude_0')
     def mag_0_low(self): return self.Float('mag_low_0')
     def mag_0_high(self): return self.Float('mag_high_0')
