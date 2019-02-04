@@ -993,11 +993,32 @@ def plot_sembmax():
     eastings = data[:,2]
     northings =  data[:,1]
 
+
     map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
                   llcrnrlat=num.min(northings),
                   urcrnrlon=num.max(eastings),
                   urcrnrlat=num.max(northings),
                   resolution='h', epsg=3395)
+
+    if sys.argv[3] is not None:
+        with open(sys.argv[3], 'r') as fin:
+            reader=csv.reader(fin)
+            event_cor=[[(s) for s in row] for i,row in enumerate(reader)]
+            event_cor_x = event_cor[:]
+            event_cor_x = np.asarray(event_cor)
+            event_cor_x = event_cor_x[:,1]
+            event_cor_y = event_cor[:]
+            event_cor_y = np.asarray(event_cor)
+            event_cor_y = event_cor_y[:,2]
+            list_x = []
+            list_y = []
+            for item in event_cor_x:
+                list_x.append(float(item))
+            for item in event_cor_y:
+                list_y.append(float(item))
+        x, y = map(list_x,list_y)
+        ps = map.scatter(x,y,marker='o',c='k', s=size, cmap='seismic')
+
     ratio_lat = num.max(northings)/num.min(northings)
     ratio_lon = num.max(eastings)/num.min(eastings)
     map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
@@ -1046,6 +1067,26 @@ def plot_sembmax():
                       urcrnrlon=num.max(eastings),
                       urcrnrlat=num.max(northings),
                       resolution='h', epsg=3395)
+
+    if sys.argv[3] is not None:
+        with open(sys.argv[3], 'r') as fin:
+            reader=csv.reader(fin)
+            event_cor=[[(s) for s in row] for i,row in enumerate(reader)]
+            event_cor_x = event_cor[:]
+            event_cor_x = np.asarray(event_cor)
+            event_cor_x = event_cor_x[:,1]
+            event_cor_y = event_cor[:]
+            event_cor_y = np.asarray(event_cor)
+            event_cor_y = event_cor_y[:,2]
+            list_x = []
+            list_y = []
+            for item in event_cor_x:
+                list_x.append(float(item))
+            for item in event_cor_y:
+                list_y.append(float(item))
+        x, y = map(list_x,list_y)
+        ps = map.scatter(x,y,marker='o',c='k', s=size, cmap='seismic')
+        
         ratio_lat = num.max(northings)/num.min(northings)
         ratio_lon = num.max(eastings)/num.min(eastings)
 
