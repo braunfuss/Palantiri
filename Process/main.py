@@ -38,7 +38,6 @@ import  sembCalc
 import  waveform
 import  times
 import time
-#from   xcorrfilter import Xcorr
 from    array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR, getArrayShiftValue
 import numpy as num
 import semp
@@ -48,7 +47,6 @@ import semp
 logger = logging.getLogger(sys.argv[0])
 logger.setLevel(logging.DEBUG)
 
-#formatter = logging.Formatter ("%(asctime)s - %(name)s - %(levelname)s - %(message)s")  #hs
 formatter  = logging.Formatter ("%(message)s")
 
 ch = logging.StreamHandler()
@@ -387,13 +385,15 @@ def processLoop():
                         Wd = waveform.readWaveformsPyrocko_restituted (FilterMeta,
                                                                         tw, evpath,
                                                                          ev)
+                    elif cfg.Bool('synthetic_test') is True:
+                        Wd = waveform.readWaveformsPyrockodummy(FilterMeta, tw, evpath, ev)
                     else:
                         Wd = waveform.readWaveformsPyrocko (FilterMeta, tw, evpath,
                                                             ev)
                 elif cfg.colesseo_input() == True:
-                    Wd = waveform.readWaveforms_colesseo   (FilterMeta, tw, evpath, ev, C)
+                    Wd = waveform.readWaveforms_colesseo(FilterMeta, tw, evpath, ev, C)
                 else:
-                    Wd = waveform.readWaveforms   (FilterMeta, tw, evpath, ev)
+                    Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
                 if cfg.Bool('synthetic_test') is True:
                     Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
                     Wdfs.extend(Wdf)
@@ -445,7 +445,7 @@ def processLoop():
 
             if cfg.Bool('combine_all') is True:
 
-                if cfg.pyrocko_download() == True:
+                if cfg.pyrocko_download() is True:
                     if cfg.quantity() == 'displacement':
                         Wd = waveform.readWaveformsPyrocko_restituted (FilterMetas,
                                                                         tw, evpath,
@@ -453,7 +453,7 @@ def processLoop():
                     else:
                         Wd = waveform.readWaveformsPyrocko (FilterMetas, tw, evpath,
                                                             ev)
-                elif cfg.colesseo_input() == True:
+                elif cfg.colesseo_input() is True:
                     Wd = waveform.readWaveforms_colesseo   (FilterMetas, tw, evpath, ev, C)
                 else:
                     Wd = waveform.readWaveforms   (FilterMetas, tw, evpath, ev)
@@ -472,7 +472,6 @@ def processLoop():
             if cfg.optimize_all() == True:
                 import optim_csemb
                 from optim_csemb import solve
-
                 sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
                 optim_csemb.solve(counter, Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                              Folder,Origin,ntimes,switch, ev,arrayfolder,

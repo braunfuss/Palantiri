@@ -133,6 +133,8 @@ class ConfigObj(object):
     def newFrequency(self): return self.Float('new_frequence')
     def pyrocko_download(self): return self.Bool('pyrocko_download')
     def synthetic_test_add_noise(self): return self.Bool('synthetic_test_add_noise')
+    def synthetic_test_pertub_arrivals(self): return self.Bool('synthetic_test_pertub_arrivals')
+    def shift_max(self):       return self.Float('shift_max')
     def quantity(self):       return self.Str('quantity')
     def colesseo_input(self): return self.Bool('colesseo_input')
     def optimize(self): return self.Bool('optimize')

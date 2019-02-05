@@ -101,6 +101,11 @@ def readWaveformsPyrocko(stationlist, w,EventPath,Origin):
                     Wdict[il.getName()] = st
     return Wdict
 
+def readWaveformsPyrockodummy(stationlist, w,EventPath,Origin):
+    Wdict = {}
+    for il in stationlist:
+        Wdict[il.getName()] = 1.
+    return Wdict
 
 def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin):
     Wdict = {}
@@ -287,8 +292,8 @@ def processdummyWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,swit
     for index,i in enumerate(WaveformDict):
 
         #resampling
-        j = resampledummy(WaveformDict[i][0],2.)
-        WaveformDict[i] = j
+        #j = resampledummy(WaveformDict[i][0],2.)
+        WaveformDict[i] = i
 
     return WaveformDict
 
