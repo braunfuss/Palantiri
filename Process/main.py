@@ -22,6 +22,7 @@ import  Debug
 from    Program    import MainObj
 import  ConfigFile
 from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
+from collections import OrderedDict
 
 #       Import from Tools
 import config
@@ -307,7 +308,7 @@ def processLoop():
             TriggerOnset = []
             Wdfs = []
             FilterMetas = []
-            TTTgrids = {}
+            TTTgrids = OrderedDict()
             mints = []
             maxts = []
             for i in networks:
@@ -409,7 +410,6 @@ def processLoop():
                 print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
                 TTTGridMap,mint,maxt = pickle.load(f)
                 f.close()
-                print(num.shape(TTTGridMap))
 
                 if cfg.Bool('combine_all') is False:
 
@@ -417,6 +417,7 @@ def processLoop():
                         optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                      Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
                     else:
+
                         arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                      Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
                         weights.append(weight)
@@ -437,22 +438,25 @@ def processLoop():
                 Logfile.add ('CALC took %0.3f sec' % (t2-t1))
                 counter +=1
 
-                TTTgrids.update(TTTGridMap)
+                TTTgrids.update(TTTGridMap)#
                 mints.append(mint)
                 maxts.append(maxt)
-                FilterMetas.extend(FilterMeta)
+                FilterMetas[len(FilterMetas):]= FilterMeta
+            #    FilterMetas.extend(FilterMeta)
                 TTTGridMap = []
 
             if cfg.Bool('combine_all') is True:
-
                 if cfg.pyrocko_download() is True:
-                    if cfg.quantity() == 'displacement':
-                        Wd = waveform.readWaveformsPyrocko_restituted (FilterMetas,
-                                                                        tw, evpath,
-                                                                         ev)
+                    if cfg.Bool('synthetic_test') is True:
+                        Wd = waveform.readWaveformsPyrockodummy(FilterMetas, tw, evpath, ev)
                     else:
-                        Wd = waveform.readWaveformsPyrocko (FilterMetas, tw, evpath,
-                                                            ev)
+                        if cfg.quantity() == 'displacement':
+                            Wd = waveform.readWaveformsPyrocko_restituted (FilterMetas,
+                                                                            tw, evpath,
+                                                                             ev)
+                        else:
+                            Wd = waveform.readWaveformsPyrocko (FilterMetas, tw, evpath,
+                                                                ev)
                 elif cfg.colesseo_input() is True:
                     Wd = waveform.readWaveforms_colesseo   (FilterMetas, tw, evpath, ev, C)
                 else:
@@ -520,7 +524,6 @@ class ProcessMain (MainObj) :
         #processLoop ()
         import cProfile
         cProfile.run('processLoop ()', filename='test.profile')
-        #print halt
         return True
 
     def finish (self) :    pass

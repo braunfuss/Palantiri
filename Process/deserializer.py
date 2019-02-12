@@ -9,11 +9,11 @@ import platform
 
 WINDOWS =(platform.system() == 'Windows')
 
-# add local directories to import path 
+# add local directories to import path
 
-sys.path.append('../tools/')                     
+sys.path.append('../tools/')
 sys.path.append('../Common/')
-                  
+
 import cPickle as pickle
 
 #       Import from common
@@ -22,6 +22,7 @@ import  Basic
 import  Globals
 import  Logfile
 import  Debug
+from collections import OrderedDict
 
 #       Import from Process
 
@@ -38,8 +39,8 @@ def deserializeTTT(numproc):
 
             if data != None: L.append(data)
         #endfor
-    
-        TTTGridMap = {}
+
+        TTTGridMap = OrderedDict()
 
         for i in L:
             for j in i.iterkeys(): TTTGridMap[j] = i[j]
@@ -63,7 +64,7 @@ def deserializeMinTMaxT(numproc):
 
 #        for i in range(numproc):
  #           os.remove('minmax-'+str(i)+'.pkl')
-        
+
         return mint,maxt
 
 # -------------------------------------------------------------------------------------------------
@@ -78,13 +79,13 @@ def deserializeSembDict(numproc):
             if data != None: L.append(data)
         #endfor
 
-        sembDict = {}
+        sembDict = OrderedDict()
 
         for i in L:
             for j in i.iterkeys(): sembDict[j] = i[j]
-            
+
         return sembDict
-    
+
 # -------------------------------------------------------------------------------------------------
 
 def deserializeSemb_unused(numproc):
@@ -98,19 +99,19 @@ def deserializeSemb_unused(numproc):
 
             L.append(data)
 
-            sembDict = {}
+            sembDict = OrderedDict()
             print L
 
         #for i in L:
          #   for j in i.iterkeys():
           #      sembDict[j] = i[j]
-            
+
     #    for i in range(numproc):
      #       os.remove('sembDict-'+str(i)+'.pkl')
 
             return L
 # -------------------------------------------------------------------------------------------------
-    
+
 def deserializeSembMaxFile(numproc):
 
     L = []
@@ -121,9 +122,9 @@ def deserializeSembMaxFile(numproc):
         if data != None:  L.append(data)
     #endfor
 
-    sembMax = {}
+    sembMax = OrderedDict()
 
     for i in L:
         for j in i.iterkeys(): sembMax[j] = i[j]
-            
+
     return sembMax

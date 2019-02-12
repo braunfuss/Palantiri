@@ -20,6 +20,11 @@ latv_txt   = 'latv.txt'
 lonv_txt   = 'lonv.txt'
 semb_txt   = 'semb.txt'
 
+def normalize(lst):
+    s = sum(lst)
+    return map(lambda x: float(x)/s, lst)
+
+
 def xcorr(tr1, tr2, shift_len, full_xcorr=False):
 
     from obspy.core.util.deprecation_helpers import ObsPyDeprecationWarning
@@ -118,8 +123,8 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
     trs_orgs  = []
     for tr in calcStreamMap:
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
         trs_orgs.append(tr_org)
-
     trace  = toMatrix (trace_1, minSampleCount)
     traveltime = []
     traveltime = toMatrix (traveltime_1, dimX * dimY)
@@ -134,7 +139,6 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
     Basic.writeVector (lonv_txt,   lonv, '%e')
     '''
     snap= (round, round)
-
     backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
     for i in range (ntimes) :
         #  loop over grid points
@@ -148,11 +152,16 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
             relstart = []
             relstarts = nostat
             cc_data = []
+            tt = []
+
             for k in range (nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
+                from matplotlib import pylab as plt
+                #plt.plot(traveltime[k][:])
+                #plt.show()
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -163,15 +172,14 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
 
                 data = tr.ydata[ibeg:iend]
                 try:
-                    sums += (data) ##put gradient on top
+                    sums += ((data)) ##put gradient on top
                 except:
                     pass
                 relstarts -= (relstart)
-
             #for dat in cc_data:
-        #        sums_cc +=xcorr(cc_data[0],dat,0)[1]
+            #    sums_cc +=xcorr(cc_data[0],dat,0)[1]
             sum = abs(num.sum(((sums))))
-        #    sum = sums_cc
+            #sum = sums_cc
             denom = sum**2
             nomin = sum
             semb = sum
@@ -187,8 +195,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
         Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
 
-    backSemb = backSemb/num.max(num.max(backSemb))
-
+    backSemb = backSemb#/num.max(num.max(backSemb))
     return abs(backSemb)
 
 # -------------------------------------------------------------------------------------------------

@@ -340,44 +340,43 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     origin = DataTypes.dictToLocation(Origin)
     i = 0
 
-    #for a in SembList:
-    #    tmp = num.zeros(num.shape(a))
     azis = []
     for a in SembList:
         x = array_centers[i][0]
         y = array_centers[i][1]
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-        #a = a*((1./delta**2)*1.e+15)
-        tmp *= a
-
-        #azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),x, y))
+        azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),x, y))
         i = i+1
+    aziblocks = num.arange(0.,360.,20.)
+    aziblockslist = list(aziblocks)
+    aziweights = []
+    blockweight = 1.
+    idxs = []
+    for azi in azis:
+            val = min(aziblocks, key=lambda x:abs(x-float(azi)))
+            idxs.append(aziblockslist.index(val))
+    for idx in idxs:
+        aziweights.append(1./idxs.count(idx))
 
-    #min_coor = num.zeros([i,2])
-    #i = 0
-    #for a in SembList:
-    #    deltas = []
-#        x = array_centers[i][0]
-#        y = array_centers[i][1]
-#        for k in range(0,len(latv)):
-#            delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k])
-#            deltas.append(orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k]))
-#            if delta <= num.min(deltas):
-#                min_coor[i]= [latv[k], lonv[k]]
-#        i = i+1
-#    array_overlap = num.average(min_coor, axis=0)
-#    delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0], array_overlap[1], origin.lat, origin.lon)
+    min_coor = num.zeros([i,2])
+    i = 0
+    for a in SembList:
+        tmp *= a*aziweights[i]
+        deltas = []
+        x = array_centers[i][0]
+        y = array_centers[i][1]
+        for k in range(0,len(latv)):
+            delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k])
+            deltas.append(orthodrome.distance_accurate50m_numpy(x, y, latv[k], lonv[k]))
+            if delta <= num.min(deltas):
+                min_coor[i]= [latv[k], lonv[k]]
+        i = i+1
+    array_overlap = num.average(min_coor, axis=0)
+    delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0], array_overlap[1], origin.lat, origin.lon)
 
-#    print(array_overlap)
+    diff_center_lat = origin.lat-array_overlap[0]
+    diff_center_lon = origin.lon-array_overlap[1]
 
-#    print(delta_center)
-#    diff_center_lat = origin.lat-array_overlap[0]
-#    diff_center_lon = origin.lon-array_overlap[1]
-#    print(diff_center_lat)
-#    print(diff_center_lon)
-    #for a in SembList:
-        #if num.mean(a)>0:
-    #        tmp *= a
 
     sembmaxvaluev = num.ndarray(ntimes,dtype=float)
     sembmaxlatv   = num.ndarray(ntimes,dtype=float)
@@ -394,58 +393,13 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     max_p = 0.
     sum_i = 0.
 
-    for a, i in enumerate(tmp):
-        if a<1:
-            sum_i *= i
-    for a, i in enumerate(tmp):
-        if a<1:
-            max = num.max(sum_i[:])
-            for j in range(migpoints):
-                if i[j] > num.max(i[:])*0.9 and i[j] > max_p:
-                    latvmax = latv[j]
-                    lonvmax = lonv[j]
-                    max_p = i[j]
+
     semb_cum = num.zeros(num.shape(i))
-#    delta_lat = origin.lat-latvmax
-#    delta_lon = origin.lon-lonvmax
 
-    #for a, i in enumerate(tmp):
-    #    max_pos = [l for l, k in enumerate(i) if k == i.max()][0]
-#        delta_lat = origin.lat-latv[max_pos]
-#        delta_lon = origin.lon-lonv[max_pos]
-    for j in range(migpoints):
-                latv[j] = latv[j]#+delta_lat
-                lonv[j] = lonv[j]#+delta_lon
-        #        latv.append(latv[j]-delta_lat)
-        #        lonv.append(lonv[j]-delta_lon)
-
-    #nix = []
-    #for a, i in enumerate(tmp):
-    #    for j in range(migpoints):
-    #            if i[j]/norm > num.max(sum_i/norm)*0.4:
-    #                if j in nix:
-    #                    pass
-    #                else:
-    #                    latv[j] = latv[j]+delta_lat
-    #                    lonv[j] = lonv[j]+delta_lon
-    #                    nix.append(j)
-                #if i[j]/norm > num.max(sum_i/norm)*0.4:
-                #    print('yes')
-                #    delta_lat = origin.lat-latv[j]
-                #    delta_lon = origin.lon-lonv[j]
-                #    print delta_lat, delta_lon, latvmax, lonvmax
-                #    print latv[j], lonv[j], origin.lat, origin.lon
-                #    ix = num.where(latv[j]+delta_lat)[0][0]
-                #    iy = num.where(lonv[j]+delta_lon)[0][0]
-                #    lat = latv[j].copy()
-                #    lon = lonv[j].copy()
-                #    latv[j] = latv[ix]
-                ##    lonv[j] =  lonv[iy]
-                #    lonv[iy]
-                #    #latv[j] = latv[j]+delta_lat
-                    #lonv[j] = lonv[j]+delta_lon
-                #    print latv[j], lonv[j]
-#
+#    correct for array center bias
+#    for j in range(migpoints):
+#                latv[j] = latv[j]#+diff_center_lat
+#                lonv[j] = lonv[j]#+diff_center_lon
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
@@ -465,28 +419,17 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         semb_cum =+ i
         for j in range(migpoints):
 
-            x= latv[j]#+delta_lat
-            y= lonv[j]#+delta_lon
-        #    if i[j]/norm > num.max(i[:]/norm)*0.1:
-        #            delta_lat = origin.lat-latv[max_pos]
-        #            delta_lon = origin.lon-lonv[max_pos]
-        #            print delta_lat, delta_lon, latv[max_pos], lonv[max_pos]
-        #            print latv[j], lonv[j], origin.lat, origin.lon
-            #        x = latv[j]+delta_lat
-        #            y = lonv[j]+delta_lon
-        #            print x, y
+            x= latv[j]
+            y= lonv[j]
+
             if cfg.Bool('norm_all') is True:
                 semb = i[j]/norm
             else:
                 semb = i[j]
             fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
-        #    xd= latv[j]-delta_lat
-    #        yd= lonv[j]-delta_lon
-#            sembd = 0.
-#            fobj.write('%.2f %.2f %.20f\n' %(xd,yd,sembd))
 
             if  semb > sembmax:
-                sembmax  = semb;#
+                sembmax  = semb;
                 sembmaxX = x;
                 sembmaxY = y;
 
@@ -723,9 +666,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     lat=st.lat,
                     lon=st.lon,
                     store_id=store_id,
+                    tmin=-3000,
+                    tmax=3000,
                     codes=(st.network, st.station, st.location, 'BHZ'),
-                    tmin=-6900,
-                    tmax=6900,
                     interpolation='multilinear',
                     quantity=cfg.quantity())
             targets.append(target)
@@ -826,14 +769,15 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         for source in sources:
             response = engine.process(source, targets)
             synthetic_traces_source = response.pyrocko_traces()
+            from pyrocko import trace as trld
             if not synthetic_traces:
                 synthetic_traces = synthetic_traces_source
             else:
                 for trsource, tr in zip(synthetic_traces_source, synthetic_traces):
                         tr.add(trsource)
             #debug
-            #from pyrocko import trace as trld
-            #trld.snuffle(synthetic_traces)
+    #    trld.snuffle(synthetic_traces)
+
         timeev = util.str_to_time(syn_in.time_0())
         if cfg.Bool('synthetic_test_add_noise') is True:
             from noise_addition import add_noise
@@ -1154,6 +1098,48 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
     USE_C_CODE = False
+    TTTGrid = True
+    manual_shift = False
+
+    if manual_shift:
+
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+        backSemb = num.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
+        bf = BeamForming(stations, traces, normalize=True)
+
+        for i in range (ntimes) :
+            #  loop over grid points
+
+            sembmax = 0; sembmaxX = 0; sembmaxY = 0
+            for j in range (dimX * dimY):
+                print(j)
+                event = model.Event(lat=float(latv[j]), lon=float(lonv[j]), depth=ev.depth*1000., time=timeev)
+                directory = arrayfolder
+                shifted_traces, stack = bf.process(event=event,
+                                            timing=timing,
+                                            fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                            fn_beam=pjoin(directory, 'beam.mseed'))
+                tmin = stack.tmin+(i*nstep)+20
+                tmax = stack.tmin+(i*nstep)+60
+                stack.chop(tmin, tmax)
+                backSemb[i][j] = abs(sum(stack.ydata))
+                print(backSemb[i][j])
+            #    from pyrocko import trace as trld
+            #    trld.snuffle(stack)
+        k = backSemb
+        TTTGrid = False
+
     #try:
     if USE_C_CODE:
         import Cm
@@ -1162,7 +1148,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
                       minSampleCount,latv,lonv,traveltimes,traces)
         print("--- %s seconds ---" %(time.time() - start_time))
-    else:
+    if TTTGrid:
         start_time = time.time()
         if cfg.UInt ('forerun')>0:
             ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
