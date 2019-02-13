@@ -1,2 +1,0 @@
-class GeomSpread(object):
-    def 
