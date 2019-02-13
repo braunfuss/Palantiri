@@ -22,7 +22,7 @@ from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
 km = 1000.
 import trigger
-from semp import otest
+from semp import semblance
 from beam_stack import BeamForming
 from pyrocko.gf import STF
 from stacking import PWS_stack
@@ -1097,7 +1097,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
 
     traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
-    USE_C_CODE = False
     TTTGrid = True
     manual_shift = False
 
@@ -1140,14 +1139,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k = backSemb
         TTTGrid = False
 
-    #try:
-    if USE_C_CODE:
-        import Cm
-        import CTrig
-        start_time = time.time()
-        k  = Cm.otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltimes,traces)
-        print("--- %s seconds ---" %(time.time() - start_time))
     if TTTGrid:
         start_time = time.time()
         if cfg.UInt ('forerun')>0:
@@ -1157,7 +1148,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         nsamp = int(winlen)
         nstep = int(step)
         Gmint = cfg.Int('forerun')
-        k = otest(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+        k = semblance(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
                   minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
         print("--- %s seconds ---" %(time.time() - start_time))
 

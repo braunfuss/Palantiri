@@ -49,15 +49,6 @@ def xcorr(tr1, tr2, shift_len, full_xcorr=False):
     else:
         return shift.value, coe_p.value
 
-def startC_Code (nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
-
-        f= [nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount]
-        args = Basic.floatToString (f, delim= ',')
-        path =  os.path.dirname (__file__)
-
-        prog = os.path.join (path,'OTest')
-
-        os.system (prog  + ' ' + args)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -76,14 +67,9 @@ class MyThread (Thread):
         self.new_freq  = new_freq
         self.minSampleCount = minSampleCount
 
-    def run(self):
-
-        return startC_Code (self.nostat, self.nsamp, self.i, self.nstep, self.dimX,self.dimY,
-                            self.mint, self.new_freq, self.minSampleCount)
-
 # -------------------------------------------------------------------------------------------------
 
-def toMatrix (npVector, nColumns) :
+def toMatrix(npVector, nColumns):
 
     t   = npVector.tolist()[0]
     n   = nColumns
@@ -99,16 +85,12 @@ def toMatrix (npVector, nColumns) :
     return mat
 
 
-def otest (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
+def semblance (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
                latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
-   #if USE_C_CODE  :
-    USE_C_CODE = False
-    if USE_C_CODE == True :
-       return otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
-                            minSampleCount, latv_1, lonv_1, traveltime_1, trace_1)
-    else :
-       return otest_py   (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence,
-                            minSampleCount, latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time)
+
+       return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                           mint, new_frequence, minSampleCount, latv_1, lonv_1,
+                           traveltime_1, trace_1, calcStreamMap, time)
 
 def t2ind_fast(t, tdelta, snap=round):
     return int(int((t/tdelta)*(10**0))/(10.**0))
@@ -116,7 +98,7 @@ def t2ind_fast(t, tdelta, snap=round):
 def t2ind(t, tdelta, snap=round):
     return int(snap(t/tdelta))
 
-def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
+def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
                latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
     from pyrocko import obspy_compat
     obspy_compat.plant()
@@ -200,82 +182,7 @@ def otest_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence
 
 # -------------------------------------------------------------------------------------------------
 
-def otestSeriell (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount,
-                  latv_1, lonv_1, traveltime_1, trace_1) :
-
-    trace  = toMatrix (trace_1, minSampleCount)
-    traveltime = toMatrix (traveltime_1, dimX * dimY)
-
-    Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount)
-    Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY)
-    Basic.writeVector (latv_txt,   latv_1.tolist())
-    Basic.writeVector (lonv_txt,   lonv_1.tolist())
-    '''
-    Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
-    Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
-    Basic.writeVector (latv_txt,   latv_1.tolist(), '%e')
-    Basic.writeVector (lonv_txt,   lonv_1.tolist(), '%e')
-    '''
-
-    startC_Code (nostat, int (nsamp), ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount)
-
-    result   = Basic.readMatrix (semb_txt, ntimes, dimX*dimY)
-    backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
-
-    for i in range (ntimes) :
-        for j in range (dimX * dimY) :
-            backSemb [i][j] = result [i][j]
-    return backSemb
-
-# -------------------------------------------------------------------------------------------------
-
-def otestPar (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_freq, minSampleCount,
-              latv_1, lonv_1, traveltime_1, trace_1) :
-
-    trace  = toMatrix (trace_1, minSampleCount)
-    traveltime = toMatrix (traveltime_1, dimX * dimY)
-    latv   = latv_1.tolist()
-    lonv   = lonv_1.tolist()
-
-    Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
-    Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
-    Basic.writeVector (latv_txt,   latv, '%e')
-    Basic.writeVector (lonv_txt,   lonv, '%e')
-
-    backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
-    threads  = []
-
-    for i in range(ntimes) :
-        t = MyThread (nostat, int(nsamp), i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
-        t.run()
-        threads.append (t)
-
-    for t in threads :
-        t.join()
-
-
-    for i in range (ntimes) :
-       #  loop over grid points
-       #
-       sembmax = 0
-       sembmaxX= 0
-       sembmaxY= 0
-       backSemb[i] = startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
-
-       for j in range (dimX * dimY):
-          semb = backSemb[i][j]
-
-          if semb > sembmax :
-             sembmax  = semb   # search for maximum and position of maximum on semblance grid for given time step
-             sembmaxX = latv[j]
-             sembmaxY = lonv[j]
-
-       Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' + str(sembmaxX)+','+ str (sembmaxY))
-    return backSemb
-
-# -------------------------------------------------------------------------------------------------
-
-def execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
+def execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
 
     f = [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount]
     args  = Basic.floatToString (f, delim= ',')
@@ -288,13 +195,13 @@ def execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCoun
     backSemb = Basic.readVector (semb_txt)
     return backSemb
 
-def execOTest2 () :
+def execsemblance2 () :
 
     for i in range (len (sys.argv)) : print sys.argv[i]
 
     params = Basic.stringToFloat (sys.argv[1])
     [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount] = params
-    backSemb = startOTest (int(nostat), int(nsamp), int(i), int(nstep),
+    backSemb = startsemblance (int(nostat), int(nsamp), int(i), int(nstep),
                            int(dimX),   int(dimY),  mint, new_freq, int(minSampleCount), False)
 
     print 'backSemb = ', backSemb[0:3]
@@ -303,12 +210,12 @@ def execOTest2 () :
 
 
 # -------------------------------------------------------------------------------------------------
-def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
+def startsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
 
     backSemb = []
 
     if isParent :
-       backSemb = execOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
+       backSemb = execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
     else :
        trace  = Basic.readMatrix (trace_txt,  nostat, minSampleCount, '%e')
@@ -346,4 +253,4 @@ def startOTest (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCou
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-   execOTest2 ()
+   execsemblance2 ()
