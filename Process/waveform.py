@@ -24,6 +24,8 @@ from    ConfigFile import ConfigObj, FilterCfg, SynthCfg
 from    config import Station,Event     #       Import from Tools
 import  ttt                             #       Import from Process
 import obspy
+from collections import OrderedDict
+
 # -------------------------------------------------------------------------------------------------
 
 def getStation(streamID,MetaDict):
@@ -51,7 +53,7 @@ def readWaveforms(stationList,tw,EventPath,Origin):
     t2  = UTCDateTime(Origin.time)
     sdspath = os.path.join(EventPath,'data',str(t2.year))
 
-    Wdict = {}
+    Wdict = OrderedDict()
 
     for i in stationList:
         streamData = i.getName() + '.D.' + str(t2.year) + '.' + str("%03d" % t2.julday)
@@ -85,13 +87,13 @@ def readWaveforms(stationList,tw,EventPath,Origin):
     return Wdict
 
 def readWaveformsPyrocko(stationlist, w,EventPath,Origin):
-    Wdict = {}
+    Wdict = OrderedDict()
     traces = io.load(EventPath+'/data/traces.mseed')
     obspy_compat.plant()
 
     traces_dict = []
-    for tr in traces:
-        for il in stationlist:
+    for il in stationlist:
+            for tr in traces:
               tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'+tr.channel[:3])
               if tr_name == str(il):
                     st = obspy.Stream()
@@ -101,9 +103,15 @@ def readWaveformsPyrocko(stationlist, w,EventPath,Origin):
                     Wdict[il.getName()] = st
     return Wdict
 
+def readWaveformsPyrockodummy(stationlist, w,EventPath,Origin):
+
+    Wdict = OrderedDict()
+    for il in stationlist:
+        Wdict[il.getName()] = 1.
+    return Wdict
 
 def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin):
-    Wdict = {}
+    Wdict = OrderedDict()
     traces = io.load(EventPath+'/data/traces_restituted.mseed')
     obspy_compat.plant()
 
@@ -121,7 +129,7 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin):
 
 
 def readWaveforms_colesseo(stationlist, w, EventPath, Origin, C):
-    Wdict = {}
+    Wdict = OrderedDict()
     Config = C.parseConfig('config')
     cfg = ConfigObj(dict=Config)
     traces_dict = []
@@ -287,8 +295,8 @@ def processdummyWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,swit
     for index,i in enumerate(WaveformDict):
 
         #resampling
-        j = resampledummy(WaveformDict[i][0],2.)
-        WaveformDict[i] = j
+        #j = resampledummy(WaveformDict[i][0],2.)
+        WaveformDict[i] = i
 
     return WaveformDict
 

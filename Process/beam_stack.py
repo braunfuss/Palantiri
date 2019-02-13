@@ -85,6 +85,7 @@ class BeamForming(Object):
             mod = cake.load_model(crust2_profile=(event.lat, event.lon))
             dist = ortho.distance_accurate50m(event, self.station_c)
             ray = timing.t(mod,(event.depth, dist), get_ray=True)
+
             if ray is None:
                 logger.error('None of defined phases available at beam station:\n %s' % self.station_c)
                 return
@@ -186,7 +187,7 @@ class BeamForming(Object):
         self.checked_nslc([stack_trace])
         self.save(stack_trace, fn_beam)
 	#trace.snuffle(self.shifted_traces)
-        return self.shifted_traces
+        return self.shifted_traces, stack_trace
     def checked_nslc(self, trs):
         for tr in trs:
             oldids = tr.nslc_id

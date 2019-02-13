@@ -21,8 +21,8 @@ from pyrocko import util, pile, model, catalog, gf, cake, io, trace
 from pyrocko.guts import Object, String, Float, List
 km = 1000.
 import trigger
-from semp import otest
 from beam_stack import BeamForming
+from semp import semblance
 from pyrocko.gf import STF
 from stacking import PWS_stack
 # -------------------------------------------------------------------------------------------------
@@ -526,36 +526,41 @@ def toMatrix (npVector, nColumns) :
 
 
 
-
-def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Folder,Origin, ntimes, switch, ev,arrayfolder, syn_in):
+def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
+           TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
+           syn_in):
     '''
     method for calculating semblance of one station array
     '''
-    Logfile.add ('PROCESS %d %s' % (flag,' Enters Semblance Calculation') )
-    Logfile.add ('MINT  : %f  MAXT: %f Traveltime' % (Gmint,Gmaxt))
+    Logfile.add('PROCESS %d %s' %(flag,' Enters Semblance Calculation'))
+    Logfile.add('MINT  : %f  MAXT: %f Traveltime' %(Gmint,Gmaxt))
 
-    cfg = ConfigObj (dict=Config)
+    cfg = ConfigObj(dict=Config)
+    cfg_f  = FilterCfg(Config)
 
-    dimX   = cfg.dimX()         # ('dimx')
-    dimY   = cfg.dimY()         # ('dimy')
-    winlen = cfg.winlen ()      # ('winlen')
-    step   = cfg.step()         # ('step')
+    timeev = util.str_to_time(ev.time)
+    dimX   = cfg.dimX()         #('dimx')
+    dimY   = cfg.dimY()         #('dimy')
+    winlen = cfg.winlen()      #('winlen')
+    step   = cfg.step()         #('step')
 
-    new_frequence   = cfg.newFrequency()          #('new_frequence')
-    forerun= cfg.Int('forerun')
-    duration= cfg.Int('duration')
-    gridspacing = cfg.Float('gridspacing')
+    new_frequence = cfg.newFrequency()          #('new_frequence')
+    forerun = cfg.Int('forerun')
+    duration = cfg.Int('duration')
 
-    nostat = len (WaveformDict)
+    nostat = len(WaveformDict)
     traveltimes = {}
     recordstarttime = ''
     minSampleCount  = 999999999
 
-    ntimes = int ((abs(forerun) + duration)/step)
-    nsamp  = int (winlen * new_frequence)
-    nstep  = int (step   * new_frequence)
+    if cfg.UInt ('forerun')>0:
+        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    else:
+        ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
+    nsamp = int(winlen * new_frequence)
+    nstep = int(step * new_frequence)
     from pyrocko import obspy_compat
-    from pyrocko import orthodrome, model
+    from pyrocko import model
     obspy_compat.plant()
 
     ############################################################################
@@ -563,404 +568,180 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
     stations = []
     py_trs = []
-    for trace in calcStreamMap.iterkeys():
-        py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-        py_trs.append(py_tr)
-        for il in FilterMetaData:
-		if str(il) == str(trace):
-                        szo = model.Station(lat=il.lat, lon=il.lon,
-                                            station=il.sta, network=il.net,
-                                            channels=py_tr.channel,
-                                            elevation=il.ele, location=il.loc)
-			stations.append(szo) #right number of stations?
+    lats = []
+    lons = []
 
-
-#==================================synthetic BeamForming=======================================
-
-    if cfg.Bool('shift_by_phase_pws') == True:
-        calcStreamMapshifted= calcStreamMap.copy()
-        from obspy.core import stream
-        stream = stream.Stream()
-        for trace in calcStreamMapshifted.iterkeys():
-            stream.append(calcStreamMapshifted[trace])
-        pws_stack = PWS_stack([stream], weight=2, normalize=True)
-        for tr in pws_stack:
-            for trace in calcStreamMapshifted.iterkeys():
-                    calcStreamMapshifted[trace]=tr
-        calcStreamMap = calcStreamMapshifted
-
-
-    if cfg.Bool('shift_by_phase_onset') == True:
-    	pjoin = os.path.join
-    	timeev = util.str_to_time(ev.time)
-    	trs_orgs= []
-        calcStreamMapshifted= calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
-                trs_orgs.append(tr_org)
-
-        timing = CakeTiming(
-           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
-           fallback_time=100.)
-        traces = trs_orgs
-
-        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
-        directory = arrayfolder
-        bf = BeamForming(stations, traces, normalize=True)
-        shifted_traces = bf.process(event=event,
-                  timing=timing,
-                  fn_dump_center=pjoin(directory, 'array_center.pf'),
-                  fn_beam=pjoin(directory, 'beam.mseed'))
-        i = 0
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for trace in calcStreamMapshifted.iterkeys():
-            recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
-            recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
-            mod = shifted_traces[i]
-            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
-            shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
-            calcStreamMapshifted[trace]=shifted_obs_tr
-            i = i+1
-
-        calcStreamMap = calcStreamMapshifted
-
-
-    weight = 0.
-    if cfg.Bool('weight_by_noise') == True:
-        from noise_analyser import analyse
-    	pjoin = os.path.join
-    	timeev = util.str_to_time(ev.time)
-    	trs_orgs= []
-        calcStreamMapshifted= calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
-                trs_orgs.append(tr_org)
-
-        timing = CakeTiming(
-           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
-           fallback_time=100.)
-        traces = trs_orgs
-        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
-        directory = arrayfolder
-        bf = BeamForming(stations, traces, normalize=True)
-        shifted_traces = bf.process(event=event,
-                  timing=timing,
-                  fn_dump_center=pjoin(directory, 'array_center.pf'),
-                  fn_beam=pjoin(directory, 'beam.mseed'))
-        i = 0
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        weight = analyse(shifted_traces, engine, event, stations,
-         100., store_id, nwindows=1,
-         check_events=True, phase_def='P')
 
     for trace in calcStreamMap.iterkeys():
-        recordstarttime = calcStreamMap[trace].stats.starttime
-        d = calcStreamMap[trace].stats.starttime
-        d = d.timestamp
-
-        if calcStreamMap[trace].stats.npts < minSampleCount:
-            minSampleCount = calcStreamMap[trace].stats.npts
-
-    ############################################################################
-    traces = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
-    traveltime = num.ndarray (shape=(len(calcStreamMap), dimX*dimY), dtype=float)
-    latv   = num.ndarray (dimX*dimY, dtype=float)
-    lonv   = num.ndarray (dimX*dimY, dtype=float)
-    ############################################################################
-
-
-    c=0
-    streamCounter = 0
-
-    for key in calcStreamMap.iterkeys():
-        streamID = key
-        c2   = 0
-
-        for o in calcStreamMap[key]:
-            if c2 < minSampleCount:
-                traces[c][c2] = o
-
-                c2 += 1
-
-
-        for key in TTTGridMap.iterkeys():
-
-            if streamID == key:
-                traveltimes[streamCounter] = TTTGridMap[key]
-            else:
-                "NEIN", streamID, key
-
-
-        if not streamCounter in traveltimes :
-           continue                              #hs : thread crashed before
-
-        g = traveltimes[streamCounter]
-        dimZ  = g.dimZ
-        mint  = g.mint
-        maxt  = g.maxt
-        Latul = g.Latul
-        Lonul = g.Lonul
-        Lator = g.Lator
-        Lonor = g.Lonor
-
-        gridElem = g.GridArray
-
-        for x in range(dimX):
-            for y in range(dimY):
-                elem = gridElem[x, y]
-
-                traveltime [c][x * dimY + y] = elem.tt
-                latv [x * dimY + y] = elem.lat
-                lonv [x * dimY + y] = elem.lon
-        #endfor
-
-        c += 1
-        streamCounter += 1
-
-    #endfor
-
-
-    ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
-    nsamp = winlen * new_frequence
-
-    nstep = int (step*new_frequence)
-    migpoints = dimX * dimY
-
-    dimZ = 0
-    new_frequence = cfg.newFrequency ()              # ['new_frequence']
-    maxp = int (Config['ncore'])
-
-
-    Logfile.add ('PROCESS %d  NTIMES: %d' % (flag,ntimes))
-
-    if False :
-       print ('nostat ',nostat,type(nostat))
-       print ('nsamp ',nsamp,type(nsamp))
-       print ('ntimes ',ntimes,type(ntimes))
-       print ('nstep ',nstep,type(nstep))
-       print ('dimX ',dimX,type(dimX))
-       print ('dimY ',dimY,type(dimY))
-       print ('mint ',Gmint,type(mint))
-       print ('new_freq ',new_frequence,type(new_frequence))
-       print ('minSampleCount ',minSampleCount,type(minSampleCount))
-       print ('latv ',latv,type(latv))
-       print ('traces',traces,type(traces))
-       print ('traveltime',traveltime,type(traveltime))
-
-
-    t1 = time.time()
-    traces_org = traces.reshape   (1,nostat*minSampleCount)
-    traveltime_org = traveltime.reshape (1,nostat*dimX*dimY)
-    USE_C_CODE = True
-    try:
-        if USE_C_CODE :
-            import Cm
-            import CTrig
-            start_time = time.time()
-            k  = Cm.otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                          minSampleCount,latv,lonv,traveltime_org,traces_org)
-            print("--- %s seconds ---" % (time.time() - start_time))
-        else :
-            start_time = time.time()
-            k = otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltime_org,traces_org)                       #hs
-            print("--- %s seconds ---" % (time.time() - start_time))
-    except:
-        print "loaded tttgrid has probably wrong dimensions or stations, delete\
-                ttgrid or exchange"
-
-    t2 = time.time()
-
-    Logfile.add ('%s took %0.3f s' % ('CALC:', (t2-t1)))
-
-
-    partSemb = k
-
-    partSemb_data  = partSemb.reshape (ntimes,migpoints)
-
-    return partSemb_data
-############################################################################
-
-
-def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
-                Folder,Origin, ntimes, switch, ev,arrayfolder, syn_in, parameter):
-    '''
-    method for calculating semblance of one station array
-    '''
-    Logfile.add ('PROCESS %d %s' % (flag,' Enters Semblance Calculation') )
-    Logfile.add ('MINT  : %f  MAXT: %f Traveltime' % (Gmint,Gmaxt))
-
-    cfg = ConfigObj (dict=Config)
-
-    dimX   = cfg.dimX()         # ('dimx')
-    dimY   = cfg.dimY()         # ('dimy')
-    winlen = cfg.winlen ()      # ('winlen')
-    step   = cfg.step()         # ('step')
-
-    new_frequence   = cfg.newFrequency()          #('new_frequence')
-    forerun= cfg.Int('forerun')
-    duration= cfg.Int('duration')
-    gridspacing = cfg.Float('gridspacing')
-
-    nostat = len (WaveformDict)
-    traveltimes = {}
-    recordstarttime = ''
-    minSampleCount  = 999999999
-
-    ntimes = int ((abs(forerun) + duration)/step)
-    nsamp  = int (winlen * new_frequence)
-    nstep  = int (step   * new_frequence)
-    from pyrocko import obspy_compat
-    from pyrocko import orthodrome, model
-    obspy_compat.plant()
-
-    ############################################################################
-    calcStreamMap = WaveformDict
-
-    stations = []
-    py_trs = []
-    for trace in calcStreamMap.iterkeys():
-        py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-        py_trs.append(py_tr)
         for il in FilterMetaData:
             if str(il) == str(trace):
-                        szo = model.Station(lat=il.lat, lon=il.lon,
-                                            station=il.sta, network=il.net,
-                                            channels=py_tr.channel,
-                                            elevation=il.ele, location=il.loc)
-			stations.append(szo) #right number of stations?
-
+                    szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                        station=il.sta, network=il.net,
+                                        channels='BHZ',
+                                        elevation=il.ele, location=il.loc)
+                    stations.append(szo)
+                    lats.append(float(il.lat))
+                    lons.append(float(il.lon))
+    array_center = [num.mean(lats), num.mean(lons)]
     store_id = syn_in.store()
     engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-
+    recordstarttimes = []
     targets = []
+    sources = []
     for st in stations:
         target = Target(
                 lat=st.lat,
                 lon=st.lon,
                 store_id=store_id,
+                tmin=-3000,
+                tmax=3000,
                 codes=(st.network, st.station, st.location, 'BHZ'),
-                tmin=-1900,
-                tmax=3900,
                 interpolation='multilinear',
                 quantity=cfg.quantity())
         targets.append(target)
 
-        if syn_in.nsources() == 1:
+    if syn_in.nsources() == 1:
+        if syn_in.use_specific_stf() is True:
+            stf = syn_in.stf()
+            exec(stf)
+        else:
+            stf = STF()
+        if syn_in.source() == 'RectangularSource':
+                sources.append(RectangularSource(
+                    lat=float(syn_in.lat_0()),
+                    lon=float(syn_in.lon_0()),
+                    east_shift=float(syn_in.east_shift_0())*1000.,
+                    north_shift=float(syn_in.north_shift_0())*1000.,
+                    depth=syn_in.depth_syn_0()*1000.,
+                    strike=syn_in.strike_0(),
+                    dip=syn_in.dip_0(),
+                    rake=syn_in.rake_0(),
+                    width=syn_in.width_0()*1000.,
+                    length=syn_in.length_0()*1000.,
+                    nucleation_x=syn_in.nucleation_x_0(),
+                    slip=syn_in.slip_0(),
+                    nucleation_y=syn_in.nucleation_y_0(),
+                    stf=stf,
+                    time=util.str_to_time(syn_in.time_0())))
+        if syn_in.source() == 'DCSource':
+                sources.append(DCSource(
+                    lat=float(syn_in.lat_0()),
+                    lon=float(syn_in.lon_0()),
+                    east_shift=float(syn_in.east_shift_0())*1000.,
+                    north_shift=float(syn_in.north_shift_0())*1000.,
+                    depth=syn_in.depth_syn_0()*1000.,
+                    strike=syn_in.strike_0(),
+                    dip=syn_in.dip_0(),
+                    rake=syn_in.rake_0(),
+                    stf=stf,
+                    time=util.str_to_time(syn_in.time_0()),
+                    magnitude=syn_in.magnitude_0()))
+        if syn_in.source() == 'MTSource':
+                sources.append(MTSource(
+                    lat=float(syn_in.lat_0()),
+                    lon=float(syn_in.lon_0()),
+                    east_shift=float(syn_in.east_shift_0())*1000.,
+                    north_shift=float(syn_in.north_shift_0())*1000.,
+                    depth=syn_in.depth_syn_0()*1000.,
+                    rmnn=syn_in.rmnn,
+                    rmee=syn_in.rmee,
+                    rmdd=syn_in.rmdd,
+                    rmne=syn_in.rmne,
+                    rmnd=syn_in.rmnd,
+                    rmed=syn_in.rmed,
+                    duation=syn_in.duration,
+                    time=util.str_to_time(syn_in.time_0()),
+                    magnitude=syn_in.magnitude_0()))
+    else:
+        for i in range(syn_in.nsources()):
             if syn_in.use_specific_stf() is True:
                 stf = syn_in.stf()
                 exec(stf)
+
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
-                    source = RectangularSource(
-                        lat=float(syn_in.lat_0()),
-                        lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0()*1000.,
-                        strike=syn_in.strike_0(),
-                        dip=syn_in.dip_0(),
-                        rake=syn_in.rake_0(),
-                        width=syn_in.width_0()*1000.,
-                        length=syn_in.length_0()*1000.,
-                        nucleation_x=syn_in.nucleation_x_0(),
-                        slip=syn_in.slip_0(),
-                        nucleation_y=syn_in.nucleation_y_0(),
+                    sources.append(RectangularSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        east_shift=float(syn_in.east_shift_1(i))*1000.,
+                        north_shift=float(syn_in.north_shift_1(i))*1000.,
+                        depth=syn_in.depth_syn_1(i)*1000.,
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
+                        width=syn_in.width_1(i)*1000.,
+                        length=syn_in.length_1(i)*1000.,
+                        nucleation_x=syn_in.nucleation_x_1(i),
+                        slip=syn_in.slip_1(i),
+                        nucleation_y=syn_in.nucleation_y_1(i),
                         stf=stf,
-                        time=util.str_to_time(syn_in.time_0()))
+                        time=util.str_to_time(syn_in.time_1(i))))
+
             if syn_in.source() == 'DCSource':
-                    source = DCSource(
-                        lat=float(syn_in.lat_0()),
-                        lon=float(syn_in.lon_0()),
-                        depth=syn_in.depth_syn_0()*1000.,
-                        strike=syn_in.strike_0(),
-                        dip=syn_in.dip_0(),
-                        rake=syn_in.rake_0(),
+                    sources.append(DCSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        east_shift=float(syn_in.east_shift_1(i))*1000.,
+                        north_shift=float(syn_in.north_shift_1(i))*1000.,
+                        depth=syn_in.depth_syn_1(i)*1000.,
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
                         stf=stf,
-                        time=util.str_to_time(syn_in.time_0()),
-                        magnitude=syn_in.magnitude_0())
-
-        else:
-            sources = []
-            for i in range(syn_in.nsources()):
-                if syn_in.use_specific_stf() is True:
-                    stf = syn_in.stf()
-                    exec(stf)
-
-                else:
-                    stf = STF()
-                if syn_in.source() == 'RectangularSource':
-                        sources.append(RectangularSource(
-                            lat=float(syn_in.lat_1(i)),
-                            lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_syn_1(i)*1000.,
-                            strike=syn_in.strike_1(i),
-                            dip=syn_in.dip_1(i),
-                            rake=syn_in.rake_1(i),
-                            width=syn_in.width_1(i)*1000.,
-                            length=syn_in.length_1(i)*1000.,
-                            nucleation_x=syn_in.nucleation_x_1(i),
-                            slip=syn_in.slip_1(i),
-                            nucleation_y=syn_in.nucleation_y_1(i),
-                            stf=stf,
-                            time=util.str_to_time(syn_in.time_1(i))))
-
-                if syn_in.source() == 'DCSource':
-                        sources.append(DCSource(
-                            lat=float(syn_in.lat_1(i)),
-                            lon=float(syn_in.lon_1(i)),
-                            depth=syn_in.depth_1(i)*1000.,
-                            strike=syn_in.strike_1(i),
-                            dip=syn_in.dip_1(i),
-                            rake=syn_in.rake_1(i),
-                            stf=stf,
-                            time=util.str_to_time(syn_in.time_1(i)),
-                            magnitude=syn_in.magnitude_1(i)))
-            source = CombiSource(subsources=sources)
+                        time=util.str_to_time(syn_in.time_1(i)),
+                        magnitude=syn_in.magnitude_1(i)))
+        #source = CombiSource(subsources=sources)
+    synthetic_traces = []
+    for source in sources:
         response = engine.process(source, targets)
+        synthetic_traces_source = response.pyrocko_traces()
+        from pyrocko import trace as trld
+        if not synthetic_traces:
+            synthetic_traces = synthetic_traces_source
+        else:
+            for trsource, tr in zip(synthetic_traces_source, synthetic_traces):
+                    tr.add(trsource)
+        #debug
+#    trld.snuffle(synthetic_traces)
 
-        synthetic_traces = response.pyrocko_traces()
-        if cfg.Bool('synthetic_test_add_noise') is True:
-            from noise_addition import add_noise
-            trs_orgs = []
-            calcStreamMapsyn = calcStreamMap.copy()
-            #from pyrocko import trace
-            for tracex in calcStreamMapsyn.iterkeys():
-                    for trl in synthetic_traces:
-                        if str(trl.name()[4:12])== str(tracex[4:]):
-                            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
-                            tr_org.downsample_to(2.0)
-                            trs_orgs.append(tr_org)
-            store_id = syn_in.store()
-            engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-            synthetic_traces = add_noise(trs_orgs, engine, source.pyrocko_event(),
-                                         stations,
-                                         store_id, phase_def='P')
-        trs_org = []
+    timeev = util.str_to_time(syn_in.time_0())
+    if cfg.Bool('synthetic_test_add_noise') is True:
+        from noise_addition import add_noise
         trs_orgs = []
-        fobj = os.path.join(arrayfolder, 'shift.dat')
-        xy = num.loadtxt(fobj, usecols=1, delimiter=',')
         calcStreamMapsyn = calcStreamMap.copy()
-        #from pyrocko import trace
         for tracex in calcStreamMapsyn.iterkeys():
                 for trl in synthetic_traces:
-                    if str(trl.name()[4:12])== str(tracex[4:]):
-                        mod = trl
-
-                        recordstarttime = calcStreamMapsyn[tracex].stats.starttime.timestamp
-                        recordendtime = calcStreamMapsyn[tracex].stats.endtime.timestamp
+                    if str(trl.name()[4:12])== str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
                         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
+                        tr_org.downsample_to(2.0)
                         trs_orgs.append(tr_org)
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        synthetic_traces = add_noise(trs_orgs, engine, source.pyrocko_event(),
+                                     stations,
+                                     store_id, phase_def='P')
+    trs_org = []
+    trs_orgs = []
+    from pyrocko import trace
+    fobj = os.path.join(arrayfolder, 'shift.dat')
+    calcStreamMapsyn = {}
+    if cfg.Bool('synthetic_test_pertub_arrivals') is True:
+        shift_max = cfg.Float('shift_max')
+        for trl in synthetic_traces:
+            shift = num.random.uniform(-shift_max,shift_max)
+            trl.shift(shift)
 
-                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
-                        synthetic_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
-                        calcStreamMapsyn[tracex] = synthetic_obs_tr
-                        trs_org.append(tr_org_add)
-        calcStreamMap = calcStreamMapsyn
+    for tracex, trl in zip(calcStreamMap.iterkeys(), synthetic_traces):
+                    if switch == 0:
+                        trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
+                    elif switch == 1:
+                        trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
+                    synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
+                    calcStreamMap[tracex] = synthetic_obs_tr
 
-    if cfg.Bool('shift_by_phase_pws') == True:
-        calcStreamMapshifted= calcStreamMap.copy()
+    if cfg.Bool('shift_by_phase_pws') is True:
+        calcStreamMapshifted = calcStreamMap.copy()
         from obspy.core import stream
         stream = stream.Stream()
         for trace in calcStreamMapshifted.iterkeys():
@@ -971,50 +752,65 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
                     calcStreamMapshifted[trace]=tr
         calcStreamMap = calcStreamMapshifted
 
-
-    if cfg.Bool('shift_by_phase_onset') == True:
-    	pjoin = os.path.join
-    	timeev = util.str_to_time(ev.time)
-    	trs_orgs= []
+    if cfg.Bool('shift_by_phase_cc') is True:
+        from stacking import align_traces
         calcStreamMapshifted= calcStreamMap.copy()
+        list_tr = []
         for trace in calcStreamMapshifted.iterkeys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
-                trs_orgs.append(tr_org)
-
-        timing = CakeTiming(
-           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
-           fallback_time=100.)
-        traces = trs_orgs
-
-        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
-        directory = arrayfolder
-        bf = BeamForming(stations, traces, normalize=True)
-        shifted_traces = bf.process(event=event,
-                  timing=timing,
-                  fn_dump_center=pjoin(directory, 'array_center.pf'),
-                  fn_beam=pjoin(directory, 'beam.mseed'))
-        i = 0
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for trace in calcStreamMapshifted.iterkeys():
-            recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
-            recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
-            mod = shifted_traces[i]
-            extracted = mod.chop(recordstarttime, recordendtime, inplace=False)
-            shifted_obs_tr = obspy_compat.to_obspy_trace(extracted)
-            calcStreamMapshifted[trace]=shifted_obs_tr
-            i = i+1
-
+            tr_org = calcStreamMapshifted[trace]
+            list_tr.append(tr_org)
+        shifts, ccs = align_traces(list_tr, 10, master=False)
+        for shift in shifts:
+            for trace in calcStreamMapshifted.iterkeys():
+                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                    tr_org.shift(shift)
+                    shifted = obspy_compat.to_obspy_trace(tr_org)
+                    calcStreamMapshifted[trace] = shifted
         calcStreamMap = calcStreamMapshifted
 
+    if cfg.Bool('shift_by_phase_onset') is True:
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
 
-    weight = 0.
-    if cfg.Bool('weight_by_noise') == True:
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+
+        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
+        directory = arrayfolder
+        bf = BeamForming(stations, traces, normalize=True)
+        shifted_traces = bf.process(event=event,
+                                    timing=timing,
+                                    fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                    fn_beam=pjoin(directory, 'beam.mseed'))
+        i = 0
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        for tracex in calcStreamMapshifted.iterkeys():
+                for trl in shifted_traces:
+                    if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
+                        mod = trl
+                        recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
+                        recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
+                        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
+                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
+                        shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
+                        calcStreamMapshifted[tracex] = shifted_obs_tr
+        calcStreamMap = calcStreamMapshifted
+
+    weight = 1.
+    if cfg.Bool('weight_by_noise') is True:
         from noise_analyser import analyse
-    	pjoin = os.path.join
-    	timeev = util.str_to_time(ev.time)
-    	trs_orgs= []
-        calcStreamMapshifted= calcStreamMap.copy()
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.iterkeys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
@@ -1027,15 +823,49 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         directory = arrayfolder
         bf = BeamForming(stations, traces, normalize=True)
         shifted_traces = bf.process(event=event,
-                  timing=timing,
-                  fn_dump_center=pjoin(directory, 'array_center.pf'),
-                  fn_beam=pjoin(directory, 'beam.mseed'))
+                                    timing=timing,
+                                    fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                    fn_beam=pjoin(directory, 'beam.mseed'))
         i = 0
-    	store_id = syn_in.store()
-    	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+        store_id = syn_in.store()
+        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
         weight = analyse(shifted_traces, engine, event, stations,
-         100., store_id, nwindows=1,
-         check_events=True, phase_def='P')
+                         100., store_id, nwindows=1,
+                         check_events=True, phase_def='P')
+
+    if cfg.Bool('array_response') is True:
+        from obspy.signal import array_analysis
+        from obspy.core import stream
+        ntimesr = int((forerun + duration)/step)
+        nsampr = int(winlen)
+        nstepr = int(step)
+        sll_x=-3.0
+        slm_x=3.0
+        sll_y=-3.0
+        slm_y=3.0
+        sl_s=0.03,
+        # sliding window properties
+
+        # frequency properties
+        frqlow=1.0,
+        frqhigh=8.0
+        prewhiten=0
+        # restrict output
+        semb_thres=-1e9
+        vel_thres=-1e9
+        stime=stime
+        etime=etime
+        stream_arr = stream.Stream()
+        for trace in calcStreamMapshifted.iterkeys():
+            stream_arr.append(calcStreamMapshifted[trace])
+        results = array_analysis.array_processing(stream_arr, nsamp, nstep,\
+                                                  sll_x, slm_x, sll_y, slm_y,\
+                                                   sl_s, semb_thres, vel_thres, \
+                                                   frqlow, frqhigh, stime, \
+                                                   etime, prewhiten)
+        timestemp = results[0]
+        relative_relpow = results[1]
+        absolute_relpow = results[2]
 
     for trace in calcStreamMap.iterkeys():
         recordstarttime = calcStreamMap[trace].stats.starttime
@@ -1045,12 +875,14 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         if calcStreamMap[trace].stats.npts < minSampleCount:
             minSampleCount = calcStreamMap[trace].stats.npts
 
-    ############################################################################
-    traces = num.ndarray (shape=(len(calcStreamMap), minSampleCount), dtype=float)
-    traveltime = num.ndarray (shape=(len(calcStreamMap), dimX*dimY), dtype=float)
-    latv   = num.ndarray (dimX*dimY, dtype=float)
-    lonv   = num.ndarray (dimX*dimY, dtype=float)
-    ############################################################################
+    ###########################################################################
+
+    traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount), dtype=float)
+    traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY), dtype=float)
+
+    latv   = num.ndarray(dimX*dimY, dtype=float)
+    lonv   = num.ndarray(dimX*dimY, dtype=float)
+    ###########################################################################
 
 
     c=0
@@ -1074,19 +906,12 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
             else:
                 "NEIN", streamID, key
 
-
         if not streamCounter in traveltimes :
            continue                              #hs : thread crashed before
 
         g = traveltimes[streamCounter]
-        dimZ  = g.dimZ
-        mint  = g.mint
-        maxt  = g.maxt
-        Latul = g.Latul
-        Lonul = g.Lonul
-        Lator = g.Lator
-        Lonor = g.Lonor
-
+        dimZ = g.dimZ
+        mint = g.mint
         gridElem = g.GridArray
 
         for x in range(dimX):
@@ -1103,63 +928,162 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
 
     #endfor
 
-
-    ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
+    ################ CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ########
     nsamp = winlen * new_frequence
 
-    nstep = int (step*new_frequence)
+    nstep = step*new_frequence
     migpoints = dimX * dimY
 
     dimZ = 0
-    new_frequence = cfg.newFrequency ()              # ['new_frequence']
-    maxp = int (Config['ncore'])
+    maxp = int(Config['ncore'])
 
-
-    Logfile.add ('PROCESS %d  NTIMES: %d' % (flag,ntimes))
+    Logfile.add('PROCESS %d  NTIMES: %d' %(flag,ntimes))
 
     if False :
-       print ('nostat ',nostat,type(nostat))
-       print ('nsamp ',nsamp,type(nsamp))
-       print ('ntimes ',ntimes,type(ntimes))
-       print ('nstep ',nstep,type(nstep))
-       print ('dimX ',dimX,type(dimX))
-       print ('dimY ',dimY,type(dimY))
-       print ('mint ',Gmint,type(mint))
-       print ('new_freq ',new_frequence,type(new_frequence))
-       print ('minSampleCount ',minSampleCount,type(minSampleCount))
-       print ('latv ',latv,type(latv))
-       print ('traces',traces,type(traces))
-       print ('traveltime',traveltime,type(traveltime))
+        print('nostat ',nostat,type(nostat))
+        print('nsamp ',nsamp,type(nsamp))
+        print('ntimes ',ntimes,type(ntimes))
+        print('nstep ',nstep,type(nstep))
+        print('dimX ',dimX,type(dimX))
+        print('dimY ',dimY,type(dimY))
+        print('mint ',Gmint,type(mint))
+        print('new_freq ',new_frequence,type(new_frequence))
+        print('minSampleCount ',minSampleCount,type(minSampleCount))
+        print('latv ',latv,type(latv))
+        print('traces',traces,type(traces))
 
+#===================compressed sensing=================================
+    try:
+        cs = cfg.cs()
+    except:
+        cs = 0
+    if cs == 1:
+        csmaxvaluev = num.ndarray(ntimes,dtype=float)
+        csmaxlatv  = num.ndarray(ntimes,dtype=float)
+        csmaxlonv  = num.ndarray(ntimes,dtype=float)
+        folder = Folder['semb']
+        fobjcsmax = open(os.path.join(folder,'csmax_%s.txt' %(switch)),'w')
+        traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
+        traveltime2 = toMatrix(traveltimes, dimX * dimY)  # for relstart
+        traveltime = traveltime.reshape(dimX*dimY,nostat)
+        import matplotlib as mpl
+        import scipy.optimize as spopt
+        import scipy.fftpack as spfft
+        import scipy.ndimage as spimg
+        import cvxpy as cvx
+        import matplotlib.pyplot as plt
+        A = spfft.idct(traveltime, norm='ortho', axis=0)
+        n =(nostat*dimX*dimY)
+        vx = cvx.Variable(dimX*dimY)
+        res = cvx.Variable(1)
+        objective = cvx.Minimize(cvx.norm(res, 1))
+        back2 = num.zeros([dimX,dimY])
+        l = int(nsamp)
+        fobj  = open(os.path.join(folder,'%s-%s_%03d.cs' %(switch,Origin['depth'],l)),'w')
+        for i in range(ntimes):
+            ydata = []
+            try:
+                for tr in traces:
+                        relstart = int((dimX*dimY - mint) * new_frequence + 0.5) + i * nstep
+                        tr=spfft.idct(tr[relstart+i:relstart+i+dimX*dimY], norm='ortho', axis=0)
+
+                        ydata.append(tr)
+                        ydata = num.asarray(ydata)
+                        ydata = ydata.reshape(dimX*dimY,nostat)
+
+                        constraints = [res == cvx.sum_entries( 0+ num.sum([ydata[:,x]-A[:,x]*vx  for x in range(nostat) ]) ) ]
+
+                        prob = cvx.Problem(objective, constraints)
+                        result = prob.solve(verbose=False, max_iters=200)
+
+                        x = num.array(vx.value)
+                        x = num.squeeze(x)
+                        back1= x.reshape(dimX,dimY)
+                        sig = spfft.idct(x, norm='ortho', axis=0)
+                        back2 = back2 + back1
+                        xs = num.array(res.value)
+                        xs = num.squeeze(xs)
+                        max_cs = num.max(back1)
+                        idx = num.where(back1==back1.max())
+                        csmaxvaluev[i] = max_cs
+                        csmaxlatv[i] = latv[idx[0]]
+                        csmaxlonv[i] = lonv[idx[1]]
+                        fobj.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
+                        fobjcsmax.write('%.5f %.5f %.20f\n' %(latv[idx[0]],lonv[idx[1]],max_cs))
+                fobj.close()
+                fobjcsmax.close()
+
+            except:
+                pass
 
 #==================================semblance calculation========================================
 
+
     t1 = time.time()
-    traces = traces.reshape   (1,nostat*minSampleCount)
-    traveltime = traveltime.reshape (1,nostat*dimX*dimY)
-    USE_C_CODE = True
-    try:
-        if USE_C_CODE :
-            import Cm
-            import CTrig
-            start_time = time.time()
-            k  = Cm.otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                          minSampleCount,latv,lonv,traveltime,traces)
-            print("--- %s seconds ---" % (time.time() - start_time))
-        else :
-            start_time = time.time()
-            k = otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltime,traces)                       #hs
-            print("--- %s seconds ---" % (time.time() - start_time))
-    except:
-        print "loaded tttgrid has probably wrong dimensions or stations, delete\
-                ttgrid or exchange"
+    traces = traces.reshape(1,nostat*minSampleCount)
+
+
+    traveltimes = traveltime.reshape(1,nostat*dimX*dimY)
+    TTTGrid = True
+    manual_shift = False
+
+    if manual_shift:
+
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+        backSemb = num.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
+        bf = BeamForming(stations, traces, normalize=True)
+
+        for i in range (ntimes) :
+            #  loop over grid points
+
+            sembmax = 0; sembmaxX = 0; sembmaxY = 0
+            for j in range (dimX * dimY):
+                print(j)
+                event = model.Event(lat=float(latv[j]), lon=float(lonv[j]), depth=ev.depth*1000., time=timeev)
+                directory = arrayfolder
+                shifted_traces, stack = bf.process(event=event,
+                                            timing=timing,
+                                            fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                            fn_beam=pjoin(directory, 'beam.mseed'))
+                tmin = stack.tmin+(i*nstep)+20
+                tmax = stack.tmin+(i*nstep)+60
+                stack.chop(tmin, tmax)
+                backSemb[i][j] = abs(sum(stack.ydata))
+                print(backSemb[i][j])
+            #    from pyrocko import trace as trld
+            #    trld.snuffle(stack)
+        k = backSemb
+        TTTGrid = False
+
+    if TTTGrid:
+        start_time = time.time()
+        if cfg.UInt ('forerun')>0:
+            ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+        else:
+            ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
+        nsamp = int(winlen)
+        nstep = int(step)
+        Gmint = cfg.Int('forerun')
+        k = semblance(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
+                  minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
+        print("--- %s seconds ---" %(time.time() - start_time))
 
     t2 = time.time()
 
+    Logfile.add('%s took %0.3f s' %('CALC:',(t2-t1)))
 
     partSemb = k
-
     partSemb_syn  = partSemb.reshape (ntimes,migpoints)
 
 
