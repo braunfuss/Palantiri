@@ -395,6 +395,8 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
 
 
     semb_cum = num.zeros(num.shape(i))
+    times_cum = num.zeros(num.shape(i))
+    times_min = num.zeros(num.shape(i))
 
 #    correct for array center bias
 #    for j in range(migpoints):
@@ -414,47 +416,63 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         sembmax  = 0
         sembmaxX = 0
         sembmaxY = 0
-
+        counter_time = 0
         uncert = num.std(i) #maybe not std?
         semb_cum =+ i
+
         for j in range(migpoints):
 
-            x= latv[j]
-            y= lonv[j]
+            x = latv[j]
+            y = lonv[j]
 
             if cfg.Bool('norm_all') is True:
                 semb = i[j]/norm
             else:
                 semb = i[j]
-            fobj.write('%.2f %.2f %.20f\n' %(x,y,semb))
+
+            if semb > semb_cum[j]:
+                times_cum[j] = times_cum[j]+a
+            fobj.write('%.2f %.2f %.20f\n' %(x, y, semb))
 
             if  semb > sembmax:
-                sembmax  = semb;
-                sembmaxX = x;
-                sembmaxY = y;
+                sembmax  = semb
+                sembmaxX = x
+                sembmaxY = y
+                counter_time = j
 
+        times_min[counter_time] = a
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-        azi   = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+        azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
-        sembmaxlatv[a]   = sembmaxX
-        sembmaxlonv[a]   = sembmaxY
+        sembmaxlatv[a] = sembmaxX
+        sembmaxlonv[a] = sembmaxY
         fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n' %(a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
         fobj.close()
 
-
     fobjsembmax.close()
 
-    fobj_cum  = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
-    for x,y,sembcums in zip(latv,lonv,semb_cum):
-        fobj_cum.write('%.2f %.2f %.20f\n' %(x,y,sembcums))
+    fobj_cum = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+    for x, y, sembcums in zip(latv, lonv, semb_cum):
+        fobj_cum.write('%.2f %.2f %.20f\n' % (x, y, sembcums))
     fobj_cum.close()
 
-    trigger.writeSembMaxValue(sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
+    fobj_timecum = open(os.path.join(folder,'times_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+    for x, y, timecum in zip(latv, lonv, times_cum):
+        fobj_timecum.write('%.2f %.2f %.20f\n' % (x, y, timecum))
+    fobj_timecum.close()
+
+    fobj_timemin = open(os.path.join(folder,'times_min_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+    for x, y, timexy in zip(latv, lonv, times_min):
+        fobj_timemin.write('%.2f %.2f %.20f\n' % (x, y, timexy))
+    fobj_timemin.close()
+
+    trigger.writeSembMaxValue(sembmaxvaluev,sembmaxlatv, sembmaxlonv, ntimes,
+                              Config, Folder)
 
     inspect_semb = cfg.Bool('inspect_semb')
     if inspect_semb is True:
-        trigger.semblancestalta(sembmaxvaluev,sembmaxlatv,sembmaxlonv)
+        trigger.semblancestalta(sembmaxvaluev, sembmaxlatv, sembmaxlonv)
     return sembmaxvaluev
 
 def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
