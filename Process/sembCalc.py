@@ -26,6 +26,7 @@ from semp import semblance
 from beam_stack import BeamForming
 from pyrocko.gf import STF
 from stacking import PWS_stack
+import copy
 # -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger('ARRAY-MP')
@@ -393,15 +394,15 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
     max_p = 0.
     sum_i = 0.
 
-
+    i = tmp[0]
     semb_cum = num.zeros(num.shape(i))
     times_cum = num.zeros(num.shape(i))
     times_min = num.zeros(num.shape(i))
-
 #    correct for array center bias
 #    for j in range(migpoints):
 #                latv[j] = latv[j]#+diff_center_lat
 #                lonv[j] = lonv[j]#+diff_center_lon
+    semb_prior = num.zeros(num.shape(i))
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
@@ -419,7 +420,6 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
         counter_time = 0
         uncert = num.std(i) #maybe not std?
         semb_cum =+ i
-
         for j in range(migpoints):
 
             x = latv[j]
@@ -429,9 +429,6 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
                 semb = i[j]/norm
             else:
                 semb = i[j]
-
-            if semb > semb_cum[j]:
-                times_cum[j] = times_cum[j]+a
             fobj.write('%.2f %.2f %.20f\n' %(x, y, semb))
 
             if  semb > sembmax:
@@ -440,10 +437,15 @@ def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_center
                 sembmaxY = y
                 counter_time = j
 
-        times_min[counter_time] = a
+        for l, sembp in enumerate(semb_prior):
+            if sembp > i[l]:
+                times_cum[l] = a
+                if times_min[l] == 0 and counter_time == l:
+                    times_min[l] = a
+
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
         azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
-
+        semb_prior = copy.copy(i)
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a] = sembmaxX
         sembmaxlonv[a] = sembmaxY
