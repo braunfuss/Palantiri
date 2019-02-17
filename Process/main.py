@@ -395,7 +395,7 @@ def processLoop():
                     Wd = waveform.readWaveforms_colesseo(FilterMeta, tw, evpath, ev, C)
                 else:
                     Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
-                if cfg.Bool('synthetic_test') is True:
+                if cfg.Bool('synthetic_test') is True or cfg.Bool('dynamic_filter') is True:
                     Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
                     Wdfs.extend(Wdf)
                 else:

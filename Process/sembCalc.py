@@ -292,7 +292,8 @@ def writeSembMatricesSingleArray(SembList,Config,Origin,arrayfolder,ntimes,switc
 
 # -------------------------------------------------------------------------------------------------
 
-def collectSemb(SembList,Config,Origin,Folder,ntimes,arrays,switch, array_centers):
+def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
+                array_centers):
     '''
     method to collect semblance matrizes from all processes and write them to file for each timestep
     '''
@@ -826,10 +827,11 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 trl.shift(shift)
 
         for tracex, trl in zip(calcStreamMap.iterkeys(), synthetic_traces):
-                        if switch == 0:
-                            trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
-                        elif switch == 1:
-                            trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
+                        if cfg.Bool('dynamic_filter') is False:
+                            if switch == 0:
+                                trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
+                            elif switch == 1:
+                                trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
                         calcStreamMap[tracex] = synthetic_obs_tr
 
@@ -1162,14 +1164,16 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if TTTGrid:
         start_time = time.time()
         if cfg.UInt ('forerun')>0:
-            ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+            ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration')) / cfg.UInt ('step'))
         else:
-            ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
+            ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step'))
         nsamp = int(winlen)
         nstep = int(step)
         Gmint = cfg.Int('forerun')
-        k = semblance(maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                  minSampleCount,latv,lonv,traveltimes,traces, calcStreamMap, timeev)
+
+        k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                      new_frequence, minSampleCount, latv, lonv, traveltimes,
+                      traces, calcStreamMap, timeev, Config, Origin)
         print("--- %s seconds ---" %(time.time() - start_time))
 
     t2 = time.time()

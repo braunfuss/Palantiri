@@ -143,6 +143,7 @@ class ConfigObj(object):
     def colosseo_scenario_yml(self):       return self.Str('colosseo_scenario_yml')
     def weight_by_noise(self): return self.Bool('weight_by_noise')
     def norm_all(self): return self.Bool('norm_all')
+    def dynamic_filter(self): return self.Bool('dynamic_filter')
 
     # ---------------------------------------------------------------------------------------------
 

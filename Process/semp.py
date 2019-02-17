@@ -7,10 +7,11 @@ from obspy.signal.headers import clibsignal
 from obspy import Stream, Trace
 # add local directories to import path
 sys.path.append ('../Common/')
+from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 
-import numpy as np          #    Import from NumPy
+import numpy as np
 
-import Logfile              #    Import from common
+import Logfile
 import Basic
 import ctypes as C
 
@@ -85,18 +86,119 @@ def toMatrix(npVector, nColumns):
     return mat
 
 
-def semblance (ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
-               latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
+def semblance (ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+               new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
+               trace_1, calcStreamMap, time, Config, Origin):
 
-       return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
-                           mint, new_frequence, minSampleCount, latv_1, lonv_1,
-                           traveltime_1, trace_1, calcStreamMap, time)
+        cfg = ConfigObj(dict=Config)
+        origin = OriginCfg(Origin)
+        cfg_f = FilterCfg(Config)
+
+        if cfg.Bool('dynamic_filter') is False:
+
+           return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                               mint, new_frequence, minSampleCount, latv_1,
+                               lonv_1, traveltime_1, trace_1, calcStreamMap,
+                               time)
+        else:
+           return semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep,
+                                          dimX, dimY, mint, new_frequence,
+                                          minSampleCount, latv_1, lonv_1,
+                                          traveltime_1, trace_1, calcStreamMap,
+                                          time, origin, cfg_f)
+
 
 def t2ind_fast(t, tdelta, snap=round):
     return int(int((t/tdelta)*(10**0))/(10.**0))
 
 def t2ind(t, tdelta, snap=round):
     return int(snap(t/tdelta))
+
+
+def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                            mint, new_frequence, minSampleCount, latv_1, lonv_1,
+                            traveltime_1, trace_1, calcStreamMap, time,
+                            origin, FilterCfg):
+
+    from pyrocko import obspy_compat
+    obspy_compat.plant()
+    trs_orgs  = []
+    for tr in calcStreamMap:
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+        trs_orgs.append(tr_org)
+    trace  = toMatrix (trace_1, minSampleCount)
+    traveltime = []
+    traveltime = toMatrix (traveltime_1, dimX * dimY)
+
+    latv   = latv_1.tolist()
+    lonv   = lonv_1.tolist()
+
+    '''
+    Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
+    Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
+    Basic.writeVector (latv_txt,   latv, '%e')
+    Basic.writeVector (lonv_txt,   lonv, '%e')
+    '''
+    snap= (round, round)
+    backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
+    for i in range (ntimes) :
+        #  loop over grid points
+        sembmax = 0; sembmaxX = 0; sembmaxY = 0
+
+        for j in range (dimX * dimY):
+            semb = 0; nomin = 0; denom = 0
+            sums_cc = 0
+            sums = 0
+            shifted = []
+            relstart = []
+            relstarts = nostat
+            cc_data = []
+            tt = []
+
+            for k in range (nostat):
+                relstart = traveltime[k][j]
+                tr = trs_orgs[k]
+                tmin = time+relstart+(i*nstep)-mint
+                tmax = time+relstart+(i*nstep)-mint+nsamp
+                from matplotlib import pylab as plt
+                #plt.plot(traveltime[k][:])
+                #plt.show()
+                try:
+                    ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+                    iend = min(
+                        tr.data_len(),
+                        t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
+                except:
+                    print('Loaded traveltime grid wrong!')
+
+                data = tr.ydata[ibeg:iend]
+                try:
+                    sums += ((data)) ##put gradient on top
+                except:
+                    pass
+                relstarts -= (relstart)
+            #for dat in cc_data:
+            #    sums_cc +=xcorr(cc_data[0],dat,0)[1]
+            sum = abs(num.sum(((sums))))
+            #sum = sums_cc
+            denom = sum**2
+            nomin = sum
+            semb = sum
+
+            backSemb[i][j] = sum
+            if semb > sembmax :
+
+               sembmax  = semb   # search for maximum and position of maximum on semblance
+                                 # grid for given time step
+               sembmaxX = latv[j]
+               sembmaxY = lonv[j]
+
+        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                     str(sembmaxX)+','+ str (sembmaxY))
+
+    backSemb = backSemb#/num.max(num.max(backSemb))
+    return abs(backSemb)
 
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
                latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
