@@ -1297,6 +1297,83 @@ def plot_semb():
     except:
         pass
 
+def blobify():
+    if len(sys.argv)<3:
+        print("missing input arrayname")
+    else:
+        if sys.argv[3] == 'combined':
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+
+            data = num.loadtxt(relstart+'sembcum', delimiter=' ', skiprows=5)
+            import matplotlib.patches as mpatches
+
+            from skimage import data
+            from skimage.filters import threshold_otsu
+            from skimage.segmentation import clear_border
+            from skimage.measure import label, regionprops
+            from skimage.morphology import closing, square
+            from skimage.color import label2rgb
+
+
+            image = data[:,2]
+
+            # apply threshold
+            thresh = threshold_otsu(image)
+            bw = closing(image > thresh, square(3))
+
+            # remove artifacts connected to image border
+            cleared = clear_border(bw)
+
+            # label image regions
+            label_image = label(cleared)
+            image_label_overlay = label2rgb(label_image, image=image)
+
+            fig, ax = plt.subplots(figsize=(10, 6))
+            ax.imshow(image_label_overlay)
+            polygons = []
+            for region in regionprops(label_image):
+                # take regions with large enough areas
+                if region.area >= 100:
+                    # draw rectangle around segmented coins
+                    minr, minc, maxr, maxc = region.bbox
+                    rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
+                                              fill=False, edgecolor='red', linewidth=2)
+                    ax.add_patch(rect)
+                    polygons.append(Polygon((minc,maxc), (maxr,minr))
+            ax.set_axis_off()
+            plt.tight_layout()
+            plt.show()
+
+            #load time for labeling
+            for pe, pn in zip(es_list, ns_list):
+                point = Point(pn, pe)
+                if polygon.contains(point) is True or \
+
+            pathlist = Path(rel).glob('0-*.ASC')
+            maxs = 0.
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    max = np.max(data[:, 2])
+                    counter =+ 1
+                    if maxs < max:
+                        maxs = max
+                        datamax = data[:, 2]
+
+            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
+            data_int = num.zeros(num.shape(data[:, 2]))
+            data_old = num.zeros(num.shape(data[:, 2]))
+            time_grid = num.zeros(num.shape(data[:, 2]))
+            counter = 0.
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    data_int += np.nan_to_num(data[:,2])
+                    for i in range(0, num.shape(data[:, 2])[0]):
+                        if data[i,2] >= data_old[i]:
+                            time_grid[i] = time_grid[i]+counter
+                    data_old = np.nan_to_num(data[:,2])
+                    counter =+ 1
 
 def plot_scatter():
     if len(sys.argv)<3:
@@ -1509,5 +1586,7 @@ else:
         plot_scatter()
     elif sys.argv[2] == 'beampower':
         beampower()
+    elif sys.argv[2] == 'blobify':
+        blobify()
     elif sys.argv[2] == 'inspect_spectrum':
         inspect_spectrum()
