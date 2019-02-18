@@ -431,18 +431,16 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
             else:
                 semb = i[j]
             fobj.write('%.2f %.2f %.20f\n' %(x, y, semb))
-
-            if  semb > sembmax:
-                sembmax  = semb
+            if semb_prior[j] <= semb:
+                times_cum[j] = a
+            if semb > sembmax:
+                sembmax = semb
                 sembmaxX = x
                 sembmaxY = y
-                counter_time = j
+                if times_min[j] == 0:
+                    times_min[j] = a
 
-        for l, sembp in enumerate(semb_prior):
-            if sembp > i[l]:
-                times_cum[l] = a
-                if times_min[l] == 0 and counter_time == l:
-                    times_min[l] = a
+
 
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
         azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
