@@ -1351,11 +1351,20 @@ def blobify():
             plt.tight_layout()
             plt.show()
 
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+
+            data_time = num.loadtxt(rel+'times_cum_0_8.7.ASC', delimiter=' ')
             #load time for labeling
-            for pe, pn in zip(es_list, ns_list):
-                point = Point(pn, pe)
-                if polygon.contains(point) is True:
-                    print('yes')
+            labels = []
+            for polygon in polygons:
+                l = 0
+                for pe, pn in zip(data_time[:,0], data_time[:,1]):
+                    point = Point(pn, pe)
+
+                    if polygon.contains(point) is True:
+                        labels.append(data_time[l,2])
+                    l =+1
+                    polygon.label= num.mean(labels)
 
 
 def plot_scatter():
