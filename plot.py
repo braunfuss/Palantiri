@@ -1302,12 +1302,19 @@ def blobify():
         print("missing input arrayname")
     else:
         if sys.argv[3] == 'combined':
+
+            evpath = 'events/'+ str(sys.argv[1])
+            C  = config.Config (evpath)
+            Config = C.parseConfig ('config')
+            cfg = ConfigObj (dict=Config)
+            dimx = cfg.UInt ('dimx')
+            dimy = cfg.UInt ('dimy')
+
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
 
-            data = num.loadtxt(relstart+'sembcum', delimiter=' ', skiprows=5)
+            data = num.loadtxt(rel+'semb_cum_0_8.7.ASC', delimiter=' ')
             import matplotlib.patches as mpatches
 
-            from skimage import data
             from skimage.filters import threshold_otsu
             from skimage.segmentation import clear_border
             from skimage.measure import label, regionprops
@@ -1316,7 +1323,7 @@ def blobify():
 
 
             image = data[:,2]
-
+            image = num.reshape(image, (dimx, dimy))
             # apply threshold
             thresh = threshold_otsu(image)
             bw = closing(image > thresh, square(3))
@@ -1339,7 +1346,7 @@ def blobify():
                     rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
                                               fill=False, edgecolor='red', linewidth=2)
                     ax.add_patch(rect)
-                    polygons.append(Polygon((minc,maxc), (maxr,minr))
+                    polygons.append(Polygon((minc,maxc), (maxr,minr)))
             ax.set_axis_off()
             plt.tight_layout()
             plt.show()
@@ -1347,33 +1354,9 @@ def blobify():
             #load time for labeling
             for pe, pn in zip(es_list, ns_list):
                 point = Point(pn, pe)
-                if polygon.contains(point) is True or \
+                if polygon.contains(point) is True:
+                    print('yes')
 
-            pathlist = Path(rel).glob('0-*.ASC')
-            maxs = 0.
-            for path in sorted(pathlist):
-                    path_in_str = str(path)
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    max = np.max(data[:, 2])
-                    counter =+ 1
-                    if maxs < max:
-                        maxs = max
-                        datamax = data[:, 2]
-
-            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
-            data_int = num.zeros(num.shape(data[:, 2]))
-            data_old = num.zeros(num.shape(data[:, 2]))
-            time_grid = num.zeros(num.shape(data[:, 2]))
-            counter = 0.
-            for path in sorted(pathlist):
-                    path_in_str = str(path)
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    data_int += np.nan_to_num(data[:,2])
-                    for i in range(0, num.shape(data[:, 2])[0]):
-                        if data[i,2] >= data_old[i]:
-                            time_grid[i] = time_grid[i]+counter
-                    data_old = np.nan_to_num(data[:,2])
-                    counter =+ 1
 
 def plot_scatter():
     if len(sys.argv)<3:
