@@ -1,12 +1,6 @@
-#
-#             Semantic of config file entries
-#
 import os
 
 from ConfigParser import SafeConfigParser
-
-#      Imports from Common
-
 import Globals                     # Own global data
 import Basic                       # Own module with basic functions
 import Logfile                     # Implements logfile
@@ -32,7 +26,7 @@ class ConfigObj(object):
     # --------------------------------------------------------------------------------------------
 
     def Str(self, key, default=None):
-        return self.String(key, default)                # zur Verkuerzung von Ausdruecken
+        return self.String(key, default)              
 
     def String(self, key, default=None):
 

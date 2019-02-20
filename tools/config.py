@@ -165,10 +165,7 @@ class Config(object):
 
         return FML
 
-
-
-
-    def checkMetaInfoFile(self,MetaList):
+    def checkMetaInfoFile(self ,MetaList):
 
         ML = []
         DL = []
@@ -233,31 +230,19 @@ class Config(object):
         return Folder
 
 
-    def cpSkeleton(self,FolderDict,ConfigDict):
-        '''
-        method to copy skeleton scripts(plotting) to event folder
-        '''
-        logger.info('\033[31m Copy plotting scripts \033[0m \n')
-
-        cpf = ConfigDict['plotcopy'].split(',')
-        for i in cpf:
-            if os.access(os.getcwd(), os.W_OK):
-                try:
-                    shutil.copy2(os.path.join(FolderDict['config'],ConfigDict[i]),os.path.join(FolderDict['semb'],ConfigDict[i]))
-                except:
-                    logger.info('\033[31m Copy processing scripts Error \033[0m \n')
-                    continue
-
-
     def writeConfig(self,Config,Origin,Folder):
         '''
         method to write recently used config to event folder
         '''
-        fobj = open(os.path.join(Folder['semb'],'stations_0.cfg'),'w')
-        fobj.write('%source: '+Origin['lat']+' '+Origin['lon']+' '+Origin['depth']+' '+Origin['time']+'\n')
-        for i in Config:
-            fobj.write('%'+i+': '+Config[i]+'\n')
-        fobj.close()
+        dst_dir= os.path.join(Folder['semb'],'config_file.cfg')
+
+        files  = glob.glob(os.path.join(self.eventpath,'*.'+'config'))
+        parser = SafeConfigParser()
+        src_file = parser.read(files[0])
+
+        shutil.copy(src_file[0],dst_dir)
+
+
 
 
     def writeStationFile(self,StationMetaData,Folder,flag):
