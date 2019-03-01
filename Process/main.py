@@ -336,13 +336,15 @@ def processLoop():
                 t1 = time.time()
 
 
-                isParallel = False                          #10.12.2015
+                isParallel = False
                 TTTGridMap = []
                 mint = []
                 maxt = []
+                ttt_model = cfg.Str('traveltime_model')
+
                 try:
-                    f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'rb')
-                    print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
+                    f = open('../tttgrid/tttgrid%s_%s_%s_%s.pkl' % (ttt_model,ev.time, arrayname, workdepth), 'rb')
+                    print "loading travel time grid%s_%s_%s_%s.pkl" % (ttt_model, ev.time, arrayname, workdepth)
                     TTTGridMap,mint,maxt = pickle.load(f)
                     f.close()
                     print "loading of travel time grid sucessful"
@@ -369,7 +371,7 @@ def processLoop():
 
                     TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
                     mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
-                    f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'wb')
+                    f = open('../tttgrid/tttgrid%s_%s_%s_%s.pkl' % (ttt_model,ev.time, arrayname, workdepth), 'wb')
                     print "dumping the traveltime grid for this array"
                     pickle.dump([TTTGridMap,mint,maxt], f)
                     f.close()
@@ -406,7 +408,7 @@ def processLoop():
                 Logfile.red ('%d Streams added for Processing' % (len(Wd)))
 
                 t1= time.time()
-                f = open('../tttgrid/tttgrid_%s_%s_%s.pkl' % (ev.time, arrayname, workdepth), 'rb')
+                f = open('../tttgrid/tttgrid%s_%s_%s_%s.pkl' % (ttt_model, ev.time, arrayname, workdepth), 'rb')
                 print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
                 TTTGridMap,mint,maxt = pickle.load(f)
                 f.close()

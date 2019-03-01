@@ -26,7 +26,7 @@ class ConfigObj(object):
     # --------------------------------------------------------------------------------------------
 
     def Str(self, key, default=None):
-        return self.String(key, default)              
+        return self.String(key, default)
 
     def String(self, key, default=None):
 
@@ -106,6 +106,7 @@ class ConfigObj(object):
     def Freq(self, key, maxVal = 1000):      return self.UFloat(key, maxVal)
     def Duration(self, key='duration'):          return self.UInt(key)
     def Time(self, key='time'):              return self.String(key)
+    def traveltime_model(self):       return self.Str('traveltime_model')
 
     def lat (self):       return self.Float('lat')        # ??? range einbauen
     def lon (self):       return self.Float('lon')        # ???

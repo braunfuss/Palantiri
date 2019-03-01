@@ -153,6 +153,7 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
     dimX= cfg.Int('dimx')
     dimY= cfg.Int('dimy')
     gridspacing = cfg.Float('gridspacing')
+    traveltime_model = cfg.Str('traveltime_model')
 
     o_lat   = float(Origin['lat'])
     o_lon   = float(Origin['lon'])
@@ -170,7 +171,7 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
     locStation = Location (station.lat, station.lon)
     sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
     Phase = cake.PhaseDef(Config[phasename])
-    model = cake.load_model()
+    model = cake.load_model('../data/'+traveltime_model)
 
     z = 0
     if plane is True:
