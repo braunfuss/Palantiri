@@ -40,7 +40,10 @@ def deserializeTTT(numproc):
         TTTGridMap = OrderedDict()
 
         for i in L:
-            for j in i.iterkeys(): TTTGridMap[j] = i[j]
+            if sys.version_info.major >= 3:
+                for j in sorted(i.keys()) : TTTGridMap[j] = i[j]
+            else:
+                for j in i.iterkeys(): TTTGridMap[j] = i[j]
 
         return TTTGridMap
 
@@ -59,9 +62,6 @@ def deserializeMinTMaxT(numproc):
         mint = min([x.mint for x in L])
         maxt = max([x.maxt for x in L])
 
-#        for i in range(numproc):
- #           os.remove('minmax-'+str(i)+'.pkl')
-
         return mint,maxt
 
 # -------------------------------------------------------------------------------------------------
@@ -79,7 +79,10 @@ def deserializeSembDict(numproc):
         sembDict = OrderedDict()
 
         for i in L:
-            for j in i.iterkeys(): sembDict[j] = i[j]
+            if sys.version_info.major >= 3:
+                for j in sorted(i.keys()) : sembDict[j] = i[j]
+            else:
+                for j in i.iterkeys(): sembDict[j] = i[j]
 
         return sembDict
 

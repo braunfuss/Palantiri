@@ -9,6 +9,7 @@ import multiprocessing
 from   optparse import OptionParser
 if sys.version_info.major >= 3:
     import _pickle as pickle
+    xrange = range
 else:
     import cPickle as pickle
 
@@ -171,9 +172,16 @@ def processLoop():
             Logfile.add ('file exits : ' + rp)
             Logfile.add ('load refshifts')
 
-            f= open(rp)
+            if sys.version_info.major >= 3:
+                f= open(rp, 'rb')
+            else:
+                f= open(rp)
+
             RefDict   = pickle.load(f)
-            x= open(ps)
+            if sys.version_info.major >= 3:
+                x= open(ps, 'rb')
+            else:
+                x= open(ps)
             XDict= pickle.load(x)
             xcorrnetworks = cfg.String ('networks').split(',')
 
@@ -203,67 +211,79 @@ def processLoop():
                 RefDict[i] = triggerobject.tdiff
                 SL[i]  = len(network)
 
-            fobjrefshift = open (rp,'w')
+            if sys.version_info.major >= 3:
+                fobjrefshift = open (rp,'wb')
+            else:
+                fobjrefshift = open (rp,'w')
             pickle.dump(RefDict,fobjrefshift)
             fobjrefshift.close()
 
-            output = open (ps, 'w')
+            if sys.version_info.major >= 3:
+                output = open (ps, 'wb')
+            else:
+                output = open (ps, 'w')
             pickle.dump(XDict, output)
             output.close()
-
-        for i in sorted (XDict.iterkeys()) :
-            Logfile.red ('Array %s has %3d of %3d Stations left' % (i,len(XDict[i]),SL[i]))
+        if sys.version_info.major >= 3:
+            for i in sorted (XDict.keys()) :
+                Logfile.red ('Array %s has %3d of %3d Stations left' % (i,len(XDict[i]),SL[i]))
+        else:
+            for i in sorted (XDict.iterkeys()) :
+                Logfile.red ('Array %s has %3d of %3d Stations left' % (i,len(XDict[i]),SL[i]))
 
         logger.info ('\033[31mFor proceeding without changes press enter or give new comma seperatet network list or quit for exit\033[0m')
 
-        while True :
-           nnl = raw_input ("please enter your choice: ")
+        while True:
+            if sys.version_info.major >= 3:
+                nnl = input("please enter your choice: ")
+            else:
+                nnl = raw_input ("please enter your choice: ")
 
-           if len(nnl) == 0:
-              if not Basic.question ('Process all networks ?') : continue
+            if len(nnl) == 0:
+                if not Basic.question ('Process all networks ?') : continue
 
-              Logfile.red ('This networks will be used for processing: %s' % (Config['networks']))
-              break
+                Logfile.red ('This networks will be used for processing: %s' % (Config['networks']))
+                break
 
-           elif str(nnl) == 'quit':
-               sys.exit()
+            elif str(nnl) == 'quit':
+                sys.exit()
 
-           elif str(nnl) == 'rerun':
-               event = os.path.join (*evpath.split('/')[-1:])
+            elif str(nnl) == 'rerun':
+                event = os.path.join(*evpath.split('/')[-1:])
 
-               try:
+                try:
                    os.remove(rp)
                    os.remove(ps)
 
-               except : pass
+                except : pass
 
-               mainfolder = os.path.join (os.path.sep,*evpath.split('/')[:-2])
-               os.chdir (mainfolder)
+                mainfolder = os.path.join (os.path.sep,*evpath.split('/')[:-2])
+                os.chdir(mainfolder)
 
-               cmd = ('%s arraytool.py process %s') % (sys.executable,event)
-               Logfile.add ('cmd = ' + cmd)
-               os.system (cmd)
-               sys.exit()
+                cmd = ('%s arraytool.py process %s') % (sys.executable,event)
+                Logfile.add ('cmd = ' + cmd)
+                os.system (cmd)
+                sys.exit()
 
-           else:
+            else:
 
-               names = nnl.split (',')
-               isOk  = True
+                names = nnl.split(',')
+                isOk = True
 
-               for array in names :
+                for array in names :
                    arrayfolder = os.path.join (Folder['semb'], array)
 
                    if not os.path.isdir (arrayfolder) :
                       Logfile.error ('Illegal network name ' + str(array))
                       isOk = False
                       break
-               if not isOk :  continue   # Illegal network : input again
+                if not isOk :  continue   # Illegal network : input again
 
-               Logfile.add ('This networks will be used for processing: %s' % (nnl))
-               Config ['networks'] = nnl
-               break
+                Logfile.add ('This networks will be used for processing: %s' % (nnl))
+                Config ['networks'] = nnl
+                break
 
-        for i in range(3,0,-1):
+        for i in range(3, 0, -1):
             time.sleep(1)
             Logfile.red ('Start processing in %d seconds ' % (i))
 

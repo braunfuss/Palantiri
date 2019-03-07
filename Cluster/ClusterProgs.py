@@ -10,7 +10,6 @@ sys.path.append('../Common/')
 
 import Basic
 import Globals
-import NewVersion
 
 def Usage():
     return 'arraytool.py cluster event_name [automatic array clustering and print arrayconfig]'
@@ -28,8 +27,6 @@ class Intern(object):
     def checkProgramParameter(self, nMinParams, nMaxParams):
 
         eventName = sys.argv[2]
-
-        NewVersion.check()                                        # Check if software version(s) ok
 
         if len(sys.argv) < nMinParams: self.error('event name missing')
         if len(sys.argv) > nMaxParams: self.error('Too many parameters')

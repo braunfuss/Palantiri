@@ -6,6 +6,7 @@ sys.path.append('../Common/')
 
 if sys.version_info.major >= 3:
     import _pickle as pickle
+    xrange = range
 else:
     import cPickle as pickle
 from config import Station

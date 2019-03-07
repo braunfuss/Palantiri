@@ -27,6 +27,8 @@ from beam_stack import BeamForming
 from pyrocko.gf import STF
 from stacking import PWS_stack
 import copy
+if sys.version_info.major >= 3:
+    xrange = range
 # -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger('ARRAY-MP')
@@ -651,34 +653,59 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     lats = []
     lons = []
     if cfg.Bool('synthetic_test') is False:
-
-        for trace in calcStreamMap.iterkeys():
-            py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-            py_trs.append(py_tr)
-            for il in FilterMetaData:
-                if str(il) == str(trace):
-                        szo = model.Station(lat=float(il.lat), lon=float(il.lon),
-                                            station=il.sta, network=il.net,
-                                            channels=py_tr.channel,
-                                            elevation=il.ele, location=il.loc)
-                        stations.append(szo)
-                        lats.append(float(il.lat))
-                        lons.append(float(il.lon))
+        if sys.version_info.major >= 3:
+            for trace in sorted(calcStreamMap.keys()):
+                py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+                py_trs.append(py_tr)
+                for il in FilterMetaData:
+                    if str(il) == str(trace):
+                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                                station=il.sta, network=il.net,
+                                                channels=py_tr.channel,
+                                                elevation=il.ele, location=il.loc)
+                            stations.append(szo)
+                            lats.append(float(il.lat))
+                            lons.append(float(il.lon))
+        else:
+            for trace in calcStreamMap.iterkeys():
+                py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+                py_trs.append(py_tr)
+                for il in FilterMetaData:
+                    if str(il) == str(trace):
+                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                                station=il.sta, network=il.net,
+                                                channels=py_tr.channel,
+                                                elevation=il.ele, location=il.loc)
+                            stations.append(szo)
+                            lats.append(float(il.lat))
+                            lons.append(float(il.lon))
         array_center = [num.mean(lats), num.mean(lons)]
 
 #==================================synthetic BeamForming======================
 
     if cfg.Bool('synthetic_test') is True:
-        for trace in calcStreamMap.iterkeys():
-            for il in FilterMetaData:
-                if str(il) == str(trace):
-                        szo = model.Station(lat=float(il.lat), lon=float(il.lon),
-                                            station=il.sta, network=il.net,
-                                            channels='BHZ',
-                                            elevation=il.ele, location=il.loc)
-                        stations.append(szo)
-                        lats.append(float(il.lat))
-                        lons.append(float(il.lon))
+        if sys.version_info.major >= 3:
+            for trace in sorted(calcStreamMap.keys()):
+                for il in FilterMetaData:
+                    if str(il) == str(trace):
+                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                                station=il.sta, network=il.net,
+                                                channels='BHZ',
+                                                elevation=il.ele, location=il.loc)
+                            stations.append(szo)
+                            lats.append(float(il.lat))
+                            lons.append(float(il.lon))
+        else:
+            for trace in calcStreamMap.iterkeys():
+                for il in FilterMetaData:
+                    if str(il) == str(trace):
+                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                                station=il.sta, network=il.net,
+                                                channels='BHZ',
+                                                elevation=il.ele, location=il.loc)
+                            stations.append(szo)
+                            lats.append(float(il.lat))
+                            lons.append(float(il.lon))
         array_center = [num.mean(lats), num.mean(lons)]
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
@@ -700,7 +727,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         if syn_in.nsources() == 1:
             if syn_in.use_specific_stf() is True:
                 stf = syn_in.stf()
-                exec(stf)
+                stf = exec(stf)
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
@@ -753,7 +780,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             for i in range(syn_in.nsources()):
                 if syn_in.use_specific_stf() is True:
                     stf = syn_in.stf()
-                    exec(stf)
+                    stf = exec(stf)
 
                 else:
                     stf = STF()
@@ -828,7 +855,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 shift = num.random.uniform(-shift_max,shift_max)
                 trl.shift(shift)
 
-        for tracex, trl in zip(calcStreamMap.iterkeys(), synthetic_traces):
+        if sys.version_info.major >= 3:
+            for tracex, trl in zip(sorted(calcStreamMap.keys()), synthetic_traces):
                         if cfg.Bool('dynamic_filter') is False:
                             if switch == 0:
                                 trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
@@ -836,6 +864,15 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                 trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
                         calcStreamMap[tracex] = synthetic_obs_tr
+        else:
+            for tracex, trl in zip(calcStreamMap.iterkeys(), synthetic_traces):
+                            if cfg.Bool('dynamic_filter') is False:
+                                if switch == 0:
+                                    trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
+                                elif switch == 1:
+                                    trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
+                            synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
+                            calcStreamMap[tracex] = synthetic_obs_tr
 
     if cfg.Bool('shift_by_phase_pws') is True:
         calcStreamMapshifted= calcStreamMap.copy()
@@ -963,14 +1000,22 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         timestemp = results[0]
         relative_relpow = results[1]
         absolute_relpow = results[2]
+    if sys.version_info.major >= 3:
+        for trace in sorted(calcStreamMap.keys()):
+            recordstarttime = calcStreamMap[trace].stats.starttime
+            d = calcStreamMap[trace].stats.starttime
+            d = d.timestamp
 
-    for trace in calcStreamMap.iterkeys():
-        recordstarttime = calcStreamMap[trace].stats.starttime
-        d = calcStreamMap[trace].stats.starttime
-        d = d.timestamp
+            if calcStreamMap[trace].stats.npts < minSampleCount:
+                minSampleCount = calcStreamMap[trace].stats.npts
+    else:
+        for trace in calcStreamMap.iterkeys():
+            recordstarttime = calcStreamMap[trace].stats.starttime
+            d = calcStreamMap[trace].stats.starttime
+            d = d.timestamp
 
-        if calcStreamMap[trace].stats.npts < minSampleCount:
-            minSampleCount = calcStreamMap[trace].stats.npts
+            if calcStreamMap[trace].stats.npts < minSampleCount:
+                minSampleCount = calcStreamMap[trace].stats.npts
 
     ###########################################################################
 
@@ -984,44 +1029,82 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     c=0
     streamCounter = 0
+    if sys.version_info.major >= 3:
+        for key in sorted(calcStreamMap.keys()):
+            streamID = key
+            c2   = 0
 
-    for key in calcStreamMap.iterkeys():
-        streamID = key
-        c2   = 0
+            for o in calcStreamMap[key]:
+                if c2 < minSampleCount:
+                    traces[c][c2] = o
 
-        for o in calcStreamMap[key]:
-            if c2 < minSampleCount:
-                traces[c][c2] = o
+                    c2 += 1
 
-                c2 += 1
+            for key in sorted(TTTGridMap.keys()):
+
+                if streamID == key:
+                    traveltimes[streamCounter] = TTTGridMap[key]
+                else:
+                    "NEIN", streamID, key
+
+            if not streamCounter in traveltimes :
+               continue
+
+            g = traveltimes[streamCounter]
+            dimZ = g.dimZ
+            mint = g.mint
+            gridElem = g.GridArray
+
+            for x in range(dimX):
+                for y in range(dimY):
+                    elem = gridElem[x, y]
+
+                    traveltime [c][x * dimY + y] = elem.tt
+                    latv [x * dimY + y] = elem.lat
+                    lonv [x * dimY + y] = elem.lon
+            #endfor
+
+            c += 1
+            streamCounter += 1
+
+    else:
+        for key in calcStreamMap.iterkeys():
+            streamID = key
+            c2   = 0
+
+            for o in calcStreamMap[key]:
+                if c2 < minSampleCount:
+                    traces[c][c2] = o
+
+                    c2 += 1
 
 
-        for key in TTTGridMap.iterkeys():
+            for key in TTTGridMap.iterkeys():
 
-            if streamID == key:
-                traveltimes[streamCounter] = TTTGridMap[key]
-            else:
-                "NEIN", streamID, key
+                if streamID == key:
+                    traveltimes[streamCounter] = TTTGridMap[key]
+                else:
+                    "NEIN", streamID, key
 
-        if not streamCounter in traveltimes :
-           continue
+            if not streamCounter in traveltimes :
+               continue
 
-        g = traveltimes[streamCounter]
-        dimZ = g.dimZ
-        mint = g.mint
-        gridElem = g.GridArray
+            g = traveltimes[streamCounter]
+            dimZ = g.dimZ
+            mint = g.mint
+            gridElem = g.GridArray
 
-        for x in range(dimX):
-            for y in range(dimY):
-                elem = gridElem[x, y]
+            for x in range(dimX):
+                for y in range(dimY):
+                    elem = gridElem[x, y]
 
-                traveltime [c][x * dimY + y] = elem.tt
-                latv [x * dimY + y] = elem.lat
-                lonv [x * dimY + y] = elem.lon
-        #endfor
+                    traveltime [c][x * dimY + y] = elem.tt
+                    latv [x * dimY + y] = elem.lat
+                    lonv [x * dimY + y] = elem.lon
+            #endfor
 
-        c += 1
-        streamCounter += 1
+            c += 1
+            streamCounter += 1
 
     #endfor
 

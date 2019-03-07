@@ -499,7 +499,6 @@ def inspect_spectrum():
         traces = io.load(rel+'traces.mseed')
         stations = model.load_stations(rel+'stations.txt')
         earth = cake.load_model('ak135-f-continental.m')
-        print event.depth
         for tr in traces:
             for st in stations:
                 if tr.station == st.station and tr.location == st.location:
@@ -546,7 +545,6 @@ def plot_integrated():
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
                     path_in_str = str(path)
-                    print(path_in_str)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     i = 0
                     for k in np.nan_to_num(data[:,2]):

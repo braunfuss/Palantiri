@@ -355,8 +355,11 @@ def copyFile(srcFile, destFile, isAbort=False):
 
 
 def dumpToFile(fileName, anyData):
+    if sys.version_info.major >= 3:
+        output = open(fileName, 'wb')
+    else:
+        output = open(fileName, 'wb')
 
-    output  = open(fileName, 'w')
     pickle.dump(anyData, output)
     output.close()
 
@@ -368,7 +371,10 @@ def loadDump(fileName):
        Logfile.fileOpenError(fileName)
        return None
 
-    f= open(fileName)
+    if sys.version_info.major >= 3:
+        f= open(fileName, 'rb')
+    else:
+        f= open(fileName)
     data = pickle.load(f)
     f.close()
     os.remove(fileName)
@@ -540,14 +546,24 @@ def readUrl2(pythonScript, pythonScript_2):
 def question(text):
 
     while True:
-       c = raw_input(text + ' <y/n>:')
-       c = c.lower()
+        if sys.version_info.major >= 3:
+            c = input(text + ' <y/n>:')
+            c = c.lower()
 
-       print('c=<' + c + '>')
+            print('c=<' + c + '>')
 
-       if   c == 'y': return True
-       elif c == 'n': return False
-       else:          continue
+            if   c == 'y': return True
+            elif c == 'n': return False
+            else:          continue
+        else:
+            c = raw_input(text + ' <y/n>:')
+            c = c.lower()
+
+            print('c=<' + c + '>')
+
+            if   c == 'y': return True
+            elif c == 'n': return False
+            else:          continue
 
 # -------------------------------------------------------------------------------------------------
 def getUserName():

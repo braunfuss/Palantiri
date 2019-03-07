@@ -1,17 +1,14 @@
-
 import os
 import sys
-#import imp
 import obspy.core
 
 # add local directories to import path
-                    
+
 sys.path.append('Common/')
 
 #      Import from Common
 
 import Globals
-import NewVersion
 
 
 def Usage(action): return 'arraytool.py ' + action + ' event_name'
@@ -30,13 +27,12 @@ class Intern(object):
 
         eventName = sys.argv[2]
 
-        NewVersion.check()                                        # Check if software version(s) ok
 
         if len(sys.argv) < nMinParams: self.error('event name missing')
         if len(sys.argv) > nMaxParams: self.error('Too many parameters')
 
         if not Globals.checkEventDirParameter(eventName):          # Exists event directory ?
-           
+
            s =  'Invalid parameter - <' + eventName +'>'
            s += '\n        '
            s += 'Cannot find directory ' + Globals.EventDir()
@@ -53,29 +49,29 @@ def buildCommand(config):
     intern = Intern(action)
 
     if action == 'getstations':
-       
-        #  python arraytool.py(0)  getmeta(1) <event dir>(2)  
-         
+
+        #  python arraytool.py(0)  getmeta(1) <event dir>(2)
+
         intern.checkProgramParameter(3,3)
 
         at   = os.path.join(os.getcwd(), dir, 'getStationList.py')
         cmd  = sys.executable + ' ' + at + ' -f ' + Globals.EventDir()
-        
+
     elif action == 'getdata':
-        
+
         #  python arraytool.py(0)  getdata(1) <event dir>(2)  [network(3)]
-         
+
         intern.checkProgramParameter(3,4)
 
         at   = os.path.join(os.getcwd(), dir, 'getStationWaveformData.py')
         cmd  = sys.executable + ' ' + at + ' -f ' + Globals.EventDir()
-        
+
         if len(sys.argv) > 3:  cmd +=(' -n ' + sys.argv[3])                # specific network
 
     elif action == 'getmeta':
-        
+
         #  python arraytool.py(0)  getmeta(1) <event dir>(2)  [network(3)]
-         
+
         intern.checkProgramParameter(3,4)
 
         path   = Globals.EventDir()                                          # event directory
@@ -86,13 +82,13 @@ def buildCommand(config):
         d   = obspy.core.utcdatetime.UTCDateTime(Origin['time'])
         jd  = "%03d" % d.julday
         cmd =('%s %s -p %s -y %s -d %s' )%(sys.executable,at, path, str(d.year), str(jd))
-        
+
         if len(sys.argv) > 3:  cmd +=(' -n ' + sys.argv[3])               # specific network
 
-    else: 
+    else:
        return None
-    
-    return cmd  
+
+    return cmd
 
 # -------------------------------------------------------------------------------------------------
 
@@ -106,5 +102,3 @@ def start(config):
     os.system(cmd)
 
     return True
-
-

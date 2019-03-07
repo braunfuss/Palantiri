@@ -15,7 +15,7 @@ from noise_analyser import analyse
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.core import read
-from obspy.core.stream import Stream,Trace
+from obspy.core.stream import Stream, Trace
 import obspy.signal.cross_correlation
 from obspy.signal.trigger import trigger_onset as triggerOnset
 from obspy.signal.trigger import recursive_sta_lta as recSTALTA
@@ -34,8 +34,8 @@ import Debug
 from ObspyFkt   import loc2degrees, obs_TravelTimes
 from ConfigFile import ConfigObj, FilterCfg, SynthCfg
 
-from config import Trigger                                 # Import from Tools
-from waveform import resampleWaveform_2, filterWaveform_2    # Import from Process
+from config import Trigger
+from waveform import resampleWaveform_2, filterWaveform_2
 from pyrocko import util, scenario, guts, gf
 
 logger = logging.getLogger(sys.argv[0])
@@ -55,9 +55,14 @@ def cmpFilterMetavsXCORR(XcorrMeta, StationMetaList):
     FilterList = []
 
     for i in StationMetaList:
-        for j in XcorrMeta.iterkeys():
-            if i.getName() == j:
-                FilterList.append(i)
+        if sys.version_info.major >= 3:
+            for j in sorted(XcorrMeta.keys()):
+                if i.getName() == j:
+                    FilterList.append(i)
+        else:
+            for j in XcorrMeta.iterkeys():
+                if i.getName() == j:
+                    FilterList.append(i)
 
     n1 = len(FilterList)
     n2 = len(StationMetaList)

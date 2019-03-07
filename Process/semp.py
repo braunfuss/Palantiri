@@ -76,7 +76,7 @@ def toMatrix(npVector, nColumns):
     n   = nColumns
     mat = []
 
-    for i in range (len(t) / n) :
+    for i in range (int(len(t) / n)) :
        pos1  = i * n
        pos2  = pos1 + n
        slice = t [pos1:pos2]
