@@ -727,7 +727,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         if syn_in.nsources() == 1:
             if syn_in.use_specific_stf() is True:
                 stf = syn_in.stf()
-                stf = exec(stf)
+                exec(stf)
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
@@ -780,7 +780,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             for i in range(syn_in.nsources()):
                 if syn_in.use_specific_stf() is True:
                     stf = syn_in.stf()
-                    stf = exec(stf)
+                    exec(stf)
 
                 else:
                     stf = STF()
