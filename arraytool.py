@@ -1,4 +1,3 @@
-
 import os
 import fnmatch
 import sys
@@ -7,7 +6,6 @@ import logging
 import imp
 import obspy.core
 
-# add local directories to import path                      #hs+
 
 sys.path.append('Waveform/')
 sys.path.append('Process/')
@@ -18,7 +16,6 @@ import WaveformProgs
 import ProcessProgs
 import ClusterProgs
 import CommonProgs
-                                                            #hs-
 
 config = imp.load_source('Config',os.path.join(os.getcwd(),'tools','config.py'))
 
@@ -77,7 +74,7 @@ def listEvents():
     '''
 
     for item in os.listdir(os.path.join(os.getcwd(),'events')):
-        print item
+        print(item)
 
 # -------------------------------------------------------------------------------------------------
 
@@ -91,16 +88,16 @@ def parseArguments(args):
     dir = 'tools'
 
     #hs+
-    if WaveformProgs.start(config) :  return       #  sys.argv[1] : 'getstations' 'getdata'  'getmeta'
-    if ProcessProgs.start (config) :  return       #                'process'
-    if ClusterProgs.start (config) :  return       #                'cluster'
-    if CommonProgs.start  () :        return       #                'new_version (for internal use)
+    if WaveformProgs.start(config) :  return
+    if ProcessProgs.start (config) :  return
+    if ClusterProgs.start (config) :  return
+    if CommonProgs.start  () :        return
     #hs-
 
     if sys.argv[1] == 'list':
         listEvents()
 
-    elif sys.argv[1] == 'process':            # nicht mehr benutzt
+    elif sys.argv[1] == 'process':
 
         path = os.path.join(os.getcwd(),'events',sys.argv[2])
         at   = os.path.join(os.getcwd(), dir,      'main.py')
@@ -128,18 +125,6 @@ def parseArguments(args):
         cmd = sys.executable+' '+at+' '+t
         os.chdir(os.path.join(os.getcwd(),"tools"))
         os.system(cmd)
-        '''
-
-    elif sys.argv[1] == 'rotate':
-
-        at = os.path.join(os.getcwd(),dir,'rotatecomp.py')
-        path = os.path.join(os.getcwd(),'events',sys.argv[2])
-        print path
-        cmd = sys.executable+' '+at+' -p '+ path
-
-        os.chdir(os.path.join(os.getcwd(),"tools"))
-        os.system(cmd)
-        '''
 
     elif sys.argv[1] == 'cluster':
 

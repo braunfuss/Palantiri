@@ -1,7 +1,6 @@
 import os
 from ConfigParser import SafeConfigParser
 import sys
-#from obspy.neries import Client                            #15.7.2016
 import shutil
 import logging
 import urllib

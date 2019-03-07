@@ -1,14 +1,13 @@
 import os
 import sys
-import platform
-
-# add local directories to import path
 
 sys.path.append('../tools/')
 sys.path.append('../Common/')
 
-import cPickle as pickle
-
+if sys.version_info.major >= 3:
+    import _pickle as pickle
+else:
+    import cPickle as pickle
 from config import Station
 
 import fnmatch
@@ -17,9 +16,6 @@ import math
 from   math  import sin, cos, atan2
 import time
 import subprocess
-
-#    Import from common
-
 import Basic
 import Logfile
 from   DataTypes  import Location
@@ -76,8 +72,8 @@ def filterStations(StationList,Config,Origin,network):
     origin = Location(Origin['lat'], Origin['lon'])
 
     Logfile.red('Filter stations with configured parameters...')
-    print 'nr networks = ', len(network)
-    print 'nr stations = ', len(StationList)
+    print('nr networks = ', len(network))
+    print('nr stations = ', len(StationList))
 
     for j in network:
         for i in StationList:
@@ -105,13 +101,11 @@ def calctakeoff(Station,Event,Config):
 
 def bearing(Station ,Event):
 
-        #Convert to radians.
         lat1 = d2r * float(Station.lat)
         lon1 = d2r * float(Station.lon)
         lat2 = d2r * float(Event.lat)
         lon2 = d2r * float(Event.lon)
 
-        #Compute the angle.
         x = sin(lon1-lon2) * cos(lat2);
         y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2);
 
@@ -130,7 +124,6 @@ def backazi(Station, Event):
         lat2 = d2r * float(Event.lat)
         lon2 = d2r * float(Event.lon)
 
-        #Compute the angle.
         x = sin(lon1-lon2) * cos(lat2)
         y = cos(lat1)      * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2)
 
@@ -139,15 +132,11 @@ def backazi(Station, Event):
         if(angle < 0.0 ):
             angle  += math.pi * 2.0;
 
-        #And convert result to degrees.
         angle = r2d * angle
 
         return angle
 
-# -------------------------------------------------------------------------------------------------
-def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=None):
-
-    phasename =('%sphase') %(os.path.basename(arrayname))
+def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift, phase):
 
     cfg= ConfigObj(dict=Config)
     dimX= cfg.Int('dimx')
@@ -170,7 +159,7 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
     GridArray  = {}
     locStation = Location (station.lat, station.lon)
     sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
-    Phase = cake.PhaseDef(Config[phasename])
+    Phase = cake.PhaseDef(phase)
     model = cake.load_model('../data/'+traveltime_model)
 
     z = 0
@@ -199,8 +188,8 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                     for k in tt:
                         if k['phase_name'] == 'P' or k['phase_name'] ==('%sdiff')%(Config[phasename]):
                             ttime = k ['time']
-                        print "Something wrong with phase arrival too large\
-                             distances choosen?"
+                        print("Something wrong with phase arrival, too large\
+                             distances choosen?")
 
                 GridArray[(i,j)] = GridElem(oLatul, oLonul, depth[j],ttime,de)
                 LMINMAX.append(ttime)
@@ -211,9 +200,6 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                 LMINMAX.append(ttime)
 
                 if ttime == 0:
-                    print '\033[31mAvailable phases for station %s in range %f deegree\033[0m'%(station,de)
-                    print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
-                    print '\033[31myou tried phase %s\033[0m'%(Config[phasename])
                     raise Exception("\033[31mILLEGAL: phase definition\033[0m")
     else:
         for i in xrange(dimX):
@@ -253,10 +239,6 @@ def calcTTTAdv(Config,station,Origin,flag,arrayname,Xcorrshift=None,Refshift=Non
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
                 if ttime == 0:
-                            print '\033[31mAvailable phases for station %s in range %f deegree\033[0m'%(station,de)
-                            print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
-                            print '\033[31myou tried phase %s\033[0m'%(Config[phasename])
-
                             raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
     mint = min(LMINMAX)

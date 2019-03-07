@@ -68,12 +68,9 @@ def getStatistics(clusterresults):
                     line = line.split()
                     resDict[fname] = Result(line[0],line[1],line[2],line[3],bspath)
                     fobjstat.write(('%s:  %s  %s  %s  %s\n')%(fname,line[0],line[1],line[2],line[3]))
-                #endfor
-                    print resDict
 
                 fobj.close()
-        #endfor
-    #endfor
+
 
     fobjstat.close()
     return resDict
@@ -109,13 +106,10 @@ def copyCluster2EventConfig(ClusterDict, evpath):
         L.append(line)
 
         if fnmatch.fnmatch(line,'*array parameter*'):
-            #print index,line
             firstend = index+1
 
         if fnmatch.fnmatch(line,'*beamforming method*'):
-            #print index,line
             secondbegin = index
-    #endfor
 
     fobj.close()
 
@@ -124,7 +118,6 @@ def copyCluster2EventConfig(ClusterDict, evpath):
 
     fobj = open(fullfname,'w')
     fobj.write(''.join(Confpart1))
-    #print Confpart1
     nlist=''
 
     for i in ClusterDict.iterkeys():
@@ -145,7 +138,6 @@ def copyCluster2EventConfig(ClusterDict, evpath):
     fobj.write('\n')
     fobj.write(''.join(Confpart2))
     fobj.close()
-    #print Confpart2
 
 # -------------------------------------------------------------------------------------------------
 
@@ -180,9 +172,8 @@ def printBestSolution(solution):
 
         ar = 'r'+str(i)+'='+array[:-1]+'\n'
         C[i] = array
-        print ar,len(ar)
         fobjarrays.write(ar)
-    #endfor
+
 
     fobjarrays.close()
 
@@ -249,22 +240,12 @@ def filterBestSolution(solution):
 
                   if delta > maxdist:  maxdist = delta
 
-                  print i,i.member,' <--> ',k,k.member, ' delta: ',delta,' allowed ',kd
 
                   if delta < kd:  counter +=1
-               #endif
-            #endif
-        #endfor
-
-        print i,'less then allowd ',counter
-    #endfor
-
-    print 'masxdist ',maxdist
 
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-    print options.evpath
     rD = getStatistics(options.evpath)
     bs = getBestSolution(rD)
     CD = printBestSolution(bs)

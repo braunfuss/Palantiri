@@ -8,9 +8,13 @@ import os
 import shutil
 import glob
 import logging
-import platform
 import numpy as np
-from ConfigParser import SafeConfigParser
+import sys
+if sys.version_info.major >= 3:
+    from configparser import SafeConfigParser
+else:
+    from ConfigParser import SafeConfigParser
+
 from pyrocko import model
 logger = logging.getLogger('ARRAY-MP')
 
@@ -173,17 +177,16 @@ class Config(object):
 
         for i in MetaList:
             try:
-            	if float(i.gain) == 0:
-                	print 'GAIN IS ZERO ',i
-                	search =('%s.%s.%s')%(i.net,i.sta,i.loc)
-               	 	DL.append(search)
-               	 	LL.append(i)
-    	    except:
-		i.gain =(np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
+                if float(i.gain) == 0:
+                    print('GAIN IS ZERO ',i)
+                    search =('%s.%s.%s')%(i.net,i.sta,i.loc)
+                    DL.append(search)
+                    LL.append(i)
+            except:
+                i.gain =(np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
                 search =('%s.%s.%s')%(i.net,i.sta,i.loc)
                 DL.append(search)
                 LL.append(i)
-
 
         if len(DL) > 0:
             for i in DL:
@@ -193,10 +196,6 @@ class Config(object):
                         ML.append(j)
         else:
             ML = MetaList
-
-        print len(MetaList)
-        print len(ML)
-
         return ML
 
 
@@ -224,7 +223,7 @@ class Config(object):
                     os.makedirs(Folder[key])
 
         else:
-            print "no write permissions"
+            print("no write permissions")
 
         Folder['config'] = os.path.join('..','skeleton')
         return Folder

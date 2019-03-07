@@ -5,17 +5,14 @@ modul for deserializing pickle data from different processes
 
 import os
 import sys
-import platform
-
-WINDOWS =(platform.system() == 'Windows')
-
-# add local directories to import path
 
 sys.path.append('../tools/')
 sys.path.append('../Common/')
 
-import cPickle as pickle
-
+if sys.version_info.major >= 3:
+    import _pickle as cPickle
+else:
+    import cPickle as pickle
 #       Import from common
 
 import  Basic
@@ -86,31 +83,6 @@ def deserializeSembDict(numproc):
 
         return sembDict
 
-# -------------------------------------------------------------------------------------------------
-
-def deserializeSemb_unused(numproc):
-            print 'ENTER DES SEMB\n'
-
-            L = []
-        #for i in range(numproc):
-            fname = '1-semb.pkl'
-            print fname
-            data = Basic.loadDump(fname)
-
-            L.append(data)
-
-            sembDict = OrderedDict()
-            print L
-
-        #for i in L:
-         #   for j in i.iterkeys():
-          #      sembDict[j] = i[j]
-
-    #    for i in range(numproc):
-     #       os.remove('sembDict-'+str(i)+'.pkl')
-
-            return L
-# -------------------------------------------------------------------------------------------------
 
 def deserializeSembMaxFile(numproc):
 

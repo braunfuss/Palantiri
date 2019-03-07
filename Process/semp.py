@@ -161,9 +161,6 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
-                from matplotlib import pylab as plt
-                #plt.plot(traveltime[k][:])
-                #plt.show()
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -174,14 +171,12 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
 
                 data = tr.ydata[ibeg:iend]
                 try:
-                    sums += ((data)) ##put gradient on top
+                    sums += num.gradient(abs(data))
                 except:
                     pass
                 relstarts -= (relstart)
-            #for dat in cc_data:
-            #    sums_cc +=xcorr(cc_data[0],dat,0)[1]
+
             sum = abs(num.sum(((sums))))
-            #sum = sums_cc
             denom = sum**2
             nomin = sum
             semb = sum
@@ -207,7 +202,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
     trs_orgs  = []
     for tr in calcStreamMap:
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+        tr_org.ydata = tr_org.ydata #/ np.sqrt(np.mean(np.square(tr_org.ydata)))
         trs_orgs.append(tr_org)
     trace  = toMatrix (trace_1, minSampleCount)
     traveltime = []
@@ -225,7 +220,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
     snap= (round, round)
     backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
     for i in range (ntimes) :
-        #  loop over grid points
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
 
         for j in range (dimX * dimY):
@@ -243,9 +237,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
-                from matplotlib import pylab as plt
-                #plt.plot(traveltime[k][:])
-                #plt.show()
+
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -299,14 +291,13 @@ def execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSample
 
 def execsemblance2 () :
 
-    for i in range (len (sys.argv)) : print sys.argv[i]
+    for i in range (len (sys.argv)) : print(sys.argv[i])
 
     params = Basic.stringToFloat (sys.argv[1])
     [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount] = params
     backSemb = startsemblance (int(nostat), int(nsamp), int(i), int(nstep),
                            int(dimX),   int(dimY),  mint, new_freq, int(minSampleCount), False)
 
-    print 'backSemb = ', backSemb[0:3]
     Basic.writeVector (semb_txt, backSemb)
 
 

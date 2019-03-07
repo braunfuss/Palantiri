@@ -1,27 +1,15 @@
-#
-#      Implements own global data
-#
 import os
 import sys
 import getpass
 import platform
-
-WINDOWS =(platform.system() == 'Windows')
-
-#      Imports from Common
-
 import Basic
 import Logfile
 import ConfigFile
 
-#      Constants
+isClient = False
+isDebug= False
 
-#      Global variables
-
-isClient   = False                        # is client process ?
-isDebug= False                        # debug mode ?
-
-ConfigDict  = None                        # Configuration file as dictionary   
+ConfigDict  = None                        # Configuration file as dictionary
 ProtFileDir = None                        # directory for protocol files
 
 EVENTS = 'events'
@@ -41,16 +29,13 @@ def EventDir():                          # event directory
     global _eventDir
 
     if _eventDir == None:
-       #print 'Globals: event dir not set'
-       #assert False
+
 
        s = os.path.join(os.getcwd(), EVENTS)
        n = len(sys.argv)
 
        if   n < 3 : _eventDir = s
-#      else:        _eventDir = os.path.join(s, sys.argv[n-1])
        else:        _eventDir = os.path.join(s, sys.argv[2])
-    #endif
 
     return _eventDir
 
@@ -66,7 +51,7 @@ def KeyfileFolder():
 # -------------------------------------------------------------------------------------------------
 
 def _error(text):
-    print '\nError: ' + text + '\n'
+    print('\nError: ' + text + '\n')
     sys.exit(1)
 
 
@@ -85,7 +70,7 @@ def checkEventDirParameter(param):
     #print 'dir=', dir
 
     return os.path.isdir(dir)
- 
+
 # -------------------------------------------------------------------------------------------------
 
 def init(configFileName = None):
@@ -98,9 +83,6 @@ def init(configFileName = None):
        ConfigDict  = ConfigFile.readGlobalConf(configFileName)
 
        if ConfigDict == None:  return False
-
-    #obj = ConfigFile.GlobCfg()
-    #isDebug = obj.Bool('debug', '0')
     key = 'DEBUG_FLAG'
 
     if not os.environ.has_key(key): isDebug = False
@@ -110,4 +92,3 @@ def init(configFileName = None):
        if isDebug: Logfile.add('Debugging is on')
 
     return True
-

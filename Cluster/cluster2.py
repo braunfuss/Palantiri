@@ -245,23 +245,17 @@ def createRandomInitialCentroids(Config,StationMetaList):
     usedIndexes  = []
     random.seed(time.clock())
 
-    if len(StationMetaList) == 0:                                 #hs
+    if len(StationMetaList) == 0:
        Logfile.red('Empty station list')
        return initialCentroids
 
-    #counter = 1
 
     while len(initialCentroids) != int(Config['maxcluster']):
 
             randomIndex = random.randint(0, len(StationMetaList)-1)
-            #flag   = alreadyUsedIndex(randomIndex,usedIndexes)
             usedIndexes.append(randomIndex)
 
-            #if len(usedIndexes) == len(StationMetaList):
-            #    raise Exception("\033[31mERROR: 'tested all stations'\033[0m")
-
             around = checkStationAroundInitialCentroid(StationMetaList[randomIndex],Config,StationMetaList)
-            #print StationMetaList[randomIndex],around
             found = False
 
             if len(initialCentroids) == 0:
@@ -277,13 +271,11 @@ def createRandomInitialCentroids(Config,StationMetaList):
 
                 else:
                     continue
-            #endif
 
             if found:
                Logfile.red('found initial cluster %d' %(len(initialCentroids)))
                Logfile.red('centroid %s with %d stations around %s deegree' %(StationMetaList[randomIndex],around,Config['centroidmindistance']))
 
-            #counter += 1
 
     Logfile.red('Initial centroid search finished')
     return initialCentroids
@@ -328,11 +320,10 @@ def calculateClusterCentre(Config, ClusterStationList):
                 sumlat += float(j.lat)
                 sumlon += float(j.lon)
                 clusterstationcounter += 1
-        #endfor
 
-        if clusterstationcounter == 0:                                              # hs-1
-           newClusterVector.append(Centroid(0.0, 0.0, -1))                         # hs-1
-        else:                                                                       # hs-1
+        if clusterstationcounter == 0:
+           newClusterVector.append(Centroid(0.0, 0.0, -1))
+        else:
            scla = sumlat / clusterstationcounter
            sclo = sumlon / clusterstationcounter
            name = i
@@ -510,29 +501,19 @@ def kmean(Config,inputCentroid,FilterMeta,counter,Folder,Origin,flag):
         sys.exit()
 
     scl = stationBelongToCluster(Config,inputCentroid,FilterMeta)
-    #sys.exit()
 
-    #print scl,len(scl)
     acounter= 1
 
     for a in inputCentroid:
-        #print a
         for i in scl:
             if acounter == i.member:
                 delta = loc2degrees(i, a)
 
                 if delta > cfg.Float('initialstationdistance'):
                     i.member = -1
-                    #print 'delete ',a,i,i.member,delta
-                    #b=scl.index(i)
-                    #del scl[b]
 
-                #else:
-                 #   print a,i,i.member,delta
         acounter+=1
-    #endfor
 
-    #sys.exit()
     nsc = calculateClusterCentre(Config,scl)
     t   = compareClusterCentre(inputCentroid,nsc,Config)
 

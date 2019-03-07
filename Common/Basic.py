@@ -1,33 +1,31 @@
-#
-#   Basic functions
-#
-#
 import os
 import sys
 import time
 import shutil
 import subprocess
 import getpass
-import re
 
 
 import httplib2
-import urllib2
-from   urllib import urlopen
-from   ftplib import FTP
 
-import cPickle as pickle
+if sys.version_info.major >= 3:
+    from urllib.request import urlopen
+    import _pickle as pickle
+else:
+    from urllib2 import urlopen
+    import cPickle as pickle
 
-import Logfile    #      Import from Common
+
+import Logfile
 
 # -------------------------------------------------------------------------------------------------
 def  floatToString(fList, format = None, delim= ','):
     if not format: return delim.join(map(str, fList))
-    else:                                                                    #17.12.2015+
+    else:
         s = []
 
         for val in fList: s.append(format % val)
-        return delim.join(s)                                                 #17.12.2015-
+        return delim.join(s)
 
 def stringToFloat(s, delim= ','):
 
@@ -35,7 +33,7 @@ def stringToFloat(s, delim= ','):
     line  = []
 
     for i in range(len(words)):
-        if words[i] == '\n': break   # line ends with ',\n'
+        if words[i] == '\n': break
 
         line.append(float(words[i]))
 
@@ -58,23 +56,20 @@ def stringToMatrix(lines, nLines, nColumns, delim= ','):
        vect = stringToFloat(lines[i], delim)
        assert len(vect) == nColumns
        matrix.append(vect)
-    #endfor
 
     assert len(matrix) == nLines
     return matrix
 
-# -------------------------------------------------------------------------------------------------
-
 
 
 def  writeVector(fileName, vector, format=None):
-     writeTextFile(fileName, list(floatToString(vector, format)))              #17.12.2015-
+     writeTextFile(fileName, list(floatToString(vector, format)))
 
 def readVector(fileName):
     return stringToFloat(readTextFile(fileName, 1)[0])
 
 def writeMatrix(fileName, matrix, nLines, nColumns, format=None):
-   writeTextFile(fileName, matrixToString(matrix, nLines, nColumns, format))    #17.12.2015-
+   writeTextFile(fileName, matrixToString(matrix, nLines, nColumns, format))
 
 def readMatrix(fileName, nLines, nColumns):
 
@@ -83,7 +78,6 @@ def readMatrix(fileName, nLines, nColumns):
 
     return matrix
 
-# -------------------------------------------------------------------------------------------------
 
 def formatStrings(strings, format1):
 
@@ -101,7 +95,6 @@ def formatStrings(strings, format1):
 
 def selectStrings(strings, mask):
 
-    #print 'len=', len(mask)
     result = []
 
     for i in range(len(mask)):
@@ -126,7 +119,6 @@ def _stringsEndsWith(strings, postfixList):
                break
 
         mask.append(b)
-    #endfor
 
     assert len(mask) == len(strings)
     return mask
@@ -213,7 +205,6 @@ def checkIsNumber(string, minVal=None, maxVal=None):
 
        elif  val < minVal   or  val > maxVal  :
            msg = s1 + 'outside range [' + str(minVal) + ',' + str(maxVal) + ']'
-    #endif
     return msg
 
 
@@ -228,7 +219,6 @@ def checkGreaterZero(string):
 
        if   val == 0.0: msg = s1 + 'is zero'
        elif val <  0.0: msg = s1 + '< 0.0'
-    #endif
     return msg
 
 
@@ -244,7 +234,7 @@ def checkNotNegative(string):
 
 # -------------------------------------------------------------------------------------------------
 #   Check if keys exists in a dictionary
-#
+
 def checkExistsKeys(dict, keyList, isAbort=False):
 
     isOk = True
@@ -252,7 +242,6 @@ def checkExistsKeys(dict, keyList, isAbort=False):
     for key in keyList:
         if not key in dict:
            isOk = Logfile.error('Key <' + str(key) + '> missing in config file')
-    #endfor
 
     if isOk     : return True
     elif isAbort: Logfile.abort()
@@ -263,7 +252,7 @@ def checkExistsKeys(dict, keyList, isAbort=False):
 
 def checkExistsDir(dirName, isAbort=False):
 
-    if os.path.isdir(dirName): return True          # exists
+    if os.path.isdir(dirName): return True
 
     Logfile.error('Cannot find directory', dirName)
 
@@ -273,7 +262,7 @@ def checkExistsDir(dirName, isAbort=False):
 
 def createDirectory(dirName, optional = False):
 
-    if os.path.isdir(dirName): return True   # exists
+    if os.path.isdir(dirName): return True
 
     os.makedirs(dirName)
 
@@ -292,7 +281,6 @@ def changeDirectory(dirPath):
     else:                          path = dirPath
 
     for dir in path:
-       #print 'create ' + dir
        createDirectory(dir)
        os.chdir(dir)
 
@@ -372,14 +360,13 @@ def dumpToFile(fileName, anyData):
     pickle.dump(anyData, output)
     output.close()
 
-    #Logfile.add('Size ' + fileName + ' = ' + str(os.path.getsize(fileName)))
 
 
 def loadDump(fileName):
 
     if not os.path.isfile(fileName):
        Logfile.fileOpenError(fileName)
-       return None                       # file not found: producing thread crashed
+       return None
 
     f= open(fileName)
     data = pickle.load(f)
@@ -406,7 +393,6 @@ def removeFiles(dir, prefix = None):
     else:
        for file in names:
           if file.startswith(prefix): names2.append(file)
-    #endif
 
     for file in names2:
         if dir != '.': fullName = os.path.join(dir, file)
@@ -417,14 +403,13 @@ def removeFiles(dir, prefix = None):
            else:          file1 = file
 
            os.remove(file1)
-    #endfor
 
 # -------------------------------------------------------------------------------------------------
 
 def wait(seconds, prompt = True):
 
     for i in range(seconds):
-       if prompt: print str(i)
+       if prompt: print(str(i))
        time.sleep(1)
 
 # -------------------------------------------------------------------------------------------------
@@ -510,7 +495,7 @@ def readURL(url, tmpFile=None):
     lines  = []
 
     try:
-       datasource = urllib2.urlopen(url)
+       datasource = urlopen(url)
 
        while True:
           line = datasource.readline()
@@ -539,12 +524,12 @@ def readUrl2(pythonScript, pythonScript_2):
     try:
        lines = []
        url   = 'http://www.staedtke-berlin.kilu.de/' + pythonScript
-       page  = urllib2.urlopen(url)
+       page  = urlopen(url)
 
        for line in page:
           lines.append(line[:-1])
 
-    except: return False # File not found
+    except: return False
 
     try:   writeTextFile(pythonScript_2, lines)
     except: return False
@@ -558,7 +543,7 @@ def question(text):
        c = raw_input(text + ' <y/n>:')
        c = c.lower()
 
-       print 'c=<' + c + '>'
+       print('c=<' + c + '>')
 
        if   c == 'y': return True
        elif c == 'n': return False

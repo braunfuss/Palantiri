@@ -3,7 +3,7 @@ import os
 import sys
 
 #   add local directories to import path
-                     
+
 sys.path.append('../Common/')
 
 #   import from Common
@@ -21,8 +21,8 @@ class Intern(object):
     def __init__(self): dummy = 0
 
     def error(self, text):
-        print '\nError: ' + text + '\n'
-        print 'Usage: ' + Usage()
+        print('\nError: ' + text + '\n')
+        print('Usage: ' + Usage())
         sys.exit('\n*** Program aborted ***')
 
     def checkProgramParameter(self, nMinParams, nMaxParams):
@@ -35,7 +35,7 @@ class Intern(object):
         if len(sys.argv) > nMaxParams: self.error('Too many parameters')
 
         if not Globals.checkEventDirParameter(eventName):          # Exists event directory ?
-           
+
            s =  'Invalid parameter - <' + eventName +'>'
            s += '\n        '
            s += 'Cannot find directory ' + Globals.EventDir()
@@ -57,12 +57,11 @@ def start(config):
        workDir = ['Cluster']
        cmd = sys.executable + ' ' + at + ' -f ' + Globals.EventDir()
 
-    else: 
-       return False  
+    else:
+       return False
 
-    Basic.changeDirectory(workDir)         # create working directory 
+    Basic.changeDirectory(workDir)         # create working directory
    #Basic.removeFiles('.')             # ... and empty it
 
     os.system(cmd)
     return True
-

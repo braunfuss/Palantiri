@@ -144,7 +144,7 @@ class Xcorr(object):
     def resampleWaveform(self, Waveform, end_frequence):
 
         Logfile.add('enter resampling in crosscorrelation')
-        print 'sampling_rate = ', Waveform.stats.sampling_rate
+        print('sampling_rate = ', Waveform.stats.sampling_rate)
         return resampleWaveform_2(Waveform, end_frequence)
 
     # ---------------------------------------------------------------------------------------------
@@ -352,21 +352,21 @@ class Xcorr(object):
 
             Logfile.red('read in %s '%(i))
             de = loc2degrees(self.Origin, i)
-    	    Phase = cake.PhaseDef('P')
+            Phase = cake.PhaseDef('P')
             model = cake.load_model()
             if cfg.colesseo_input() == True:
                 arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth, zstop=0.)
             else:
                 arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km, zstop=0.)
-    	    try:
-                    	ptime = arrivals[0].t
-    	    except:
-    			try:
-    		        	arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km-2.1)
-    				ptime = arrivals[0].t
-    			except:
-    				ptime = ptime
-    	    T.append(ptime)
+            try:
+                ptime = arrivals[0].t
+            except:
+                try:
+                    arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth*km-2.1)
+                    ptime = arrivals[0].t
+                except:
+                    ptime = ptime
+            T.append(ptime)
             if ptime == 0:
                 Logfile.red('Available phases for station %s in range %f deegree' %(i,de))
                 Logfile.red('you tried phase %s' %(self.Config[phasename]))
@@ -538,9 +538,6 @@ class Xcorr(object):
         phasename =('%sphase') %(os.path.basename(self.AF))
 
         if ptime == 0:
-                print '\033[31mAvailable phases for reference station %s in range %f deegree\033[0m'%(i,de)
-                print '\033[31m'+'|'.join([str(item['phase_name']) for item in tt])+'\033[0m'
-                print '\033[31myou tried phase %s\033[0m'%(self.Config[phasename])
                 raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
         tw  = self.calculateTimeWindows(ptime)
@@ -572,17 +569,13 @@ class Xcorr(object):
 
         try:
             onset = t[0][0] / trP.stats.sampling_rate
-            print 'ONSET ',onset
 
         except:
             onset = self.mintforerun
 
         trigger = trP.stats.starttime+onset
 
-        print 'TRIGGER ',trigger
-        print 'THEORETICAL: ',UTCDateTime(3600)+self.mintforerun
         tdiff =(trP.stats.starttime+onset)-(UTCDateTime(3600)+self.mintforerun)
-        print 'TDIFF: ',tdiff
 
         refp = UTCDateTime(self.Origin.time)+ptime
         reftriggeronset = refp+onset-self.mintforerun
@@ -657,8 +650,7 @@ class Xcorr(object):
                         L.append(info)
                         S.append(stream)
 
-                    if abs(XcorrDict[shift].value) < dsfactor:
-                        print 'OUT: ', stream, XcorrDict[shift].value, XcorrDict[shift].sampleindex, XcorrDict[shift].shift
+
         return L, S
 
     # ---------------------------------------------------------------------------------------------

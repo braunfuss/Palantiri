@@ -21,32 +21,17 @@ class Station(object):
         self.inst = inst
         self.provider = None
 
-    def fullName(self):    return self.net + '.' + self.sta + '.' + self.loc + '.' + self.comp  
+    def fullName(self):    return self.net + '.' + self.sta + '.' + self.loc + '.' + self.comp
     def stationName(self): return self.net + '.' + self.sta
     def location(self):    return Location(self.lat, self.lon)
 
-    def print1(self):
-
-        print 'name = ', self.fullName()
-        print 'lat  = ', self.lat
-        print 'lon  = ', self.lon
-        print 'ele  = ', self.ele
-        print 'dip  = ', self.dip
-        print 'azi  = ', self.azi
-        print 'gain = ', self.gain
-        print 'inst = ', self.inst
-
-        if self.provider != None: print 'prov = ' + self.provider
-
-        print ' '
-#endClass
 
 # -------------------------------------------------------------------------------------------------
 
 class Location(object):
 
     def __init__(self, lat, lon):
- 
+
         self.lat  = float(lat)
         self.lon  = float(lon)
 
@@ -81,7 +66,7 @@ def toStationNames(strings):
     names = []
 
     if len(strings) == 0:  return names
-    
+
     delim = _getDelim(strings[0])
 
     for i in range(len(strings)):

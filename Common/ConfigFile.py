@@ -1,9 +1,13 @@
 import os
+import sys
+if sys.version_info.major >= 3:
+    from configparser import SafeConfigParser
+else:
+    from ConfigParser import SafeConfigParser
 
-from ConfigParser import SafeConfigParser
-import Globals                     # Own global data
-import Basic                       # Own module with basic functions
-import Logfile                     # Implements logfile
+import Globals
+import Basic
+import Logfile
 
 # -------------------------------------------------------------------------------------------------
 
@@ -34,7 +38,7 @@ class ConfigObj(object):
         elif default != None: s = default
         else:                 self._keyMissing(key)
 
-        if self._debug: print 'cfg [' + key + '] = ' + s
+        if self._debug: print('cfg [' + key + '] = ' + s)
 
         return s
 
@@ -131,6 +135,8 @@ class ConfigObj(object):
     def synthetic_test_pertub_arrivals(self): return self.Bool('synthetic_test_pertub_arrivals')
     def shift_max(self):       return self.Float('shift_max')
     def quantity(self):       return self.Str('quantity')
+    def ttphases(self):       return self.Str('ttphases')
+
     def colesseo_input(self): return self.Bool('colesseo_input')
     def optimize(self): return self.Bool('optimize')
     def optimize_all(self): return self.Bool('optimize_all')
@@ -297,10 +303,6 @@ class SynthCfg(ConfigObj):
 # -------------------------------------------------------------------------------------------------
 
 DEFAULT_CONFIG_FILE = 'global.conf'
-
-#
-#       Keys for global.conf
-#
 blacklist = 'blacklist'
 duration  = 'duration'
 keyfilefolder = 'keyfilefolder'
@@ -322,7 +324,6 @@ class GlobalConfigObj(ConfigObj):
 
         ConfigObj.__init__(self, name, readConf(os.path.join('..', name)))
 
-#endclass
 
 _globConfigObj = None
 
@@ -376,14 +377,10 @@ def checkKeys(conf, keyList, optional=False):
     if type(keyList) is str: list1 = list(keyList)
     else:                     list1 = keyList
 
-
-    #Logfile.add(' ', 'Check config file:', ' ')
-
     if not optional:
        Basic.checkExistsKeys(conf, list1, isAbort=True)
 
     eventDir = Globals.EventDir()
-    #print 'eventdir = ', eventDir
     isOk = True
 
     for key in list1:
@@ -397,8 +394,6 @@ def checkKeys(conf, keyList, optional=False):
 
         if msg != None:
            isOk = Logfile.error('Key <' + key +'> in config file: ' + msg)
-
-    #endfor
 
     if not isOk: Logfile.abort()
     return True

@@ -6,7 +6,7 @@ import Globals                   # Own global data
 import Logfile
 
 #      Module constans
-              
+
 #      Global variables
 
 g_Level = 0
@@ -42,9 +42,6 @@ class PROC(object):
 
        for i in range(g_Level): s.append('  ')
 
-       #Logfile.add(s + text + ' ' + self.name)
-       xxx
-       print ' ' + s
 
 #endClass PROC
 
@@ -52,9 +49,9 @@ class PROC(object):
 
 def assert1(condition, text1 = None, text2 = None, text3 = None):
 
-    if not condition: 
+    if not condition:
        if text1 != None: Logfile.error(text1,text2,text3)
-    
+
        Logfile.abort()
     #endif
 
@@ -73,9 +70,9 @@ def enter(module, procName):
     s = ''
     for i in range(g_Level): s.append('  ')
 
-    Logfile.add(s + 'E ' + module + '.' + procName)  
+    Logfile.add(s + 'E ' + module + '.' + procName)
     g_Level += 1
- 
+
 
 def leave(module, procName, val=0):
     global  g_Level
@@ -100,4 +97,3 @@ def init():
 
     if key in os.environ.keys(): g_showProcs =(int(os.environ [key]) > 0)
     else:                        g_showProcs = False
-

@@ -17,16 +17,6 @@ from obspy.imaging.beachball import beach
 import matplotlib.colors as colors
 import matplotlib.tri as tri
 from pyrocko import trace, io, model
-from matplotlib.colors import LinearSegmentedColormap
-sys.path.append ('Common/')
-import  ConfigFile
-from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
-import  Globals
-global  evpath
-sys.path.append ('tools/')
-import config
-
-
 w=25480390.0
 
 def shoot(lon, lat, azimuth, maxdist=None):
@@ -150,7 +140,7 @@ def plot_cluster():
     map = Basemap(width=21000000,height=21000000,
                 resolution='l',projection='aeqd',\
                 lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
-    map.fillcontinents(zorder=-1)
+    map.drawcoastlines()
     map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
     map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
     x, y = map(event_cor[1][0],event_cor[0][0])
@@ -235,17 +225,8 @@ def plot_movie():
                     eastings = data[:,1]
                     northings =  data[:,0]
                     plt.figure()
-
-                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                                  llcrnrlat=num.min(northings),
-                                  urcrnrlon=num.max(eastings),
-                                  urcrnrlat=num.max(northings),
-                                  resolution='h', epsg=3395)
-                    ratio_lat = num.max(northings)/num.min(northings)
-                    ratio_lon = num.max(eastings)/num.min(eastings)
-
-                    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-
+                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                            resolution='h')
                     parallels = np.arange(num.min(northings),num.max(northings),0.2)
                     meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
                     xpixels = 1000
@@ -268,16 +249,8 @@ def plot_movie():
                         eastings = data[:,1]
                         northings =  data[:,0]
                         plt.figure()
-
-                        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                                      llcrnrlat=num.min(northings),
-                                      urcrnrlon=num.max(eastings),
-                                      urcrnrlat=num.max(northings),
-                                      resolution='h', epsg=3395)
-                        ratio_lat = num.max(northings)/num.min(northings)
-                        ratio_lon = num.max(eastings)/num.min(eastings)
-
-                        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                                resolution='h')
                         parallels = np.arange(num.min(northings),num.max(northings),0.2)
                         meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
                         xpixels = 1000
@@ -305,15 +278,12 @@ def plot_movie():
                     eastings = data[:,1]
                     northings =  data[:,0]
                     plt.figure()
-                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                    map = Basemap(projection='merc',
+                                  llcrnrlon=num.min(eastings),
                                   llcrnrlat=num.min(northings),
                                   urcrnrlon=num.max(eastings),
                                   urcrnrlat=num.max(northings),
-                                  resolution='h', epsg=3395)
-                    ratio_lat = num.max(northings)/num.min(northings)
-                    ratio_lon = num.max(eastings)/num.min(eastings)
-
-                    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                                  resolution='h')
                     parallels = np.arange(num.min(northings),num.max(northings),0.2)
                     meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
@@ -331,7 +301,8 @@ def plot_movie():
                     plt.close()
                     pass
 
-def integrated_scatter():
+
+def plot_scatter():
     if len(sys.argv)<5:
         print("missing input arrayname and or depth")
     else:
@@ -341,86 +312,74 @@ def integrated_scatter():
             matplotlib.rcParams.update({'font.size': 32})
             pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             maxs = 0.
-            counter = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     max = np.max(data[:, 2])
-                    counter =+ 1
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
-
             pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
             data_int = num.zeros(num.shape(data[:, 2]))
-            data_old = num.zeros(num.shape(data[:, 2]))
-            time_grid = num.zeros(num.shape(data[:, 2]))
-            counter = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
-                    for i in range(0, num.shape(data[:, 2])[0]):
-                        if data[i,2] >= data_old[i]:
-                            time_grid[i] = time_grid[i]+counter
-
-                    data_old = np.nan_to_num(data[:,2])
-                    counter =+ 1
 
             eastings = data[:,1]
             northings = data[:,0]
-            xpixels = 1000
-
             plt.figure()
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                          llcrnrlat=num.min(northings),
-                          urcrnrlon=num.max(eastings),
-                          urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
 
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
 
-            parallels = np.arange(num.min(northings),num.max(northings),0.2)
-            meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+
+            map = Basemap( projection='merc',\
+                    llcrnrlon=95.5, \
+                    llcrnrlat=37, \
+                    urcrnrlon=97.5, \
+                    urcrnrlat=38, \
+                    resolution='h',epsg = 4269)
+            parallels = np.arange(37,38,1.)
+            meridians = np.arange(95.5,97.5,0.5)
+
+            xpixels = 1000
 
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            size =(data_int/np.max(data_int))*300
 
-            ps = map.scatter(x,y,marker='o',c=time_grid, s=size, cmap='autumn_r')
-            cb = plt.colorbar(orientation="horizontal")
-            cb.outline.set_visible(False)
-            cb.set_ticks([])
-            cb.set_label('Time ->',fontsize=22)
+            l = range(0,num.shape(data[:,2])[0])
+            # implement based on delta t sampling coloring
+            size =(data[:,2]/np.max(data[:,2]))*300
+            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='autumn_r')
+
+        #    for i in range(0,len(x)):
+        #        if data[i,2]> np.max(data[:,2])*0.05:
+        #            plt.text(x[i],y[i],'%s' %i)
+            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
+
+            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
+
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
+            plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
 
-            xpixels = 6000
-            eastings = data[:,1]
-            northings = data[:,0]
-            map.arcgisimage(service='World_Shaded_Relief',
-                            xpixels=xpixels, verbose=False)
+            xpixels = 1000
+            try:
+                map.arcgisimage(service='World_Shaded_Relief',
+                                xpixels=xpixels, verbose=False)
+            except:
+                pass
+
             plt.show()
 
-            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
+            pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
-            data_old = num.zeros(num.shape(data[:, 2]))
-            time_grid = num.zeros(num.shape(data[:, 2]))
-            counter = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
-                    for i in range(0, num.shape(data[:, 2])[0]):
-                        if data[i,2] >= data_old[i]:
-                            time_grid[i] = time_grid[i]+counter
-
-                    data_old = np.nan_to_num(data[:,2])
-                    counter =+ 1
 
             eastings = data[:,1]
             northings =  data[:,0]
@@ -430,11 +389,7 @@ def integrated_scatter():
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                          resolution='h',epsg=4269)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
@@ -451,14 +406,13 @@ def integrated_scatter():
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
 
+            #l = range(0,num.shape(data[:,2])[0])
             l = [i for i in range(1600) for _ in range(70)]
             l = sorted(range(160)*10)
-            size =(data_int/np.max(data_int))*300
-            ps = map.scatter(x,y,marker='o',c=time_grid, s=size, cmap='autumn_r')
-            cb = plt.colorbar(orientation="horizontal")
-            cb.outline.set_visible(False)
-            cb.set_ticks([])
-            cb.set_label('Time ->',fontsize=22)
+            size =(data[:,2]/np.max(data[:,2]))*300
+            ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='winter_r')
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
+            plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
             ax = plt.gca()
             xpixels = 1000
@@ -511,6 +465,7 @@ def inspect_spectrum():
                             zstart=event.depth*2,
                             zstop=0.0)
                         time = rays[0].t+event.time
+                        #tr = tr.chop(time-20, time+30, inplace=False)
                         tr.ydata = tr.ydata.astype(num.float)
                         tr.ydata -= tr.ydata.mean()
                         tr_spec, a = spec(tr)
@@ -546,13 +501,13 @@ def plot_integrated():
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
                     path_in_str = str(path)
-                    print(path_in_str)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     i = 0
                     for k in np.nan_to_num(data[:,2]):
                         if k>data_int[i]:
                             data_int[i]= k
                         i = i+1
+                    #data_int += np.nan_to_num(data[:,2])
 
             eastings = data[:,1]
             northings =  data[:,0]
@@ -562,11 +517,7 @@ def plot_integrated():
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                          resolution='h',epsg=4269)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
@@ -577,12 +528,19 @@ def plot_integrated():
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
+            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
+
+            #mask = np.ma.masked_where(data_int < 0.4, data_int)
+            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.085)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             levels = np.arange(0., 1.05, 0.025)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='cool')
+            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
+
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
             event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
@@ -626,11 +584,7 @@ def plot_integrated():
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
                           urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                          resolution='h',epsg=4269)
 
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
@@ -641,6 +595,8 @@ def plot_integrated():
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
 
+            #mask = np.ma.masked_where(data_int < 0.4, data_int)
+            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
@@ -705,30 +661,36 @@ def plot_integrated_timestep():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                          llcrnrlat=num.min(northings),
-                          urcrnrlon=num.max(eastings),
-                          urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-
+#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+#                    resolution='h',epsg = 4269)
+            map = Basemap( projection='cyl',\
+                    llcrnrlon=95.5, \
+                    llcrnrlat=37, \
+                    urcrnrlon=97.5, \
+                    urcrnrlat=38, \
+                    resolution='h',epsg = 4269)
+            parallels = np.arange(37,38,1.)
+            meridians = np.arange(95.5,97.5,0.5)
             xpixels = 1000
+           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
+            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
 
+            #mask = np.ma.masked_where(data_int < 0.4, data_int)
+            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
 
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
+            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
 
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar()
             plt.title(path_in_str)
 
@@ -743,6 +705,7 @@ def plot_integrated_timestep():
             pathlist = Path(rel).glob('0-*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
+            #    try:
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     data_int += np.nan_to_num(data[:,2])
@@ -751,34 +714,44 @@ def plot_integrated_timestep():
             northings =  data[:,0]
             plt.figure()
 
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                          llcrnrlat=num.min(northings),
-                          urcrnrlon=num.max(eastings),
-                          urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-
+#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+#                    resolution='h',epsg = 4269)
+            map = Basemap( projection='cyl',\
+                    llcrnrlon=95.25, \
+                    llcrnrlat=37, \
+                    urcrnrlon=97.25, \
+                    urcrnrlat=38, \
+                    resolution='h',epsg = 4269)
+            parallels = np.arange(37,38,1.)
+            meridians = np.arange(95.5,97.5,0.5)
             xpixels = 1000
+           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
+            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
             import matplotlib.colors as colors
             import matplotlib.tri as tri
-
+            #mask = np.ma.masked_where(data_int < 0.4, data_int)
+            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
+            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
 
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
             plt.colorbar()
             plt.title(path_in_str)
+            ax = plt.gca()
+            np1 = [116, 61, 91]
+            x, y = map(96.476,37.529)
 
+            beach1 = beach(np1, xy=(x, y), width=0.05)
+            ax.add_collection(beach1)
             xpixels = 1000
             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
 
@@ -817,11 +790,7 @@ def plot_integrated_kite():
             eastings1 = np.arange(scd.frame.llLon,scd.frame.llLon+scd.frame.dE*scd.frame.cols,scd.frame.dE)
             northings1 = np.arange(scd.frame.llLat,scd.frame.llLat+scd.frame.dN*scd.frame.rows,scd.frame.dN)
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings1),llcrnrlat=num.min(northings1),urcrnrlon=num.max(eastings1),urcrnrlat=num.max(northings1),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                    resolution='h',epsg = 4269)
             parallels = np.arange(num.min(northings1),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings1),num.max(eastings),0.2)
             xpixels = 1000
@@ -861,11 +830,7 @@ def plot_integrated_kite():
             northings =  data[:,0]
             plt.figure()
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings1),llcrnrlat=num.min(northings1),urcrnrlon=num.max(eastings1),urcrnrlat=num.max(northings1),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                    resolution='h',epsg = 4269)
             parallels = np.arange(num.min(northings1),num.max(northings1),0.2)
             meridians = np.arange(num.min(eastings1),num.max(eastings1),0.2)
             xpixels = 1000
@@ -896,11 +861,7 @@ def plot_integrated_kite():
             northings =  data[:,0]
             plt.figure()
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings1),llcrnrlat=num.min(northings1),urcrnrlon=num.max(eastings1),urcrnrlat=num.max(northings1),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+                    resolution='h',epsg = 4269)
             parallels = np.arange(num.min(northings1),num.max(northings1),0.2)
             meridians = np.arange(num.min(eastings1),num.max(eastings1),0.2)
             xpixels = 1000
@@ -948,15 +909,8 @@ def plot_moving():
                     pass
             pathlist = Path(rel).glob('**/*.ASC')
 
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                      llcrnrlat=num.min(northings),
-                      urcrnrlon=num.max(eastings),
-                      urcrnrlat=num.max(northings),
-                      resolution='h', epsg=3395)
-        ratio_lat = num.max(northings)/num.min(northings)
-        ratio_lon = num.max(eastings)/num.min(eastings)
-
-        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                resolution='h')
         parallels = np.arange(num.min(northings),num.max(northings),0.2)
         meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
@@ -983,48 +937,13 @@ def plot_moving():
         plt.show()
 
 def plot_sembmax():
-    evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
     data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
 
-
-    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                  llcrnrlat=num.min(northings),
-                  urcrnrlon=num.max(eastings),
-                  urcrnrlat=num.max(northings),
-                  resolution='h', epsg=3395)
-    try:
-        if sys.argv[3] is not None:
-            with open(sys.argv[3], 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[(s) for s in row] for i,row in enumerate(reader)]
-                event_cor_x = event_cor[:]
-                event_cor_x = np.asarray(event_cor)
-                event_cor_x = event_cor_x[:,1]
-                event_cor_y = event_cor[:]
-                event_cor_y = np.asarray(event_cor)
-                event_cor_y = event_cor_y[:,2]
-                list_x = []
-                list_y = []
-                for item in event_cor_x:
-                    list_x.append(float(item))
-                for item in event_cor_y:
-                    list_y.append(float(item))
-            x, y = map(list_x,list_y)
-            ps = map.scatter(x,y,marker='o',c='k', s=size, cmap='seismic')
-    except:
-        pass
-
-    ratio_lat = num.max(northings)/num.min(northings)
-    ratio_lon = num.max(eastings)/num.min(eastings)
-    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+            resolution='h',epsg = 4269)
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
     desired=[3,4]
     with open(event, 'r') as fin:
@@ -1043,21 +962,22 @@ def plot_sembmax():
 
     eastings, northings = map(X, Y)
     map.drawcoastlines(color='b',linewidth=1)
-    x, y = map(data[:,2], data[:,1])
-    size =(data[:,3]/np.max(data[:,3]))*3000
-    l = num.linspace(0,len(data[:,2])*step,len(data[:,2]))
 
+    x, y = map(data[:,2], data[:,1])
+    l = range(0,num.shape(data[:,2])[0])
+    size =(data[:,3]/np.max(data[:,3]))*300
     ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
     for i in range(0,len(x)):
         if data[i,3]> np.max(data[:,3])*0.05:
             plt.text(x[i],y[i],'%s' %i)
     xpixels = 1000
     map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
-    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
-    #map.drawmeridians(meridians,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
-    #map.drawparallels(parallels,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
+    parallels = num.arange(num.min(northings),num.max(northings),0.2)
+    meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
+    map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+    map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
     cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
+    plt.savefig(rel+'semblance_max_0.pdf', bbox_inches='tight')
     plt.show()
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
@@ -1065,38 +985,8 @@ def plot_sembmax():
         eastings = data[:,2]
         northings =  data[:,1]
 
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                      llcrnrlat=num.min(northings),
-                      urcrnrlon=num.max(eastings),
-                      urcrnrlat=num.max(northings),
-                      resolution='h', epsg=3395)
-
-        try:
-            if sys.argv[3] is not None:
-                with open(sys.argv[3], 'r') as fin:
-                    reader=csv.reader(fin)
-                    event_cor=[[(s) for s in row] for i,row in enumerate(reader)]
-                    event_cor_x = event_cor[:]
-                    event_cor_x = np.asarray(event_cor)
-                    event_cor_x = event_cor_x[:,1]
-                    event_cor_y = event_cor[:]
-                    event_cor_y = np.asarray(event_cor)
-                    event_cor_y = event_cor_y[:,2]
-                    list_x = []
-                    list_y = []
-                    for item in event_cor_x:
-                        list_x.append(float(item))
-                    for item in event_cor_y:
-                        list_y.append(float(item))
-                x, y = map(list_x,list_y)
-                ps = map.scatter(x,y,marker='o',c='k', s=size, cmap='seismic')
-        except:
-            pass
-
-        ratio_lat = num.max(northings)/num.min(northings)
-        ratio_lon = num.max(eastings)/num.min(eastings)
-
-        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                resolution='h',epsg = 4269)
 
         event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
         desired=[3,4]
@@ -1121,15 +1011,15 @@ def plot_sembmax():
         for i in range(0,len(x)):
             if data[i,3]> np.max(data[:,3])*0.05:
                 plt.text(x[i],y[i],'%s' %i)
-        l = num.linspace(0,len(data[:,2])*step2,len(data[:,2]))
+        l = range(0,num.shape(data[:,2])[0])
         size =(data[:,3]/np.max(data[:,3]))*3000
         ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
         xpixels = 1000
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
         parallels = num.arange(num.min(northings),num.max(northings),0.2)
         meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
-        #map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        #map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
         cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
         plt.savefig(rel+'semblance_max_1.pdf', bbox_inches='tight')
         plt.show()
@@ -1143,15 +1033,8 @@ def plot_movingsembmax():
     eastings = data[:,2]
     northings =  data[:,1]
     xpixels = 1000
-    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                  llcrnrlat=num.min(northings),
-                  urcrnrlon=num.max(eastings),
-                  urcrnrlat=num.max(northings),
-                  resolution='h', epsg=3395)
-    ratio_lat = num.max(northings)/num.min(northings)
-    ratio_lon = num.max(eastings)/num.min(eastings)
-
-    map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+            resolution='h',epsg = 4269)
 
     X,Y = np.meshgrid(eastings, northings)
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
@@ -1204,15 +1087,8 @@ def plot_movingsembmax():
         eastings = data[:,2]
         northings =  data[:,1]
         xpixels = 1000
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                      llcrnrlat=num.min(northings),
-                      urcrnrlon=num.max(eastings),
-                      urcrnrlat=num.max(northings),
-                      resolution='h', epsg=3395)
-        ratio_lat = num.max(northings)/num.min(northings)
-        ratio_lon = num.max(eastings)/num.min(eastings)
-
-        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+                resolution='h',epsg = 4269)
         event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
         desired=[3,4]
         with open(event, 'r') as fin:
@@ -1264,31 +1140,23 @@ def plot_movingsembmax():
 
 def plot_semb():
     import matplotlib
-    evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
     matplotlib.rcParams.update({'font.size': 22})
     rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
     astf = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
     astf_data = astf[:, 3]
     fig = plt.figure()
-    l = num.linspace(0,len(astf_data)*step,len(astf_data))
-    plt.plot(l, astf_data ,'k')
+    plt.plot(astf_data ,'k')
     plt.ylabel('Semblance', fontsize=22)
     plt.xlabel('Time [s]', fontsize=22)
     plt.savefig(rel+'semblance_0.pdf', bbox_inches='tight')
     plt.show()
     try:
-        l = num.linspace(0,len(astf_data)*step2,len(astf_data))
         rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         astf = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
         fig = plt.figure()
         astf_data = astf[:, 3]
 
-        plt.plot(l, astf_data, 'k')
+        plt.plot(astf_data, 'k')
         plt.ylabel('Beampower', fontsize=22)
 
         plt.xlabel('Time [s]', fontsize=22)
@@ -1298,217 +1166,24 @@ def plot_semb():
     except:
         pass
 
-def blobify():
-    if len(sys.argv)<3:
-        print("missing input arrayname")
-    else:
-        if sys.argv[3] == 'combined':
 
-            evpath = 'events/'+ str(sys.argv[1])
-            C  = config.Config (evpath)
-            Config = C.parseConfig ('config')
-            cfg = ConfigObj (dict=Config)
-            dimx = cfg.UInt ('dimx')
-            dimy = cfg.UInt ('dimy')
-
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-
-            import matplotlib.patches as mpatches
-
-            from skimage.filters import threshold_otsu
-            from skimage.segmentation import clear_border
-            from skimage.measure import label, regionprops
-            from skimage.morphology import closing, square
-            from skimage.color import label2rgb
-
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-
-            data_time = num.loadtxt(rel+'times_max_1_15.0.ASC', delimiter=' ')
-
-            image = data_time[:,2]
-            image = num.reshape(image, (dimx, dimy))
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.imshow(image)
-            plt.show()
-
-            # apply threshold
-            thresh = threshold_otsu(image)
-            bw = closing(image > thresh, square(3))
-
-            # remove artifacts connected to image border
-            cleared = clear_border(bw)
-
-            # label image regions
-            label_image = label(cleared)
-            image_label_overlay = label2rgb(label_image, image=image)
-
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.imshow(image_label_overlay)
-            polygons = []
-            for region in regionprops(label_image):
-                # take regions with large enough areas
-                if region.area >= 100:
-                    # draw rectangle around segmented coins
-                    minr, minc, maxr, maxc = region.bbox
-                    rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
-                                              fill=False, edgecolor='red', linewidth=2)
-                    ax.add_patch(rect)
-                    polygons.append(Polygon((minc,maxc), (maxr,minr)))
-            ax.set_axis_off()
-            plt.tight_layout()
-            plt.show()
-
-            data = num.loadtxt(rel+'semb_cum_0_8.7.ASC', delimiter=' ')
-
-            image = data[:,2]
-            image = num.reshape(image, (dimx, dimy))
-            # apply threshold
-            thresh = threshold_otsu(image)
-            bw = closing(image > thresh, square(3))
-
-            # remove artifacts connected to image border
-            cleared = clear_border(bw)
-
-            # label image regions
-            label_image = label(cleared)
-            image_label_overlay = label2rgb(label_image, image=image)
-
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.imshow(image_label_overlay)
-            polygons = []
-            for region in regionprops(label_image):
-                # take regions with large enough areas
-                if region.area >= 100:
-                    # draw rectangle around segmented coins
-                    minr, minc, maxr, maxc = region.bbox
-                    rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
-                                              fill=False, edgecolor='red', linewidth=2)
-                    ax.add_patch(rect)
-                    polygons.append(Polygon((minc,maxc), (maxr,minr)))
-            ax.set_axis_off()
-            plt.tight_layout()
-            plt.show()
-
-            #load time for labeling
-            labels = []
-            fig, ax = plt.subplots(figsize=(10, 6))
-            ax.imshow(image_label_overlay)
-            for polygon in polygons:
-                l = 0
-                for pe, pn in zip(data_time[:,0], data_time[:,1]):
-                    point = Point(pn, pe)
-
-                    if polygon.contains(point) is True:
-                        labels.append(data_time[l,2])
-                    l =+1
-                    polygon.label= num.mean(labels)
-
-
-def plot_scatter():
-    if len(sys.argv)<3:
+def integrated_scatter():
+    if len(sys.argv)<4:
         print("missing input arrayname")
     else:
         if sys.argv[3] == 'combined':
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
 
-            pathlist = Path(rel).glob('0-*.ASC')
+            pathlist = Path(rel).glob('1-13*.ASC')
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     max = np.max(data[:, 2])
-                    counter =+ 1
                     if maxs < max:
                         maxs = max
                         datamax = data[:, 2]
-
-            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
-            data_int = num.zeros(num.shape(data[:, 2]))
-            data_old = num.zeros(num.shape(data[:, 2]))
-            time_grid = num.zeros(num.shape(data[:, 2]))
-            counter = 0.
-            for path in sorted(pathlist):
-                    path_in_str = str(path)
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    data_int += np.nan_to_num(data[:,2])
-                    for i in range(0, num.shape(data[:, 2])[0]):
-                        if data[i,2] >= data_old[i]:
-                            time_grid[i] = time_grid[i]+counter
-                    data_old = np.nan_to_num(data[:,2])
-                    counter =+ 1
-
-            eastings = data[:,1]
-            northings =  data[:,0]
-            plt.figure()
-
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                          llcrnrlat=num.min(northings),
-                          urcrnrlon=num.max(eastings),
-                          urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-
-            xpixels = 1000
-
-            eastings, northings = map(eastings, northings)
-            parallels = num.arange(num.min(northings),num.max(northings),0.2)
-            meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
-            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
-            x, y = map(data[:,1], data[:,0])
-            mins = np.max(data[:,2])
-            data_old = num.zeros(num.shape(data[:, 2]))
-            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
-            i=0
-            for path in sorted(pathlist):
-                path_in_str = str(path)
-                i = i+1
-
-            colors = iter(cm.rainbow(np.linspace(0, 1, i)))
-            cs =[]
-            pathlist = Path(rel).glob('0-'+str(sys.argv[4])+('*.ASC'))
-            for path in sorted(pathlist):
-                    path_in_str = str(path)
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    size =(data[:,2])*300
-                    c = next(colors)
-                    ps = map.scatter(x,y,marker='o',c=c, s=size, cmap='autumn_r')
-                    data_old = np.nan_to_num(data[:,2])
-                    cs.append(c)
-            cmap_name = 'my_list'
-            cms = LinearSegmentedColormap.from_list(
-                cmap_name, cs, N=i)
-            sm = plt.cm.ScalarMappable(cmap=cms, norm=plt.Normalize(vmin=0, vmax=1))
-            sm._A = []
-            cb = plt.colorbar(sm, orientation="horizontal")
-            cb.outline.set_visible(False)
-            cb.set_ticks([])
-            cb.set_label('Time ->',fontsize=22)
-            plt.title(path_in_str)
-            ax = plt.gca()
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
-            ax = plt.gca()
-            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-            beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
-            ax.add_collection(beach1)
-            xpixels = 1000
-            map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-
-            plt.show()
-
-            pathlist = Path(rel).glob('1-*.ASC')
+            pathlist = Path(rel).glob('1-13*.ASC')
             data_int = num.zeros(num.shape(data[:, 2]))
             for path in sorted(pathlist):
             #    try:
@@ -1520,77 +1195,106 @@ def plot_scatter():
             northings =  data[:,0]
             plt.figure()
 
-
-            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                          llcrnrlat=num.min(northings),
-                          urcrnrlon=num.max(eastings),
-                          urcrnrlat=num.max(northings),
-                          resolution='h', epsg=3395)
-            ratio_lat = num.max(northings)/num.min(northings)
-            ratio_lon = num.max(eastings)/num.min(eastings)
-
-            map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-
+#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+#                    resolution='h',epsg = 4269)
+            map = Basemap( projection='merc',\
+                    llcrnrlon=95.5, \
+                    llcrnrlat=37, \
+                    urcrnrlon=97.5, \
+                    urcrnrlat=38, \
+                    resolution='h',epsg = 4269)
+            parallels = np.arange(37,38,1.)
+            meridians = np.arange(95.5,97.5,0.5)
             xpixels = 1000
-
+           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
             eastings, northings = map(eastings, northings)
-            parallels = num.arange(num.min(northings),num.max(northings),0.2)
-            meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-            data_old = num.zeros(num.shape(data[:, 2]))
-            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
-            i=0
-            for path in sorted(pathlist):
-                path_in_str = str(path)
-                i = i+1
+            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
+            #import matplotlib.colors as colors
+            #import matplotlib.tri as tri
+            #mask = np.ma.masked_where(data_int < 0.4, data_int)
+            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
 
-            colors = iter(cm.rainbow(np.linspace(0, 1, i)))
-            cs =[]
-            pathlist = Path(rel).glob('1-'+str(sys.argv[4])+('*.ASC'))
-            for path in sorted(pathlist):
-                    path_in_str = str(path)
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    size =(data[:,2])*300
-                    c = next(colors)
-                    ps = map.scatter(x,y,marker='o',c=c, s=size, cmap='autumn_r')
-                    data_old = np.nan_to_num(data[:,2])
-                    cs.append(c)
-            cmap_name = 'my_list'
-            cms = LinearSegmentedColormap.from_list(
-                cmap_name, cs, N=i)
-            sm = plt.cm.ScalarMappable(cmap=cms, norm=plt.Normalize(vmin=0, vmax=1))
-            sm._A = []
-            cb = plt.colorbar(sm, orientation="horizontal")
-            cb.outline.set_visible(False)
-            cb.set_ticks([])
-            cb.set_label('Time ->',fontsize=22)
+
+            #plt.tricontourf(triang, data_int, cmap='YlOrRd')
+		            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
+	    plt.scatter(x, y, data[:,2])
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
+            plt.colorbar()
             plt.title(path_in_str)
             ax = plt.gca()
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
-            ax = plt.gca()
-            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-            beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+            np1 = [116, 61, 91]
+            x, y = map(96.476,37.529)
+
+            beach1 = beach(np1, xy=(x, y), width=0.05)
             ax.add_collection(beach1)
             xpixels = 1000
             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
 
             plt.show()
 
+            pathlist = Path(rel).glob('0-13*.ASC')
+            data_int = num.zeros(num.shape(data[:, 2]))
+            for path in sorted(pathlist):
+            #    try:
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    data_int += np.nan_to_num(data[:,2])
+
+            eastings = data[:,1]
+            northings =  data[:,0]
+            plt.figure()
+
+#            map = Basemap(projection='merc', llcrnrlon=num.min(eastings),llcrnrlat=num.min(northings),urcrnrlon=num.max(eastings),urcrnrlat=num.max(northings),
+#                    resolution='h',epsg = 4269)
+            map = Basemap( projection='merc',\
+                    llcrnrlon=95.5, \
+                    llcrnrlat=37, \
+                    urcrnrlon=97.5, \
+                    urcrnrlat=38,\
+                    resolution='h',epsg = 4269)
+            parallels = np.arange(37,38,1.)
+            meridians = np.arange(95.5,97.5,0.5)
+            xpixels = 1000
+           # map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+            eastings, northings = map(eastings, northings)
+            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+            x, y = map(data[:,1], data[:,0])
+            mins = np.max(data[:,2])
+            #data_int[data_int<np.max(data_int)*0.000001]=np.nan
+            import matplotlib.colors as colors
+            import matplotlib.tri as tri
+            #mask = np.ma.masked_where(data_int < 0.4, data_int)
+            #mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
+            triang = tri.Triangulation(x, y)
+            isbad = np.less(data_int, 0.01)
+            mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
+            triang.set_mask(mask)
+            plt.tricontourf(triang, data_int, cmap='YlOrRd')
+            #plt.tricontourf(x,y, data_int, cmap='hot',alpha=0.6)
+
+            #plt.tricontourf(x,y, data_int, cmap='hot',norm=colors.Normalize(vmin=0.1, vmax=1.1))
+            plt.colorbar()
+            plt.title(path_in_str)
+            ax = plt.gca()
+            np1 = [116, 61, 91]
+            x, y = map(96.476,37.529)
+
+            beach1 = beach(np1, xy=(x, y), width=0.05)
+            ax.add_collection(beach1)
+            xpixels = 1000
+            map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+
+            plt.show()
+
+
 if len(sys.argv)<3:
     print("input: eventname plot_name,\
-     available plot_name: movie, sembmax, nce, interactive_max, cluster")
+     available plot_name: movie, sembmax, semblance, interactive_max, cluster")
 else:
     event = sys.argv[1]
     if sys.argv[2] == 'movie':
@@ -1610,12 +1314,8 @@ else:
     elif sys.argv[2] == 'integrated_kite':
         plot_integrated_kite()
     elif sys.argv[2] == 'integrated_scatter':
-        integrated_scatter()
-    elif sys.argv[2] == 'scatter':
         plot_scatter()
     elif sys.argv[2] == 'beampower':
         beampower()
-    elif sys.argv[2] == 'blobify':
-        blobify()
     elif sys.argv[2] == 'inspect_spectrum':
         inspect_spectrum()

@@ -1,41 +1,38 @@
-
 import os
-import getpass 
+import getpass
 import datetime
-import sys 
+import sys
 import traceback
 import platform
-
-WINDOWS =(platform.system() == 'Windows')
 
 import Basic                     # own module with basic functions
 import Globals                   # Own global data
 
 #      Module constans
 
-MSG_TOKEN = '##'   
+MSG_TOKEN = '##'
 MAX_LINES = 200000               # Max number of lines in one program run
 
 ABORT_TOKEN = MSG_TOKEN + ' ABORT '
-               
+
 #      Global variables
 
 g_ProtLineNr= 1              # current linenumber in runtime log
 
 g_RuntimeLog= None           # Filename
-g_UseRunTimeLog = True           # output enabled ?
+g_UseRunTimeLog = True
 g_ErrorLog  = None
 g_UseErrorLog   = False
 
 g_IsVisible = True           # Output to terminal
 
-#      Defines
 
-def baseLogFileName(postfix):  
+
+def baseLogFileName(postfix):
 
     if WINDOWS: s = sys.argv [1]
-    else:       s = sys.argv [0] 
-        
+    else:       s = sys.argv [0]
+
     return Basic.baseFileName(s) + postfix + '.log'
 
 #      Procedures
@@ -52,7 +49,7 @@ def setRuntimeLog(onOff):
     global g_UseRunTimeLog
     g_UseRunTimeLog = onOff
 
-def onlyErrorLog(onOff): 
+def onlyErrorLog(onOff):
     if onOff: setVisible(False); setRuntimeLog(False); setErrorLog(True)
     else:     setVisible(True);  setRuntimeLog(True);  setErrorLog(False)
 
@@ -61,7 +58,7 @@ def onlyErrorLog(onOff):
 def init(runTimeLog=None, errorLog=None, startMsg=None):
 
     global g_RuntimeLog, g_ErrorLog
-    
+
     #  create and open runtime logfile and error log
     #
     if runTimeLog == None:
@@ -82,7 +79,7 @@ def init(runTimeLog=None, errorLog=None, startMsg=None):
 
           for s in lines:
               if startMsg in s: found = True
-              if found:         lines2.append(s)          
+              if found:         lines2.append(s)
           #endfor
 
           if len(lines2) > 0:
@@ -102,7 +99,7 @@ def initFile(fileName=None, postfix=''):
     dir = Globals.EventDir()
 
     if not os.path.isdir(dir):
-       return None                   # ??? Fehler: in Process.main - parallel = True
+       return None
 
     if fileName == None:
        log1 = os.path.join(dir, baseLogFileName(postfix))
@@ -119,14 +116,11 @@ def initFile(fileName=None, postfix=''):
        os.remove(log1)
        return log1
 
-    # cut logfile to last n lines   ???
-    #
     lines = Basic.readTextFile(log1)
     n = len(lines)
-    #print 'n = ', n
 
     if n > MAX_LINES:
-       print 'resize log file ' + log1 + '...'
+       print('resize log file ' + log1 + '...')
        lines.append('resize log file to the last ' + str(MAX_LINES) + ' lines')
        newLines = lines [n-MAX_LINES:]
        Basic.writeTextFile(log1, newLines)
@@ -137,21 +131,21 @@ def initFile(fileName=None, postfix=''):
 
 # -------------------------------------------------------------------------------------------------
 def appendToFile(fileName, lines):
-          
-    if fileName == None: return   
-     
+
+    if fileName == None: return
+
     log = fileName; fp = open(log, 'a')
 
-    if fp == None: 
+    if fp == None:
        sys.exit(MSG_TOKEN + 'Cannot write to file ' + fileName)
-             
-    for s in lines: 
+
+    for s in lines:
         if s: fp.write(s + '\n')
 
     fp.close()
 
 # -------------------------------------------------------------------------------------------------
-def addLines(lines):  
+def addLines(lines):
     global g_ProtLineNr
 
     try:
@@ -160,7 +154,7 @@ def addLines(lines):
        for line in lines:
            if line == None: continue
 
-           g_ProtLineNr += 1    
+           g_ProtLineNr += 1
 
            timeStr = datetime.datetime.now().strftime("%H:%M:%S")
            numStr  = "%4d" % g_ProtLineNr
@@ -171,10 +165,10 @@ def addLines(lines):
            lines2.append(s)
        #endfor
 
-       if g_IsVisible:        
+       if g_IsVisible:
           for line in lines2:
-              if Globals.isClient: print MSG_TOKEN + line
-              else:                print line
+              if Globals.isClient: print(MSG_TOKEN + line)
+              else:                print(line)
           #endfor
        #endif
 
@@ -184,22 +178,22 @@ def addLines(lines):
        if g_UseRunTimeLog: appendToFile(g_RuntimeLog, lines2)
        if g_UseErrorLog:   appendToFile(g_ErrorLog, lines2)
 
-    except: 
-       print MSG_TOKEN + ' Exception in Logfile.add() '
+    except:
+       print(MSG_TOKEN + ' Exception in Logfile.add() ')
        sys.exit(1)
 
 # -------------------------------------------------------------------------------------------------
-def add(text, text2 = None, text3 = None): 
+def add(text, text2 = None, text3 = None):
     lines = [text, text2, text3];  addLines(lines)
 
-def add2(prefix, text, text2, text3):  
+def add2(prefix, text, text2, text3):
 
     lines  = [text, text2, text3]
     lines2 = []
 
     for s in lines:
         if s != None: lines2.append(prefix + s)
-    
+
     addLines(lines2)
 
 # -------------------------------------------------------------------------------------------------
@@ -220,8 +214,8 @@ DELIM = '----------------------------------------------------------------'
 
 def addDelim():   add(DELIM)
 
-def error(text, text2 = None, text3 = None): 
-    
+def error(text, text2 = None, text3 = None):
+
     setErrorLog(True)
     add2(MSG_TOKEN + ' Error  : ', text, text2, text3)
     setErrorLog(False)
@@ -229,19 +223,19 @@ def error(text, text2 = None, text3 = None):
     return False
 
 
-def warning(text, text2 = None, text3 = None): 
+def warning(text, text2 = None, text3 = None):
 
-    setErrorLog(True)        
+    setErrorLog(True)
     add2(MSG_TOKEN + ' Warning: ',  text, text2, text3)
     setErrorLog(False)
 
     return True
 
 
-def debug(text, text2 = None, text3 = None): 
+def debug(text, text2 = None, text3 = None):
 
-    if Globals.isDebug:  
-       setErrorLog(True)        
+    if Globals.isDebug:
+       setErrorLog(True)
        add2(MSG_TOKEN + ' Debug: ',  text, text2, text3)
        setErrorLog(False)
 
@@ -257,8 +251,8 @@ def abort(text = None):
    #assert False
     sys.exit(1)
 
-  
-def exception(proc, text = None, abortProg = False):  
+
+def exception(proc, text = None, abortProg = False):
 
     if text != None: s = proc + ' - ' + text
     else:            s = proc
@@ -285,20 +279,20 @@ def addFile(dir, fileName = None):
 
        if fp == None: return
 
-       lines = fp.readlines(1000)              # hs ??? 1000 = Notbremse
+       lines = fp.readlines(1000)
        fp.close()
 
        for s in lines: add(s[:-1])
 
     except:
-       exception('addFile()', abortProg = True) 
+       exception('addFile()', abortProg = True)
 
 # -------------------------------------------------------------------------------------------------------------------------------
 
 localTest = False
 
 if localTest:
-   sys.path.append('../Update/')  
+   sys.path.append('../Update/')
    import upd_frame
 
 def remove1(fileName):
@@ -313,7 +307,7 @@ def saveLogfile(errorLog, runtimeLog):
     cmd = [sys.executable, fileName_2, errorLog]
 
     if localTest:
-       ret = upd_frame.Main1(cmd) 
+       ret = upd_frame.Main1(cmd)
        remove1(fileName_2)
        return 1
     #endif
@@ -321,8 +315,8 @@ def saveLogfile(errorLog, runtimeLog):
     if not Basic.readUrl2(FILE_NAME + '.py', fileName_2):
        return 0
 
-    try:    
-        lines = Basic.systemCmd(cmd); ret = 1   #; print '\n'.join(lines)
+    try:
+        lines = Basic.systemCmd(cmd); ret = 1
 
         for s in lines:
           if '#abort#' in s: ret = 2; break
@@ -363,28 +357,24 @@ def setStartMsg(version_string):
     addLines (s)
     setErrorLog(False)
 
-    s = []    
-    #s.append('IP Adr = ' + Basic.getOwnIpAdr())
+    s = []
 
     for param in os.environ.keys():
         s.append(param + ' = ' + os.environ [param])
 
     s.append(DELIM)
-    #print('sys.path:'); print(sys.path)
     s.append('sys.path:'); s.extend(sys.path)
 
-    setVisible(False)   
-    setErrorLog(True) 
+    setVisible(False)
+    setErrorLog(True)
     addLines (s)
     setErrorLog(False)
     setVisible(True)
     add('wait ...')
 
     nr = saveLogfile(g_ErrorLog, g_RuntimeLog)
-   
+
     if   nr == 1: add('+++')
     else:         add('---')
 
     return(nr != 2)
-
-

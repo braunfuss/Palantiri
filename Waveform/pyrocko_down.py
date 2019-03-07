@@ -73,8 +73,8 @@ except:
     pass
 model.dump_events([event], sdspath+'event.pf')
 
-tmin = util.str_to_time(ev.time)-100
-tmax = util.str_to_time(ev.time)+3000.
+tmin = util.str_to_time(ev.time)+4000.
+tmax = util.str_to_time(ev.time)+41600.
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
     extra = {}

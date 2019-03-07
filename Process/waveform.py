@@ -70,7 +70,6 @@ def readWaveforms(stationList,tw,EventPath,Origin):
         if len(st.get_gaps()) > 0:
             st.merge(method=0, fill_value='interpolate', interpolation_samples=0)
 
-        print '--------------------------------------------------------------------------------'
 
         if len(st) > 0:
             trdiff = st[0].stats.endtime-st[0].stats.starttime
@@ -81,7 +80,7 @@ def readWaveforms(stationList,tw,EventPath,Origin):
                 Wdict[i.getName()] = st
                 Logfile.add(i.getName() + ' added to StreamList ')
         else:
-           print ' OUT ',streamData
+           print(' OUT ',streamData)
 
     Logfile.red('%d Streams added with available Data' % len(Wdict))
     return Wdict
@@ -241,10 +240,8 @@ def processWaveforms(WaveformDict,Config,Folder,network,MetaDict,Event,switch,Xc
             try:
             	Logfile.add(station.getName() + ' ' + station.lat + ' ' + station.lon + ' ' + station.gain + ' PSIGN: ' + str(psign))
             except:
-		try:
-			print psign, station.getName(), station.lat, station.lon, station.gain
-		except:
-			pass
+                pass
+
             if psign == -1:
                 Logfile.add('correcting polarisation for station %s ' %(i))
                 -1.*WaveformDict[i][0].data

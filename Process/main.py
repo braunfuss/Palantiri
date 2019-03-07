@@ -7,8 +7,10 @@ import shutil
 import time
 import multiprocessing
 from   optparse import OptionParser
-import cPickle  as pickle
-# add local directories to import path
+if sys.version_info.major >= 3:
+    import _pickle as pickle
+else:
+    import cPickle as pickle
 
 sys.path.append ('../tools/')
 sys.path.append ('../Common/')
@@ -29,8 +31,6 @@ import config
 from   config import Event, Trigger
 
 #       Import from Process
-
-from    Version  import  VERSION_STRING
 
 import  deserializer
 import  filterStation
@@ -90,10 +90,13 @@ def processLoop():
     except:
         pass
     Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    if cfg.pyrocko_download() == True:
-        Meta = C.readpyrockostations()#
 
+    cfg = ConfigObj (dict=Config)
+    phases = cfg.Str('ttphases')
+    phases = phases.split(',')
+
+    if cfg.pyrocko_download() == True:
+        Meta = C.readpyrockostations()
     elif cfg.colesseo_input() == True:
         scenario = guts.load(filename=cfg.colosseo_scenario_yml())
         scenario_path = cfg.colosseo_scenario_yml()[:-12]
@@ -153,8 +156,6 @@ def processLoop():
     filtername = filter.filterName()
     Logfile.add ('filtername = ' + filtername)
 
-    #todo crosscorrelation for all arrays before processing
-
     XDict   = {}
     RefDict = {}
     SL  = {}
@@ -195,20 +196,19 @@ def processLoop():
                 else:
                     A = Xcorr (ev,FilterMeta,evpath,Config,Syn_in,arrayfolder)
 
-                print "run Xcorr"
+                print("run Xcorr")
                 W,triggerobject= A.runXcorr()
 
                 XDict[i]   = W
                 RefDict[i] = triggerobject.tdiff
                 SL[i]  = len(network)
-            #endfor
 
             fobjrefshift = open (rp,'w')
-            pickle.dump (RefDict,fobjrefshift)
+            pickle.dump(RefDict,fobjrefshift)
             fobjrefshift.close()
 
             output = open (ps, 'w')
-            pickle.dump (XDict, output)
+            pickle.dump(XDict, output)
             output.close()
 
         for i in sorted (XDict.iterkeys()) :
@@ -218,7 +218,6 @@ def processLoop():
 
         while True :
            nnl = raw_input ("please enter your choice: ")
-           #Logfile.add ('Choise = ' + nnl)
 
            if len(nnl) == 0:
               if not Basic.question ('Process all networks ?') : continue
@@ -247,7 +246,6 @@ def processLoop():
                sys.exit()
 
            else:
-               # Check if selected array(s) exists
 
                names = nnl.split (',')
                isOk  = True
@@ -259,11 +257,7 @@ def processLoop():
                       Logfile.error ('Illegal network name ' + str(array))
                       isOk = False
                       break
-               #endfor
-
                if not isOk :  continue   # Illegal network : input again
-
-               # use these networks
 
                Logfile.add ('This networks will be used for processing: %s' % (nnl))
                Config ['networks'] = nnl
@@ -285,215 +279,213 @@ def processLoop():
     Logfile.add ('working on ' + Config['networks'])
 
     #==================================loop over depth======================
-    for filterindex in xrange(0,filters):
-        for depthindex in xrange(start,stop, step):
+    for phase in phases:
+        for filterindex in xrange(0,filters):
+            for depthindex in xrange(start,stop, step):
 
-            workdepth = float(wd) + depthindex
+                workdepth = float(wd) + depthindex
 
-            Origin['depth'] = workdepth
+                Origin['depth'] = workdepth
 
-            ev = Event (Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'],
-                        strike = strike,dip=dip,rake=rake)
-            Logfile.add ('WORKDEPTH: ' + str (Origin['depth']))
+                ev = Event (Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'],
+                            strike = strike,dip=dip,rake=rake)
+                Logfile.add ('WORKDEPTH: ' + str (Origin['depth']))
 
-            #==================================do prerequiries===============
+                #==================================do prerequiries===============
 
-            #==================================loop over arrays================
-            ASL = []
-            weights = []
-            array_centers = []
+                #==================================loop over arrays================
+                ASL = []
+                weights = []
+                array_centers = []
 
-            networks = Config['networks'].split(',')
-            counter = 1
-            TriggerOnset = []
-            Wdfs = []
-            FilterMetas = []
-            TTTgrids = OrderedDict()
-            mints = []
-            maxts = []
-            for i in networks:
+                networks = Config['networks'].split(',')
+                counter = 1
+                TriggerOnset = []
+                Wdfs = []
+                FilterMetas = []
+                TTTgrids = OrderedDict()
+                mints = []
+                maxts = []
+                for i in networks:
 
-                arrayname = i
-                arrayfolder = os.path.join (Folder['semb'],arrayname)
+                    arrayname = i
+                    arrayfolder = os.path.join (Folder['semb'],arrayname)
 
-                network = Config[i].split('|')
-                Logfile.add ('network: ' + str (network))
+                    network = Config[i].split('|')
+                    Logfile.add ('network: ' + str (network))
 
-                FilterMeta = ttt.filterStations (Meta,Config,Origin,network)
+                    FilterMeta = ttt.filterStations (Meta,Config,Origin,network)
 
-                if len(FilterMeta)  < 3: continue
+                    if len(FilterMeta)  < 3: continue
 
-                W = XDict[i]
-                refshift = RefDict[i]
+                    W = XDict[i]
+                    refshift = RefDict[i]
 
-                FilterMeta = cmpFilterMetavsXCORR (W, FilterMeta)
+                    FilterMeta = cmpFilterMetavsXCORR (W, FilterMeta)
 
-                Logfile.add ('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
-                         % (Config['dimx'],Config['dimy'],Config['gridspacing']))
-
-
-                Logfile.red ('Calculating Traveltime Grid')
-                t1 = time.time()
+                    Logfile.add ('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
+                             % (Config['dimx'],Config['dimy'],Config['gridspacing']))
 
 
-                isParallel = False
-                TTTGridMap = []
-                mint = []
-                maxt = []
-                ttt_model = cfg.Str('traveltime_model')
-
-                try:
-                    f = open('../tttgrid/tttgrid%s_%s_%s_%s.pkl' % (ttt_model,ev.time, arrayname, workdepth), 'rb')
-                    print "loading travel time grid%s_%s_%s_%s.pkl" % (ttt_model, ev.time, arrayname, workdepth)
-                    TTTGridMap,mint,maxt = pickle.load(f)
-                    f.close()
-                    print "loading of travel time grid sucessful"
-                except:
-                    print "loading of travel time grid unsucessful, will now calculate the grid:"
-                    if isParallel :                                            #hs
-                       maxp = 6                                               #hs
-                       po   = multiprocessing.Pool(maxp)
-
-                       for i in xrange(len(FilterMeta)):
-                           po.apply_async (ttt.calcTTTAdv,(Config,FilterMeta[i],Origin,i,arrayname,W,refshift))
-
-                           po.close()
-                           po.join()
-                    else:                                                                           #hs+
-                        for i in xrange(len(FilterMeta)):
-                            t1 = time.time()
-                            ttt.calcTTTAdv (Config,FilterMeta[i],Origin,i,arrayname,W,refshift)
-
-                            Logfile.add ('ttt.calcTTTAdv : ' + str(time.time() - t1) + ' sec.')
-                            #endif                                                                           #hs-
-
-                    assert len(FilterMeta) > 0
-
-                    TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
-                    mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
-                    f = open('../tttgrid/tttgrid%s_%s_%s_%s.pkl' % (ttt_model,ev.time, arrayname, workdepth), 'wb')
-                    print "dumping the traveltime grid for this array"
-                    pickle.dump([TTTGridMap,mint,maxt], f)
-                    f.close()
+                    Logfile.red ('Calculating Traveltime Grid')
+                    t1 = time.time()
 
 
-                t2 = time.time()
-                Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
+                    isParallel = False
+                    TTTGridMap = []
+                    mint = []
+                    maxt = []
+                    ttt_model = cfg.Str('traveltime_model')
 
-                switch = filterindex
+                    try:
+                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' % (phase, ttt_model,ev.time, arrayname, workdepth), 'rb')
+                        print("loading travel time grid%s_%s_%s_%s_%s.pkl" % (phase, ttt_model, ev.time, arrayname, workdepth))
+                        TTTGridMap,mint,maxt = pickle.load(f)
+                        f.close()
+                        print("loading of travel time grid sucessful")
+                    except:
+                        print("loading of travel time grid unsucessful, will now calculate the grid:")
+                        if isParallel :
+                           maxp = 6
+                           po   = multiprocessing.Pool(maxp)
 
-                tw  = times.calculateTimeWindows (mint,maxt,Config,ev, switch)
-                if cfg.pyrocko_download() == True:
-                    if cfg.quantity() == 'displacement':
-                        Wd = waveform.readWaveformsPyrocko_restituted (FilterMeta,
-                                                                        tw, evpath,
-                                                                         ev)
-                    elif cfg.Bool('synthetic_test') is True:
-                        Wd = waveform.readWaveformsPyrockodummy(FilterMeta, tw, evpath, ev)
-                    else:
-                        Wd = waveform.readWaveformsPyrocko (FilterMeta, tw, evpath,
-                                                            ev)
-                elif cfg.colesseo_input() == True:
-                    Wd = waveform.readWaveforms_colesseo(FilterMeta, tw, evpath, ev, C)
-                else:
-                    Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
-                if cfg.Bool('synthetic_test') is True or cfg.Bool('dynamic_filter') is True:
-                    Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-                    Wdfs.extend(Wdf)
-                else:
-                    Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
-                    Wdfs.extend(Wdf)
+                           for i in xrange(len(FilterMeta)):
+                               po.apply_async (ttt.calcTTTAdv,(Config,FilterMeta[i],Origin,i,arrayname,W,refshift))
 
-                C.writeStationFile(FilterMeta,Folder,counter)
-                Logfile.red ('%d Streams added for Processing' % (len(Wd)))
+                               po.close()
+                               po.join()
+                        else:
+                            for i in xrange(len(FilterMeta)):
+                                t1 = time.time()
+                                ttt.calcTTTAdv (Config,FilterMeta[i],Origin,i,arrayname,W,refshift,phase)
 
-                t1= time.time()
-                f = open('../tttgrid/tttgrid%s_%s_%s_%s.pkl' % (ttt_model, ev.time, arrayname, workdepth), 'rb')
-                print "loading travel time grid_%s_%s_%s.pkl" % (ev.time, arrayname, workdepth)
-                TTTGridMap,mint,maxt = pickle.load(f)
-                f.close()
+                                Logfile.add ('ttt.calcTTTAdv : ' + str(time.time() - t1) + ' sec.')
 
-                if cfg.Bool('combine_all') is False:
+                        assert len(FilterMeta) > 0
 
-                    if cfg.optimize() == True:
-                        optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                                     Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                    else:
+                        TTTGridMap = deserializer.deserializeTTT (len(FilterMeta))
+                        mint,maxt  = deserializer.deserializeMinTMaxT (len(FilterMeta))
+                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' % (phase, ttt_model,ev.time, arrayname, workdepth), 'wb')
+                        print("dumping the traveltime grid for this array")
+                        pickle.dump([TTTGridMap,mint,maxt], f)
+                        f.close()
 
-                        arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                                     Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                        weights.append(weight)
-                        array_centers.append(array_center)
-                        ASL.append(arraySemb)
-                        sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
 
-                fileName = os.path.join (arrayfolder,'stations.txt')
-                Logfile.add ('Write to file ' + fileName)
+                    t2 = time.time()
+                    Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
-                fobjarraynetwork = open (fileName,'w')
+                    switch = filterindex
 
-                for i in FilterMeta:
-                    fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
-
-                fobjarraynetwork.close()
-                t2= time.time()
-                Logfile.add ('CALC took %0.3f sec' % (t2-t1))
-                counter +=1
-
-                TTTgrids.update(TTTGridMap)#
-                mints.append(mint)
-                maxts.append(maxt)
-                FilterMetas[len(FilterMetas):]= FilterMeta
-            #    FilterMetas.extend(FilterMeta)
-                TTTGridMap = []
-
-            if cfg.Bool('combine_all') is True:
-                if cfg.pyrocko_download() is True:
-                    if cfg.Bool('synthetic_test') is True:
-                        Wd = waveform.readWaveformsPyrockodummy(FilterMetas, tw, evpath, ev)
-                    else:
+                    tw  = times.calculateTimeWindows (mint,maxt,Config,ev, switch)
+                    if cfg.pyrocko_download() == True:
                         if cfg.quantity() == 'displacement':
-                            Wd = waveform.readWaveformsPyrocko_restituted (FilterMetas,
+                            Wd = waveform.readWaveformsPyrocko_restituted (FilterMeta,
                                                                             tw, evpath,
                                                                              ev)
+                        elif cfg.Bool('synthetic_test') is True:
+                            Wd = waveform.readWaveformsPyrockodummy(FilterMeta, tw, evpath, ev)
                         else:
-                            Wd = waveform.readWaveformsPyrocko (FilterMetas, tw, evpath,
+                            Wd = waveform.readWaveformsPyrocko (FilterMeta, tw, evpath,
                                                                 ev)
-                elif cfg.colesseo_input() is True:
-                    Wd = waveform.readWaveforms_colesseo   (FilterMetas, tw, evpath, ev, C)
-                else:
-                    Wd = waveform.readWaveforms   (FilterMetas, tw, evpath, ev)
-                if cfg.Bool('synthetic_test') is True:
-                    Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMetas, ev, switch, W)
-                else:
-                    Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMetas, ev, switch, W)
-                mint = num.min(mints)
-                maxt = num.max(maxts)
-                arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMetas,mint,maxt,TTTgrids,
-                                             Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
-                ASL.append(arraySemb)
-                weights.append(weight)
-                array_centers.append(array_center)
-                sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
-            if cfg.optimize_all() == True:
-                import optim_csemb
-                from optim_csemb import solve
-                sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
-                optim_csemb.solve(counter, Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                             Folder,Origin,ntimes,switch, ev,arrayfolder,
-                                             syn_in, ASL, sembmax, evpath, XDict, RefDict,
-                                             workdepth, filterindex, Wdfs)
+                    elif cfg.colesseo_input() == True:
+                        Wd = waveform.readWaveforms_colesseo(FilterMeta, tw, evpath, ev, C)
+                    else:
+                        Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
+                    if cfg.Bool('synthetic_test') is True or cfg.Bool('dynamic_filter') is True:
+                        Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+                        Wdfs.extend(Wdf)
+                    else:
+                        Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMeta, ev, switch, W)
+                        Wdfs.extend(Wdf)
 
-            if ASL:
-                Logfile.red ('collect semblance matrices from all arrays')
-                sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch, array_centers)
-                if cfg.Bool('weight_by_noise') == True:
-                    sembCalc.collectSembweighted(ASL,Config,Origin,Folder,ntimes,len(networks),switch, weights)
+                    C.writeStationFile(FilterMeta,Folder,counter)
+                    Logfile.red ('%d Streams added for Processing' % (len(Wd)))
+
+                    t1= time.time()
+                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' % (phase, ttt_model, ev.time, arrayname, workdepth), 'rb')
+                    TTTGridMap,mint,maxt = pickle.load(f)
+                    f.close()
+
+                    if cfg.Bool('combine_all') is False:
+
+                        if cfg.optimize() == True:
+                            optim.solve (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                         Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                        else:
+
+                            arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                         Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                            weights.append(weight)
+                            array_centers.append(array_center)
+                            ASL.append(arraySemb)
+                            sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
+
+                    fileName = os.path.join (arrayfolder,'stations.txt')
+                    Logfile.add ('Write to file ' + fileName)
+
+                    fobjarraynetwork = open (fileName,'w')
+
+                    for i in FilterMeta:
+                        fobjarraynetwork.write (('%s %s %s\n') % (i.getName(),i.lat,i.lon))
+
+                    fobjarraynetwork.close()
+                    t2= time.time()
+                    Logfile.add ('CALC took %0.3f sec' % (t2-t1))
+                    counter +=1
+
+                    TTTgrids.update(TTTGridMap)#
+                    mints.append(mint)
+                    maxts.append(maxt)
+                    FilterMetas[len(FilterMetas):]= FilterMeta
+                    TTTGridMap = []
+
+                if cfg.Bool('combine_all') is True:
+                    if cfg.pyrocko_download() is True:
+                        if cfg.Bool('synthetic_test') is True:
+                            Wd = waveform.readWaveformsPyrockodummy(FilterMetas, tw, evpath, ev)
+                        else:
+                            if cfg.quantity() == 'displacement':
+                                Wd = waveform.readWaveformsPyrocko_restituted (FilterMetas,
+                                                                                tw, evpath,
+                                                                                 ev)
+                            else:
+                                Wd = waveform.readWaveformsPyrocko (FilterMetas, tw, evpath,
+                                                                    ev)
+                    elif cfg.colesseo_input() is True:
+                        Wd = waveform.readWaveforms_colesseo   (FilterMetas, tw, evpath, ev, C)
+                    else:
+                        Wd = waveform.readWaveforms   (FilterMetas, tw, evpath, ev)
+                    if cfg.Bool('synthetic_test') is True:
+                        Wdf = waveform.processdummyWaveforms(Wd, Config, Folder, arrayname, FilterMetas, ev, switch, W)
+                    else:
+                        Wdf = waveform.processWaveforms(Wd, Config, Folder, arrayname, FilterMetas, ev, switch, W)
+                    mint = num.min(mints)
+                    maxt = num.max(maxts)
+                    arraySemb, weight, array_center = sembCalc.doCalc (counter,Config,Wdf,FilterMetas,mint,maxt,TTTgrids,
+                                                 Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in)
+                    ASL.append(arraySemb)
+                    weights.append(weight)
+                    array_centers.append(array_center)
+                    sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
+                if cfg.optimize_all() == True:
+                    import optim_csemb
+                    from optim_csemb import solve
+                    sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
+                    optim_csemb.solve(counter, Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
+                                                 Folder,Origin,ntimes,switch, ev,arrayfolder,
+                                                 syn_in, ASL, sembmax, evpath, XDict, RefDict,
+                                                 workdepth, filterindex, Wdfs)
+
+                if ASL:
+                    Logfile.red ('collect semblance matrices from all arrays')
+                    sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch, array_centers)
+                    if cfg.Bool('weight_by_noise') == True:
+                        sembCalc.collectSembweighted(ASL,Config,Origin,Folder,ntimes,len(networks),switch, weights)
 
     else:
         Logfile.red ('Nothing to do  -> Finish')
-    print "depth:"
-    print workdepth
+    print("depth:")
+    print(workdepth)
 # --------------------------------------------------------------------------------------------------
 
 class ProcessMain (MainObj) :
@@ -501,16 +493,11 @@ class ProcessMain (MainObj) :
     def __init__ (self) :
         initModule ()
 
-        MainObj.__init__ (self, self, VERSION_STRING, 'process_run.log', 'process.log')
+        MainObj.__init__ (self, self, '0.3', 'process_run.log', 'process.log')
 
     # ---------------------------------------------------------------------------------------------
 
     def init (self) :
-
-        if not Globals.init () : return False
-
-        #  Copy model file to working directory
-
         file = 'ak135.model'
 
         if not os.path.isfile (file) :
@@ -523,14 +510,12 @@ class ProcessMain (MainObj) :
     # --------------------------------------------------------------------------------------------
 
     def process (self) :
-        #processLoop ()
         import cProfile
         cProfile.run('processLoop ()', filename='test.profile')
         return True
 
     def finish (self) :    pass
 
-#endclass ProcessMain
 # -------------------------------------------------------------------------------------------------
 
 def MainProc () :

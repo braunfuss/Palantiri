@@ -395,7 +395,6 @@ def collectSemb (SembList,Config,Origin,Folder,ntimes,arrays,switch):
 
     durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    print 'DD2: ',durationpath
     trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
 
 def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
@@ -506,7 +505,6 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
 
     durationpath  = os.path.join (folder, "duration.txt")
     trigger.writeSembMaxValue (sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
-    print 'DD2: ',durationpath
     trigger.semblancestalta (sembmaxvaluev,sembmaxlatv,sembmaxlonv)
 
 def toMatrix (npVector, nColumns) :
@@ -1136,7 +1134,7 @@ def optimization(*params, **args):
         misfit_list.append(misfit), norm_list.append(norm)  # append the misfit into a list
     global_misfit_normed = num.sqrt(num.nansum((num.asarray(misfit_list))**2) / # sum all the misfits and normalize to get a single minimizable value
                                     num.nansum((num.asarray(norm_list))**2))
-    print global_misfit_normed
+    print(global_misfit_normed)
     return global_misfit_normed
 
 
@@ -1165,10 +1163,10 @@ def solve(counter,Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                  Folder,Origin,ntimes,switch, ev,arrayfolder, syn_in, data))
     elapsed = time.time() - t  # get the processing time
     # Now we just print out all information that we like:
-    print "Time elapsed:", elapsed
-    print "Best model:"
-    print "magnitude:", result.x[0], "strike:", result.x[1]
-    print "dip:", result.x[2], "rake:", result.x[3], "depth:", result.x[4]
-    print "north shift from GCMT in m", result.x[5], "east shift from GCMT in m:"
-    print result.x[6], "time shift from GCMT in s:", result.x[7],
+    print("Time elapsed:", elapsed)
+    print("Best model:")
+    print("magnitude:", result.x[0], "strike:", result.x[1])
+    print("dip:", result.x[2], "rake:", result.x[3], "depth:", result.x[4])
+    print("north shift from GCMT in m", result.x[5], "east shift from GCMT in m:")
+    print(result.x[6], "time shift from GCMT in s:", result.x[7],)
     fobjsembmax = open(os.path.join(folder,'optim_results_%s.txt' %(switch)),'w')
