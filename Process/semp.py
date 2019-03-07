@@ -202,11 +202,13 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
     trs_orgs  = []
     for tr in calcStreamMap:
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-        tr_org.ydata = tr_org.ydata #/ np.sqrt(np.mean(np.square(tr_org.ydata)))
+        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+
+        tr_org.ydata = num.diff(abs(tr_org.ydata))
         trs_orgs.append(tr_org)
-    trace  = toMatrix (trace_1, minSampleCount)
+    trace  = toMatrix(trace_1, minSampleCount)
     traveltime = []
-    traveltime = toMatrix (traveltime_1, dimX * dimY)
+    traveltime = toMatrix(traveltime_1, dimX * dimY)
 
     latv   = latv_1.tolist()
     lonv   = lonv_1.tolist()
@@ -218,8 +220,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
     Basic.writeVector (lonv_txt,   lonv, '%e')
     '''
     snap= (round, round)
-    backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
-    for i in range (ntimes) :
+    backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+    for i in range(ntimes) :
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
 
         for j in range (dimX * dimY):
@@ -232,7 +234,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
             cc_data = []
             tt = []
 
-            for k in range (nostat):
+            for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
@@ -248,12 +250,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
 
                 data = tr.ydata[ibeg:iend]
                 try:
-                    sums += ((data)) ##put gradient on top
+                    sums += ((data))
                 except:
                     pass
                 relstarts -= (relstart)
-            #for dat in cc_data:
-            #    sums_cc +=xcorr(cc_data[0],dat,0)[1]
+
             sum = abs(num.sum(((sums))))
             #sum = sums_cc
             denom = sum**2

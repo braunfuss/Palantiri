@@ -425,7 +425,16 @@ def processLoop():
                     f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' % (phase, ttt_model, ev.time, arrayname, workdepth), 'rb')
                     TTTGridMap,mint,maxt = pickle.load(f)
                     f.close()
-
+                    if switch == 0:
+                        winlen = cfg.winlen()
+                        step   = cfg.step()
+                    if switch == 1:
+                        winlen = cfg.winlen_f2()
+                        step   = cfg.step_f2()
+                    if cfg.UInt ('forerun')>0:
+                        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / step )
+                    else:
+                        ntimes = int ((cfg.UInt ('duration') ) / step)
                     if cfg.Bool('combine_all') is False:
 
                         if cfg.optimize() == True:
@@ -438,7 +447,7 @@ def processLoop():
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
-                            sembCalc.writeSembMatricesSingleArray (arraySemb,Config,Origin,arrayfolder,ntimes,switch)
+                            sembCalc.writeSembMatricesSingleArray(arraySemb,Config,Origin,arrayfolder,ntimes,switch)
 
                     fileName = os.path.join (arrayfolder,'stations.txt')
                     Logfile.add ('Write to file ' + fileName)
