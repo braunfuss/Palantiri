@@ -495,8 +495,12 @@ def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weig
 
     dimX   = cfg.dimX()
     dimY   = cfg.dimY()
-    winlen = cfg.winlen()
-    step   = cfg.step()
+    if switch == 0:
+        winlen = cfg.winlen()
+        step   = cfg.step()
+    if switch == 1:
+        winlen = cfg.winlen_f2()
+        step   = cfg.step_f2()
 
     latv = []
     lonv = []
@@ -624,8 +628,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     timeev = util.str_to_time(ev.time)
     dimX   = cfg.dimX()
     dimY   = cfg.dimY()
-    winlen = cfg.winlen()
-    step   = cfg.step()
+    if switch == 0:
+        winlen = cfg.winlen()
+        step   = cfg.step()
+    if switch == 1:
+        winlen = cfg.winlen_f2()
+        step   = cfg.step_f2()
 
     new_frequence = cfg.newFrequency()
     forerun = cfg.Int('forerun')
@@ -637,9 +645,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     minSampleCount  = 999999999
 
     if cfg.UInt ('forerun')>0:
-        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / cfg.UInt ('step') )
+        ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration') ) / step )
     else:
-        ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step') )
+        ntimes = int ((cfg.UInt ('duration') ) / step )
     nsamp = int(winlen * new_frequence)
     nstep = int(step * new_frequence)
 
@@ -727,7 +735,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         if syn_in.nsources() == 1:
             if syn_in.use_specific_stf() is True:
                 stf = syn_in.stf()
-                exec(stf)
+                stf = exec(stf)
             else:
                 stf = STF()
             if syn_in.source() == 'RectangularSource':
@@ -780,7 +788,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             for i in range(syn_in.nsources()):
                 if syn_in.use_specific_stf() is True:
                     stf = syn_in.stf()
-                    exec(stf)
+                    stf = exec(stf)
 
                 else:
                     stf = STF()
@@ -1244,9 +1252,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if TTTGrid:
         start_time = time.time()
         if cfg.UInt ('forerun')>0:
-            ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration')) / cfg.UInt ('step'))
+            ntimes = int ((cfg.UInt ('forerun') + cfg.UInt ('duration')) / step)
         else:
-            ntimes = int ((cfg.UInt ('duration') ) / cfg.UInt ('step'))
+            ntimes = int ((cfg.UInt ('duration') ) / step)
         nsamp = int(winlen)
         nstep = int(step)
         Gmint = cfg.Int('forerun')

@@ -221,14 +221,14 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift, p
                 except:
                     try:
                         arrivals = model.arrivals([de, de], phases=Phase,
-                                                  zstart=o_depth*km-2.5,
-                                                  zstop=o_depth*km-2.5,
+                                                  zstart=o_depth*km,
+                                                  zstop=o_depth*km,
                                                   refine=True)
                         ttime = arrivals[0].t
                     except:
                         arrivals = model.arrivals([de, de], phases=Phase,
                                                   zstart=o_depth*km-2.5,
-                                                  zstop=0.,
+                                                  zstop=o_depth*km+2.5,
                                                   refine=True)
                         ttime = arrivals[0].t
 
