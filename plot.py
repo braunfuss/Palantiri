@@ -425,7 +425,6 @@ def integrated_scatter():
             eastings = data[:,1]
             northings =  data[:,0]
             plt.figure()
-
             map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
                           llcrnrlat=num.min(northings),
                           urcrnrlon=num.max(eastings),
@@ -439,35 +438,25 @@ def integrated_scatter():
             parallels = np.arange(num.min(northings),num.max(northings),0.2)
             meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
 
-            xpixels = 1000
-            try:
-                map.arcgisimage(service='World_Shaded_Relief',
-                                xpixels = xpixels, verbose= False)
-            except:
-                pass
             eastings, northings = map(eastings, northings)
             map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
             map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
             x, y = map(data[:,1], data[:,0])
             mins = np.max(data[:,2])
-
-            l = [i for i in range(1600) for _ in range(70)]
-            l = sorted(range(160)*10)
             size =(data_int/np.max(data_int))*300
+
             ps = map.scatter(x,y,marker='o',c=time_grid, s=size, cmap='autumn_r')
             cb = plt.colorbar(orientation="horizontal")
             cb.outline.set_visible(False)
             cb.set_ticks([])
             cb.set_label('Time ->',fontsize=22)
             plt.title(path_in_str)
-            ax = plt.gca()
-            xpixels = 1000
-            try:
-                map.arcgisimage(service='World_Shaded_Relief',
-                                xpixels=xpixels, verbose=False)
-            except:
-                pass
 
+            xpixels = 6000
+            eastings = data[:,1]
+            northings = data[:,0]
+            map.arcgisimage(service='World_Shaded_Relief',
+                            xpixels=xpixels, verbose=False)
             plt.show()
 
 def beampower():
@@ -1035,7 +1024,7 @@ def plot_sembmax():
     x, y = map(event_cor[1][0],event_cor[0][0])
     ax = plt.gca()
     np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-    beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+    beach1 = beach(np1, xy=(x, y), width=1000.3, alpha=0.4)
     ax.add_collection(beach1)
     X,Y = np.meshgrid(eastings, northings)
 
@@ -1108,7 +1097,7 @@ def plot_sembmax():
         x, y = map(event_cor[1][0],event_cor[0][0])
         ax = plt.gca()
         np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-        beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
+        beach1 = beach(np1, xy=(x, y), width=1000.03, alpha=0.4)
         ax.add_collection(beach1)
         X,Y = np.meshgrid(eastings, northings)
 
@@ -1126,8 +1115,6 @@ def plot_sembmax():
         map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
         parallels = num.arange(num.min(northings),num.max(northings),0.2)
         meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
-        #map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        #map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
         cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
         plt.savefig(rel+'semblance_max_1.pdf', bbox_inches='tight')
         plt.show()

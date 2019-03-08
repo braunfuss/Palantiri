@@ -20,7 +20,9 @@ from   config import Event, Trigger
 from    ConfigFile import ConfigObj, FilterCfg, OriginCfg
 global options,args
 from pyrocko.io import stationxml
-
+from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
+from pyrocko import util, model
+from pyrocko.client import catalog
 
 
 def main(args):
@@ -63,6 +65,23 @@ minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
 
 ev = Event(Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )
 event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=float(ev.depth)*1000., time=util.str_to_time(ev.time))
+tmin = util.str_to_time(ev.time)-40
+tmax = util.str_to_time(ev.time)+40
+global_cmt_catalog = catalog.GlobalCMT()
+events = global_cmt_catalog.get_events(
+    time_range=(tmin, tmax),
+    latmin=float(ev.lat)-1.,
+    latmax=float(ev.lat)+1,
+    lonmin=float(ev.lon)-1,
+    lonmax=float(ev.lon)+1)
+event_cat = events[0]
+
+
+source = gf.DCSource(lat=event_cat.lat, lon=event_cat.lon,
+                     strike=event_cat.moment_tensor.strike1,
+                     rake=event_cat.moment_tensor.rake1,
+                     dip=event_cat.moment_tensor.dip1,
+                     magnitude=event.magnitude)
 newFreq = float(filter.newFrequency())
 options.time = Origin ['time']
 options.duration = int(Conf['duration'])
@@ -97,10 +116,12 @@ displacement_geofon = []
 stations_disp_geofon = []
 stations_real_geofon = []
 gaps= []
+trs_projected_geofon = []
+trs_projected_displacement_geofon = []
 
 try:
     for l in range(0,1):
-        stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
+        stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
 
         nstations_geofon = [s for s in stations_geofon]
 
@@ -140,6 +161,26 @@ try:
 
         traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
 
+        projections = []
+        for station in stations_real_geofon:
+                try:
+                    backazimuth = source.azibazi_to(station)[1]
+                    projections.extend(station.guess_projections_to_rtu(
+                    out_channels=('R', 'T', 'Z'),
+                    backazimuth=backazimuth))
+                except:
+                    stations_real_geofon.remove(station)
+
+        for matrix, in_channels, out_channels in projections:
+            deps = trace.project_dependencies(
+            matrix, in_channels, out_channels)
+
+        trs_projected_geofon.extend(
+                trace.project(
+                traces_geofon, matrix,
+                in_channels, out_channels))
+
+        disp_rot = []
         for tr in traces_geofon:
             for station in stations_real_geofon:
                 if tr.station == station.station and tr.location == station.location:
@@ -148,10 +189,6 @@ try:
                         nslc=tr.nslc_id,
                         timespan=(tr.tmin, tr.tmax),
                         fake_input_units='M')
-                        # *fake_input_units*: required for consistent responses throughout entire
-                        # data set
-
-                        # deconvolve transfer function
                         restituted = tr.transfer(
                         tfade=2.,
                         freqlimits=(0.01, 0.1, 1., 2.),
@@ -159,25 +196,28 @@ try:
                         invert=True)
 
                         displacement_geofon.append(restituted)
+                        disp_rot.append(restituted)
                         stations_disp_geofon.append(station)
                     except:
                         pass
+        trs_projected_displacement_geofon.extend(
+                trace.project(
+                disp_rot, matrix,
+                in_channels, out_channels))
 except:
     for l in range(0,9):
         try:
             maxDist = minDist+diffDist
-            stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
+            stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
 
             nstations_geofon = [s for s in stations_geofon]
 
             selection_geofon = fdsn.make_data_selection(nstations_geofon, tmin, tmax)
             request_waveform_geofon = fdsn.dataselect(site=site, selection=selection_geofon)
 
-            # write the incoming data stream to 'traces.mseed'
             with open(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l), 'wb') as file:
                 file.write(request_waveform_geofon.read())
             print('traces written')
-            # request meta data
             traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
 
             for tr in traces_geofon:
@@ -198,14 +238,31 @@ except:
             request_response.dump_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
             sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
             pyrocko_stations = sx.get_pyrocko_stations()
-            # Loop through retrieved waveforms and request meta information
-            # for each trace
             event_origin = gf.Source(
             lat=event.lat,
             lon=event.lon)
 
             traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
 
+            projections = []
+            for station in stations_real_geofon:
+                    try:
+                        backazimuth = source.azibazi_to(station)[1]
+                        projections.extend(station.guess_projections_to_rtu(
+                        out_channels=('R', 'T', 'Z'),
+                        backazimuth=backazimuth))
+                    except:
+                        stations_real_geofon.remove(station)
+
+            for matrix, in_channels, out_channels in projections:
+                deps = trace.project_dependencies(
+                matrix, in_channels, out_channels)
+
+            trs_projected_geofon.extend(
+                    trace.project(
+                    traces_geofon, matrix,
+                    in_channels, out_channels))
+            disp_rot = []
             for tr in traces_geofon:
                 for station in stations_real_geofon:
                     if tr.station == station.station and tr.location == station.location:
@@ -214,15 +271,12 @@ except:
                             nslc=tr.nslc_id,
                             timespan=(tr.tmin, tr.tmax),
                             fake_input_units='M')
-                            # *fake_input_units*: required for consistent responses throughout entire
-                            # data set
-
-                            # deconvolve transfer function
                             restituted = tr.transfer(
                             tfade=2.,
                             freqlimits=(0.01, 0.1, 1., 2.),
                             transfer_function=polezero_response,
                             invert=True)
+                            disp_rot.append(restituted)
 
                             displacement_geofon.append(restituted)
                             stations_disp_geofon.append(station)
@@ -231,8 +285,15 @@ except:
         except:
             pass
         minDist = minDist+diffDist
+        trs_projected_displacement_geofon.extend(
+                trace.project(
+                disp_rot, matrix,
+                in_channels, out_channels))
+
 io.save(displacement_geofon, os.path.join(sdspath,'traces_restituted_geofon.mseed'))
 model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_disp_geofon.txt'))
+io.save(trs_projected_displacement_geofon, os.path.join(sdspath,'traces_restituted_rotated_geofon.mseed'))
+io.save(trs_projected_geofon, os.path.join(sdspath,'traces_rotated_geofon.mseed'))
 
 
 
@@ -241,10 +302,13 @@ stations_real_sites = []
 stations_disp_sites = []
 displacement_sites = []
 traces_sites = []
+trs_projected = []
+trs_projected_displacement = []
+
 sites = ['iris','orfeus', 'resif', 'usp', 'bgr', 'ingv', 'geonet', 'ethz', 'ncedc', 'knmi', 'usgs', 'isc', 'ipgp', 'koeri']
 for site in sites:
     try:
-        stations_site = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BHZ')
+        stations_site = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
         if not stations_sites:
             stations_sites = stations_site
         else:
@@ -254,12 +318,9 @@ for site in sites:
 
         selection_site = fdsn.make_data_selection(nstations_site, tmin, tmax)
         request_waveform_site = fdsn.dataselect(site=site, selection=selection_site)
-
-        # write the incoming data stream to 'traces.mseed'
         with open(os.path.join(sdspath,'traces_%s.mseed' %site), 'wb') as file:
             file.write(request_waveform_site.read())
         print('traces written')
-        # request meta data
         traces_site = io.load(os.path.join(sdspath,'traces_%s.mseed'%site))
         stations_real_site = []
 
@@ -285,24 +346,38 @@ for site in sites:
 
         request_response = fdsn.station(
             site=site, selection=selection_site, level='response')
-        # save the response in YAML and StationXML format
         request_response.dump(filename=os.path.join(sdspath,'responses_%s.yml'%site))
         request_response.dump_xml(filename=os.path.join(sdspath,'responses_%s.xml'%site))
         sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_%s.xml'%site))
         pyrocko_stations = sx.get_pyrocko_stations()
-        #model.dump_stations(stations_real, os.path.join(sdspath,'stations2.txt'))
-
-        # Loop through retrieved waveforms and request meta information
-        # for each trace
         event_origin = gf.Source(
         lat=event.lat,
         lon=event.lon)
 
         traces_site = io.load(os.path.join(sdspath,'traces_%s.mseed'%site))
 
+        projections = []
+        for station in stations_real_site:
+                try:
+                    backazimuth = source.azibazi_to(station)[1]
+                    projections.extend(station.guess_projections_to_rtu(
+                    out_channels=('R', 'T', 'Z'),
+                    backazimuth=backazimuth))
+                except:
+                    stations_real_site.remove(station)
+
+        for matrix, in_channels, out_channels in projections:
+            deps = trace.project_dependencies(
+            matrix, in_channels, out_channels)
+
+        trs_projected.extend(
+                trace.project(
+                traces_site, matrix,
+                in_channels, out_channels))
 
         displacement_site = []
         stations_disp_site = []
+        disp_rot = []
         for tr in traces_site:
             for station in stations_real_site:
                 if tr.station == station.station and tr.location == station.location:
@@ -323,12 +398,15 @@ for site in sites:
 
                         displacement_site.append(restituted)
                         displacement_sites.append(restituted)
-
+                        disp_rot.append(restituted)
                         stations_disp_site.append(station)
                         stations_disp_sites.append(station)
                     except:
                         pass
-
+        trs_projected_displacement.extend(
+                trace.project(
+                disp_rot, matrix,
+                in_channels, out_channels))
         io.save(displacement_site, os.path.join(sdspath,'traces_restituted_%s.mseed'%site))
         model.dump_stations(stations_disp_site, os.path.join(sdspath,'stations_disp_%s.txt'%site))
     except:
@@ -346,10 +424,16 @@ for stg in stations_real_geofon:
             pass
 try:
     traces_all = traces_sites+traces_geofon
+    traces_all_rot = trs_projected_geofon+trs_projected
 except:
     traces_all = traces_sites
+    traces_all_rot = trs_projected
+
 io.save(traces_all, os.path.join(sdspath,'traces.mseed'))
 model.dump_stations(stations_all, os.path.join(sdspath,'stations.txt'))
+io.save(trs_projected_displacement, os.path.join(sdspath,'traces_restituted_rotated_sites.mseed'))
+io.save(trs_projected, os.path.join(sdspath,'traces_rotated_sites.mseed'))
+io.save(traces_all_rot, os.path.join(sdspath,'traces_rotated.mseed'))
 
 try:
     stations_all_disp = stations_disp_sites+stations_disp_geofon
@@ -363,10 +447,14 @@ try:
             else:
                 pass
     traces_all_disp = displacement_sites+displacement_geofon
+    traces_all_rot_disp = trs_projected_displacement_geofon+trs_projected_displacement
+    io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
 except:
     stations_all_disp = stations_disp_sites
     traces_all_disp = displacement_sites
+    traces_all_rot_disp = trs_projected_displacement
+    io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))

@@ -653,7 +653,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     obspy_compat.plant()
 
-    ############################################################################
+    ###########################################################################
     calcStreamMap = WaveformDict
 
     stations = []

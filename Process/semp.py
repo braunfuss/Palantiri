@@ -14,6 +14,8 @@ import numpy as np
 import Logfile
 import Basic
 import ctypes as C
+from pyrocko import trace as trld
+from pyrocko.marker import PhaseMarker
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -184,8 +186,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
             backSemb[i][j] = sum
             if semb > sembmax :
 
-               sembmax  = semb   # search for maximum and position of maximum on semblance
-                                 # grid for given time step
+               sembmax  = semb
                sembmaxX = latv[j]
                sembmaxY = lonv[j]
 
@@ -200,11 +201,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
     from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs  = []
-    for tr in calcStreamMap:
+    for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        #tr_org.ydata = abs(tr_org.ydata)
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-
-        tr_org.ydata = num.diff(abs(tr_org.ydata))
+        #tr_org.ydata = num.gradient(tr_org.ydata)
         trs_orgs.append(tr_org)
     trace  = toMatrix(trace_1, minSampleCount)
     traveltime = []
@@ -212,7 +213,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
 
     latv   = latv_1.tolist()
     lonv   = lonv_1.tolist()
-
     '''
     Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
     Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
@@ -221,6 +221,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
     '''
     snap= (round, round)
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+    data_first = []
     for i in range(ntimes) :
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
 
@@ -240,6 +241,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
 
+
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -249,6 +251,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
                     print('Loaded traveltime grid wrong!')
 
                 data = tr.ydata[ibeg:iend]
+
                 try:
                     sums += ((data))
                 except:
@@ -268,7 +271,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
                                  # grid for given time step
                sembmaxX = latv[j]
                sembmaxY = lonv[j]
-
         Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
 
@@ -308,39 +310,35 @@ def startsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampl
 
     backSemb = []
 
-    if isParent :
-       backSemb = execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
+    if isParent:
+        backSemb = execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
-    else :
+    else:
        trace  = Basic.readMatrix (trace_txt,  nostat, minSampleCount, '%e')
        traveltime = Basic.readMatrix (travel_txt, nostat, dimX * dimY, '%e')
        latv   = Basic.readVector (latv_txt, '%e')
        lonv   = Basic.readVector (lonv_txt, '%e')
 
+    for j in range (dimX * dimY):
+      semb  = 0
+      nomin = 0
+      denom = 0
 
-       for j in range (dimX * dimY):
-          semb  = 0
-          nomin = 0
-          denom = 0
+      for l in range (int (nsamp)):
+         sum = 0
 
-          for l in range (int (nsamp)) :
-             sum = 0
+         for k in range (nostat):
+            relstart_samples = int ((traveltime[k][j] - mint) * new_freq + 0.5) + i * nstep
 
-             for k in range (nostat) :
-                relstart_samples = int ((traveltime[k][j] - mint) * new_freq + 0.5) + i * nstep
+            val   =  trace[k][relstart_samples+l]
+            sum   += val
+            denom += (val * val)
 
-                val   =  trace[k][relstart_samples+l]
-                sum   += val
-                denom += (val * val)
-             # endfor nostat
+         nomin += sum * sum;
+         semb  = nomin / (float (nostat) * denom)
 
-             nomin += sum * sum;
-             semb  = nomin / (float (nostat) * denom);
-          # endfor nsamp
+      backSemb.append(semb)
 
-          backSemb.append (semb)
-       #endfor dimX *dimY
-    #endif isParent
 
     return backSemb
 
