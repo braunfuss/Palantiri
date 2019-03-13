@@ -101,7 +101,7 @@ def semblance (ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
            return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                mint, new_frequence, minSampleCount, latv_1,
                                lonv_1, traveltime_1, trace_1, calcStreamMap,
-                               time)
+                               time, cfg)
         else:
            return semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep,
                                           dimX, dimY, mint, new_frequence,
@@ -193,33 +193,75 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
         Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str (sembmaxY))
 
-    backSemb = backSemb#/num.max(num.max(backSemb))
+    backSemb = backSemb/num.max(num.max(backSemb))
     return abs(backSemb)
 
-def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequence, minSampleCount,
-               latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time) :
+
+def hilbert(x, N=None):
+    '''
+    Return the hilbert transform of x of length N.
+    (from scipy.signal, but changed to use fft and ifft from numpy.fft)
+    '''
+
+    x = num.asarray(x)
+    if N is None:
+        N = len(x)
+    if N <= 0:
+        raise ValueError("N must be positive.")
+    if num.iscomplexobj(x):
+        logger.warning('imaginary part of x ignored.')
+        x = num.real(x)
+    Xf = num.fft.fft(x, N, axis=0)
+    h = num.zeros(N)
+    if N % 2 == 0:
+        h[0] = h[N//2] = 1
+        h[1:N//2] = 2
+    else:
+        h[0] = 1
+        h[1:(N+1)//2] = 2
+
+    if len(x.shape) > 1:
+        h = h[:, num.newaxis]
+    x = num.fft.ifft(Xf*h)
+    return x
+
+def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_frequence, minSampleCount,
+               latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time, cfg) :
     from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs  = []
+    snap= (round, round)
+
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-        #tr_org.ydata = abs(tr_org.ydata)
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-        #tr_org.ydata = num.gradient(tr_org.ydata)
+        if cfg.Bool('combine_all') is True:
+            # some trickery to make all waveforms have same polarity, while still
+            # considering constructive/destructive interferences. This is needed
+            # when combing all waveforms/arrays from the world at once (only then)
+            # for a single array with polarity issues we recommend fixing polarity.
+            # advantage of the following is that nothing needs to be known about the
+            # mechanism.
+            tr_org.ydata = abs(tr_org.ydata)
+            tr_org.ydata = num.diff((tr_org.ydata),append=num.min(tr_org.ydata))
+            tr_org.ydata = num.diff((tr_org.ydata),append=num.min(tr_org.ydata))
+            tr_org.ydata = num.sqrt(tr_org.ydata**2 + hilbert(tr_org.ydata)**2)
+            tr_org.ydata = num.diff((tr_org.ydata),append=num.min(tr_org.ydata))
         trs_orgs.append(tr_org)
+
+
     trace  = toMatrix(trace_1, minSampleCount)
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
-
-    latv   = latv_1.tolist()
-    lonv   = lonv_1.tolist()
+    latv = latv_1.tolist()
+    lonv = lonv_1.tolist()
     '''
     Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
     Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
     Basic.writeVector (latv_txt,   latv, '%e')
     Basic.writeVector (lonv_txt,   lonv, '%e')
     '''
-    snap= (round, round)
+
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
     data_first = []
     for i in range(ntimes) :
@@ -228,6 +270,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
         for j in range (dimX * dimY):
             semb = 0; nomin = 0; denom = 0
             sums_cc = 0
+            #sums = 0
             sums = 0
             shifted = []
             relstart = []
@@ -240,8 +283,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
-
-
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -253,20 +294,21 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX,dimY, mint, new_frequ
                 data = tr.ydata[ibeg:iend]
 
                 try:
-                    sums += ((data))
+                    if cfg.Bool('combine_all') is True:
+                        sums *= (data)
+                    else:
+                        sums += (data)
                 except:
                     pass
-                relstarts -= (relstart)
+                relstarts -= relstart
 
             sum = abs(num.sum(((sums))))
-            #sum = sums_cc
             denom = sum**2
             nomin = sum
             semb = sum
 
             backSemb[i][j] = sum
             if semb > sembmax :
-
                sembmax  = semb   # search for maximum and position of maximum on semblance
                                  # grid for given time step
                sembmaxX = latv[j]
