@@ -205,7 +205,8 @@ def processLoop():
                     A = Xcorr (ev,FilterMeta,evpath,Config,Syn_in,arrayfolder)
 
                 print("run Xcorr")
-                W,triggerobject= A.runXcorr()
+                phase = phases[0]
+                W,triggerobject= A.runXcorr(phase)
 
                 XDict[i]   = W
                 RefDict[i] = triggerobject.tdiff

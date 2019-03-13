@@ -344,7 +344,7 @@ class Xcorr(object):
 
 
 
-    def traveltimes(self):
+    def traveltimes(self, phase):
 
         Logfile.red('Enter AUTOMATIC CROSSCORRELATION ')
         Logfile.red('\n\n+++++++++++++++++++++++++++++++++++++++++++++++++++\n ')
@@ -357,8 +357,8 @@ class Xcorr(object):
 
             Logfile.red('read in %s '%(i))
             de = loc2degrees(self.Origin, i)
-            Phase = cake.PhaseDef('P')
-            model = cake.load_model()
+            Phase = cake.PhaseDef(phase)
+            model = cake.load_model('../data/'+traveltime_model)
             if cfg.colesseo_input() == True:
                 arrivals= model.arrivals([de,de], phases=Phase, zstart=self.Origin.depth, zstop=0.)
             else:
@@ -702,8 +702,8 @@ class Xcorr(object):
 
     # ---------------------------------------------------------------------------------------------
 
-    def doXcorr(self):
-        StreamDict, SNRDict = self.traveltimes()
+    def doXcorr(self, phase):
+        StreamDict, SNRDict = self.traveltimes(phase)
         t = self.f6(SNRDict)
         Logfile.add('doXcorr: REFERENCE: ' + t)
 
@@ -734,9 +734,9 @@ class Xcorr(object):
 
     # ---------------------------------------------------------------------------------------------
 
-    def runXcorr(self):
+    def runXcorr(self, phase):
 
-        CD,ref,WD = self.doXcorr()
+        CD,ref,WD = self.doXcorr(phase)
         onset = 0
         tdiff,triggerobject = self.refTrigger(ref)
 
