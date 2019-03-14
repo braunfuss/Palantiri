@@ -271,8 +271,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
         for j in range(dimX * dimY):
             semb = 0; nomin = 0; denom = 0
             sums_cc = 0
-            #sums = 0
-            sums = 0
+            if cfg.Bool('combine_all') is True:
+                sums = 1
+            else:
+                sums = 0
             shifted = []
             relstart = []
             relstarts = nostat

@@ -1,7 +1,7 @@
 import os
 import fnmatch
 import sys
-from   optparse import OptionParser
+from optparse import OptionParser
 import logging
 import imp
 import obspy.core
@@ -87,12 +87,13 @@ def parseArguments(args):
 
     dir = 'tools'
 
-    #hs+
-    if WaveformProgs.start(config) :  return
-    if ProcessProgs.start (config) :  return
-    if ClusterProgs.start (config) :  return
-    if CommonProgs.start  () :        return
-    #hs-
+    if WaveformProgs.start(config):
+        return
+    if ProcessProgs.start(config):
+        return
+    if ClusterProgs.start(config):  
+        return
+
 
     if sys.argv[1] == 'list':
         listEvents()
@@ -101,15 +102,6 @@ def parseArguments(args):
 
         path = os.path.join(os.getcwd(),'events',sys.argv[2])
         at   = os.path.join(os.getcwd(), dir,      'main.py')
-        cmd  = sys.executable+' '+at+' -f '+ path
-
-        os.chdir (os.path.join(os.getcwd(),"tools"))
-        os.system(cmd)
-
-    elif sys.argv[1] == 'energy':
-
-        path = os.path.join(os.getcwd(),'events',sys.argv[2])
-        at   = os.path.join(os.getcwd(), dir,    'energy.py')
         cmd  = sys.executable+' '+at+' -f '+ path
 
         os.chdir (os.path.join(os.getcwd(),"tools"))
@@ -135,15 +127,6 @@ def parseArguments(args):
         os.chdir(os.path.join(os.getcwd(),"tools"))
         os.system(cmd)
 
-    elif sys.argv[1] == 'plotstations':
-
-        at   = os.path.join(os.getcwd(),dir,'makeplot.py')
-        path = os.path.join(os.getcwd(),'events',sys.argv[2])
-        cmd  = sys.executable+' '+at+' -f '+ path
-
-        os.chdir(os.path.join(os.getcwd(),"tools"))
-        os.system(cmd)
-
     elif sys.argv[1] == 'pyrocko_download':
 
         at   = os.path.join(os.getcwd(),'Waveform','pyrocko_down.py')
@@ -153,23 +136,12 @@ def parseArguments(args):
         os.chdir(os.path.join(os.getcwd(),"Waveform"))
         os.system(cmd)
 
-
     elif sys.argv[1] == 'search':
 
         at  = os.path.join(os.getcwd(),dir,'eventsearch.py')
         cmd = sys.executable+' '+ at
 
         os.system(cmd)
-
-    elif sys.argv[1] == 'plotresult':
-
-        at   = os.path.join(os.getcwd(),dir,'plotresult.py')
-        path = os.path.join(os.getcwd(),'events',sys.argv[2])
-        cmd  = sys.executable+' '+at+' -f '+ path
-
-        os.chdir(os.path.join(os.getcwd(),"tools"))
-        os.system(cmd)
-
 
     else:
         logger.info('\033[31m Option not available \033[0m')

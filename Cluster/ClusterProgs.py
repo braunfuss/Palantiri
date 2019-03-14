@@ -1,4 +1,3 @@
-
 import os
 import sys
 
@@ -38,9 +37,7 @@ class Intern(object):
            s += 'Cannot find directory ' + Globals.EventDir()
            self.error(s)
 
-#end class
 
-# -------------------------------------------------------------------------------------------------
 
 def start(config):
 

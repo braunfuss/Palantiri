@@ -1,13 +1,8 @@
 import logging
-import os.path as op
-from optparse import OptionParser
-
-from pyrocko import util, scenario, guts, gf
 import fnmatch
 import os
 import shutil
 import glob
-import logging
 import numpy as np
 import sys
 if sys.version_info.major >= 3:
@@ -18,11 +13,14 @@ else:
 from pyrocko import model
 logger = logging.getLogger('ARRAY-MP')
 
+
 class Station(object):
     '''
     class to store station object from metadatafile
     '''
-    def __init__(self, net, sta, loc, comp,lat=0,lon=0,ele=0,dip=0,azi=0,gain=0,takeoff=0,backazi=0,sazi=0):
+
+    def __init__(self, net, sta, loc, comp, lat=0, lon=0, ele=0, dip=0, azi=0,
+                 gain=0, takeoff=0, backazi=0, sazi=0):
         self.net = net
         self.sta = sta
         self.loc = loc
@@ -72,7 +70,8 @@ class Trigger(object):
     '''
     class to store triggertimes for station used in xcorrelations
     '''
-    def __init__(self,stationname,triggertime,arrayname,tdiff=0):
+
+    def __init__(self, stationname, triggertime, arrayname, tdiff=0):
         self.sname = stationname
         self.ttime = triggertime
         self.aname = arrayname
@@ -84,9 +83,9 @@ class Config(object):
     class to parse origin, config and metadata file for arraytool
     initialize with eventpath
     '''
-    def __init__(self,eventpath):
-        self.eventpath = eventpath
 
+    def __init__(self, eventpath):
+        self.eventpath = eventpath
 
     def parseConfig(self,suffix):
         '''
@@ -94,17 +93,16 @@ class Config(object):
         return Configdictionary
         '''
         cDict = {}
-        files  = glob.glob(os.path.join(self.eventpath,'*.'+suffix))
+        files = glob.glob(os.path.join(self.eventpath, '*.'+suffix))
         parser = SafeConfigParser()
 
         parser.read(files[0])
 
         for section_name in parser.sections():
             for name, value in parser.items(section_name):
-                cDict[name]=value
+                cDict[name] = value
 
         return cDict
-
 
     def readMetaInfoFile(self):
         '''
@@ -116,8 +114,8 @@ class Config(object):
         try:
             for i in os.listdir(self.eventpath):
                 if fnmatch.fnmatch(i, '*.meta'):
-                    evfile = os.path.join(self.eventpath,i)
-                    fobj = open(evfile,'r')
+                    evfile = os.path.join(self.eventpath, i)
+                    fobj = open(evfile, 'r')
                     for i in fobj:
                         line = i.split()
                         net = line[0]
@@ -130,8 +128,9 @@ class Config(object):
                         dip = line[7]
                         azi = line[8]
                         gain = line[9]
-                        if fnmatch.fnmatch(comp,'*HZ'):
-                            MetaL.append(Station(net,sta,loc,comp,lat,lon,ele,dip,azi,gain))
+                        if fnmatch.fnmatch(comp, '*HZ'):
+                            MetaL.append(Station(net, sta, loc, comp, lat, lon,
+                                                 ele, dip, azi, gain))
 
             logger.info('\033[31m %d ENTRIES IN METAFILE FOUND \033[0m \n' %(len(MetaL)))
         except:
@@ -178,13 +177,13 @@ class Config(object):
         for i in MetaList:
             try:
                 if float(i.gain) == 0:
-                    print('GAIN IS ZERO ',i)
-                    search =('%s.%s.%s')%(i.net,i.sta,i.loc)
+                    print('GAIN IS ZERO ', i)
+                    search = ('%s.%s.%s')%(i.net,i.sta,i.loc)
                     DL.append(search)
                     LL.append(i)
             except:
-                i.gain =(np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
-                search =('%s.%s.%s')%(i.net,i.sta,i.loc)
+                i.gain = (np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
+                search = ('%s.%s.%s')%(i.net,i.sta,i.loc)
                 DL.append(search)
                 LL.append(i)
 
@@ -198,7 +197,6 @@ class Config(object):
             ML = MetaList
         return ML
 
-
     def createFolder(self):
         '''
         method to create work folder in event directory
@@ -210,8 +208,8 @@ class Config(object):
 
             basedir = os.path.join(self.eventpath,'work')
             sembdir = os.path.join(basedir, 'semblance')
-            ascdir  = os.path.join(basedir, 'asc')
-            mseeddir  = os.path.join(basedir, 'mseed')
+            ascdir = os.path.join(basedir, 'asc')
+            mseeddir = os.path.join(basedir, 'mseed')
 
             Folder['base'] = basedir
             Folder['semb'] = sembdir
@@ -229,7 +227,7 @@ class Config(object):
         return Folder
 
 
-    def writeConfig(self,Config,Origin,Folder):
+    def writeConfig(self, Config, Origin, Folder):
         '''
         method to write recently used config to event folder
         '''
@@ -242,9 +240,7 @@ class Config(object):
         shutil.copy(src_file[0],dst_dir)
 
 
-
-
-    def writeStationFile(self,StationMetaData,Folder,flag):
+    def writeStationFile(self, StationMetaData, Folder, flag):
         '''
         method to write recently used stations for processing to event folder
         '''

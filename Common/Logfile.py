@@ -3,7 +3,6 @@ import getpass
 import datetime
 import sys
 import traceback
-import platform
 
 import Basic                     # own module with basic functions
 import Globals                   # Own global data
@@ -30,8 +29,8 @@ g_IsVisible = True           # Output to terminal
 
 def baseLogFileName(postfix):
 
-    if WINDOWS: s = sys.argv [1]
-    else:       s = sys.argv [0]
+
+    s = sys.argv [0]
 
     return Basic.baseFileName(s) + postfix + '.log'
 
