@@ -342,9 +342,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
     min_coor = num.zeros([i, 2])
     i = 0
-
     if cfg.Bool('bootstrap_array_weights') is True:
-        bs_weights = make_bayesian_weights(len(azis))
+        nboot = cfg.float('n_bootstrap')
+        bs_weights = make_bayesian_weights(len(azis), nbootstrap=nboot)
 
     for a in SembList:
         if cfg.Bool('weight_by_azimuth') is True:

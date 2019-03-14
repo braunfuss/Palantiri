@@ -1,12 +1,12 @@
 import os
 import sys
-from pyrocko import util, scenario, guts, gf
+from pyrocko import guts
 
 import logging
 import shutil
 import time
 import multiprocessing
-from   optparse import OptionParser
+from optparse import OptionParser
 if sys.version_info.major >= 3:
     import _pickle as pickle
     xrange = range
@@ -21,8 +21,7 @@ import optim
 import  Basic
 import  Globals
 import  Logfile
-#import  Debug
-from    Program    import MainObj
+from Program import MainObj
 import  ConfigFile
 from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 from collections import OrderedDict
@@ -30,9 +29,6 @@ from collections import OrderedDict
 #       Import from Tools
 import config
 from   config import Event, Trigger
-
-#       Import from Process
-
 import  deserializer
 import  ttt
 import  sembCalc
@@ -43,7 +39,6 @@ from array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR, getArrayShif
 import numpy as num
 import semp
 
-# -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger(sys.argv[0])
 logger.setLevel(logging.DEBUG)
@@ -56,7 +51,6 @@ ch.setFormatter(formatter)
 
 logger.addHandler(ch)
 
-# --------------------------------------------------------------------------------------------------
 
 evpath  = None
 
@@ -77,11 +71,11 @@ def initModule() :
     Globals.setEventDir(evpath)
     return True
 
-# --------------------------------------------------------------------------------------------------
+# ----------------------------------------------------------------------
 
 def processLoop():
 
-    #==================================get meta info==========================================
+    #==================================get meta info========================
     C  = config.Config(evpath)
     Origin = C.parseConfig('origin')
     try:
@@ -103,9 +97,6 @@ def processLoop():
         Meta = C.readcolosseostations(scenario_path)
     else:
         Meta = C.readMetaInfoFile()
-    #==================================get meta info==========================================
-
-    #==================================do prerequiries========================================
     Folder = C.createFolder()
     C.writeConfig(Config,Origin,Folder)
 
