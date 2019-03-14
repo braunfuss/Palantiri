@@ -25,8 +25,8 @@ basemap is only necessary for plotting and can be omitted
 Please make sure that current version of both obspy and pyrocko
 are installed. 
 
-Note: This tool is writen in python2, therefore you
-need to install obspy and pyrocko with python2!
+Note: This tool is writen for both python2 and python3. 
+For python2 choose the appropiate branch, the master is for python3 only.
 
 ```
 
