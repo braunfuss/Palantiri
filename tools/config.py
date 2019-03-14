@@ -111,7 +111,7 @@ class Config(object):
         method to parse metadata file
         return List of Station Objects
         '''
-        MetaL = []
+        MetaL =[]
         logger.info('\033[31m Parsing MetaInfoFile \033[0m \n')
         try:
             for i in os.listdir(self.eventpath):
@@ -143,7 +143,7 @@ class Config(object):
 
     def readpyrockostations(self):
         stations = model.load_stations(self.eventpath+'/data/stations.txt')
-        MetaL = []
+        MetaL =[]
         for sl in stations:
                 channel = sl.channels[0]
                 MetaL.append(Station(str(sl.network),str(sl.station),
@@ -158,7 +158,7 @@ class Config(object):
     def readcolosseostations(self, scenario_path):
         stations = model.load_stations(scenario_path+'/meta/stations.txt')
 
-        MetaL = []
+        MetaL =[]
         for sl in stations:
                 channel = sl.channels[2]
                 MetaL.append(Station(str(sl.network),str(sl.station),
@@ -171,9 +171,9 @@ class Config(object):
 
     def checkMetaInfoFile(self ,MetaList):
 
-        ML = []
-        DL = []
-        LL = []
+        ML =[]
+        DL =[]
+        LL =[]
 
         for i in MetaList:
             try:

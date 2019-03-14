@@ -6,7 +6,7 @@ from threading import Thread
 from obspy.signal.headers import clibsignal
 from obspy import Stream, Trace
 # add local directories to import path
-sys.path.append ('../Common/')
+sys.path.append('../Common/')
 from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 
 import numpy as np
@@ -55,9 +55,9 @@ def xcorr(tr1, tr2, shift_len, full_xcorr=False):
 
 # -------------------------------------------------------------------------------------------------
 
-class MyThread (Thread):
+class MyThread(Thread):
 
-    def __init__ (self, nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount):
+    def __init__(self, nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount):
         Thread.__init__(self)
 
         self.nostat= nostat
@@ -78,17 +78,17 @@ def toMatrix(npVector, nColumns):
     n   = nColumns
     mat = []
 
-    for i in range (int(len(t) / n)) :
+    for i in range(int(len(t) / n)) :
        pos1  = i * n
        pos2  = pos1 + n
        slice = t [pos1:pos2]
        assert len(slice) == nColumns
-       mat.append (slice)
+       mat.append(slice)
 
     return mat
 
 
-def semblance (ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                trace_1, calcStreamMap, time, Config, Origin):
 
@@ -129,26 +129,26 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
         trs_orgs.append(tr_org)
-    trace  = toMatrix (trace_1, minSampleCount)
+    trace  = toMatrix(trace_1, minSampleCount)
     traveltime = []
-    traveltime = toMatrix (traveltime_1, dimX * dimY)
+    traveltime = toMatrix(traveltime_1, dimX * dimY)
 
     latv   = latv_1.tolist()
     lonv   = lonv_1.tolist()
 
     '''
-    Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
-    Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
-    Basic.writeVector (latv_txt,   latv, '%e')
-    Basic.writeVector (lonv_txt,   lonv, '%e')
+    Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
+    Basic.writeMatrix(travel_txt, traveltime, nostat, dimX * dimY, '%e')
+    Basic.writeVector(latv_txt,   latv, '%e')
+    Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
-    snap= (round, round)
-    backSemb = np.ndarray (shape=(ntimes, dimX*dimY), dtype=float)
-    for i in range (ntimes) :
+    snap=(round, round)
+    backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+    for i in range(ntimes) :
         #  loop over grid points
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
 
-        for j in range (dimX * dimY):
+        for j in range(dimX * dimY):
             semb = 0; nomin = 0; denom = 0
             sums_cc = 0
             sums = 0
@@ -158,7 +158,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
             cc_data = []
             tt = []
 
-            for k in range (nostat):
+            for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
@@ -176,7 +176,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                     sums += num.gradient(abs(data))
                 except:
                     pass
-                relstarts -= (relstart)
+                relstarts -=(relstart)
 
             sum = abs(num.sum(((sums))))
             denom = sum**2
@@ -190,8 +190,8 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                sembmaxX = latv[j]
                sembmaxY = lonv[j]
 
-        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
-                     str(sembmaxX)+','+ str (sembmaxY))
+        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                     str(sembmaxX)+','+ str(sembmaxY))
 
     backSemb = backSemb/num.max(num.max(backSemb))
     return abs(backSemb)
@@ -200,7 +200,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
 def hilbert(x, N=None):
     '''
     Return the hilbert transform of x of length N.
-    (from scipy.signal, but changed to use fft and ifft from numpy.fft)
+  (from scipy.signal, but changed to use fft and ifft from numpy.fft)
     '''
 
     x = num.asarray(x)
@@ -229,8 +229,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
                latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time, cfg) :
     from pyrocko import obspy_compat
     obspy_compat.plant()
-    trs_orgs  = []
-    snap= (round, round)
+    trs_orgs = []
+    snap = (round, round)
 
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
@@ -238,7 +238,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
         if cfg.Bool('combine_all') is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
-            # when combing all waveforms/arrays from the world at once (only then)
+            # when combing all waveforms/arrays from the world at once(only then)
             # for a single array with polarity issues we recommend fixing polarity.
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
@@ -256,18 +256,19 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
     latv = latv_1.tolist()
     lonv = lonv_1.tolist()
     '''
-    Basic.writeMatrix (trace_txt,  trace, nostat, minSampleCount, '%e')
-    Basic.writeMatrix (travel_txt, traveltime, nostat, dimX * dimY, '%e')
-    Basic.writeVector (latv_txt,   latv, '%e')
-    Basic.writeVector (lonv_txt,   lonv, '%e')
+    Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
+    Basic.writeMatrix(travel_txt, traveltime, nostat, dimX * dimY, '%e')
+    Basic.writeVector(latv_txt,   latv, '%e')
+    Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
-
+    from pyrocko.marker import PhaseMarker
+    markers = []
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
     data_first = []
     for i in range(ntimes) :
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
 
-        for j in range (dimX * dimY):
+        for j in range(dimX * dimY):
             semb = 0; nomin = 0; denom = 0
             sums_cc = 0
             #sums = 0
@@ -283,6 +284,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint
                 tmax = time+relstart+(i*nstep)-mint+nsamp
+
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -295,9 +297,9 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
 
                 try:
                     if cfg.Bool('combine_all') is True:
-                        sums *= (data)
+                        sums *=(data)
                     else:
-                        sums += (data)
+                        sums +=(data)
                 except:
                     pass
                 relstarts -= relstart
@@ -308,76 +310,76 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
             semb = sum
 
             backSemb[i][j] = sum
-            if semb > sembmax :
+            if semb > sembmax:
                sembmax  = semb   # search for maximum and position of maximum on semblance
                                  # grid for given time step
                sembmaxX = latv[j]
                sembmaxY = lonv[j]
-        Logfile.add ('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
-                     str(sembmaxX)+','+ str (sembmaxY))
+        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                     str(sembmaxX)+','+ str(sembmaxY))
 
     backSemb = backSemb#/num.max(num.max(backSemb))
     return abs(backSemb)
 
 # -------------------------------------------------------------------------------------------------
 
-def execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
+def execsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
 
     f = [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount]
-    args  = Basic.floatToString (f, delim= ',')
+    args  = Basic.floatToString(f, delim= ',')
     prog  = sys.executable + ' ' + __file__
     cmd   = prog  + ' ' + args
 
-    Logfile.add ('--------------------------------------------', cmd)
-    result = Basic.systemCmd (cmd)
-    Logfile.addLines (result)
-    backSemb = Basic.readVector (semb_txt)
+    Logfile.add('--------------------------------------------', cmd)
+    result = Basic.systemCmd(cmd)
+    Logfile.addLines(result)
+    backSemb = Basic.readVector(semb_txt)
     return backSemb
 
-def execsemblance2 () :
+def execsemblance2() :
 
-    for i in range (len (sys.argv)) : print(sys.argv[i])
+    for i in range(len(sys.argv)) : print(sys.argv[i])
 
-    params = Basic.stringToFloat (sys.argv[1])
+    params = Basic.stringToFloat(sys.argv[1])
     [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount] = params
-    backSemb = startsemblance (int(nostat), int(nsamp), int(i), int(nstep),
+    backSemb = startsemblance(int(nostat), int(nsamp), int(i), int(nstep),
                            int(dimX),   int(dimY),  mint, new_freq, int(minSampleCount), False)
 
-    Basic.writeVector (semb_txt, backSemb)
+    Basic.writeVector(semb_txt, backSemb)
 
 
 
 # -------------------------------------------------------------------------------------------------
-def startsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
+def startsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
 
     backSemb = []
 
     if isParent:
-        backSemb = execsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
+        backSemb = execsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
 
     else:
-       trace  = Basic.readMatrix (trace_txt,  nostat, minSampleCount, '%e')
-       traveltime = Basic.readMatrix (travel_txt, nostat, dimX * dimY, '%e')
-       latv   = Basic.readVector (latv_txt, '%e')
-       lonv   = Basic.readVector (lonv_txt, '%e')
+       trace  = Basic.readMatrix(trace_txt,  nostat, minSampleCount, '%e')
+       traveltime = Basic.readMatrix(travel_txt, nostat, dimX * dimY, '%e')
+       latv   = Basic.readVector(latv_txt, '%e')
+       lonv   = Basic.readVector(lonv_txt, '%e')
 
-    for j in range (dimX * dimY):
+    for j in range(dimX * dimY):
       semb  = 0
       nomin = 0
       denom = 0
 
-      for l in range (int (nsamp)):
+      for l in range(int(nsamp)):
          sum = 0
 
-         for k in range (nostat):
-            relstart_samples = int ((traveltime[k][j] - mint) * new_freq + 0.5) + i * nstep
+         for k in range(nostat):
+            relstart_samples = int((traveltime[k][j] - mint) * new_freq + 0.5) + i * nstep
 
             val   =  trace[k][relstart_samples+l]
             sum   += val
-            denom += (val * val)
+            denom +=(val * val)
 
          nomin += sum * sum;
-         semb  = nomin / (float (nostat) * denom)
+         semb  = nomin /(float(nostat) * denom)
 
       backSemb.append(semb)
 
@@ -387,4 +389,4 @@ def startsemblance (nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampl
 # -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
-   execsemblance2 ()
+   execsemblance2()
