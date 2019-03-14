@@ -21,7 +21,7 @@ import optim
 import  Basic
 import  Globals
 import  Logfile
-import  Debug
+#import  Debug
 from    Program    import MainObj
 import  ConfigFile
 from    ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg

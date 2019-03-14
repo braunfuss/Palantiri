@@ -30,7 +30,6 @@ from pyrocko import obspy_compat
 
 import Basic
 import Logfile
-import Debug
 from ObspyFkt   import loc2degrees, obs_TravelTimes
 from ConfigFile import ConfigObj, FilterCfg, SynthCfg
 

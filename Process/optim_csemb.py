@@ -733,64 +733,79 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     #endfor
 
 
-    ############################## CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ##################
-    nsamp = winlen * new_frequence
-
-    nstep = int (step*new_frequence)
-    migpoints = dimX * dimY
-
-    dimZ = 0
-    new_frequence = cfg.newFrequency ()              # ['new_frequence']
-    maxp = int (Config['ncore'])
-
-
-    Logfile.add ('PROCESS %d  NTIMES: %d' % (flag,ntimes))
-
-    if False :
-       print ('nostat ',nostat,type(nostat))
-       print ('nsamp ',nsamp,type(nsamp))
-       print ('ntimes ',ntimes,type(ntimes))
-       print ('nstep ',nstep,type(nstep))
-       print ('dimX ',dimX,type(dimX))
-       print ('dimY ',dimY,type(dimY))
-       print ('mint ',Gmint,type(mint))
-       print ('new_freq ',new_frequence,type(new_frequence))
-       print ('minSampleCount ',minSampleCount,type(minSampleCount))
-       print ('latv ',latv,type(latv))
-       print ('traces',traces,type(traces))
-       print ('traveltime',traveltime,type(traveltime))
-
+# ==================================semblance calculation=======
 
     t1 = time.time()
-    traces_org = traces.reshape   (1,nostat*minSampleCount)
-    traveltime_org = traveltime.reshape (1,nostat*dimX*dimY)
-    USE_C_CODE = True
-    try:
-        if USE_C_CODE :
-            import Cm
-            import CTrig
-            start_time = time.time()
-            k  = Cm.otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                          minSampleCount,latv,lonv,traveltime_org,traces_org)
-            print("--- %s seconds ---" % (time.time() - start_time))
-        else :
-            start_time = time.time()
-            k = otest (maxp,nostat,nsamp,ntimes,nstep,dimX,dimY,Gmint,new_frequence,
-                      minSampleCount,latv,lonv,traveltime_org,traces_org)                       #hs
-            print("--- %s seconds ---" % (time.time() - start_time))
-    except:
-        print "loaded tttgrid has probably wrong dimensions or stations, delete\
-                ttgrid or exchange"
+    traces = traces.reshape(1, nostat*minSampleCount)
+
+    traveltimes = traveltime.reshape(1, nostat*dimX*dimY)
+    TTTGrid = True
+    manual_shift = False
+
+    if manual_shift:
+
+        pjoin = os.path.join
+        timeev = util.str_to_time(ev.time)
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
+        for trace in calcStreamMapshifted.iterkeys():
+                tr_org = obspy_compat.to_pyrocko_trace(
+                    calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+
+        timing = CakeTiming(
+           phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
+           fallback_time=100.)
+        traces = trs_orgs
+        backSemb = num.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+        bf = BeamForming(stations, traces, normalize=True)
+
+        for i in range(ntimes):
+            sembmax = 0
+            sembmaxX = 0
+            sembmaxY = 0
+            for j in range(dimX * dimY):
+                event = model.Event(lat=float(latv[j]), lon=float(lonv[j]),
+                                    depth=ev.depth*1000., time=timeev)
+                directory = arrayfolder
+                shifted_traces, stack = bf.process(event=event,
+                                                   timing=timing,
+                                                   fn_dump_center=pjoin(
+                                                                directory,
+                                                         'array_center.pf'),
+                                                   fn_beam=pjoin(directory,
+                                                                 'beam.mseed'))
+                tmin = stack.tmin+(i*nstep)+20
+                tmax = stack.tmin+(i*nstep)+60
+                stack.chop(tmin, tmax)
+                backSemb[i][j] = abs(sum(stack.ydata))
+
+        k = backSemb
+        TTTGrid = False
+
+    if TTTGrid:
+        start_time = time.time()
+        if cfg.UInt('forerun') > 0:
+            ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+        else:
+            ntimes = int((cfg.UInt('duration')) / step)
+        nsamp = int(winlen)
+        nstep = int(step)
+        Gmint = cfg.Int('forerun')
+
+        k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                      new_frequence, minSampleCount, latv, lonv, traveltimes,
+                      traces, calcStreamMap, timeev, Config, Origin)
+        print("--- %s seconds ---" % (time.time() - start_time))
 
     t2 = time.time()
 
+    Logfile.add('%s took %0.3f s' % ('CALC:',(t2-t1)))
 
     partSemb = k
+    partSemb = partSemb.reshape(ntimes, migpoints)
 
-    partSemb_data  = partSemb.reshape (ntimes,migpoints)
-
-    return partSemb_data
-############################################################################
+    return partSemb
 
 
 def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
