@@ -200,16 +200,13 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
 def hilbert(x, N=None):
     '''
     Return the hilbert transform of x of length N.
-  (from scipy.signal, but changed to use fft and ifft from numpy.fft)
+    (from scipy.signal, but changed to use fft and ifft from numpy.fft)
     '''
-
     x = num.asarray(x)
     if N is None:
         N = len(x)
     if N <= 0:
         raise ValueError("N must be positive.")
-    if num.iscomplexobj(x):
-        logger.warning('imaginary part of x ignored.')
         x = num.real(x)
     Xf = num.fft.fft(x, N, axis=0)
     h = num.zeros(N)
@@ -225,8 +222,9 @@ def hilbert(x, N=None):
     x = num.fft.ifft(Xf*h)
     return x
 
-def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_frequence, minSampleCount,
-               latv_1, lonv_1, traveltime_1, trace_1, calcStreamMap, time, cfg) :
+def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+                 new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
+                 trace_1, calcStreamMap, time, cfg):
     from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs = []
@@ -261,8 +259,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint, new_freq
     Basic.writeVector(latv_txt,   latv, '%e')
     Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
-    from pyrocko.marker import PhaseMarker
-    markers = []
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
     data_first = []
     for i in range(ntimes) :

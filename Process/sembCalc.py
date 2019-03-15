@@ -36,7 +36,8 @@ logger = logging.getLogger('ARRAY-MP')
 
 def make_bayesian_weights(narrays, nbootstrap=100,
                           type='bayesian', rstate=None):
-    ws = num.zeros(narrays)
+
+    ws = num.zeros((nbootstrap, nmisfits))
     if rstate is None:
         rstate = num.random.RandomState()
 
@@ -51,7 +52,7 @@ def make_bayesian_weights(narrays, nbootstrap=100,
             f[-1] = 1.
             f = num.sort(f)
             g = f[1:] - f[:-1]
-            ws[ibootstrap] = g
+            ws[ibootstrap, :] = g
         else:
             assert False
     return ws
@@ -173,7 +174,7 @@ class FileSembMax(object):
                                                        self.azi,self.delta*119.19))
 
 
-def toAzimuth(latevent,lonevent,latsource,lonsource):
+def toAzimuth(latevent, lonevent, latsource, lonsource):
         '''
         method to calculate azimuth between two points
         '''
@@ -183,17 +184,15 @@ def toAzimuth(latevent,lonevent,latsource,lonsource):
         lat2 = radians(latevent)
         lon2 = radians(lonevent)
 
-       # Compute the angle.
-        x =  sin(lon1-lon2 ) * cos(lat2)
-        y =  cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2)
-        angle = -atan2(x,y)
+        x = sin(lon1-lon2 ) * cos(lat2)
+        y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2)
+        angle = -atan2(x, y)
 
         if angle < 0.0:
          angle  += math.pi * 2.0
 
-       #And convert result to degrees.
         angle = math.degrees(angle)
-        angle = '%02f'%angle
+        angle = '%02f' % angle
 
         return angle
 
@@ -345,137 +344,152 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     if cfg.Bool('bootstrap_array_weights') is True:
         nboot = cfg.float('n_bootstrap')
         bs_weights = make_bayesian_weights(len(azis), nbootstrap=nboot)
-
-    for a in SembList:
-        if cfg.Bool('weight_by_azimuth') is True:
-            tmp *= a*aziweights[i]
-        else:
-            tmp *= a
-
-        deltas = []
-        x = array_centers[i][0]
-        y = array_centers[i][1]
-        for k in range(0, len(latv)):
-            delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k],
-                                                          lonv[k])
-            deltas.append(orthodrome.distance_accurate50m_numpy(x, y, latv[k],
-                                                                lonv[k]))
-            if delta <= num.min(deltas):
-                min_coor[i] = [latv[k], lonv[k]]
-        i = i+1
-    array_overlap = num.average(min_coor, axis=0)
-    delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0],
-                                                         array_overlap[1],
-                                                         origin.lat,
-                                                         origin.lon)
-
-    diff_center_lat = origin.lat-array_overlap[0]
-    diff_center_lon = origin.lon-array_overlap[1]
-
-    sembmaxvaluev = num.ndarray(ntimes, dtype=float)
-    sembmaxlatv = num.ndarray(ntimes, dtype=float)
-    sembmaxlonv = num.ndarray(ntimes, dtype=float)
-
-    rc= UTCDateTime(Origin['time'])
-    rcs= '%s-%s-%s_%02d:%02d:%02d'%(rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
-    d = rc.timestamp
-
-    usedarrays = arrays
-    folder = Folder['semb']
-    fobjsembmax = open(os.path.join(folder,'sembmax_%s.txt' %(switch)),'w')
-    norm = num.max(num.max(tmp, axis=1))
-    max_p = 0.
-    sum_i = 0.
-
-    i = tmp[0]
-    semb_cum = num.zeros(num.shape(i))
-    times_cum = num.zeros(num.shape(i))
-    times_min = num.zeros(num.shape(i))
-    times_max = num.zeros(num.shape(i))
-
-#    correct for array center bias
-#    for j in range(migpoints):
-#                latv[j] = latv[j]#+diff_center_lat
-#                lonv[j] = lonv[j]#+diff_center_lon
-    semb_prior = num.zeros(num.shape(i))
-
-    for a, i in enumerate(tmp):
-        logger.info('timestep %d' % a)
-        fobj = open(os.path.join(folder,'%s-%s_%03d.ASC' %(switch,Origin['depth'],a)),'w')
-        fobj.write('# %s , %s\n' %(d,rcs))
-        fobj.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
-        fobj.write('# \n')
-        fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'%(Latul,gridspacing,dimX))
-        fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
-        fobj.write('# ddepth: 0 ndepth: 1 \n')
-
-        sembmax = 0
-        sembmaxX = 0
-        sembmaxY = 0
-        counter_time = 0
-        uncert = num.std(i) #maybe not std?
-        semb_cum =+ i
-        for j in range(migpoints):
-
-            x = latv[j]
-            y = lonv[j]
-
-            if cfg.Bool('norm_all') is True:
-                semb = i[j]/norm
+    else:
+        nboot = 1
+    #writeout nboot semb, final combine all in one and writeout
+    for boot in range(nboot):
+        c = 0
+        for a in SembList:
+            if cfg.Bool('weight_by_azimuth') is True:
+                tmp *= a*aziweights[i]
+            #use array weights from this nboot iter
+            elif cfg.Bool('bootstrap_array_weights') is True:
+                tmp *= a*bs_weights[boot, c]
             else:
-                semb = i[j]
-            fobj.write('%.2f %.2f %.20f\n' %(x, y, semb))
-            if semb_prior[j] <= semb:
-                semb_prior[j] = i[j]
-                times_cum[j] = a
-                times_max[j] = a*i[j]
-            if semb > sembmax:
-                sembmax = semb
-                sembmaxX = x
-                sembmaxY = y
-                if times_min[j] == 0:
-                    times_min[j] = a
+                tmp *= a
+            c =+ 1
+            deltas = []
+            x = array_centers[i][0]
+            y = array_centers[i][1]
+            for k in range(0, len(latv)):
+                delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k],
+                                                              lonv[k])
+                deltas.append(orthodrome.distance_accurate50m_numpy(x, y,
+                                                                    latv[k],
+                                                                    lonv[k]))
+                if delta <= num.min(deltas):
+                    min_coor[i] = [latv[k], lonv[k]]
+            i = i+1
+        array_overlap = num.average(min_coor, axis=0)
+        delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0],
+                                                             array_overlap[1],
+                                                             origin.lat,
+                                                             origin.lon)
+
+        diff_center_lat = origin.lat-array_overlap[0]
+        diff_center_lon = origin.lon-array_overlap[1]
+
+        sembmaxvaluev = num.ndarray(ntimes, dtype=float)
+        sembmaxlatv = num.ndarray(ntimes, dtype=float)
+        sembmaxlonv = num.ndarray(ntimes, dtype=float)
+
+        rc = UTCDateTime(Origin['time'])
+        rcs = '%s-%s-%s_%02d:%02d:%02d'%(rc.day, rc.month, rc.year, rc.hour,
+                                         rc.minute, rc.second)
+        d = rc.timestamp
+
+        usedarrays = arrays
+        folder = Folder['semb']
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s.txt'
+                                        % (switch)), 'w')
+        norm = num.max(num.max(tmp, axis=1))
+        max_p = 0.
+        sum_i = 0.
+
+        i = tmp[0]
+        semb_cum = num.zeros(num.shape(i))
+        times_cum = num.zeros(num.shape(i))
+        times_min = num.zeros(num.shape(i))
+        times_max = num.zeros(num.shape(i))
+
+    #    correct for array center bias
+    #    for j in range(migpoints):
+    #                latv[j] = latv[j]#+diff_center_lat
+    #                lonv[j] = lonv[j]#+diff_center_lon
+
+        semb_prior = num.zeros(num.shape(i))
+
+        for a, i in enumerate(tmp):
+            logger.info('timestep %d' % a)
+            fobj = open(os.path.join(folder, '%s-%s_%03d.ASC'
+                                     % (switch, Origin['depth'], a)), 'w')
+            fobj.write('# %s , %s\n' % (d, rcs))
+            fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
+                       % (step, ntimes, winlen))
+            fobj.write('# \n')
+            fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'
+                       % (Latul, gridspacing, dimX))
+            fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'
+                       % (Lonul, gridspacing, dimY))
+            fobj.write('# ddepth: 0 ndepth: 1 \n')
+
+            sembmax = 0
+            sembmaxX = 0
+            sembmaxY = 0
+            counter_time = 0
+            uncert = num.std(i)
+            semb_cum =+ i
+            for j in range(migpoints):
+
+                x = latv[j]
+                y = lonv[j]
+
+                if cfg.Bool('norm_all') is True:
+                    semb = i[j]/norm
+                else:
+                    semb = i[j]
+                fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
+                if semb_prior[j] <= semb:
+                    semb_prior[j] = i[j]
+                    times_cum[j] = a
+                    times_max[j] = a*i[j]
+                if semb > sembmax:
+                    sembmax = semb
+                    sembmaxX = x
+                    sembmaxY = y
+                    if times_min[j] == 0:
+                        times_min[j] = a
 
 
 
-        delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-        azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
-        semb_prior = copy.copy(i)
-        sembmaxvaluev[a] = sembmax
-        sembmaxlatv[a] = sembmaxX
-        sembmaxlonv[a] = sembmaxY
-        fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n' %(a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
-        fobj.close()
+            delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
+            azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+            semb_prior = copy.copy(i)
+            sembmaxvaluev[a] = sembmax
+            sembmaxlatv[a] = sembmaxX
+            sembmaxlonv[a] = sembmaxY
+            fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n' %(a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
+            fobj.close()
 
-    fobjsembmax.close()
+        fobjsembmax.close()
 
-    fobj_cum = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
-    for x, y, sembcums in zip(latv, lonv, semb_cum):
-        fobj_cum.write('%.2f %.2f %.20f\n' %(x, y, sembcums))
-    fobj_cum.close()
+        fobj_cum = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        for x, y, sembcums in zip(latv, lonv, semb_cum):
+            fobj_cum.write('%.2f %.2f %.20f\n' %(x, y, sembcums))
+        fobj_cum.close()
 
-    fobj_timemax = open(os.path.join(folder,'times_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
-    for x, y, timemax in zip(latv, lonv, times_max):
-        fobj_timemax.write('%.2f %.2f %.20f\n' %(x, y, timemax))
-    fobj_timemax.close()
+        fobj_timemax = open(os.path.join(folder,'times_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        for x, y, timemax in zip(latv, lonv, times_max):
+            fobj_timemax.write('%.2f %.2f %.20f\n' %(x, y, timemax))
+        fobj_timemax.close()
 
-    fobj_timecum = open(os.path.join(folder,'times_max_%s_%s.ASC' %(switch,Origin['depth'])),'w')
-    for x, y, timecum in zip(latv, lonv, times_cum):
-        fobj_timecum.write('%.2f %.2f %.20f\n' %(x, y, timecum))
-    fobj_timecum.close()
+        fobj_timecum = open(os.path.join(folder,'times_max_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        for x, y, timecum in zip(latv, lonv, times_cum):
+            fobj_timecum.write('%.2f %.2f %.20f\n' %(x, y, timecum))
+        fobj_timecum.close()
 
-    fobj_timemin = open(os.path.join(folder,'times_min_%s_%s.ASC' %(switch,Origin['depth'])),'w')
-    for x, y, timexy in zip(latv, lonv, times_min):
-        fobj_timemin.write('%.2f %.2f %.20f\n' %(x, y, timexy))
-    fobj_timemin.close()
+        fobj_timemin = open(os.path.join(folder,'times_min_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        for x, y, timexy in zip(latv, lonv, times_min):
+            fobj_timemin.write('%.2f %.2f %.20f\n' %(x, y, timexy))
+        fobj_timemin.close()
 
-    trigger.writeSembMaxValue(sembmaxvaluev, sembmaxlatv, sembmaxlonv, ntimes,
-                              Config, Folder)
+        trigger.writeSembMaxValue(sembmaxvaluev, sembmaxlatv, sembmaxlonv, ntimes,
+                                  Config, Folder)
 
-    inspect_semb = cfg.Bool('inspect_semb')
-    if inspect_semb is True:
-        trigger.semblancestalta(sembmaxvaluev, sembmaxlatv, sembmaxlonv)
-    return sembmaxvaluev
+        inspect_semb = cfg.Bool('inspect_semb')
+        if inspect_semb is True:
+            trigger.semblancestalta(sembmaxvaluev, sembmaxlatv, sembmaxlonv)
+        return sembmaxvaluev
 
 def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
     '''
@@ -606,9 +620,10 @@ def toMatrix(npVector, nColumns):
 
     return mat
 
+
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in):
+           syn_in, bs_weights=None):
     '''
     method for calculating semblance of one station array
     '''
@@ -668,7 +683,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             lats.append(float(il.lat))
                             lons.append(float(il.lon))
         else:
-            for trace in calcStreamMap.iterkeys():
+            for trace in sorted(calcStreamMap.iterkeys()):
                 py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
                 py_trs.append(py_tr)
                 for il in FilterMetaData:
@@ -697,7 +712,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             lats.append(float(il.lat))
                             lons.append(float(il.lon))
         else:
-            for trace in calcStreamMap.iterkeys():
+            for trace in sorted(calcStreamMap.iterkeys()):
                 for il in FilterMetaData:
                     if str(il) == str(trace):
                             szo = model.Station(lat=float(il.lat), lon=float(il.lon),
@@ -824,7 +839,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             if not synthetic_traces:
                 synthetic_traces = synthetic_traces_source
             else:
-                for trsource, tr in zip(synthetic_traces_source, synthetic_traces):
+                for trsource, tr in zip(synthetic_traces_source,
+                                        synthetic_traces):
                         tr.add(trsource)
             #debug
     #    trld.snuffle(synthetic_traces)
@@ -954,12 +970,14 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            phase_selection='first(p|P|PP|P(cmb)P(icb)P(icb)p(cmb)p)-20',
            fallback_time=100.)
         traces = trs_orgs
-        event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
+        event = model.Event(lat=float(ev.lat), lon=float(ev.lon),
+                            depth=ev.depth*1000., time=timeev)
         directory = arrayfolder
         bf = BeamForming(stations, traces, normalize=True)
         shifted_traces = bf.process(event=event,
                                     timing=timing,
-                                    fn_dump_center=pjoin(directory, 'array_center.pf'),
+                                    fn_dump_center=pjoin(directory,
+                                                         'array_center.pf'),
                                     fn_beam=pjoin(directory, 'beam.mseed'))
         i = 0
         store_id = syn_in.store()
@@ -993,10 +1011,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         stream_arr = stream.Stream()
         for trace in calcStreamMapshifted.iterkeys():
             stream_arr.append(calcStreamMapshifted[trace])
-        results = array_analysis.array_processing(stream_arr, nsamp, nstep,\
-                                                  sll_x, slm_x, sll_y, slm_y,\
-                                                   sl_s, semb_thres, vel_thres, \
-                                                   frqlow, frqhigh, stime, \
+        results = array_analysis.array_processing(stream_arr, nsamp, nstep,
+                                                  sll_x, slm_x, sll_y, slm_y,
+                                                   sl_s, semb_thres, vel_thres,
+                                                   frqlow, frqhigh, stime,
                                                    etime, prewhiten)
         timestemp = results[0]
         relative_relpow = results[1]
@@ -1018,14 +1036,15 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             if calcStreamMap[trace].stats.npts < minSampleCount:
                 minSampleCount = calcStreamMap[trace].stats.npts
 
-    traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount), dtype=float)
-    traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY), dtype=float)
+    traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount),
+                         dtype=float)
+    traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY),
+                             dtype=float)
 
     latv = num.ndarray(dimX*dimY, dtype=float)
     lonv = num.ndarray(dimX*dimY, dtype=float)
 
-
-    c=0
+    c = 0
     streamCounter = 0
     if sys.version_info.major >= 3:
         for key in sorted(calcStreamMap.keys()):
@@ -1045,8 +1064,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 else:
                     "NEIN", streamID, key
 
-            if not streamCounter in traveltimes :
-               continue
+            if streamCounter not in traveltimes:
+                continue
 
             g = traveltimes[streamCounter]
             dimZ = g.dimZ
@@ -1057,9 +1076,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 for y in range(dimY):
                     elem = gridElem[x, y]
 
-                    traveltime [c][x * dimY + y] = elem.tt
-                    latv [x * dimY + y] = elem.lat
-                    lonv [x * dimY + y] = elem.lon
+                    traveltime[c][x * dimY + y] = elem.tt
+                    latv[x * dimY + y] = elem.lat
+                    lonv[x * dimY + y] = elem.lon
             c += 1
             streamCounter += 1
 
