@@ -1,31 +1,28 @@
-
-import platform
-
 import obspy
-import  obspy.core
+import obspy.core
 from obspy.geodetics import locations2degrees
-from obspy.taup import TauPyModel
+import Basic
 
-import  Basic
 
 def loc2degrees(a, b):
 
-    if type(a) is dict: a1 = Basic.dictToLocation(a)
-    else:               a1 = a
+    if type(a) is dict:
+        a1 = Basic.dictToLocation(a)
+    else:
+        a1 = a
 
-    if type(b) is dict: b1 = Basic.dictToLocation(b)
-    else:               b1 = b
+    if type(b) is dict:
+        b1 = Basic.dictToLocation(b)
+    else:
+        b1 = b
 
-    delta = locations2degrees(float(a1.lat), float(a1.lon), float(b1.lat), float(b1.lon))
+    delta = locations2degrees(float(a1.lat), float(a1.lon), float(b1.lat),
+                              float(b1.lon))
     return delta
 
-# -------------------------------------------------------------------------------------------------
 
 def obs_TravelTimes(delta1, depth1):
 
     model = obspy.taup.TauPyModel(model='ak135')
-    return model.get_travel_times(distance_in_degree=delta1, source_depth_in_km = float(depth1))
-
-def obs_kilometer2degrees(km):
-
-    return kilometer2degrees(float(km))
+    return model.get_travel_times(distance_in_degree=delta1,
+                                  source_depth_in_km=float(depth1))
