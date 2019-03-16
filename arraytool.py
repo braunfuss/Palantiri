@@ -12,7 +12,6 @@ sys.path.append('Process/')
 sys.path.append('Cluster/')
 sys.path.append('Common/')
 
-import WaveformProgs
 import ProcessProgs
 import ClusterProgs
 import CommonProgs
@@ -33,9 +32,7 @@ usage = ''' %prog [options] <command> [args]
 %prog list              [list all events from event folder]
 %prog search            [search for events in online catalog parameter from global.conf]
 %prog create  eventID   [eventID from online catalog]
-%prog getstations eventname
-%prog getdata eventname
-%prog getmeta eventname
+%prog pyrocko_down eventname
 %prog plotstations eventname
 %prog cluster eventname     [automatic array clustering and print arrayconfig]
 %prog process eventname
@@ -52,16 +49,18 @@ def folderContent(p):
     return list of eventname if config and origin file are existing
     '''
     L = []
-    for root,dirs,files in os.walk(p):
-           flags=0
+    for root,dirs ,files in os.walk(p):
+        flags = 0
 
-           for i in files:
-                 if fnmatch.fnmatch(i,'*.config'):  flags += 1
-                 if fnmatch.fnmatch(i,'*.origin'):  flags += 1
+        for i in files:
+            if fnmatch.fnmatch(i, '*.config'):
+                flags += 1
+            if fnmatch.fnmatch(i, '*.origin'):
+                flags += 1
 
-           if flags == 2:
-               name = root.split('/')
-               L.append(name[-1:])
+        if flags == 2:
+            name = root.split('/')
+            L.append(name[-1:])
     return L
 
 
@@ -76,7 +75,7 @@ def listEvents():
     for item in os.listdir(os.path.join(os.getcwd(),'events')):
         print(item)
 
-# -------------------------------------------------------------------------------------------------
+
 
 def parseArguments(args):
     '''
@@ -87,11 +86,9 @@ def parseArguments(args):
 
     dir = 'tools'
 
-    if WaveformProgs.start(config):
-        return
     if ProcessProgs.start(config):
         return
-    if ClusterProgs.start(config):  
+    if ClusterProgs.start(config):
         return
 
 
@@ -146,7 +143,7 @@ def parseArguments(args):
     else:
         logger.info('\033[31m Option not available \033[0m')
 
-# -------------------------------------------------------------------------------------------------
+
 if __name__ == "__main__":
 
     if len(sys.argv) > 1:

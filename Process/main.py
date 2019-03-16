@@ -61,7 +61,6 @@ def initModule():
     Globals.setEventDir(evpath)
     return True
 
-# ----------------------------------------------------------------------
 
 def processLoop():
 
@@ -282,6 +281,10 @@ def processLoop():
 
 # ==================================loop over phases======================
     for phase in phases:
+        if phase is 'P':
+            desired = 'Z'
+        if phase is 'S':
+            desired = 'T'
         # ==================================loop over filter setups=====
         for filterindex in xrange(0, filters):
             # ==================================loop over depth=======
@@ -379,14 +382,15 @@ def processLoop():
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
                             Wd = waveform.readWaveformsPyrocko_restituted(
-                                FilterMeta, tw, evpath, ev)
+                                FilterMeta, tw, evpath, ev, desired)
                         elif cfg.Bool('synthetic_test') is True:
                             Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                     tw, evpath,
                                                                     ev)
                         else:
                             Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
-                                                               evpath, ev)
+                                                               evpath, ev,
+                                                               desired)
                     elif cfg.colesseo_input() is True:
                         Wd = waveform.readWaveforms_colesseo(FilterMeta, tw,
                                                              evpath, ev, C)

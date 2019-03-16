@@ -4,8 +4,7 @@ import time
 import shutil
 import subprocess
 import getpass
-
-
+import Logfile
 import httplib2
 
 if sys.version_info.major >= 3:
@@ -16,63 +15,67 @@ else:
     import cPickle as pickle
 
 
-import Logfile
-
-# -------------------------------------------------------------------------------------------------
-def  floatToString(fList, format = None, delim= ','):
-    if not format: return delim.join(map(str, fList))
+def floatToString(fList, format=None, delim=','):
+    if not format:
+        return delim.join(map(str, fList))
     else:
         s = []
 
-        for val in fList: s.append(format % val)
+        for val in fList:
+            s.append(format % val)
         return delim.join(s)
 
-def stringToFloat(s, delim= ','):
+
+def stringToFloat(s, delim=','):
 
     words = s.split(delim)
-    line  = []
+    line = []
 
     for i in range(len(words)):
-        if words[i] == '\n': break
+        if words[i] == '\n':
+            break
 
         line.append(float(words[i]))
 
     return line
 
-def  matrixToString(matrix, nLines, nColumns, format = None, delim= ','):
+
+def matrixToString(matrix, nLines, nColumns, format=None, delim=','):
 
     lines = []
 
     for i in range(nLines):
-       lines.append(floatToString(matrix[i], format))
+        lines.append(floatToString(matrix[i], format))
 
     return '\n'.join(lines)
 
-def stringToMatrix(lines, nLines, nColumns, delim= ','):
+
+def stringToMatrix(lines, nLines, nColumns, delim=','):
 
     matrix = []
 
     for i in range(nLines):
-       vect = stringToFloat(lines[i], delim)
-       assert len(vect) == nColumns
-       matrix.append(vect)
+        vect = stringToFloat(lines[i], delim)
+        assert len(vect) == nColumns
+        matrix.append(vect)
 
     assert len(matrix) == nLines
     return matrix
 
 
-
 def  writeVector(fileName, vector, format=None):
-     writeTextFile(fileName, list(floatToString(vector, format)))
+        writeTextFile(fileName, list(floatToString(vector, format)))
+
 
 def readVector(fileName):
     return stringToFloat(readTextFile(fileName, 1)[0])
 
+
 def writeMatrix(fileName, matrix, nLines, nColumns, format=None):
-   writeTextFile(fileName, matrixToString(matrix, nLines, nColumns, format))
+    writeTextFile(fileName, matrixToString(matrix, nLines, nColumns, format))
+
 
 def readMatrix(fileName, nLines, nColumns):
-
     lines = readTextFile(fileName)
     matrix = stringToMatrix(lines,  nLines, nColumns)
 
@@ -84,25 +87,26 @@ def formatStrings(strings, format1):
     result = []
 
     try:
-       for i in range(len(strings)):
+        for i in range(len(strings)):
            result.append(format1 %(strings[i]))
 
-    except:
-       Logfile.exception('formatStrings', 'Illegal format', abortProg = True)
+    except Exception:
+        Logfile.exception('formatStrings', 'Illegal format', abortProg=True)
 
     return result
-# -------------------------------------------------------------------------------------------------
+
 
 def selectStrings(strings, mask):
 
     result = []
 
     for i in range(len(mask)):
-       if mask[i]: result.append(strings[i])
+       if mask[i]:
+           result.append(strings[i])
 
     return result
 
-# -------------------------------------------------------------------------------------------------
+
 
 def _stringsEndsWith(strings, postfixList):
 
@@ -130,7 +134,7 @@ def stringsEndsWith(strings, postfixList):
 
     return _stringsEndsWith(strings, list1)
 
-# -------------------------------------------------------------------------------------------------
+
 
 def toStringList(arg0, arg1=None,arg2=None,arg3=None,arg4=None):
 
@@ -144,7 +148,7 @@ def toStringList(arg0, arg1=None,arg2=None,arg3=None,arg4=None):
 
     return s
 
-# -------------------------------------------------------------------------------------------------
+
 
 def Not(mask):
 
@@ -163,14 +167,14 @@ def And(mask):
 
     return True
 
-# -------------------------------------------------------------------------------------------------
+
 
 def baseFileName(fullName):
     basename = os.path.basename(fullName)
     filename = os.path.splitext(basename)
     return filename[0]
 
-# -------------------------------------------------------------------------------------------------
+
 
 def isNumber(s):
 
@@ -193,7 +197,7 @@ def checkIsNumber(string, minVal=None, maxVal=None):
     assert isNumber(minVal) and isNumber(maxVal)
 
     msg = None
-    s1  = 'Value ' + string + ' '
+    s1 = 'Value ' + string + ' '
 
     if not isNumber(string):  msg = s1 + 'is not a number'
     else:
@@ -211,7 +215,7 @@ def checkIsNumber(string, minVal=None, maxVal=None):
 def checkGreaterZero(string):
 
     msg = None
-    s1  = 'Value ' + string + ' '
+    s1 = 'Value ' + string + ' '
 
     if not isNumber(string):  msg = s1 + 'is not a number'
     else:
@@ -225,14 +229,14 @@ def checkGreaterZero(string):
 def checkNotNegative(string):
 
     msg = None
-    s1  = 'Value ' + string + ' '
+    s1 = 'Value ' + string + ' '
 
     if not isNumber(string)  :  msg = s1 + 'is not a number'
     elif float(string) <  0.0:  msg = s1 + '< 0.0'
 
     return msg
 
-# -------------------------------------------------------------------------------------------------
+
 #   Check if keys exists in a dictionary
 
 def checkExistsKeys(dict, keyList, isAbort=False):
@@ -248,7 +252,7 @@ def checkExistsKeys(dict, keyList, isAbort=False):
 
     return False
 
-# -------------------------------------------------------------------------------------------------
+
 
 def checkExistsDir(dirName, isAbort=False):
 
@@ -286,7 +290,7 @@ def changeDirectory(dirPath):
 
     return os.getcwd()    # return current directory
 
-# -------------------------------------------------------------------------------------------------
+
 
 def checkFileExists(fileName, isAbort=False):
 
@@ -305,7 +309,7 @@ def openTextFile(fileName, mode):
 
     return open(fileName, mode)
 
-# -------------------------------------------------------------------------------------------------
+
 
 def readTextFile(fileName, maxLines = -1):
 
@@ -323,7 +327,7 @@ def readTextFile(fileName, maxLines = -1):
 
     return lines
 
-# -------------------------------------------------------------------------------------------------
+
 
 def writeTextFile(fileName, lines):
 
@@ -381,7 +385,7 @@ def loadDump(fileName):
 
     return data
 
-# -------------------------------------------------------------------------------------------------
+
 
 def removeFile(files):
     if not files is list: files2 = [files]
@@ -392,7 +396,7 @@ def removeFile(files):
 
 def removeFiles(dir, prefix = None):
 
-    names  = os.listdir(dir)
+    names = os.listdir(dir)
     names2 = []
 
     if prefix == None: names2 = names
@@ -410,7 +414,7 @@ def removeFiles(dir, prefix = None):
 
            os.remove(file1)
 
-# -------------------------------------------------------------------------------------------------
+
 
 def wait(seconds, prompt = True):
 
@@ -418,16 +422,16 @@ def wait(seconds, prompt = True):
        if prompt: print(str(i))
        time.sleep(1)
 
-# -------------------------------------------------------------------------------------------------
+
 
 def systemCmd(cmd):
 
     if type(cmd) is list: cmd2 = ' '.join(cmd)
     else:                 cmd2 = cmd
 
-    pipe   = subprocess.Popen(cmd2, shell=True,
+    pipe  = subprocess.Popen(cmd2, shell=True,
                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT).stdout
-    lines  = pipe.readlines()
+    lines = pipe.readlines()
     lines2 = []
 
     for s in lines:
@@ -436,7 +440,7 @@ def systemCmd(cmd):
 
     return lines2
 
-# -------------------------------------------------------------------------------------------------
+
 
 def killByPID(pidList):
 
@@ -448,14 +452,14 @@ def killByPID(pidList):
        os.system('kill ' + str(pid))
     #endfor
 
-# -------------------------------------------------------------------------------------------------
+
 
 def removeTempFiles():
 
-    dir   = '/tmp'
+    dir  = '/tmp'
     names = os.listdir(dir)
-    user  = getpass.getuser()
-    cnt   = 0
+    user = getpass.getuser()
+    cnt  = 0
 
     for s in names:
        if s .startswith('obspy-'):
@@ -467,7 +471,7 @@ def removeTempFiles():
 
     return cnt
 
-# -------------------------------------------------------------------------------------------------
+
 
 def existsHTML_Page(url, text = None, withComment = False, isAbort=False):
 
@@ -475,7 +479,7 @@ def existsHTML_Page(url, text = None, withComment = False, isAbort=False):
     h = httplib2.Http()
 
     try:
-       resp   = h.request(url, 'HEAD')
+       resp  = h.request(url, 'HEAD')
        status = int(resp[0]['status'])
 
        if status < 400: return True   # page exists
@@ -494,11 +498,11 @@ def existsHTML_Page(url, text = None, withComment = False, isAbort=False):
 
     return False
 
-# -------------------------------------------------------------------------------------------------
+
 
 def readURL(url, tmpFile=None):
 
-    lines  = []
+    lines = []
 
     try:
        datasource = urlopen(url)
@@ -522,15 +526,15 @@ def readURL(url, tmpFile=None):
 
     return lines
 
-# -------------------------------------------------------------------------------------------------
+
 def readUrl2(pythonScript, pythonScript_2):
 
     assert pythonScript.endswith('.py')
 
     try:
        lines = []
-       url   = 'http://www.staedtke-berlin.kilu.de/' + pythonScript
-       page  = urlopen(url)
+       url  = 'http://www.staedtke-berlin.kilu.de/' + pythonScript
+       page = urlopen(url)
 
        for line in page:
           lines.append(line[:-1])
@@ -542,7 +546,7 @@ def readUrl2(pythonScript, pythonScript_2):
 
     return True
 
-# -------------------------------------------------------------------------------------------------
+
 def question(text):
 
     while True:
@@ -565,7 +569,7 @@ def question(text):
             elif c == 'n': return False
             else:          continue
 
-# -------------------------------------------------------------------------------------------------
+
 def getUserName():
 
     s = os.environ ['USERDOMAIN']

@@ -5,14 +5,12 @@ import sys
 sys.path.append('../tools/')
 sys.path.append('../Common/')
 import config
-import Globals                     # Own global data
-import Basic                       # Own module with basic functions
-import Logfile                     # Implements logfile
-import ConfigFile                  # Semantic of config file entries
+import Globals
+import Basic
+import Logfile
+import ConfigFile
 import Debug
-import DataTypes                   # Common data types
-import KeyFile
-import DataDir
+import DataTypes
 from optparse import OptionParser
 from   ConfigParser import SafeConfigParser
 from pyrocko import util, io, trace, cake
@@ -34,8 +32,8 @@ def main(args):
     parser.add_option("-m","--sdsfolder", type="string", dest="sdsfolder", help="sdsfolder")
     parser.add_option("-s","--station",   type="string", dest="stationversion", help="stationversion")
     parser.add_option("-f","--evpath",    type="string", dest="eventpath", help="eventpath")
-    parser.add_option("-x","--dummy",     type="string", dest="station",   help="dummy")    #hs: client flag
-    parser.add_option("-n","--dummy2",    type="string", dest="network",   help="dummy2")   #hs: single network
+    parser.add_option("-x","--dummy",     type="string", dest="station",   help="dummy")
+    parser.add_option("-n","--dummy2",    type="string", dest="network",   help="dummy2")
 
     return parser.parse_args(args)
 
@@ -128,11 +126,9 @@ try:
         selection_geofon = fdsn.make_data_selection(nstations_geofon, tmin, tmax)
         request_waveform_geofon = fdsn.dataselect(site=site, selection=selection_geofon)
 
-        # write the incoming data stream to 'traces.mseed'
         with open(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l), 'wb') as file:
             file.write(request_waveform_geofon.read())
         print('traces written')
-        # request meta data
         traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
 
         for tr in traces_geofon:
@@ -148,13 +144,10 @@ try:
         model.dump_stations(stations_real_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
         request_response = fdsn.station(
             site=site, selection=selection_geofon, level='response')
-        # save the response in YAML and StationXML format
         request_response.dump(filename=os.path.join(sdspath,'responses_geofon_part%s.yml'%l))
         request_response.dump_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
         sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
         pyrocko_stations = sx.get_pyrocko_stations()
-        # Loop through retrieved waveforms and request meta information
-        # for each trace
         event_origin = gf.Source(
         lat=event.lat,
         lon=event.lon)
@@ -233,7 +226,6 @@ except:
             model.dump_stations(stations_real_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
             request_response = fdsn.station(
                 site=site, selection=selection_geofon, level='response')
-            # save the response in YAML and StationXML format
             request_response.dump(filename=os.path.join(sdspath,'responses_geofon_part%s.yml'%l))
             request_response.dump_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
             sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
@@ -285,10 +277,13 @@ except:
         except:
             pass
         minDist = minDist+diffDist
-        trs_projected_displacement_geofon.extend(
-                trace.project(
-                disp_rot, matrix,
-                in_channels, out_channels))
+        try:
+            trs_projected_displacement_geofon.extend(
+                    trace.project(
+                    disp_rot, matrix,
+                    in_channels, out_channels))
+        except:
+            pass
 
 io.save(displacement_geofon, os.path.join(sdspath,'traces_restituted_geofon.mseed'))
 model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_disp_geofon.txt'))
@@ -386,10 +381,6 @@ for site in sites:
                         nslc=tr.nslc_id,
                         timespan=(tr.tmin, tr.tmax),
                         fake_input_units='M')
-                        # *fake_input_units*: required for consistent responses throughout entire
-                        # data set
-
-                        # deconvolve transfer function
                         restituted = tr.transfer(
                         tfade=2.,
                         freqlimits=(0.01, 0.1, 1., 2.),

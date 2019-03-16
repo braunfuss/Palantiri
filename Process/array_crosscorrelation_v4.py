@@ -520,7 +520,7 @@ class Xcorr(object):
         trigger = trP.stats.starttime+onset
 
         tdiff = (trP.stats.starttime + onset)-(UTCDateTime(3600)
-                                     + self.mintforerun)
+                                               + self.mintforerun)
 
         refp = UTCDateTime(self.Origin.time)+ptime
         reftriggeronset = refp+onset-self.mintforerun
@@ -528,16 +528,22 @@ class Xcorr(object):
         if int(self.Config['autoxcorrcorrectur']) == 1:
             try:
 
-                refmarkername = os.path.join(self.EventPath, ('%s-marker') % (os.path.basename(self.AF)))
+                refmarkername = os.path.join(self.EventPath,
+                                             ('%s-marker') % (os.path.basename(
+                                              self.AF)))
                 fobjrefmarkername = open(refmarkername, 'w')
-                fobjrefmarkername.write('# Snuffler Markers File Version 0.2\n')
+                fobjrefmarkername.write('# Snuffler Markers File Version\
+                                         0.2\n')
                 fobjrefmarkername.write(('phase: %s 0 %s    None           None         None         XWStart        None False\n') % (tw['xcorrstart'].strftime('%Y-%m-%d %H:%M:%S.%f'), name))
                 fobjrefmarkername.write(('phase: %s 0 %s    None           None         None         XWEnd        None False\n') % (tw['xcorrend'].strftime('%Y-%m-%d %H:%M:%S.%f'), name))
                 fobjrefmarkername.write(('phase: %s 1 %s    None           None         None         TheoP        None False\n') % (refp.strftime('%Y-%m-%d %H:%M:%S.%f'), name))
                 fobjrefmarkername.write(('phase: %s 3 %s    None           None         None         XTrig        None False') % (reftriggeronset.strftime('%Y-%m-%d %H:%M:%S.%f'), name))
                 fobjrefmarkername.close()
 
-                cmd = 'snuffler %s --markers=%s&' % (os.path.join(self.EventPath, refuntouchname), refmarkername)
+                cmd = 'snuffler %s --markers=%s&' % (os.path.join(
+                                                    self.EventPath,
+                                                    refuntouchname),
+                                                    refmarkername)
                 os.system(cmd)
 
                 thrOn = float(self.Config['reflta'])
@@ -550,7 +556,8 @@ class Xcorr(object):
 
                 refname = os.path.basename(self.AF)+'-shift.mseed'
                 trP.stats.starttime = trP.stats.starttime - selection
-                trP.write(os.path.join(self.EventPath, refname), format='MSEED')
+                trP.write(os.path.join(self.EventPath, refname),
+                                       format='MSEED')
 
             except Exception:
                 selection = 0.

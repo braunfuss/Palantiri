@@ -153,10 +153,6 @@ def startAcquisition(sttime,sdsfolder,Dconfig):
     sds = os.path.join(sdsfolder,'data')
     cmd = sys.executable+' '+tool+' -t '+ sttime +' -d '+Dconfig['duration'] +' -m ' + sds + ' -k '+keyfolder+ ' -s '+Dconfig['keyfiles']
 
-    #print cmd
-    #os.chdir(os.path.join(os.getcwd(),"tools"))
-    #os.system(cmd)
-
 def copyConfigSkeleton(evfolder):
     '''
     method to copy the example config from skeleton directory to event directory
@@ -171,7 +167,7 @@ def copyConfigSkeleton(evfolder):
 
     event = evfolder.split('/')[-1]
 
-    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      python arraytool.py getstations {evdirectory} \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
+    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      python arraytool.py pyrocko_download {evdirectory} \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
 
 
 if __name__ == "__main__":
@@ -182,6 +178,5 @@ if __name__ == "__main__":
         time = writeOriginFile(absf,sys.argv)
         writeSynFile(absf,sys.argv)
         copyConfigSkeleton(absf)
-        #startAcquisition(time,absf,options)
     else:
         logger.info('\033[31m Nothing to do %s \033[0m \n')

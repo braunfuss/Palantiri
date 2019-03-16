@@ -1,21 +1,13 @@
 import sys
-import logging
-from pyrocko import util, scenario, guts
 import os
 import fnmatch
 sys.path.append('../tools/')
 sys.path.append('../Common/')
 from obspy.core import read
-from obspy.core.stream import Stream, Trace
 from obspy.core.utcdatetime import UTCDateTime
 from pyrocko import obspy_compat, io
-from pyrocko import orthodrome, model
-import numpy
-import Basic
-import Globals
 import Logfile
-from ConfigFile import ConfigObj, FilterCfg, SynthCfg
-from config import Station, Event
+from ConfigFile import ConfigObj, FilterCfg
 import ttt
 import obspy
 from collections import OrderedDict
@@ -81,9 +73,12 @@ def readWaveforms(stationList, tw, EventPath, Origin):
     return Wdict
 
 
-def readWaveformsPyrocko(stationlist, w, EventPath, Origin):
+def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
     Wdict = OrderedDict()
-    traces = io.load(EventPath+'/data/traces.mseed')
+    if desired is 'Z':
+        traces = io.load(EventPath+'/data/traces_restituted.mseed')
+    else:
+        traces = io.load(EventPath+'/data/traces_rotated.mseed')
     obspy_compat.plant()
 
     traces_dict = []
@@ -91,7 +86,7 @@ def readWaveformsPyrocko(stationlist, w, EventPath, Origin):
             for tr in traces:
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location
                               + '.' + tr.channel[:3])
-                if tr_name == str(il):
+                if tr_name == str(il) and tr.channel is desired:
                     st = obspy.Stream()
                     es = obspy_compat.to_obspy_trace(tr)
                     st.extend([es])
@@ -108,9 +103,13 @@ def readWaveformsPyrockodummy(stationlist, w, EventPath, Origin):
     return Wdict
 
 
-def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin):
+def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
     Wdict = OrderedDict()
-    traces = io.load(EventPath+'/data/traces_restituted.mseed')
+    if desired is 'Z':
+        traces = io.load(EventPath+'/data/traces_restituted.mseed')
+    else:
+        traces = io.load(EventPath+'/data/traces_rotated.mseed')
+
     obspy_compat.plant()
 
     traces_dict = []
@@ -118,7 +117,7 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin):
         for il in stationlist:
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location
                               + '.' + tr.channel[:3])
-                if tr_name == str(il):
+                if tr_name == str(il) and tr.channel is desired:
                     st = obspy.Stream()
                     es = obspy_compat.to_obspy_trace(tr)
                     st.extend([es])
