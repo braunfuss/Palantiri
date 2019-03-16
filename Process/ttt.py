@@ -25,14 +25,12 @@ from   ObspyFkt   import loc2degrees, obs_TravelTimes
 from pyrocko import cake
 import numpy as np
 km = 1000.
-# -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger(sys.argv[0])
 
 d2r = math.pi/180.
 r2d = 1./d2r
 
-# -------------------------------------------------------------------------------------------------
 
 class GridElem(object):
     def __init__(self, lat, lon, depth, tt, delta):
@@ -42,7 +40,6 @@ class GridElem(object):
         self.tt= tt
         self.delta = delta
 
-# -------------------------------------------------------------------------------------------------
 
 class TTTGrid(object):
     def __init__(self, dimZ, mint,maxt,Latul,Lonul,Lator,Lonor,GridArray):
@@ -55,7 +52,6 @@ class TTTGrid(object):
         self.Lonor = Lonor
         self.GridArray = GridArray
 
-# -------------------------------------------------------------------------------------------------
 
 class MinTMaxT(object):
     def __init__(self, mint,maxt):
@@ -360,109 +356,6 @@ def calcTTTAdvTauP(Config,station,Origin,flag,Xcorrshift=None,Refshift=None):
     except:
         Logfile.exception('cannot delete files')
 
-# -------------------------------------------------------------------------------------------------
-
-def calcak135parameter(Event):
-
-    vp = 0
-    vs = 0
-    rho= 0
-    tmprho = 0
-    tmpvp  = 0
-    tmpvs  = 0
-    depth  = "%.02f" % float(Event.depth)
-    Logfile.add('MODELDEPTH ' + depth)
-
-    Basic.checkFileExists('ak135.model', isAbort=True)
-
-    try:
-        fobj = open('ak135.model','r')
-        index = {}
-
-        for counter,line in enumerate(fobj):
-            line = line.split()
-            index[counter] = line[0]
-
-        L = []
-
-        for i in index.iterkeys():
-            if fnmatch.fnmatch(index[i], str(depth)+'*'):
-                L.append(i)
-
-        fobj.seek(0)
-
-        if len(L) == 0:
-            for counter,line in enumerate(fobj):
-                line = line.split()
-
-                if float(depth) > float(line[0]):
-                    x = counter
-
-            fobj.seek(0)
-            begin = x
-            end = x+1
-            I = []
-
-            for counter, line in enumerate(fobj):
-                if counter == begin:  I.append(line)
-                if counter == end:    I.append(line)
-
-            dist = float(I[1].split()[0]) - float(I[0].split()[0])
-            rhodist = float(I[1].split()[1]) - float(I[0].split()[1])
-            vpdist = float(I[1].split()[2]) - float(I[0].split()[2])
-            vsdist = float(I[1].split()[3]) - float(I[0].split()[3])
-            depthdist = float(depth) - float(I[0].split()[0])
-
-            rhofact = rhodist/dist
-            vpfact = vpdist/dist
-            vsfact = vsdist/dist
-
-            rho = float(I[0].split()[1]) + rhofact * depthdist
-            vp = float(I[0].split()[2]) + vpfact * depthdist
-            vs = float(I[0].split()[3]) + vsfact * depthdist
-
-        # endif
-
-        n = len(L)
-
-        if n == 1:
-            for counter, line in enumerate(fobj):
-                for a in L:
-                    if counter == a:
-                        line = line.split()
-                        tmprho = float(line[1])
-                        tmpvp = float(line[2])
-                        tmpvs = float(line[3])
-            # endfor
-
-            rho = tmprho / n
-            vp = tmpvp  / n
-            vs = tmpvs  / n
-        # endif
-
-        if n == 2:
-            for counter,line in enumerate(fobj):
-                for a in L:
-                    if counter == a:
-                        line = line.split()
-                        tmprho += float(line[1])
-                        tmpvp += float(line[2])
-                        tmpvs += float(line[3])
-            # endfor
-
-            rho = tmprho / n
-            vp = tmpvp  / n
-            vs = tmpvs  / n
-        # endif
-
-        fobj.close()
-
-    except:
-        Logfile.exception('Model File not found Exception')
-
-    return vp, vs, rho
-
-# -------------------------------------------------------------------------------------------------
 
 def dubcup(rho, vp, vs, stri, dip, rak, azi, phi):
 

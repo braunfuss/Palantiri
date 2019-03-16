@@ -186,8 +186,6 @@ def processWaveforms(WaveformDict, Config, Folder, network, MetaDict, Event,
     cfg = FilterCfg(Config)
     new_frequence = cfg.newFrequency()
 
-    vp, vs, rho = ttt.calcak135parameter(Event)
-
     for index, i in enumerate(WaveformDict):
             Logfile.add('%s:%s ---------------------' % (index, i))
 
@@ -196,30 +194,15 @@ def processWaveforms(WaveformDict, Config, Folder, network, MetaDict, Event,
 
             station = getStation(i, MetaDict)
 
-            psign = 1
-
             if cfg.Int('fm') == 1:
                 azi = ttt.bearing(Event, station)
                 bazi = ttt.backazi(station, Event)
-                psign = ttt.dubcup(rho, vp, vs, Event.strike, Event.dip,
-                                   Event.rake, azi, station.takeoff)
 
                 msg = 'Takeoff ' + str(station.takeoff) + ' Azi ' + str(azi) +\
                       'Bazi ' + str(bazi)
-                msg += (' vp ' + str(vp) + ' vs ' + str(vs) + ' rho '
-                        + str(rho) + ' Psign ' + str(psign))
+
                 Logfile.add(msg)
 
-            try:
-                Logfile.add(station.getName() + ' ' + station.lat + ' ' +
-                            station.lon + ' ' + station.gain + ' PSIGN: '
-                            + str(psign))
-            except Exception:
-                pass
-
-            if psign == -1:
-                Logfile.add('correcting polarisation for station %s ' % (i))
-                -1.*WaveformDict[i][0].data
             gain = float(station.gain)
 
             if gain == 0.0 or gain == -1.0:

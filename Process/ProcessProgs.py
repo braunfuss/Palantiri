@@ -8,6 +8,7 @@ import Globals
 def Usage():
     return 'arraytool.py process event_name'
 
+
 class Intern(object):
 
     def __init__(self):
@@ -29,7 +30,7 @@ class Intern(object):
 
         if not Globals.checkEventDirParameter(eventName):
 
-            s = 'Invalid parameter - <' + eventName +'>'
+            s = 'Invalid parameter - <' + eventName + '>'
             s += '\n        '
             s += 'Cannot find directory ' + Globals.EventDir()
             self.error(s)
@@ -40,10 +41,10 @@ def start(config):
     intern = Intern()
 
     if sys.argv[1] == 'process':
-        intern.checkProgramParameter(3,3)
+        intern.checkProgramParameter(3, 3)
 
         path = Globals.EventDir()
-        at = os.path.join(os.getcwd(),'Process', 'main.py')
+        at = os.path.join(os.getcwd(), 'Process', 'main.py')
         workDir = [path, 'tmp2', 'process']
         workDir = ['tmpProcess']
         cmd = sys.executable + ' ' + at + ' -f ' + path
