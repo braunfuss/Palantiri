@@ -9,7 +9,7 @@ from obspy.core.utcdatetime import UTCDateTime
 import Basic
 import Globals
 import Logfile
-import  DataTypes
+import DataTypes
 from DataTypes import Location
 from ObspyFkt import loc2degrees
 from pyrocko import orthodrome, obspy_compat, model
@@ -29,7 +29,6 @@ from stacking import PWS_stack
 import copy
 if sys.version_info.major >= 3:
     xrange = range
-# -------------------------------------------------------------------------------------------------
 
 logger = logging.getLogger('ARRAY-MP')
 
@@ -37,7 +36,7 @@ logger = logging.getLogger('ARRAY-MP')
 def make_bayesian_weights(narrays, nbootstrap=100,
                           type='bayesian', rstate=None):
 
-    ws = num.zeros((nbootstrap, nmisfits))
+    ws = num.zeros((int(nbootstrap), int(narrays)))
     if rstate is None:
         rstate = num.random.RandomState()
 
@@ -45,7 +44,7 @@ def make_bayesian_weights(narrays, nbootstrap=100,
         if type == 'classic':
             ii = rstate.randint(0, narrays, size=narrays)
             ws[ibootstrap, :] = num.histogram(
-                ii, narrays,(-0.5, narrays - 0.5))[0]
+                ii, narrays, (-0.5, narrays - 0.5))[0]
         elif type == 'bayesian':
             f = rstate.uniform(0., 1., size=narrays+1)
             f[0] = 0.
@@ -56,6 +55,7 @@ def make_bayesian_weights(narrays, nbootstrap=100,
         else:
             assert False
     return ws
+
 
 class CakeTiming(Object):
     '''Calculates and caches phase arrivals.
@@ -196,15 +196,16 @@ def toAzimuth(latevent, lonevent, latsource, lonsource):
 
         return angle
 
-# -------------------------------------------------------------------------------------------------
 
-def writeSembMatricesSingleArray(SembList,Config,Origin,arrayfolder,ntimes,switch):
+def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
+                                 switch, bootstrap=None):
     '''
-    method to write semblance matrizes from one processes to file for each timestep
+    method to write semblance matrizes from one processes to file for each
+    timestep.
     '''
     logger.info('start write semblance matrices')
 
-    cfg= ConfigObj(dict=Config)
+    cfg = ConfigObj(dict=Config)
     origin = OriginCfg(Origin)
 
     dimX = cfg.dimX()
@@ -227,50 +228,64 @@ def writeSembMatricesSingleArray(SembList,Config,Origin,arrayfolder,ntimes,switc
     oLatul = 0
     oLonul = 0
 
-    z=0
+    z = 0
 
     for i in xrange(dimX):
-         oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
+        oLatul = o_lat - ((dimX-1)/2) * gridspacing + i*gridspacing
 
-         if z == 0 and i == 0:
-             Latul = oLatul
-         o=0
+        if z == 0 and i == 0:
+            Latul = oLatul
+        o = 0
 
-         for j in xrange(dimY):
-               oLonul = o_lon -((dimY-1)/2) * gridspacing + j * gridspacing
+        for j in xrange(dimY):
+            oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
 
-               if o==0 and j==0:  Lonul = oLonul
+            if o == 0 and j == 0:
+                Lonul = oLonul
 
-               latv.append(oLatul)
-               lonv.append(oLonul)
+            latv.append(oLatul)
+            lonv.append(oLonul)
 
     rc = UTCDateTime(Origin['time'])
-    rcs = '%s-%s-%s_%02d:%02d:%02d'%(rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
+    rcs = '%s-%s-%s_%02d:%02d:%02d' % (rc.day, rc.month, rc.year, rc.hour,
+                                       rc.minute, rc.second)
     d = rc.timestamp
 
     for a, i in enumerate(SembList):
-        fobj = open(os.path.join(arrayfolder,'%s-%s_%03d.ASC' %(switch,Origin['depth'],a)),'w')
-        fobj.write('# %s , %s\n' %(d,rcs))
-        fobj.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
+        if bootstrap is None:
+            fobj = open(os.path.join(arrayfolder, '%s-%s_%03d.ASC'
+                                     % (switch, Origin['depth'], a)), 'w')
+        else:
+            fobj = open(os.path.join(arrayfolder, '%s-%s-boot%s_%03d.ASC'
+                                     % (switch, Origin['depth'], bootstrap,
+                                        a)), 'w')
+
+        fobj.write('# %s , %s\n' % (d, rcs))
+        fobj.write('# step %ds| ntimes %d| winlen: %ds\n' % (step, ntimes,
+                                                             winlen))
         fobj.write('# \n')
-        fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'%(Latul,gridspacing,dimX))
-        fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
+        fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n' % (Latul,
+                                                                  gridspacing,
+                                                                  dimX))
+        fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n' % (Lonul,
+                                                                  gridspacing,
+                                                                  dimY))
         fobj.write('# ddepth: 0 ndepth: 1 \n')
 
         for j in range(migpoints):
-            x= latv[j]
-            y= lonv[j]
-            z= origin.depth()
+            x = latv[j]
+            y = lonv[j]
+            z = origin.depth()
             semb = i[j]
 
-            fobj.write('%.2f %.2f %.2f %.20f\n' %(x,y,z,semb))
+            fobj.write('%.2f %.2f %.2f %.20f\n' % (x, y, z, semb))
 
         fobj.close()
 
 
 
 def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
-                array_centers):
+                array_centers, cboot=None, temp_comb=None):
     '''
     method to collect semblance matrizes from all processes and write them to file for each timestep
     '''
@@ -315,52 +330,70 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                latv.append(oLatul)
                lonv.append(oLonul)
 
-    tmp=1
     origin = DataTypes.dictToLocation(Origin)
-    i = 0
+    icount = 0
 
     azis = []
     for a in SembList:
-        x = array_centers[i][0]
-        y = array_centers[i][1]
+        x = array_centers[icount][0]
+        y = array_centers[icount][1]
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
                                                       origin.lon)
         azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),
                               x, y))
-        i = i+1
+        icount = icount+1
     aziblocks = num.arange(0., 360., 20.)
     aziblockslist = list(aziblocks)
     aziweights = []
     blockweight = 1.
     idxs = []
+    tmp_general = 1
     for azi in azis:
             val = min(aziblocks, key=lambda x: abs(x-float(azi)))
             idxs.append(aziblockslist.index(val))
     for idx in idxs:
         aziweights.append(1./idxs.count(idx))
 
-    min_coor = num.zeros([i, 2])
-    i = 0
-    if cfg.Bool('bootstrap_array_weights') is True:
-        nboot = cfg.float('n_bootstrap')
+    min_coor = num.zeros([icount, 2])
+    if cfg.Bool('bootstrap_array_weights') is True and\
+       cfg.Bool('combine_all') is False:
+        nboot = cfg.Int('n_bootstrap')
         bs_weights = make_bayesian_weights(len(azis), nbootstrap=nboot)
     else:
         nboot = 1
-    #writeout nboot semb, final combine all in one and writeout
+
+    if temp_comb is not None:
+        nboot = 0
+    else:
+        nboot = 1
+
+    folder = Folder['semb']
+    sembmaxvaluev = num.ndarray(ntimes, dtype=float)
+    sembmaxlatv = num.ndarray(ntimes, dtype=float)
+    sembmaxlonv = num.ndarray(ntimes, dtype=float)
+
+    rc = UTCDateTime(Origin['time'])
+    rcs = '%s-%s-%s_%02d:%02d:%02d' % (rc.day, rc.month, rc.year, rc.hour,
+                                       rc.minute, rc.second)
+    d = rc.timestamp
+
+    usedarrays = arrays
     for boot in range(nboot):
         c = 0
+        tmp = 1
+
         for a in SembList:
             if cfg.Bool('weight_by_azimuth') is True:
-                tmp *= a*aziweights[i]
-            #use array weights from this nboot iter
+                tmp *= a*aziweights[c]
             elif cfg.Bool('bootstrap_array_weights') is True:
                 tmp *= a*bs_weights[boot, c]
             else:
                 tmp *= a
-            c =+ 1
+            tmp_general *= tmp
             deltas = []
-            x = array_centers[i][0]
-            y = array_centers[i][1]
+            x = array_centers[c][0]
+            y = array_centers[c][1]
+
             for k in range(0, len(latv)):
                 delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k],
                                                               lonv[k])
@@ -368,8 +401,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                                                                     latv[k],
                                                                     lonv[k]))
                 if delta <= num.min(deltas):
-                    min_coor[i] = [latv[k], lonv[k]]
-            i = i+1
+                    min_coor[c] = [latv[k], lonv[k]]
+            c =+ 1
+
         array_overlap = num.average(min_coor, axis=0)
         delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0],
                                                              array_overlap[1],
@@ -379,40 +413,31 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         diff_center_lat = origin.lat-array_overlap[0]
         diff_center_lon = origin.lon-array_overlap[1]
 
-        sembmaxvaluev = num.ndarray(ntimes, dtype=float)
-        sembmaxlatv = num.ndarray(ntimes, dtype=float)
-        sembmaxlonv = num.ndarray(ntimes, dtype=float)
 
-        rc = UTCDateTime(Origin['time'])
-        rcs = '%s-%s-%s_%02d:%02d:%02d'%(rc.day, rc.month, rc.year, rc.hour,
-                                         rc.minute, rc.second)
-        d = rc.timestamp
-
-        usedarrays = arrays
-        folder = Folder['semb']
-        fobjsembmax = open(os.path.join(folder, 'sembmax_%s.txt'
-                                        % (switch)), 'w')
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s.txt'
+                                        % (switch, boot)), 'w')
         norm = num.max(num.max(tmp, axis=1))
         max_p = 0.
         sum_i = 0.
 
-        i = tmp[0]
-        semb_cum = num.zeros(num.shape(i))
-        times_cum = num.zeros(num.shape(i))
-        times_min = num.zeros(num.shape(i))
-        times_max = num.zeros(num.shape(i))
+        ishape = tmp[0]
+        semb_cum = num.zeros(num.shape(ishape))
+        times_cum = num.zeros(num.shape(ishape))
+        times_min = num.zeros(num.shape(ishape))
+        times_max = num.zeros(num.shape(ishape))
+        semb_prior = num.zeros(num.shape(ishape))
 
     #    correct for array center bias
     #    for j in range(migpoints):
     #                latv[j] = latv[j]#+diff_center_lat
     #                lonv[j] = lonv[j]#+diff_center_lon
 
-        semb_prior = num.zeros(num.shape(i))
 
         for a, i in enumerate(tmp):
             logger.info('timestep %d' % a)
-            fobj = open(os.path.join(folder, '%s-%s_%03d.ASC'
-                                     % (switch, Origin['depth'], a)), 'w')
+            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d.ASC'
+                                     % (switch, Origin['depth'], boot, a)),
+                        'w')
             fobj.write('# %s , %s\n' % (d, rcs))
             fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
                        % (step, ntimes, winlen))
@@ -450,48 +475,184 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                     if times_min[j] == 0:
                         times_min[j] = a
 
-
-
-            delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat, origin.lon)
-            azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+            delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
+                                                          origin.lon)
+            azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),
+                            float(sembmaxX), float(sembmaxY))
             semb_prior = copy.copy(i)
             sembmaxvaluev[a] = sembmax
             sembmaxlatv[a] = sembmaxX
             sembmaxlonv[a] = sembmaxY
-            fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n' %(a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
+            fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n'
+                              % (a*step, sembmaxX, sembmaxY, sembmax, uncert,
+                                 usedarrays, delta, float(azi), delta*119.19))
             fobj.close()
 
         fobjsembmax.close()
 
-        fobj_cum = open(os.path.join(folder,'semb_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s.ASC'
+                                     % (switch, Origin['depth'], boot)),
+                        'w')
         for x, y, sembcums in zip(latv, lonv, semb_cum):
-            fobj_cum.write('%.2f %.2f %.20f\n' %(x, y, sembcums))
+            fobj_cum.write('%.2f %.2f %.20f\n' % (x, y, sembcums))
         fobj_cum.close()
 
-        fobj_timemax = open(os.path.join(folder,'times_cum_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_boot%s.ASC'
+                                         % (switch, Origin['depth'], boot)),
+                            'w')
         for x, y, timemax in zip(latv, lonv, times_max):
-            fobj_timemax.write('%.2f %.2f %.20f\n' %(x, y, timemax))
+            fobj_timemax.write('%.2f %.2f %.20f\n' % (x, y, timemax))
         fobj_timemax.close()
 
-        fobj_timecum = open(os.path.join(folder,'times_max_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_boot%s.ASC'
+                                         % (switch, Origin['depth'], boot)),
+                            'w')
         for x, y, timecum in zip(latv, lonv, times_cum):
-            fobj_timecum.write('%.2f %.2f %.20f\n' %(x, y, timecum))
+            fobj_timecum.write('%.2f %.2f %.20f\n' % (x, y, timecum))
         fobj_timecum.close()
 
-        fobj_timemin = open(os.path.join(folder,'times_min_%s_%s.ASC' %(switch,Origin['depth'])),'w')
+        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_boot%s.ASC'
+                                         % (switch, Origin['depth'], boot)),
+                            'w')
         for x, y, timexy in zip(latv, lonv, times_min):
-            fobj_timemin.write('%.2f %.2f %.20f\n' %(x, y, timexy))
+            fobj_timemin.write('%.2f %.2f %.20f\n' % (x, y, timexy))
         fobj_timemin.close()
+    if cboot is None:
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s.txt'
+                                        % (switch)), 'w')
+    else:
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s.txt'
+                                        % (switch, cboot)), 'w')
+    if temp_comb is not None:
+        tmp_general = temp_comb
+        tmp = tmp_general
+        ishape = tmp_general[0]
+        semb_cum = num.zeros(num.shape(ishape))
+        times_cum = num.zeros(num.shape(ishape))
+        times_min = num.zeros(num.shape(ishape))
+        times_max = num.zeros(num.shape(ishape))
+        semb_prior = num.zeros(num.shape(ishape))
+    norm = num.max(num.max(tmp_general, axis=1))
+    for a, i in enumerate(tmp_general):
+        logger.info('timestep %d' % a)
+        if cboot is None:
+            fobj = open(os.path.join(folder, '%s-%s_%03d.ASC'
+                                     % (switch, Origin['depth'], a)),
+                        'w')
+        else:
+            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d.ASC'
+                                     % (switch, Origin['depth'], cboot, a)),
+                        'w')
+        fobj.write('# %s , %s\n' % (d, rcs))
+        fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
+                   % (step, ntimes, winlen))
+        fobj.write('# \n')
+        fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'
+                   % (Latul, gridspacing, dimX))
+        fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'
+                   % (Lonul, gridspacing, dimY))
+        fobj.write('# ddepth: 0 ndepth: 1 \n')
 
-        trigger.writeSembMaxValue(sembmaxvaluev, sembmaxlatv, sembmaxlonv, ntimes,
-                                  Config, Folder)
+        sembmax = 0
+        sembmaxX = 0
+        sembmaxY = 0
+        counter_time = 0
+        uncert = num.std(i)
+        semb_cum =+ i
+        for j in range(migpoints):
 
-        inspect_semb = cfg.Bool('inspect_semb')
-        if inspect_semb is True:
-            trigger.semblancestalta(sembmaxvaluev, sembmaxlatv, sembmaxlonv)
-        return sembmaxvaluev
+            x = latv[j]
+            y = lonv[j]
 
-def collectSembweighted(SembList,Config,Origin,Folder,ntimes,arrays,switch, weights):
+            if cfg.Bool('norm_all') is True:
+                semb = i[j]/norm
+            else:
+                semb = i[j]
+            fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
+            if semb_prior[j] <= semb:
+                semb_prior[j] = i[j]
+                times_cum[j] = a
+                times_max[j] = a*i[j]
+            if semb > sembmax:
+                sembmax = semb
+                sembmaxX = x
+                sembmaxY = y
+                if times_min[j] == 0:
+                    times_min[j] = a
+
+        delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
+                                                      origin.lon)
+        azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),
+                        float(sembmaxX), float(sembmaxY))
+        semb_prior = copy.copy(i)
+        sembmaxvaluev[a] = sembmax
+        sembmaxlatv[a] = sembmaxX
+        sembmaxlonv[a] = sembmaxY
+        fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n'
+                          % (a*step, sembmaxX, sembmaxY, sembmax, uncert,
+                             usedarrays, delta, float(azi), delta*119.19))
+        fobj.close()
+    fobjsembmax.close()
+
+    if cboot is None:
+        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s.ASC'
+                                     % (switch, Origin['depth'])),
+                        'w')
+    else:
+        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s.ASC'
+                                     % (switch, Origin['depth'], cboot)),
+                        'w')
+    for x, y, sembcums in zip(latv, lonv, semb_cum):
+        fobj_cum.write('%.2f %.2f %.20f\n' % (x, y, sembcums))
+    fobj_cum.close()
+
+    if cboot is None:
+        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s.ASC'
+                                         % (switch, Origin['depth'])),
+                            'w')
+    else:
+        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_boot%s.ASC'
+                                         % (switch, Origin['depth'], cboot)),
+                            'w')
+    for x, y, timemax in zip(latv, lonv, times_max):
+        fobj_timemax.write('%.2f %.2f %.20f\n' % (x, y, timemax))
+    fobj_timemax.close()
+
+    if cboot is None:
+        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s.ASC'
+                                         % (switch, Origin['depth'])),
+                            'w')
+    else:
+        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_boot%s.ASC'
+                                         % (switch, Origin['depth'], cboot)),
+                            'w')
+    for x, y, timecum in zip(latv, lonv, times_cum):
+        fobj_timecum.write('%.2f %.2f %.20f\n' % (x, y, timecum))
+    fobj_timecum.close()
+
+    if cboot is None:
+        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s.ASC'
+                                         % (switch, Origin['depth'])),
+                            'w')
+    else:
+        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_boot%s.ASC'
+                                         % (switch, Origin['depth'], cboot)),
+                            'w')
+    for x, y, timexy in zip(latv, lonv, times_min):
+        fobj_timemin.write('%.2f %.2f %.20f\n' % (x, y, timexy))
+    fobj_timemin.close()
+
+    trigger.writeSembMaxValue(sembmaxvaluev, sembmaxlatv, sembmaxlonv,
+                              ntimes, Config, Folder)
+
+    inspect_semb = cfg.Bool('inspect_semb')
+    if inspect_semb is True and cboot is None:
+        trigger.semblancestalta(sembmaxvaluev, sembmaxlatv, sembmaxlonv)
+    return sembmaxvaluev, tmp
+
+
+def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
+                        switch, weights):
     '''
     method to collect semblance matrizes from all processes and write them to file for each timestep
     '''
@@ -627,8 +788,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     '''
     method for calculating semblance of one station array
     '''
-    Logfile.add('PROCESS %d %s' %(flag,' Enters Semblance Calculation'))
-    Logfile.add('MINT  : %f  MAXT: %f Traveltime' %(Gmint,Gmaxt))
+    Logfile.add('PROCESS %d %s' % (flag,' Enters Semblance Calculation'))
+    Logfile.add('MINT  : %f  MAXT: %f Traveltime' % (Gmint, Gmaxt))
 
     cfg = ConfigObj(dict=Config)
     cfg_f = FilterCfg(Config)
@@ -1272,7 +1433,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
         k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                       new_frequence, minSampleCount, latv, lonv, traveltimes,
-                      traces, calcStreamMap, timeev, Config, Origin)
+                      traces, calcStreamMap, timeev, Config, Origin,
+                      bs_weights=bs_weights)
         print("--- %s seconds ---" % (time.time() - start_time))
 
     t2 = time.time()

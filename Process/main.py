@@ -514,18 +514,23 @@ def processLoop():
                                                               ntimes, switch)
                     else:
                         nboot = cfg.Int('n_bootstrap')
-                        ws = num.zeros((nboot, counter-1))
+                        tmp_general = 1
                         for ibootstrap in range(nboot):
-                            f = rstate.uniform(0., 1., size=counter-1)
-                            f[0] = 0.
-                            f[-1] = 1.
+                            f = rstate.uniform(0., 1., size=counter+1)
                             f = num.sort(f)
                             g = f[1:] - f[:-1]
-                            ws[ibootstrap, :] = g
+                            k = 0
+                            ws = []
+
+                            for wss in range(0, counter-1):
+                                for stats in range(0, stations_per_array[k]):
+                                    ws.append(g[k])
+                                k =+ 1
+                            ws = num.asarray(ws)
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
-                                ev, arrayfolder, syn_in, bs_weights=g)
+                                ev, arrayfolder, syn_in, bs_weights=ws)
 
                             ASL.append(arraySemb)
                             weights.append(weight)
@@ -535,21 +540,43 @@ def processLoop():
                                                                   Origin,
                                                                   arrayfolder,
                                                                   ntimes,
-                                                                  switch)
+                                                                  switch,
+                                                                  bootstrap=ibootstrap)
 
+                            if ASL:
+                                Logfile.red('collect semblance matrices from\
+                                            all arrays')
+                                sembmax, tmp = sembCalc.collectSemb(ASL, Config,
+                                                               Origin, Folder,
+                                                               ntimes,
+                                                               len(networks),
+                                                               switch,
+                                                               array_centers,
+                                                               cboot=ibootstrap)
+                                tmp_general *= tmp
+                                ASL = []
+                        sembmax, tmp = sembCalc.collectSemb(ASL, Config,
+                                                       Origin, Folder,
+                                                       ntimes,
+                                                       len(networks),
+                                                       switch,
+                                                       array_centers,
+                                                       cboot=None,
+                                                       temp_comb=tmp_general)
                 if cfg.optimize_all() is True:
                     import optim_csemb
-                    sembmax = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
+                    sembmax, tmp = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
                     optim_csemb.solve(counter, Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
                                                  Folder,Origin,ntimes,switch, ev,arrayfolder,
                                                  syn_in, ASL, sembmax, evpath, XDict, RefDict,
                                                  workdepth, filterindex, Wdfs)
 
-                if ASL:
+                if ASL and cfg.Bool('bootstrap_array_weights') is False:
                     Logfile.red('collect semblance matrices from all arrays')
-                    sembmax = sembCalc.collectSemb(ASL, Config, Origin, Folder,
-                                                   ntimes, len(networks),
-                                                   switch, array_centers)
+                    sembmax, tmp = sembCalc.collectSemb(ASL, Config, Origin,
+                                                        Folder,
+                                                        ntimes, len(networks),
+                                                        switch, array_centers)
                     if cfg.Bool('weight_by_noise') is True:
                         sembCalc.collectSembweighted(ASL, Config, Origin,
                                                      Folder, ntimes,

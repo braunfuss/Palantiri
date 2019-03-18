@@ -28,6 +28,32 @@ def normalize(lst):
     return map(lambda x: float(x)/s, lst)
 
 
+def hilbert(x, N=None):
+    '''
+    Return the hilbert transform of x of length N.
+    (from scipy.signal, but changed to use fft and ifft from numpy.fft)
+    '''
+    x = num.asarray(x)
+    if N is None:
+        N = len(x)
+    if N <= 0:
+        raise ValueError("N must be positive.")
+        x = num.real(x)
+    Xf = num.fft.fft(x, N, axis=0)
+    h = num.zeros(N)
+    if N % 2 == 0:
+        h[0] = h[N//2] = 1
+        h[1:N//2] = 2
+    else:
+        h[0] = 1
+        h[1:(N+1)//2] = 2
+
+    if len(x.shape) > 1:
+        h = h[:, num.newaxis]
+    x = num.fft.ifft(Xf*h)
+    return x
+
+
 def xcorr(tr1, tr2, shift_len, full_xcorr=False):
 
     from obspy.core.util.deprecation_helpers import ObsPyDeprecationWarning
@@ -53,7 +79,6 @@ def xcorr(tr1, tr2, shift_len, full_xcorr=False):
         return shift.value, coe_p.value
 
 
-# -------------------------------------------------------------------------------------------------
 
 class MyThread(Thread):
 
@@ -70,7 +95,6 @@ class MyThread(Thread):
         self.new_freq  = new_freq
         self.minSampleCount = minSampleCount
 
-# -------------------------------------------------------------------------------------------------
 
 def toMatrix(npVector, nColumns):
 
@@ -89,8 +113,9 @@ def toMatrix(npVector, nColumns):
 
 
 def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
-               new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
-               trace_1, calcStreamMap, time, Config, Origin):
+              new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
+              trace_1, calcStreamMap, time, Config, Origin,
+              bs_weights=None):
 
         cfg = ConfigObj(dict=Config)
         origin = OriginCfg(Origin)
@@ -101,7 +126,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
            return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                mint, new_frequence, minSampleCount, latv_1,
                                lonv_1, traveltime_1, trace_1, calcStreamMap,
-                               time, cfg)
+                               time, cfg, bs_weights)
         else:
            return semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep,
                                           dimX, dimY, mint, new_frequence,
@@ -197,34 +222,9 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
     return abs(backSemb)
 
 
-def hilbert(x, N=None):
-    '''
-    Return the hilbert transform of x of length N.
-    (from scipy.signal, but changed to use fft and ifft from numpy.fft)
-    '''
-    x = num.asarray(x)
-    if N is None:
-        N = len(x)
-    if N <= 0:
-        raise ValueError("N must be positive.")
-        x = num.real(x)
-    Xf = num.fft.fft(x, N, axis=0)
-    h = num.zeros(N)
-    if N % 2 == 0:
-        h[0] = h[N//2] = 1
-        h[1:N//2] = 2
-    else:
-        h[0] = 1
-        h[1:(N+1)//2] = 2
-
-    if len(x.shape) > 1:
-        h = h[:, num.newaxis]
-    x = num.fft.ifft(Xf*h)
-    return x
-
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
-                 trace_1, calcStreamMap, time, cfg):
+                 trace_1, calcStreamMap, time, cfg, bs_weights=None):
     from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs = []
@@ -241,14 +241,16 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
             tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.diff((tr_org.ydata),append=num.min(tr_org.ydata))
-            tr_org.ydata = num.diff((tr_org.ydata),append=num.min(tr_org.ydata))
+            tr_org.ydata = num.diff((tr_org.ydata),
+                                    append=num.min(tr_org.ydata))
+            tr_org.ydata = num.diff((tr_org.ydata),
+                                    append=num.min(tr_org.ydata))
             tr_org.ydata = num.sqrt(tr_org.ydata**2 + hilbert(tr_org.ydata)**2)
-            tr_org.ydata = num.diff((tr_org.ydata),append=num.min(tr_org.ydata))
+            tr_org.ydata = num.diff((tr_org.ydata),
+                                    append=num.min(tr_org.ydata))
         trs_orgs.append(tr_org)
 
-
-    trace  = toMatrix(trace_1, minSampleCount)
+    #trace  = toMatrix(trace_1, minSampleCount)
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
@@ -260,22 +262,21 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
-    data_first = []
-    for i in range(ntimes) :
-        sembmax = 0; sembmaxX = 0; sembmaxY = 0
+    for i in range(ntimes):
+        sembmax = 0
+        sembmaxX = 0
+        sembmaxY = 0
 
         for j in range(dimX * dimY):
-            semb = 0; nomin = 0; denom = 0
-            sums_cc = 0
+            semb = 0
+            nomin = 0
+            denom = 0
             if cfg.Bool('combine_all') is True:
                 sums = 1
             else:
                 sums = 0
-            shifted = []
             relstart = []
             relstarts = nostat
-            cc_data = []
-            tt = []
 
             for k in range(nostat):
                 relstart = traveltime[k][j]
@@ -288,38 +289,39 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                     iend = min(
                         tr.data_len(),
                         t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
-                except:
+                except Exception:
                     print('Loaded traveltime grid wrong!')
 
                 data = tr.ydata[ibeg:iend]
 
                 try:
                     if cfg.Bool('combine_all') is True:
-                        sums *=(data)
+                        if cfg.Bool('bootstrap_array_weights') is True:
+                            sums *= (data)*bs_weights[k]
+                        else:
+                            sums *= (data)
+
                     else:
-                        sums +=(data)
-                except:
+                        sums += (data)
+                except Exception:
                     pass
                 relstarts -= relstart
 
             sum = abs(num.sum(((sums))))
-            denom = sum**2
-            nomin = sum
             semb = sum
 
             backSemb[i][j] = sum
             if semb > sembmax:
-               sembmax  = semb   # search for maximum and position of maximum on semblance
+                sembmax  = semb   # search for maximum and position of maximum on semblance
                                  # grid for given time step
-               sembmaxX = latv[j]
-               sembmaxY = lonv[j]
+                sembmaxX = latv[j]
+                sembmaxY = lonv[j]
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str(sembmaxY))
 
-    backSemb = backSemb#/num.max(num.max(backSemb))
+    backSemb = backSemb/num.max(num.max(backSemb))
     return abs(backSemb)
 
-# -------------------------------------------------------------------------------------------------
 
 def execsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :
 
@@ -346,8 +348,6 @@ def execsemblance2() :
     Basic.writeVector(semb_txt, backSemb)
 
 
-
-# -------------------------------------------------------------------------------------------------
 def startsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
 
     backSemb = []
