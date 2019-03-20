@@ -16,7 +16,7 @@ from pyrocko import orthodrome, obspy_compat, model
 from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 import time
 import numpy as num
-from collections import OrderedDict, defaultdict
+from collections import defaultdict
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
 from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
@@ -784,7 +784,7 @@ def toMatrix(npVector, nColumns):
 
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in, bs_weights=None):
+           syn_in, refshifts, bs_weights=None):
     '''
     method for calculating semblance of one station array
     '''
@@ -894,8 +894,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     lat=st.lat,
                     lon=st.lon,
                     store_id=store_id,
-                    tmin=-3000,
-                    tmax=3000,
+                    tmin=-1000,
+                    tmax=1000,
                     codes=(st.network, st.station, st.location, 'BHZ'),
                     interpolation='multilinear',
                     quantity=cfg.quantity())
@@ -1004,7 +1004,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                         synthetic_traces):
                         tr.add(trsource)
             #debug
-    #    trld.snuffle(synthetic_traces)
+        #trld.snuffle(synthetic_traces)
 
         timeev = util.str_to_time(syn_in.time_0())
         if cfg.Bool('synthetic_test_add_noise') is True:
@@ -1293,7 +1293,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     Logfile.add('PROCESS %d  NTIMES: %d' %(flag,ntimes))
 
-    if False :
+    if False:
         print('nostat ',nostat,type(nostat))
         print('nsamp ',nsamp,type(nsamp))
         print('ntimes ',ntimes,type(ntimes))
@@ -1433,13 +1433,13 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
         k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                       new_frequence, minSampleCount, latv, lonv, traveltimes,
-                      traces, calcStreamMap, timeev, Config, Origin,
+                      traces, calcStreamMap, timeev, Config, Origin, refshifts,
                       bs_weights=bs_weights)
         print("--- %s seconds ---" % (time.time() - start_time))
 
     t2 = time.time()
 
-    Logfile.add('%s took %0.3f s' % ('CALC:',(t2-t1)))
+    Logfile.add('%s took %0.3f s' % ('CALC:', (t2-t1)))
 
     partSemb = k
     partSemb = partSemb.reshape(ntimes, migpoints)

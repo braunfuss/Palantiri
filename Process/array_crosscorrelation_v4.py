@@ -18,6 +18,7 @@ from ObspyFkt import loc2degrees
 from ConfigFile import ConfigObj, FilterCfg
 from config import Trigger
 from waveform import resampleWaveform_2
+from collections import OrderedDict
 
 logger = logging.getLogger(sys.argv[0])
 
@@ -299,8 +300,8 @@ class Xcorr(object):
         Logfile.red('Enter AUTOMATIC CROSSCORRELATION ')
         Logfile.red('\n\n+++++++++++++++++++++++++++++++++++++++++++++++\n ')
         T = []
-        Wdict = {}
-        SNR = {}
+        Wdict = OrderedDict()
+        SNR = OrderedDict()
         Config = self.Config
         cfg = ConfigObj(dict=Config)
         for i in self.StationMeta:
@@ -450,7 +451,7 @@ class Xcorr(object):
             if sname == i.getName():
                 return i
 
-    def refTrigger(self, RefWaveform):
+    def refTrigger(self, RefWaveform, phase):
         Config = self.Config
         cfg = ConfigObj(dict=Config)
         name = ('%s.%s.%s.%s') % (RefWaveform[0].stats.network,
@@ -462,7 +463,7 @@ class Xcorr(object):
         de = loc2degrees(self.Origin, i)
         ptime = 0
 
-        Phase = cake.PhaseDef('P')
+        Phase = cake.PhaseDef(phase)
         model = cake.load_model()
         if cfg.colesseo_input() is True:
             arrivals = model.arrivals([de, de], phases=Phase,
@@ -669,15 +670,41 @@ class Xcorr(object):
         Logfile.red('Finish Xcorr Procedure ')
         return corrDict, StreamDict[t], StreamDict
 
+    def doXcorr_dummy(self, phase):
+        StreamDict, SNRDict = self.traveltimes(phase)
+        t = self.f6(SNRDict)
+
+        alternativeref = os.path.join(*self.AF.split(os.sep)[-1:])+'refstation'
+
+        if self.Config[alternativeref] == '':
+            t = t
+        else:
+            t = self.Config[alternativeref]
+
+        corrDict = {}
+
+        for stream in StreamDict.iterkeys():
+
+            corrDict[stream] = StreamDict[stream]
+            corrDict[stream].value = abs(corrDict[stream].value)
+
+        return corrDict, StreamDict[t], StreamDict
+
     def runXcorr(self, phase):
 
         CD, ref, WD = self.doXcorr(phase)
         onset = 0
-        tdiff, triggerobject = self.refTrigger(ref)
+        tdiff, triggerobject = self.refTrigger(ref, phase)
 
         fCD = self.filterCorrDict(CD, onset)
 
-        C, Streams = self.shiftSeismograms(WD, fCD, onset)
-
-        self.writeShift(C)
         return fCD, triggerobject
+
+    def runXcorr_dummy(self, phase):
+
+        CD, ref, WD = self.doXcorr_dummy(phase)
+        onset = 0
+
+        fCD = self.filterCorrDict(CD, onset)
+
+        return fCD

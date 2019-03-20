@@ -136,66 +136,72 @@ def processLoop():
     filtername = filter.filterName()
     Logfile.add('filtername = ' + filtername)
 
-    XDict = {}
-    RefDict = {}
-    SL = {}
-    if cfg.Int('xcorr') == 1:
+    XDict = OrderedDict()
+    RefDict = OrderedDict()
+    SL = OrderedDict()
+    refshifts_global = []
+    newFreq = str(filter.newFrequency())
+    xcorrnetworks = cfg.String('networks').split(',')
 
-        newFreq = str(filter.newFrequency())
+    if cfg.Int('xcorr') is 1:
+
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
-        rp= os.path.join(Folder['semb'], fobjreferenceshiftname)
-        fobjpickleshiftname= newFreq + '_' + filtername + '.xcorrpkl'
-        ps= os.path.join(Folder['semb'], fobjpickleshiftname)
+        rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
+        fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
+        ps = os.path.join(Folder['semb'], fobjpickleshiftname)
 
-        if(os.path.isfile(rp) and os.path.getsize(rp) != 0 and os.path.isfile(ps) and os.path.getsize(ps) != 0):
-            Logfile.add('file exits : ' + rp)
-            Logfile.add('load refshifts')
+        if(os.path.isfile(rp) and os.path.getsize(rp) != 0
+           and os.path.isfile(ps) and os.path.getsize(ps) != 0):
+            Logfile.add('xcorr/reference shift file exits : ' + rp)
+            Logfile.add('loaded reference shift')
 
             if sys.version_info.major >= 3:
-                f= open(rp, 'rb')
+                f = open(rp, 'rb')
             else:
-                f= open(rp)
+                f = open(rp)
 
             RefDict = pickle.load(f)
             if sys.version_info.major >= 3:
-                x= open(ps, 'rb')
+                x = open(ps, 'rb')
             else:
-                x= open(ps)
-            XDict= pickle.load(x)
-            xcorrnetworks = cfg.String('networks').split(',')
+                x = open(ps)
+            XDict = pickle.load(x)
 
             for i in xcorrnetworks:
                 SL[i] = len(Config[i].split('|'))
         else:
             SL = {}
-            xcorrnetworks = cfg.String('networks').split(',')
             for i in xcorrnetworks:
                 W = {}
-                refshift= 0
                 network = cfg.String(i).split('|')
-                FilterMeta = ttt.filterStations(Meta,Config,Origin,network)
-                arrayfolder = os.path.join(Folder['semb'],i)
+                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+                arrayfolder = os.path.join(Folder['semb'], i)
 
-                if os.access(arrayfolder,os.F_OK) == False:
-                   os.makedirs(arrayfolder)
-                if cfg.pyrocko_download() == True:
-                    A = Xcorr(ev,FilterMeta,evpath,Config,Syn_in,arrayfolder)
+                if os.access(arrayfolder, os.F_OK) is False:
+                    os.makedirs(arrayfolder)
+                if cfg.pyrocko_download() is True:
+                    # TODO check seperate xcoor nescessity
+                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
+                              arrayfolder)
                 else:
-                    A = Xcorr(ev,FilterMeta,evpath,Config,Syn_in,arrayfolder)
+                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
+                              arrayfolder)
 
                 print("run Xcorr")
                 phase = phases[0]
-                W,triggerobject= A.runXcorr(phase)
+                W, triggerobject = A.runXcorr(phase)
 
                 XDict[i] = W
                 RefDict[i] = triggerobject.tdiff
                 SL[i] = len(network)
+                for i in range(0, len(FilterMeta)):
+                    refshifts_global.append(triggerobject.tdiff)
 
             if sys.version_info.major >= 3:
-                fobjrefshift = open(rp,'wb')
+                fobjrefshift = open(rp, 'wb')
             else:
-                fobjrefshift = open(rp,'w')
-            pickle.dump(RefDict,fobjrefshift)
+                fobjrefshift = open(rp, 'w')
+            pickle.dump(RefDict, fobjrefshift)
             fobjrefshift.close()
 
             if sys.version_info.major >= 3:
@@ -204,73 +210,144 @@ def processLoop():
                 output = open(ps, 'w')
             pickle.dump(XDict, output)
             output.close()
-        if sys.version_info.major >= 3:
-            for i in sorted(XDict.keys()) :
-                Logfile.red('Array %s has %3d of %3d Stations left' %(i,len(XDict[i]),SL[i]))
-        else:
-            for i in sorted(XDict.iterkeys()) :
-                Logfile.red('Array %s has %3d of %3d Stations left' %(i,len(XDict[i]),SL[i]))
 
-        logger.info('\033[31mFor proceeding without changes press enter or give new comma seperatet network list or quit for exit\033[0m')
-
-        while True:
+    else:
+        fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
+        rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
+        fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
+        ps = os.path.join(Folder['semb'], fobjpickleshiftname)
+        refshift = 0
+        if(os.path.isfile(rp) and os.path.getsize(rp) != 0
+           and os.path.isfile(ps) and os.path.getsize(ps) != 0):
+            Logfile.add('Temporay Memory file exits : ' + rp)
             if sys.version_info.major >= 3:
-                nnl = input("please enter your choice: ")
+                f = open(rp, 'rb')
             else:
-                nnl = raw_input("please enter your choice: ")
+                f = open(rp)
 
-            if len(nnl) == 0:
-                if not Basic.question('Process all networks ?') : continue
-
-                Logfile.red('This networks will be used for processing: %s' %(Config['networks']))
-                break
-
-            elif str(nnl) == 'quit':
-                sys.exit()
-
-            elif str(nnl) == 'rerun':
-                event = os.path.join(*evpath.split('/')[-1:])
-
-                try:
-                   os.remove(rp)
-                   os.remove(ps)
-
-                except : pass
-
-                mainfolder = os.path.join(os.path.sep,*evpath.split('/')[:-2])
-                os.chdir(mainfolder)
-
-                cmd =('%s arraytool.py process %s') %(sys.executable,event)
-                Logfile.add('cmd = ' + cmd)
-                os.system(cmd)
-                sys.exit()
-
+            RefDict = pickle.load(f)
+            if sys.version_info.major >= 3:
+                x = open(ps, 'rb')
             else:
+                x = open(ps)
+            XDict = pickle.load(x)
 
-                names = nnl.split(',')
-                isOk = True
+            for i in xcorrnetworks:
+                SL[i] = len(Config[i].split('|'))
+                network = cfg.String(i).split('|')
+                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
 
-                for array in names:
-                    arrayfolder = os.path.join(Folder['semb'], array)
+                for i in range(0, len(FilterMeta)):
+                    refshifts_global.append(refshift)
+        else:
+            SL = {}
+            for i in xcorrnetworks:
+                W = {}
+                refshift = 0
+                network = cfg.String(i).split('|')
+                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+                arrayfolder = os.path.join(Folder['semb'], i)
 
-                    if not os.path.isdir(arrayfolder):
-                        Logfile.error('Illegal network name ' + str(array))
-                        isOk = False
-                        break
-                if not isOk:
-                    continue   # Illegal network : input again
+                if os.access(arrayfolder, os.F_OK) is False:
+                    os.makedirs(arrayfolder)
+                if cfg.pyrocko_download() is True:
+                    # TODO check seperate xcoor nescessity
+                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
+                              arrayfolder)
+                else:
+                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
+                              arrayfolder)
 
-                Logfile.add('This networks will be used for processing: %s' %(nnl))
-                Config['networks'] = nnl
-                break
+                print("run Xcorr")
+                phase = phases[0]
+                W, triggerobject = A.runXcorr_dummy(phase)
 
-        for i in range(3, 0, -1):
-            time.sleep(1)
-            Logfile.red('Start processing in %d seconds ' %(i))
+                XDict[i] = W
+                RefDict[i] = refshift
+                SL[i] = len(network)
+                for i in range(0, len(FilterMeta)):
+                    refshifts_global.append(refshift)
+
+            if sys.version_info.major >= 3:
+                fobjrefshift = open(rp, 'wb')
+            else:
+                fobjrefshift = open(rp, 'w')
+            pickle.dump(RefDict, fobjrefshift)
+            fobjrefshift.close()
+
+            if sys.version_info.major >= 3:
+                output = open(ps, 'wb')
+            else:
+                output = open(ps, 'w')
+            pickle.dump(XDict, output)
+            output.close()
+
+    if sys.version_info.major >= 3:
+        for i in sorted(XDict.keys()):
+            Logfile.red('Array %s has %3d of %3d Stations left' %(i,len(XDict[i]),SL[i]))
+    else:
+        for i in sorted(XDict.iterkeys()):
+            Logfile.red('Array %s has %3d of %3d Stations left' %(i,len(XDict[i]),SL[i]))
+    while True:
+        if sys.version_info.major >= 3:
+            nnl = input("please enter your choice: ")
+        else:
+            nnl = raw_input("please enter your choice: ")
+
+        if len(nnl) == 0:
+            if not Basic.question('Process all networks ?'):
+                continue
+
+            Logfile.red('This networks will be used for processing: %s' % (Config['networks']))
+            break
+
+        elif str(nnl) == 'quit':
+            sys.exit()
+
+        elif str(nnl) == 'rerun':
+            event = os.path.join(*evpath.split('/')[-1:])
+
+            try:
+                os.remove(rp)
+                os.remove(ps)
+
+            except Exception:
+                pass
+
+            mainfolder = os.path.join(os.path.sep, *evpath.split('/')[:-2])
+            os.chdir(mainfolder)
+
+            cmd =('%s arraytool.py process %s') % (sys.executable, event)
+            Logfile.add('cmd = ' + cmd)
+            os.system(cmd)
+            sys.exit()
+
+        else:
+
+            names = nnl.split(',')
+            isOk = True
+
+            for array in names:
+                arrayfolder = os.path.join(Folder['semb'], array)
+
+                if not os.path.isdir(arrayfolder):
+                    Logfile.error('Illegal network name ' + str(array))
+                    isOk = False
+                    break
+            if not isOk:
+                continue   # Illegal network : input again
+
+            Logfile.add('This networks will be used for processing: %s' %(nnl))
+            Config['networks'] = nnl
+            break
+
+    for i in range(3, 0, -1):
+        time.sleep(1)
+        Logfile.red('Start processing in %d seconds ' %(i))
 
 
     wd = Origin['depth']
-    start,stop,step = cfg.String('depths').split(',')
+    start, stop, step = cfg.String('depths').split(',')
 
     start = int(start)
     stop = int(stop)+1
@@ -438,7 +515,7 @@ def processLoop():
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMeta, mint, maxt,
                                 TTTGridMap, Folder, Origin, ntimes, switch, ev,
-                                arrayfolder, syn_in)
+                                arrayfolder, syn_in, refshift)
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -504,7 +581,7 @@ def processLoop():
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
-                            ev, arrayfolder, syn_in)
+                            ev, arrayfolder, syn_in, refshifts_global)
                         ASL.append(arraySemb)
                         weights.append(weight)
                         array_centers.append(array_center)
@@ -530,7 +607,8 @@ def processLoop():
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
-                                ev, arrayfolder, syn_in, bs_weights=ws)
+                                ev, arrayfolder, syn_in, refshifts_global,
+                                bs_weights=ws)
 
                             ASL.append(arraySemb)
                             weights.append(weight)

@@ -114,7 +114,7 @@ def toMatrix(npVector, nColumns):
 
 def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
               new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
-              trace_1, calcStreamMap, time, Config, Origin,
+              trace_1, calcStreamMap, time, Config, Origin, refshifts,
               bs_weights=None):
 
         cfg = ConfigObj(dict=Config)
@@ -126,7 +126,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
            return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                mint, new_frequence, minSampleCount, latv_1,
                                lonv_1, traveltime_1, trace_1, calcStreamMap,
-                               time, cfg, bs_weights)
+                               time, cfg, refshifts, bs_weights=bs_weights)
         else:
            return semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep,
                                           dimX, dimY, mint, new_frequence,
@@ -169,7 +169,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
     '''
     snap=(round, round)
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
-    for i in range(ntimes) :
+    for i in range(ntimes):
         #  loop over grid points
         sembmax = 0; sembmaxX = 0; sembmaxY = 0
 
@@ -224,7 +224,8 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
 
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
-                 trace_1, calcStreamMap, time, cfg, bs_weights=None):
+                 trace_1, calcStreamMap, time, cfg, refshifts,
+                 bs_weights=None):
     from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs = []
@@ -281,8 +282,14 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
-                tmin = time+relstart+(i*nstep)-mint
-                tmax = time+relstart+(i*nstep)-mint+nsamp
+                if cfg.Bool('combine_all') is False:
+
+                    tmin = time+relstart+(i*nstep)-mint-refshifts
+                    tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts
+
+                else:
+                    tmin = time+relstart+(i*nstep)-mint-refshifts[k]
+                    tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
 
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))

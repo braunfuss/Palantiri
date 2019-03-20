@@ -190,9 +190,7 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift, p
 
                 GridArray[(i,j)] = GridElem(oLatul, oLonul, depth[j],ttime,de)
                 LMINMAX.append(ttime)
-                if int(Config['xcorr']) == 1:
-                    ttime = ttime-float(Xcorrshift[station.getName()].shift)\
-                     - Refshift
+
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
 
@@ -230,9 +228,7 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift, p
 
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
-                if int(Config['xcorr']) == 1:
-                            ttime = ttime-float(Xcorrshift[station.getName()].shift)\
-                             - Refshift
+
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
                 if ttime == 0:
