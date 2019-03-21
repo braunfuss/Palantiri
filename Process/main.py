@@ -237,6 +237,7 @@ def processLoop():
                 SL[i] = len(Config[i].split('|'))
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+                RefDict[i] = refshift
 
                 for i in range(0, len(FilterMeta)):
                     refshifts_global.append(refshift)
@@ -288,7 +289,7 @@ def processLoop():
             Logfile.red('Array %s has %3d of %3d Stations left' %
                         (i, len(XDict[i]), SL[i]))
     else:
-        for i in sorted(XDict.iterkeys()):
+        for i in sorted(XDict.keys()):
             Logfile.red('Array %s has %3d of %3d Stations left' %
                         (i, len(XDict[i]), SL[i]))
     while True:
@@ -432,7 +433,7 @@ def processLoop():
                         f.close()
                         print("loading of travel time grid sucessful")
                     except Exception:
-                        print("loading of travel time grid unsucessful,\
+                        print("loading of travel time grid unsucessful,\n \
                               will now calculate the grid:")
                         if isParallel:
                             maxp = 6

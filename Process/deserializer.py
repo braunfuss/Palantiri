@@ -29,7 +29,7 @@ def deserializeTTT(numproc):
                 for j in sorted(i.keys()):
                     TTTGridMap[j] = i[j]
             else:
-                for j in i.iterkeys():
+                for j in i.keys():
                     TTTGridMap[j] = i[j]
 
         return TTTGridMap
@@ -68,7 +68,7 @@ def deserializeSembDict(numproc):
                 for j in sorted(i.keys()):
                     sembDict[j] = i[j]
             else:
-                for j in i.iterkeys():
+                for j in i.keys():
                     sembDict[j] = i[j]
 
         return sembDict
@@ -87,7 +87,7 @@ def deserializeSembMaxFile(numproc):
     sembMax = OrderedDict()
 
     for i in L:
-        for j in i.iterkeys():
+        for j in i.keys():
             sembMax[j] = i[j]
 
     return sembMax

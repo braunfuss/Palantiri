@@ -844,7 +844,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             lats.append(float(il.lat))
                             lons.append(float(il.lon))
         else:
-            for trace in sorted(calcStreamMap.iterkeys()):
+            for trace in sorted(calcStreamMap.keys()):
                 py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
                 py_trs.append(py_tr)
                 for il in FilterMetaData:
@@ -873,7 +873,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             lats.append(float(il.lat))
                             lons.append(float(il.lon))
         else:
-            for trace in sorted(calcStreamMap.iterkeys()):
+            for trace in sorted(calcStreamMap.keys()):
                 for il in FilterMetaData:
                     if str(il) == str(trace):
                             szo = model.Station(lat=float(il.lat), lon=float(il.lon),
@@ -1011,7 +1011,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             from noise_addition import add_noise
             trs_orgs = []
             calcStreamMapsyn = calcStreamMap.copy()
-            for tracex in calcStreamMapsyn.iterkeys():
+            for tracex in calcStreamMapsyn.keys():
                     for trl in synthetic_traces:
                         if str(trl.name()[4:12])== str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
                             tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
@@ -1043,7 +1043,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
                         calcStreamMap[tracex] = synthetic_obs_tr
         else:
-            for tracex, trl in zip(calcStreamMap.iterkeys(), synthetic_traces):
+            for tracex, trl in zip(calcStreamMap.keys(), synthetic_traces):
                             if cfg.Bool('dynamic_filter') is False:
                                 if switch == 0:
                                     trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
@@ -1056,11 +1056,11 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         calcStreamMapshifted= calcStreamMap.copy()
         from obspy.core import stream
         stream = stream.Stream()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             stream.append(calcStreamMapshifted[trace])
         pws_stack = PWS_stack([stream], weight=2, normalize=True)
         for tr in pws_stack:
-            for trace in calcStreamMapshifted.iterkeys():
+            for trace in calcStreamMapshifted.keys():
                     calcStreamMapshifted[trace]=tr
         calcStreamMap = calcStreamMapshifted
 
@@ -1068,12 +1068,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         from stacking import align_traces
         calcStreamMapshifted= calcStreamMap.copy()
         list_tr = []
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             tr_org = calcStreamMapshifted[trace]
             list_tr.append(tr_org)
         shifts, ccs = align_traces(list_tr, 10, master=False)
         for shift in shifts:
-            for trace in calcStreamMapshifted.iterkeys():
+            for trace in calcStreamMapshifted.keys():
                     tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                     tr_org.shift(shift)
                     shifted = obspy_compat.to_obspy_trace(tr_org)
@@ -1085,7 +1085,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         timeev = util.str_to_time(ev.time)
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
 
@@ -1104,7 +1104,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         i = 0
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for tracex in calcStreamMapshifted.iterkeys():
+        for tracex in calcStreamMapshifted.keys():
                 for trl in shifted_traces:
                     if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
                         mod = trl
@@ -1123,7 +1123,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         timeev = util.str_to_time(ev.time)
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
 
@@ -1170,7 +1170,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         stime=stime
         etime=etime
         stream_arr = stream.Stream()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             stream_arr.append(calcStreamMapshifted[trace])
         results = array_analysis.array_processing(stream_arr, nsamp, nstep,
                                                   sll_x, slm_x, sll_y, slm_y,
@@ -1189,7 +1189,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             if calcStreamMap[trace].stats.npts < minSampleCount:
                 minSampleCount = calcStreamMap[trace].stats.npts
     else:
-        for trace in calcStreamMap.iterkeys():
+        for trace in calcStreamMap.keys():
             recordstarttime = calcStreamMap[trace].stats.starttime
             d = calcStreamMap[trace].stats.starttime
             d = d.timestamp
@@ -1244,7 +1244,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             streamCounter += 1
 
     else:
-        for key in calcStreamMap.iterkeys():
+        for key in calcStreamMap.keys():
             streamID = key
             c2 = 0
 
@@ -1255,7 +1255,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     c2 += 1
 
 
-            for key in TTTGridMap.iterkeys():
+            for key in TTTGridMap.keys():
 
                 if streamID == key:
                     traveltimes[streamCounter] = TTTGridMap[key]
@@ -1386,7 +1386,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         timeev = util.str_to_time(ev.time)
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(
                     calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)

@@ -42,7 +42,7 @@ def cmpFilterMetavsXCORR(XcorrMeta, StationMetaList):
                 if i.getName() == j:
                     FilterList.append(i)
         else:
-            for j in XcorrMeta.iterkeys():
+            for j in XcorrMeta.keys():
                 if i.getName() == j:
                     FilterList.append(i)
 
@@ -581,8 +581,8 @@ class Xcorr(object):
 
         dsfactor = float(self.Config['xcorrtreshold'])
 
-        for stream in StreamDict.iterkeys():
-            for shift in XcorrDict.iterkeys():
+        for stream in StreamDict.keys():
+            for shift in XcorrDict.keys():
                 if stream == shift:
 
                     StreamDict[stream][0].stats.starttime = StreamDict[stream][0].stats.starttime\
@@ -623,12 +623,12 @@ class Xcorr(object):
         syn_test = int(self.Config['synthetic_test'])
 
         if syn_test == 1:
-            for stream in CorrDict.iterkeys():
+            for stream in CorrDict.keys():
                 fCD[stream] = CorrDict[stream]
                 fCD[stream].value = fCD[stream].value
 
         else:
-            for stream in CorrDict.iterkeys():
+            for stream in CorrDict.keys():
                 if abs(CorrDict[stream].value) >= dsfactor:
                     fCD[stream] = CorrDict[stream]
                     fCD[stream].value = fCD[stream].value
@@ -640,7 +640,7 @@ class Xcorr(object):
         t = self.f6(SNRDict)
         Logfile.add('doXcorr: REFERENCE: ' + t)
 
-        for i in SNRDict.iterkeys():
+        for i in SNRDict.keys():
             Logfile.add('doXcorr: STREAM: ' + i + ' SNR: ' + str(SNRDict[i]))
 
         alternativeref = os.path.join(*self.AF.split(os.sep)[-1:])+'refstation'
@@ -655,7 +655,7 @@ class Xcorr(object):
         Logfile.red('Reference Station of %s for Xcorr Procedure %s'
                     % (os.path.basename(self.AF), t))
         Logfile.red('Enter Xcorr Procedure ')
-        for stream in StreamDict.iterkeys():
+        for stream in StreamDict.keys():
             a, b = obspy.signal.cross_correlation.xcorr(ref,
                                                         StreamDict[stream][0],
                                                         0)
@@ -683,7 +683,7 @@ class Xcorr(object):
 
         corrDict = {}
 
-        for stream in StreamDict.iterkeys():
+        for stream in StreamDict.keys():
 
             corrDict[stream] = StreamDict[stream]
             corrDict[stream].value = abs(corrDict[stream].value)

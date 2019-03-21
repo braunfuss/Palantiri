@@ -284,12 +284,12 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 tr = trs_orgs[k]
                 if cfg.Bool('combine_all') is False:
 
-                    tmin = time+relstart+(i*nstep)-mint-refshifts
-                    tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts
+                    tmin = time+relstart+(i*nstep)-mint#-refshifts
+                    tmax = time+relstart+(i*nstep)-mint+nsamp#-refshifts
 
                 else:
-                    tmin = time+relstart+(i*nstep)-mint-refshifts[k]
-                    tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
+                    tmin = time+relstart+(i*nstep)-mint#-refshifts[k]
+                    tmax = time+relstart+(i*nstep)-mint+nsamp#-refshifts[k]
 
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))

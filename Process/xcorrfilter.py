@@ -106,12 +106,12 @@ class Xcorr(object):
         StreamDict = self.traveltimes()
         corrDict = {}
 
-        for stream in StreamDict.iterkeys():
+        for stream in StreamDict.keys():
             ref = StreamDict[stream][0].data
 
         Logfile.red('Enter Xcorr Procedure')
 
-        for stream in StreamDict.iterkeys():
+        for stream in StreamDict.keys():
             a, b = obspy.signal.cross_correlation.xcorr(ref,
                                                         StreamDict[stream][0],
                                                         100)

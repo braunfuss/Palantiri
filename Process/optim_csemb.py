@@ -575,7 +575,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
 
     stations = []
     py_trs = []
-    for trace in calcStreamMap.iterkeys():
+    for trace in calcStreamMap.keys():
         py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
         py_trs.append(py_tr)
         for il in FilterMetaData:
@@ -593,11 +593,11 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         calcStreamMapshifted= calcStreamMap.copy()
         from obspy.core import stream
         stream = stream.Stream()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             stream.append(calcStreamMapshifted[trace])
         pws_stack = PWS_stack([stream], weight=2, normalize=True)
         for tr in pws_stack:
-            for trace in calcStreamMapshifted.iterkeys():
+            for trace in calcStreamMapshifted.keys():
                     calcStreamMapshifted[trace]=tr
         calcStreamMap = calcStreamMapshifted
 
@@ -607,7 +607,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     	timeev = util.str_to_time(ev.time)
     	trs_orgs= []
         calcStreamMapshifted= calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
 
@@ -626,7 +626,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         i = 0
     	store_id = syn_in.store()
     	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
             recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
             mod = shifted_traces[i]
@@ -645,7 +645,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     	timeev = util.str_to_time(ev.time)
     	trs_orgs= []
         calcStreamMapshifted= calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
 
@@ -667,7 +667,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
          100., store_id, nwindows=1,
          check_events=True, phase_def='P')
 
-    for trace in calcStreamMap.iterkeys():
+    for trace in calcStreamMap.keys():
         recordstarttime = calcStreamMap[trace].stats.starttime
         d = calcStreamMap[trace].stats.starttime
         d = d.timestamp
@@ -686,7 +686,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
     c=0
     streamCounter = 0
 
-    for key in calcStreamMap.iterkeys():
+    for key in calcStreamMap.keys():
         streamID = key
         c2   = 0
 
@@ -697,7 +697,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
                 c2 += 1
 
 
-        for key in TTTGridMap.iterkeys():
+        for key in TTTGridMap.keys():
 
             if streamID == key:
                 traveltimes[streamCounter] = TTTGridMap[key]
@@ -749,7 +749,7 @@ def  doCalc (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,Fold
         timeev = util.str_to_time(ev.time)
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(
                     calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
@@ -849,7 +849,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
 
     stations = []
     py_trs = []
-    for trace in calcStreamMap.iterkeys():
+    for trace in calcStreamMap.keys():
         py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
         py_trs.append(py_tr)
         for il in FilterMetaData:
@@ -955,7 +955,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         trs_orgs = []
         calcStreamMapsyn = calcStreamMap.copy()
         #from pyrocko import trace
-        for tracex in calcStreamMapsyn.iterkeys():
+        for tracex in calcStreamMapsyn.keys():
                 for trl in synthetic_traces:
                     if str(trl.name()[4:12]) == str(tracex[4:]):
                         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
@@ -972,7 +972,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     xy = num.loadtxt(fobj, usecols=1, delimiter=',')
     calcStreamMapsyn = calcStreamMap.copy()
     #from pyrocko import trace
-    for tracex in calcStreamMapsyn.iterkeys():
+    for tracex in calcStreamMapsyn.keys():
             for trl in synthetic_traces:
                 if str(trl.name()[4:12])== str(tracex[4:]):
                     mod = trl
@@ -992,11 +992,11 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         calcStreamMapshifted= calcStreamMap.copy()
         from obspy.core import stream
         stream = stream.Stream()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             stream.append(calcStreamMapshifted[trace])
         pws_stack = PWS_stack([stream], weight=2, normalize=True)
         for tr in pws_stack:
-            for trace in calcStreamMapshifted.iterkeys():
+            for trace in calcStreamMapshifted.keys():
                     calcStreamMapshifted[trace]=tr
         calcStreamMap = calcStreamMapshifted
 
@@ -1006,7 +1006,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     	timeev = util.str_to_time(ev.time)
     	trs_orgs= []
         calcStreamMapshifted= calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
 
@@ -1025,7 +1025,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
         i = 0
     	store_id = syn_in.store()
     	engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
             recordstarttime = calcStreamMapshifted[trace].stats.starttime.timestamp
             recordendtime = calcStreamMapshifted[trace].stats.endtime.timestamp
             mod = shifted_traces[i]
@@ -1044,7 +1044,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     	timeev = util.str_to_time(ev.time)
     	trs_orgs= []
         calcStreamMapshifted= calcStreamMap.copy()
-        for trace in calcStreamMapshifted.iterkeys():
+        for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
 
@@ -1066,7 +1066,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
          100., store_id, nwindows=1,
          check_events=True, phase_def='P')
 
-    for trace in calcStreamMap.iterkeys():
+    for trace in calcStreamMap.keys():
         recordstarttime = calcStreamMap[trace].stats.starttime
         d = calcStreamMap[trace].stats.starttime
         d = d.timestamp
@@ -1085,7 +1085,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
     c=0
     streamCounter = 0
 
-    for key in calcStreamMap.iterkeys():
+    for key in calcStreamMap.keys():
         streamID = key
         c2   = 0
 
@@ -1096,7 +1096,7 @@ def  doCalc_syn (flag,Config,WaveformDict,FilterMetaData,Gmint,Gmaxt,TTTGridMap,
                 c2 += 1
 
 
-        for key in TTTGridMap.iterkeys():
+        for key in TTTGridMap.keys():
 
             if streamID == key:
                 traveltimes[streamCounter] = TTTGridMap[key]

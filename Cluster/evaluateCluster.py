@@ -81,12 +81,12 @@ def getBestSolution(resultDictionary):
 
     bestsolution = -100000
 
-    for i in resultDictionary.iterkeys():
+    for i in resultDictionary.keys():
         if bestsolution < resultDictionary[i].meanvalue:
             bestsolution = resultDictionary[i].meanvalue
 
     L = []
-    for j in resultDictionary.iterkeys():
+    for j in resultDictionary.keys():
         if bestsolution == resultDictionary[j].meanvalue:
             L.append(resultDictionary[j])
 
@@ -120,14 +120,14 @@ def copyCluster2EventConfig(ClusterDict, evpath):
     fobj.write(''.join(Confpart1))
     nlist=''
 
-    for i in ClusterDict.iterkeys():
+    for i in ClusterDict.keys():
         if len(ClusterDict[i]) > 0:
             nlist += 'r'+str(i)+','
 
     fobj.write(('networks=%s\n')%(nlist[:-1]))
     fobj.write('\n')
 
-    for i in ClusterDict.iterkeys():
+    for i in ClusterDict.keys():
         if len(ClusterDict[i]) > 0:
             aname = 'r'+str(i)
             fobj.write(('%s=%s\n')%(aname,ClusterDict[i][:-1]))
