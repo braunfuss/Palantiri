@@ -76,31 +76,14 @@ step 2)
                                                 (copies example.config from skeleton folder)
                                     
 
-For step 3) four options exsist:
+For step 3) three options exsist:
 	
 a) Download real data with pyrocko (faster, less stations):
 		
 	
 		python arraytool.py pyrocko_download eventname
 
-b) Download  real data with obspy (slower, more stations). For this three commands are needed, first:
-		
-
-		1) python arraytool.py getstations eventname: - search for station in iris and webdc with searchparameters defined in global.conf
-		                                                 - possible parameter: - mindistance from event
-		                                                                    - maxdistance from event
-		                                                                    - networks for blacklist
-
-		2) python arraytool.py getdata eventname: - acquisition of archived waveformdata from iris and eida saved as sds in the eventfolder
-		                                             - copy keyfoldername from step 3 into global.conf
-		                                             - possible parameter: - keyfolder
-		                                             - duration of waveformdata
-
-
-		3) python arraytool.py getmeta eventname: - create file with metainformation from every station which has data in sds structure
-
-
-c) use synthetics but station distributions from a real data case: 
+b) use synthetics but with a station distributions from a real data case: 
 
 		For this you will need a greensfunctions store that is pre-calculated with the fomosto tool from pyrocko (https://pyrocko.org/docs/current/apps/fomosto/index.html).
 		Several already pre-calculated stores for download can be found at http://kinherd.org:8080/gfws/static/stores/
@@ -109,7 +92,7 @@ c) use synthetics but station distributions from a real data case:
 		Also the noise of the real data will be used to pertub the synthetics if you select the option in the event config file.
 
 
-d) use synthetics from a scenario generator:
+c) use synthetics from a scenario generator:
 
 		You can also use the output of the pyrocko scenario generator colosseo.
 		After you followed the steps to create a purely synthetic dataset at https://pyrocko.org/docs/current/apps/colosseo/index.html
@@ -127,8 +110,7 @@ Note that the option for several filters are build in. With this option the proc
 and according outputs are generated. This is useful for divding into high- and low-frequency content. 
 Also note that several depths can be selected to iterate over. Right now for one run only planar equi-depth grid are considered for the semblance
 calculation. If several depths are choosen the processing will be repeted for each depth.
-step 4) Clustering the stations into virtual arrays, based on the input in the eventname.config. This is handled as an optimization problem
-	and returns the best solution.
+step 4) Clustering the stations into virtual arrays, based on the input in the eventname.config. This is handled as an optimization problem and returns a set of virtual arrays.
 
 		python arraytool.py cluster eventname: - clustering of stations to automatically build virtual arrays 
                                                      - configuration parameter in the event config file (eventname.config)
@@ -152,9 +134,9 @@ step 4) Clustering the stations into virtual arrays, based on the input in the e
 
 STEP 5) The last step is the actual processing. 
 	First the data of each array will be cross-correlated. Stations under the threshold (xcorrtreshold) given in the eventname.config
-	are disregarded. If autoxcorrcorrectur = 1 is selected for each array a manual qualtiy control is done before and will return a reference waveform of one of the stations
-	in the virtual array. A figure and a snuffler window will open for the user to investigate the traveltime. Marker for STA/LTA and theortical phase onsets will be given.
-	After closing both figures, the user can then input a manual traveltime shift in second in regard to the xcorr window start (also markers in the snuffler).
+	are disregarded. xcorr=1 enables a correction of timeshifts at each based on cross correlations. If also autoxcorrcorrectur = 1 is selected for each array a manual picking of phase onsets is done before the processing. This will return a reference waveform of one of the stations
+	in the virtual array in a figure and a snuffler window.  Marker for STA/LTA and theortical phase onsets will be given.
+	After closing both figures, the user can then input a manual traveltime shift in second in regard to the xcorr window start (also markers in the snuffler). The traveltimes for this array will than be statically corrected using this manual selected value. Both methods allows for handling of velocity model inadequacies.
 	
 
 	Second the traveltimes for each gridpoint to each station will be calculated. This can take some time, depending on your gridsize. Therefor the traveltime grids are 
