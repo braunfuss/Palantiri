@@ -12,7 +12,7 @@ from ConfigParser import SafeConfigParser
 from pyrocko import util, io, trace, cake
 from config import Event, Trigger
 from ConfigFile import ConfigObj, FilterCfg, OriginCfg
-global options,args
+global options, args
 from pyrocko.io import stationxml
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
 from pyrocko import util, model
@@ -38,7 +38,7 @@ def globalConf():
 
     cDict = {}
     parser = SafeConfigParser()
-    parser.read(os.path.join('..', 'global.conf'))
+    parser.read(os.path.join('../', 'global.conf'))
 
     for section_name in parser.sections():
         for name, value in parser.items(section_name):
@@ -46,6 +46,8 @@ def globalConf():
 
     return cDict
 
+
+params = globalConf()
 options, args = main(sys.argv)
 Basic.checkExistsDir(options.eventpath, isAbort=True)
 Globals.setEventDir(options.eventpath)
@@ -57,8 +59,8 @@ Config = C.parseConfig('config')
 filter = FilterCfg(Config)
 
 cfg = ConfigObj(dict=Config)
-minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
-
+minDist = float(params['mindist'])
+maxDist = float(params['maxdist'])
 ev = Event(Origin['lat'], Origin['lon'], Origin['depth'], Origin['time'])
 event = model.Event(lat=float(ev.lat), lon=float(ev.lon),
                     depth=float(ev.depth)*1000.,
@@ -89,10 +91,12 @@ try:
 except Exception:
     pass
 model.dump_events([event], sdspath+'event.pf')
-
-tmin = util.str_to_time(ev.time)+4000.
-tmax = util.str_to_time(ev.time)+41600.
-
+if float(params['duration']) == 0:
+    tmin = util.str_to_time(ev.time)+float(params['tmin'])
+    tmax = util.str_to_time(ev.time)+float(params['tmax'])
+else:
+    tmin = util.str_to_time(ev.time)
+    tmax = util.str_to_time(ev.time) + float(params['duration'])
 
 def get_stations(site, lat, lon, rmin, rmax, tmin, tmax,
                  channel_pattern='BH*'):
@@ -110,7 +114,8 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax,
 
 
 site = 'geofon'
-minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
+minDist = float(params['mindist'])
+maxDist = float(params['maxdist'])
 diffDist = (maxDist - minDist)/9.
 displacement_geofon = []
 stations_disp_geofon = []
@@ -120,7 +125,7 @@ trs_projected_geofon = []
 trs_projected_displacement_geofon = []
 
 try:
-    for l in range(0,1):
+    for l in range(0, 1):
         stations_geofon = get_stations(site, event.lat, event.lon, minDist,
                                        maxDist, tmin, tmax, 'BH*')
 
