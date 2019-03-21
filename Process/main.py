@@ -475,13 +475,14 @@ def processLoop():
                     tw = times.calculateTimeWindows(mint, maxt, Config,
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
-                        if cfg.quantity() == 'displacement':
-                            Wd = waveform.readWaveformsPyrocko_restituted(
-                                FilterMeta, tw, evpath, ev, desired)
-                        elif cfg.Bool('synthetic_test') is True:
+                        if cfg.Bool('synthetic_test') is True:
                             Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                     tw, evpath,
                                                                     ev)
+                        elif cfg.quantity() == 'displacement':
+                            Wd = waveform.readWaveformsPyrocko_restituted(
+                                FilterMeta, tw, evpath, ev, desired)
+
                         else:
                             Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
                                                                evpath, ev,
@@ -493,6 +494,7 @@ def processLoop():
                         Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
                     if cfg.Bool('synthetic_test') is True\
                        or cfg.Bool('dynamic_filter') is True:
+
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                              Folder, arrayname,
                                                              FilterMeta, ev,
@@ -506,7 +508,6 @@ def processLoop():
 
                     C.writeStationFile(FilterMeta, Folder, counter)
                     Logfile.red('%d Streams added for Processing' % (len(Wd)))
-
                     t1 = time.time()
                     f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                              % (phase, ttt_model, ev.time, arrayname,
@@ -590,6 +591,7 @@ def processLoop():
                                                              FilterMetas, ev,
                                                              switch, W)
                     else:
+
                         Wdf = waveform.processWaveforms(Wd, Config, Folder,
                                                         arrayname, FilterMetas,
                                                         ev, switch, W)
