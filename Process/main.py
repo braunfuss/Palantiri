@@ -11,7 +11,6 @@ if sys.version_info.major >= 3:
     xrange = range
 else:
     import cPickle as pickle
-from pyrocko import obspy_compat
 
 sys.path.append('../Common/')
 import optim
@@ -30,7 +29,7 @@ import ttt
 import sembCalc
 import waveform
 import times
-from array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR
+from array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
 import numpy as num
 
 rstate = num.random.RandomState()
@@ -46,14 +45,15 @@ evpath = None
 
 def initModule():
 
-    global  evpath
+    global evpath
 
     parser = OptionParser(usage="%prog -f Eventpath ")
-    parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
+    parser.add_option("-f", "--evpath", type="string", dest="evpath",
+                      help="evpath")
 
     (options, args) = parser.parse_args()
 
-    if options.evpath == None:
+    if options.evpath is None:
         parser.error("non existing eventpath")
         return False
 
@@ -64,13 +64,13 @@ def initModule():
 
 def processLoop():
 
-    #==================================get meta info========================
+    # ==================================get meta info========================
     C = config.Config(evpath)
     Origin = C.parseConfig('origin')
     try:
         Syn_in = C.parseConfig('syn')
         syn_in = SynthCfg(Syn_in)
-    except:
+    except Exception:
         pass
     Config = C.parseConfig('config')
 
@@ -78,25 +78,26 @@ def processLoop():
     phases = cfg.Str('ttphases')
     phases = phases.split(',')
 
-    if cfg.pyrocko_download() == True:
+    if cfg.pyrocko_download() is True:
         Meta = C.readpyrockostations()
-    elif cfg.colesseo_input() == True:
+    elif cfg.colesseo_input() is True:
         scenario = guts.load(filename=cfg.colosseo_scenario_yml())
         scenario_path = cfg.colosseo_scenario_yml()[:-12]
         Meta = C.readcolosseostations(scenario_path)
     else:
         Meta = C.readMetaInfoFile()
     Folder = C.createFolder()
-    C.writeConfig(Config,Origin,Folder)
+    C.writeConfig(Config, Origin, Folder)
 
     filter = FilterCfg(Config)
-    if cfg.UInt('forerun')>0:
-        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration') ) / cfg.UInt('step') )
+    if cfg.UInt('forerun') > 0:
+        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
+                     cfg.UInt('step'))
     else:
-        ntimes = int((cfg.UInt('duration') ) / cfg.UInt('step') )
+        ntimes = int((cfg.UInt('duration')) / cfg.UInt('step'))
     origin = OriginCfg(Origin)
 
-    if cfg.colesseo_input() == True:
+    if cfg.colesseo_input() is True:
         from pyrocko import util
         events = scenario.get_events()
         ev = events[0]
@@ -284,10 +285,12 @@ def processLoop():
 
     if sys.version_info.major >= 3:
         for i in sorted(XDict.keys()):
-            Logfile.red('Array %s has %3d of %3d Stations left' %(i,len(XDict[i]),SL[i]))
+            Logfile.red('Array %s has %3d of %3d Stations left' %
+                        (i, len(XDict[i]), SL[i]))
     else:
         for i in sorted(XDict.iterkeys()):
-            Logfile.red('Array %s has %3d of %3d Stations left' %(i,len(XDict[i]),SL[i]))
+            Logfile.red('Array %s has %3d of %3d Stations left' %
+                        (i, len(XDict[i]), SL[i]))
     while True:
         if sys.version_info.major >= 3:
             nnl = input("please enter your choice: ")
@@ -298,7 +301,8 @@ def processLoop():
             if not Basic.question('Process all networks ?'):
                 continue
 
-            Logfile.red('This networks will be used for processing: %s' % (Config['networks']))
+            Logfile.red('This networks will be used for processing: %s'
+                        % (Config['networks']))
             break
 
         elif str(nnl) == 'quit':
@@ -317,7 +321,7 @@ def processLoop():
             mainfolder = os.path.join(os.path.sep, *evpath.split('/')[:-2])
             os.chdir(mainfolder)
 
-            cmd =('%s arraytool.py process %s') % (sys.executable, event)
+            cmd = ('%s arraytool.py process %s') % (sys.executable, event)
             Logfile.add('cmd = ' + cmd)
             os.system(cmd)
             sys.exit()
@@ -337,14 +341,14 @@ def processLoop():
             if not isOk:
                 continue   # Illegal network : input again
 
-            Logfile.add('This networks will be used for processing: %s' %(nnl))
+            Logfile.add('This networks will be used for processing: %s'
+                        % (nnl))
             Config['networks'] = nnl
             break
 
     for i in range(3, 0, -1):
         time.sleep(1)
-        Logfile.red('Start processing in %d seconds ' %(i))
-
+        Logfile.red('Start processing in %d seconds ' % (i))
 
     wd = Origin['depth']
     start, stop, step = cfg.String('depths').split(',')
@@ -404,8 +408,9 @@ def processLoop():
 
                     FilterMeta = cmpFilterMetavsXCORR(W, FilterMeta)
 
-                    Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING: %s \n'
-                             %(Config['dimx'],Config['dimy'],Config['gridspacing']))
+                    Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
+                                %s \n' % (Config['dimx'], Config['dimy'],
+                                          Config['gridspacing']))
 
                     Logfile.red('Calculating Traveltime Grid')
                     t1 = time.time()
@@ -417,34 +422,46 @@ def processLoop():
                     ttt_model = cfg.Str('traveltime_model')
 
                     try:
-                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' %(phase, ttt_model,ev.time, arrayname, workdepth), 'rb')
-                        print("loading travel time grid%s_%s_%s_%s_%s.pkl" %(phase, ttt_model, ev.time, arrayname, workdepth))
-                        TTTGridMap,mint,maxt = pickle.load(f)
+                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                 % (phase, ttt_model, ev.time, arrayname,
+                                    workdepth), 'rb')
+                        print("loading travel time grid%s_%s_%s_%s_%s.pkl"
+                              % (phase, ttt_model, ev.time, arrayname,
+                                 workdepth))
+                        TTTGridMap, mint, maxt = pickle.load(f)
                         f.close()
                         print("loading of travel time grid sucessful")
-                    except:
-                        print("loading of travel time grid unsucessful, will now calculate the grid:")
-                        if isParallel :
-                           maxp = 6
-                           po = multiprocessing.Pool(maxp)
+                    except Exception:
+                        print("loading of travel time grid unsucessful,\
+                              will now calculate the grid:")
+                        if isParallel:
+                            maxp = 6
+                            po = multiprocessing.Pool(maxp)
 
-                           for i in xrange(len(FilterMeta)):
-                               po.apply_async(ttt.calcTTTAdv,(Config,FilterMeta[i],Origin,i,arrayname,W,refshift))
+                            for i in xrange(len(FilterMeta)):
+                                po.apply_async(ttt.calcTTTAdv,
+                                               (Config, FilterMeta[i], Origin,
+                                                i, arrayname, W, refshift))
 
-                               po.close()
-                               po.join()
+                                po.close()
+                                po.join()
                         else:
                             for i in xrange(len(FilterMeta)):
                                 t1 = time.time()
-                                ttt.calcTTTAdv(Config,FilterMeta[i],Origin,i,arrayname,W,refshift,phase)
+                                ttt.calcTTTAdv(Config, FilterMeta[i], Origin,
+                                               i, arrayname, W, refshift,
+                                               phase)
 
-                                Logfile.add('ttt.calcTTTAdv : ' + str(time.time() - t1) + ' sec.')
+                                Logfile.add('ttt.calcTTTAdv : '
+                                            + str(time.time() - t1) + ' sec.')
 
                         assert len(FilterMeta) > 0
 
                         TTTGridMap = deserializer.deserializeTTT(len(FilterMeta))
-                        mint,maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
-                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' %(phase, ttt_model,ev.time, arrayname, workdepth), 'wb')
+                        mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
+                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                 % (phase, ttt_model, ev.time, arrayname,
+                                    workdepth), 'wb')
                         print("dumping the traveltime grid for this array")
                         pickle.dump([TTTGridMap, mint, maxt], f)
                         f.close()
@@ -490,8 +507,9 @@ def processLoop():
                     Logfile.red('%d Streams added for Processing' % (len(Wd)))
 
                     t1 = time.time()
-                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl' % (phase,
-                             ttt_model, ev.time, arrayname, workdepth), 'rb')
+                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                             % (phase, ttt_model, ev.time, arrayname,
+                                workdepth), 'rb')
                     TTTGridMap, mint, maxt = pickle.load(f)
                     f.close()
                     if switch == 0:
@@ -624,30 +642,35 @@ def processLoop():
                             if ASL:
                                 Logfile.red('collect semblance matrices from\
                                             all arrays')
-                                sembmax, tmp = sembCalc.collectSemb(ASL, Config,
-                                                               Origin, Folder,
-                                                               ntimes,
-                                                               len(networks),
-                                                               switch,
-                                                               array_centers,
-                                                               cboot=ibootstrap)
+                                sembmax, tmp = sembCalc.collectSemb(ASL,
+                                                                    Config,
+                                                                    Origin,
+                                                                    Folder,
+                                                                    ntimes,
+                                                                    len(networks),
+                                                                    switch,
+                                                                    array_centers,
+                                                                    cboot=ibootstrap)
                                 tmp_general *= tmp
                                 ASL = []
                         sembmax, tmp = sembCalc.collectSemb(ASL, Config,
-                                                       Origin, Folder,
-                                                       ntimes,
-                                                       len(networks),
-                                                       switch,
-                                                       array_centers,
-                                                       cboot=None,
-                                                       temp_comb=tmp_general)
+                                                            Origin, Folder,
+                                                            ntimes,
+                                                            len(networks),
+                                                            switch,
+                                                            array_centers,
+                                                            cboot=None,
+                                                            temp_comb=tmp_general)
                 if cfg.optimize_all() is True:
                     import optim_csemb
-                    sembmax, tmp = sembCalc.collectSemb(ASL,Config,Origin,Folder,ntimes,len(networks),switch)
-                    optim_csemb.solve(counter, Config,Wdf,FilterMeta,mint,maxt,TTTGridMap,
-                                                 Folder,Origin,ntimes,switch, ev,arrayfolder,
-                                                 syn_in, ASL, sembmax, evpath, XDict, RefDict,
-                                                 workdepth, filterindex, Wdfs)
+                    sembmax, tmp = sembCalc.collectSemb(ASL, Config, Origin,
+                                                        Folder, ntimes,
+                                                        len(networks), switch)
+                    optim_csemb.solve(counter, Config, Wdf, FilterMeta, mint,
+                                      maxt, TTTGridMap, Folder, Origin,
+                                      ntimes, switch, ev, arrayfolder,
+                                      syn_in, ASL, sembmax, evpath, XDict,
+                                      RefDict, workdepth, filterindex, Wdfs)
 
                 if ASL and cfg.Bool('bootstrap_array_weights') is False:
                     Logfile.red('collect semblance matrices from all arrays')
@@ -665,50 +688,44 @@ def processLoop():
         Logfile.red('Nothing to do  -> Finish')
     print("last work depth:")
     print(workdepth)
-# ----------------------------------------------------------------------------
 
 
 class ProcessMain(MainObj):
 
-    def __init__(self) :
+    def __init__(self):
         initModule()
 
         MainObj.__init__(self, self, '0.3', 'process_run.log', 'process.log')
 
-    # ---------------------------------------------------------------------------------------------
-
-    def init(self) :
+    def init(self):
         file = 'ak135.model'
 
-        if not os.path.isfile(file) :
-           source = os.path.join('..','tools', file)
-           Basic.checkFileExists(source, isAbort = True)
-           shutil.copy(source, file)
+        if not os.path.isfile(file):
+            source = os.path.join('..', 'tools', file)
+            Basic.checkFileExists(source, isAbort=True)
+            shutil.copy(source, file)
 
         return True
 
-    # --------------------------------------------------------------------------------------------
-
-    def process(self) :
+    def process(self):
         import cProfile
         cProfile.run('processLoop()', filename='test.profile')
         return True
 
-    def finish(self) :    pass
+    def finish(self):
+        pass
 
-# -------------------------------------------------------------------------------------------------
 
-def MainProc() :
+def MainProc():
 
     mainObj = ProcessMain()
 
     mainObj.run()
 
-# -------------------------------------------------------------------------------------------------
 
 isClient = False
 
 if __name__ == "__main__":
 
-   if not isClient :
-      MainProc()
+    if not isClient:
+        MainProc()
