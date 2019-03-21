@@ -7,15 +7,11 @@ sys.path.append('../Common/')
 import config
 import Globals
 import Basic
-import Logfile
-import ConfigFile
-import Debug
-import DataTypes
 from optparse import OptionParser
-from   ConfigParser import SafeConfigParser
+from ConfigParser import SafeConfigParser
 from pyrocko import util, io, trace, cake
-from   config import Event, Trigger
-from    ConfigFile import ConfigObj, FilterCfg, OriginCfg
+from config import Event, Trigger
+from ConfigFile import ConfigObj, FilterCfg, OriginCfg
 global options,args
 from pyrocko.io import stationxml
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
@@ -37,18 +33,20 @@ def main(args):
 
     return parser.parse_args(args)
 
+
 def globalConf():
 
-    cDict  = {}
+    cDict = {}
     parser = SafeConfigParser()
     parser.read(os.path.join('..', 'global.conf'))
 
     for section_name in parser.sections():
-        for name, value in parser.items(section_name): cDict[name] = value
+        for name, value in parser.items(section_name):
+            cDict[name] = value
 
     return cDict
 
-options,args = main(sys.argv)
+options, args = main(sys.argv)
 Basic.checkExistsDir(options.eventpath, isAbort=True)
 Globals.setEventDir(options.eventpath)
 C = config.Config(options.eventpath)
@@ -61,8 +59,10 @@ filter = FilterCfg(Config)
 cfg = ConfigObj(dict=Config)
 minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
 
-ev = Event(Origin['lat'],Origin['lon'],Origin['depth'],Origin['time'] )
-event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=float(ev.depth)*1000., time=util.str_to_time(ev.time))
+ev = Event(Origin['lat'], Origin['lon'], Origin['depth'], Origin['time'])
+event = model.Event(lat=float(ev.lat), lon=float(ev.lon),
+                    depth=float(ev.depth)*1000.,
+                    time=util.str_to_time(ev.time))
 tmin = util.str_to_time(ev.time)-40
 tmax = util.str_to_time(ev.time)+40
 global_cmt_catalog = catalog.GlobalCMT()
@@ -81,19 +81,21 @@ source = gf.DCSource(lat=event_cat.lat, lon=event_cat.lon,
                      dip=event_cat.moment_tensor.dip1,
                      magnitude=event.magnitude)
 newFreq = float(filter.newFrequency())
-options.time = Origin ['time']
+options.time = Origin['time']
 options.duration = int(Conf['duration'])
-sdspath = os.path.join(options.eventpath,'data')
+sdspath = os.path.join(options.eventpath, 'data')
 try:
     os.mkdir(sdspath)
-except:
+except Exception:
     pass
 model.dump_events([event], sdspath+'event.pf')
 
 tmin = util.str_to_time(ev.time)+4000.
 tmax = util.str_to_time(ev.time)+41600.
 
-def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
+
+def get_stations(site, lat, lon, rmin, rmax, tmin, tmax,
+                 channel_pattern='BH*'):
     extra = {}
     if site == 'iris':
         extra.update(matchtimeseries=True)
@@ -109,58 +111,69 @@ def get_stations(site, lat, lon, rmin, rmax, tmin, tmax, channel_pattern='BH*'):
 
 site = 'geofon'
 minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
-diffDist =(maxDist - minDist)/9.
+diffDist = (maxDist - minDist)/9.
 displacement_geofon = []
 stations_disp_geofon = []
 stations_real_geofon = []
-gaps= []
+gaps = []
 trs_projected_geofon = []
 trs_projected_displacement_geofon = []
 
 try:
     for l in range(0,1):
-        stations_geofon = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
+        stations_geofon = get_stations(site, event.lat, event.lon, minDist,
+                                       maxDist, tmin, tmax, 'BH*')
 
         nstations_geofon = [s for s in stations_geofon]
 
-        selection_geofon = fdsn.make_data_selection(nstations_geofon, tmin, tmax)
-        request_waveform_geofon = fdsn.dataselect(site=site, selection=selection_geofon)
+        selection_geofon = fdsn.make_data_selection(nstations_geofon, tmin,
+                                                    tmax)
+        request_waveform_geofon = fdsn.dataselect(site=site,
+                                                  selection=selection_geofon)
 
-        with open(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l), 'wb') as file:
+        with open(os.path.join(sdspath,
+                               'traces_geofon_part%s.mseed' % l), 'wb') as file:
             file.write(request_waveform_geofon.read())
         print('traces written')
-        traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
+        traces_geofon = io.load(os.path.join(sdspath,
+                                             'traces_geofon_part%s.mseed' % l))
 
         for tr in traces_geofon:
             for st in stations_geofon:
                 if tr.station == st.station and tr.location == st.location:
                         stations_real_geofon.append(st)
                         gaps.append(st.station)
-        remove =[x for x in gaps if gaps.count(x) > 1]
+        remove = [x for x in gaps if gaps.count(x) > 1]
         for re in remove:
             for st in stations_real_geofon:
                 if st.station == re:
                     stations_real_geofon.remove(st)
-        model.dump_stations(stations_real_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
+        model.dump_stations(stations_real_geofon,
+                            os.path.join(sdspath,
+                                         'stations_geofon_part%s.txt' % l))
         request_response = fdsn.station(
             site=site, selection=selection_geofon, level='response')
-        request_response.dump(filename=os.path.join(sdspath,'responses_geofon_part%s.yml'%l))
-        request_response.dump_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
-        sx = stationxml.load_xml(filename=os.path.join(sdspath,'responses_geofon_part%s.xml'%l))
+        request_response.dump(filename=os.path.join(sdspath,
+                              'responses_geofon_part%s.yml' % l))
+        request_response.dump_xml(filename=os.path.join(sdspath,
+                                  'responses_geofon_part%s.xml' % l))
+        sx = stationxml.load_xml(filename=os.path.join(sdspath,
+                                 'responses_geofon_part%s.xml' % l))
         pyrocko_stations = sx.get_pyrocko_stations()
         event_origin = gf.Source(
-        lat=event.lat,
-        lon=event.lon)
+                                lat=event.lat,
+                                lon=event.lon)
 
-        traces_geofon = io.load(os.path.join(sdspath,'traces_geofon_part%s.mseed' %l))
+        traces_geofon = io.load(os.path.join(sdspath,
+                                             'traces_geofon_part%s.mseed' % l))
 
         projections = []
         for station in stations_real_geofon:
                 try:
                     backazimuth = source.azibazi_to(station)[1]
                     projections.extend(station.guess_projections_to_rtu(
-                    out_channels=('R', 'T', 'Z'),
-                    backazimuth=backazimuth))
+                                        out_channels=('R', 'T', 'Z'),
+                                        backazimuth=backazimuth))
                 except:
                     stations_real_geofon.remove(station)
 
