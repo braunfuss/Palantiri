@@ -76,7 +76,7 @@ def readWaveforms(stationList, tw, EventPath, Origin):
 def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
     Wdict = OrderedDict()
     if desired is 'Z':
-        traces = io.load(EventPath+'/data/traces_restituted.mseed')
+        traces = io.load(EventPath+'/data/traces.mseed')
     else:
         traces = io.load(EventPath+'/data/traces_rotated.mseed')
     obspy_compat.plant()
@@ -86,7 +86,7 @@ def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
             for tr in traces:
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location
                               + '.' + tr.channel[:3])
-                if tr_name == str(il) and tr.channel is desired:
+                if tr_name == str(il) and tr.channel[-1] == desired:
                     st = obspy.Stream()
                     es = obspy_compat.to_obspy_trace(tr)
                     st.extend([es])
@@ -117,7 +117,7 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
         for il in stationlist:
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location
                               + '.' + tr.channel[:3])
-                if tr_name == str(il) and tr.channel is desired:
+                if tr_name == str(il) and tr.channel[-1] == desired:
                     st = obspy.Stream()
                     es = obspy_compat.to_obspy_trace(tr)
                     st.extend([es])
