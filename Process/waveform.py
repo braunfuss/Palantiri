@@ -245,9 +245,7 @@ def processWaveforms(WaveformDict, Config, Folder, network, MetaDict, Event,
 
 def processdummyWaveforms(WaveformDict, Config, Folder, network, MetaDict,
                           Event, switch, Xcorr):
-
     for index, i in enumerate(WaveformDict):
 
         WaveformDict[i] = i
-
     return WaveformDict

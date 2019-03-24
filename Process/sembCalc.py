@@ -861,6 +861,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 #==================================synthetic BeamForming======================
 
     if cfg.Bool('synthetic_test') is True:
+
         if sys.version_info.major >= 3:
             for trace in sorted(calcStreamMap.keys()):
                 for il in FilterMetaData:
@@ -922,7 +923,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         nucleation_x=syn_in.nucleation_x_0(),
                         slip=syn_in.slip_0(),
                         nucleation_y=syn_in.nucleation_y_0(),
-                        stf=stf,
                         time=util.str_to_time(syn_in.time_0())))
             if syn_in.source() == 'DCSource':
                     sources.append(DCSource(
@@ -934,7 +934,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
                         rake=syn_in.rake_0(),
-                        stf=stf,
                         time=util.str_to_time(syn_in.time_0()),
                         magnitude=syn_in.magnitude_0()))
             if syn_in.source() == 'MTSource':
@@ -976,7 +975,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             nucleation_x=syn_in.nucleation_x_1(i),
                             slip=syn_in.slip_1(i),
                             nucleation_y=syn_in.nucleation_y_1(i),
-                            stf=stf,
                             time=util.str_to_time(syn_in.time_1(i))))
 
                 if syn_in.source() == 'DCSource':
@@ -989,7 +987,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             strike=syn_in.strike_1(i),
                             dip=syn_in.dip_1(i),
                             rake=syn_in.rake_1(i),
-                            stf=stf,
                             time=util.str_to_time(syn_in.time_1(i)),
                             magnitude=syn_in.magnitude_1(i)))
         synthetic_traces = []
