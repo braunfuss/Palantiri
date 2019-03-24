@@ -433,8 +433,7 @@ def processLoop():
                         f.close()
                         print("loading of travel time grid sucessful")
                     except Exception:
-                        print("loading of travel time grid unsucessful,\n \
-                              will now calculate the grid:")
+                        print("loading of travel time grid unsucessful, will now calculate the grid:")
                         if isParallel:
                             maxp = 6
                             po = multiprocessing.Pool(maxp)
