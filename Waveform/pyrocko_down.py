@@ -124,6 +124,14 @@ gaps = []
 trs_projected_geofon = []
 trs_projected_displacement_geofon = []
 
+quantity_to_unit = {
+    'displacement': 'M',
+    'velocity': 'M/S',
+    'acceleration': 'M/S**2'}
+
+quantitiy = cfg.quantity()
+
+
 try:
     for l in range(0, 1):
         stations_geofon = get_stations(site, event.lat, event.lon, minDist,
@@ -199,7 +207,8 @@ try:
                         polezero_response = request_response.get_pyrocko_response(
                         nslc=tr.nslc_id,
                         timespan=(tr.tmin, tr.tmax),
-                        fake_input_units='M')
+                        fake_input_units=quantity_to_unit[quantity])
+
                         restituted = tr.transfer(
                         tfade=2.,
                         freqlimits=(0.01, 0.1, 1., 2.),
@@ -280,7 +289,8 @@ except:
                             polezero_response = request_response.get_pyrocko_response(
                             nslc=tr.nslc_id,
                             timespan=(tr.tmin, tr.tmax),
-                            fake_input_units='M')
+                            fake_input_units=quantity_to_unit[quantity])
+
                             restituted = tr.transfer(
                             tfade=2.,
                             freqlimits=(0.01, 0.1, 1., 2.),
@@ -398,7 +408,8 @@ for site in sites:
                         polezero_response = request_response.get_pyrocko_response(
                         nslc=tr.nslc_id,
                         timespan=(tr.tmin, tr.tmax),
-                        fake_input_units='M')
+                        fake_input_units=quantity_to_unit[quantity])
+
                         restituted = tr.transfer(
                         tfade=2.,
                         freqlimits=(0.01, 0.1, 1., 2.),
