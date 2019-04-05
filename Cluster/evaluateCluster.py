@@ -133,27 +133,25 @@ def copyCluster2EventConfig(ClusterDict, evpath):
             fobj.write(('%s=%s\n')%(aname,ClusterDict[i][:-1]))
             fobj.write(('%srefstation=\n')%(aname))
             fobj.write(('%sphase=P\n')%(aname))
-    #endfor
 
     fobj.write('\n')
     fobj.write(''.join(Confpart2))
     fobj.close()
 
-# -------------------------------------------------------------------------------------------------
 
 def printBestSolution(solution):
 
     maxline = -100
-    L   = []
-    M   = []
+    L = []
+    M = []
 
-    Logfile.add('eventpath: ', os.path.join(solution.path,'event.stations'))
-    fobj = open(os.path.join(solution.path,'event.stations'),'r')
+    Logfile.add('eventpath: ', os.path.join(solution.path, 'event.stations'))
+    fobj = open(os.path.join(solution.path, 'event.stations'), 'r')
 
     for line in fobj:
         line = line.split()
         M.append(int(line[3]))
-        L.append(BestSolution(line[0],line[3],line[1],line[2]))
+        L.append(BestSolution(line[0], line[3], line[1], line[2]))
 
     fobj.close()
 
@@ -168,62 +166,57 @@ def printBestSolution(solution):
         for j in L:
             if j.cluster == str(i):
                 array+=j.station+'|'
-        #endfor
 
         ar = 'r'+str(i)+'='+array[:-1]+'\n'
         C[i] = array
         fobjarrays.write(ar)
 
-
     fobjarrays.close()
 
     return C
 
-# -------------------------------------------------------------------------------------------------
 
 def copyAndShowBestSolution(solution):
 
     dest = solution.path
-    src  = os.path.join('/',*solution.path.split('/')[:-4])
-    src  = os.path.join(src,'skeleton','clusterplot.sh')
+    src = os.path.join('/', *solution.path.split('/')[:-4])
+    src = os.path.join(src, 'skeleton', 'clusterplot.sh')
 
-
-# -------------------------------------------------------------------------------------------------
 
 def filterBestSolution(solution):
 
-    evp  = os.path.join('/',*solution.path.split('/')[:-2])
-    C= Config(evp)
+    evp = os.path.join('/', *solution.path.split('/')[:-2])
+    C = Config(evp)
     Conf = C.parseConfig('config')
-    cfg  = ConfigObj(dict=Conf)
+    cfg = ConfigObj(dict=Conf)
 
-    SL   = []
-    M= []
-    fobj = open(os.path.join(solution.path, 'event.stations'),'r')
+    SL = []
+    M = []
+    fobj = open(os.path.join(solution.path, 'event.stations'), 'r')
 
     for s in fobj:
-       try:
-           line = s.split()
-           net,sta,loc,comp = line[0].split('.')
+        try:
+            line = s.split()
+            net, sta, loc, comp = line[0].split('.')
 
-           slat= line[1]
-           slon= line[2]
-           smember = line[3]
+            slat = line[1]
+            slon = line[2]
+            smember = line[3]
 
-           M.append(smember)
-           SL.append(Station(net,sta,loc,comp,lat=slat,lon=slon,member=smember))
+            M.append(smember)
+            SL.append(Station(net, sta, loc, comp, lat=slat, lon=slon,
+                              member=smember))
 
-       except:
-           Logfile.exception('filterBestSolution', '<' + s + '>')
-           continue
-    #endfor
+        except Exception:
+            Logfile.exception('filterBestSolution', '<' + s + '>')
+            continue
 
     fobj.close()
 
     M = list(set(M))
 
     Logfile.add('number of clusters ' + str(len(M)),
-                 'number of stations ' + str(len(SL)))
+                'number of stations ' + str(len(SL)))
 
     kd = obs_kilometer2degrees(cfg.Distance('intraclusterdistance'))
     Logfile.add('icd ' + str(kd))
@@ -235,15 +228,15 @@ def filterBestSolution(solution):
 
         for k in SL:
             if i.member == '8' and k.member == '8':
-               if i.getName() != k.getName():
-                  delta = loc2degrees(i, k)
+                if i.getName() != k.getName():
+                    delta = loc2degrees(i, k)
 
-                  if delta > maxdist:  maxdist = delta
+                    if delta > maxdist:
+                        maxdist = delta
 
+                    if delta < kd:
+                        counter +=1
 
-                  if delta < kd:  counter +=1
-
-# -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
     rD = getStatistics(options.evpath)
@@ -251,4 +244,4 @@ if __name__ == "__main__":
     CD = printBestSolution(bs)
     copyAndShowBestSolution(bs)
 
-    copyCluster2EventConfig(CD,options.evpath)
+    copyCluster2EventConfig(CD, options.evpath)
