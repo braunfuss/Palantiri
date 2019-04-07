@@ -17,7 +17,7 @@ from pyrocko.io import stationxml
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
 from pyrocko import util, model
 from pyrocko.client import catalog
-
+import numpy as num
 
 def main(args):
 
@@ -214,7 +214,8 @@ try:
                         freqlimits=(0.01, 0.1, 1., 2.),
                         transfer_function=polezero_response,
                         invert=True)
-
+                        if quantitiy == 'velocity':
+                            tr.ydata = num.diff(tr.ydata)
                         displacement_geofon.append(restituted)
                         disp_rot.append(restituted)
                         stations_disp_geofon.append(station)
@@ -296,6 +297,8 @@ except:
                             freqlimits=(0.01, 0.1, 1., 2.),
                             transfer_function=polezero_response,
                             invert=True)
+                            if quantitiy == 'velocity':
+                                tr.ydata = num.diff(tr.ydata)
                             disp_rot.append(restituted)
 
                             displacement_geofon.append(restituted)
@@ -415,6 +418,8 @@ for site in sites:
                         freqlimits=(0.01, 0.1, 1., 2.),
                         transfer_function=polezero_response,
                         invert=True)
+                        if quantitiy == 'velocity':
+                            tr.ydata = num.diff(tr.ydata)
 
                         displacement_site.append(restituted)
                         displacement_sites.append(restituted)
