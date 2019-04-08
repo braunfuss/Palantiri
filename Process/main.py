@@ -433,7 +433,8 @@ def processLoop():
                         f.close()
                         print("loading of travel time grid sucessful")
                     except Exception:
-                        print("loading of travel time grid unsucessful, will now calculate the grid:")
+                        print("loading of travel time grid unsucessful,\n \
+                              will now calculate the grid:")
                         if isParallel:
                             maxp = 6
                             po = multiprocessing.Pool(maxp)
@@ -474,14 +475,13 @@ def processLoop():
                     tw = times.calculateTimeWindows(mint, maxt, Config,
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
-                        if cfg.Bool('synthetic_test') is True:
+                        if cfg.quantity() == 'displacement':
+                            Wd = waveform.readWaveformsPyrocko_restituted(
+                                FilterMeta, tw, evpath, ev, desired)
+                        elif cfg.Bool('synthetic_test') is True:
                             Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                     tw, evpath,
                                                                     ev)
-                        elif cfg.quantity() == 'displacement':
-                            Wd = waveform.readWaveformsPyrocko_restituted(
-                                FilterMeta, tw, evpath, ev, desired)
-
                         else:
                             Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
                                                                evpath, ev,
@@ -493,7 +493,6 @@ def processLoop():
                         Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
                     if cfg.Bool('synthetic_test') is True\
                        or cfg.Bool('dynamic_filter') is True:
-
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                              Folder, arrayname,
                                                              FilterMeta, ev,
@@ -507,6 +506,7 @@ def processLoop():
 
                     C.writeStationFile(FilterMeta, Folder, counter)
                     Logfile.red('%d Streams added for Processing' % (len(Wd)))
+
                     t1 = time.time()
                     f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                              % (phase, ttt_model, ev.time, arrayname,
@@ -543,7 +543,8 @@ def processLoop():
                                                                   Origin,
                                                                   arrayfolder,
                                                                   ntimes,
-                                                                  switch)
+                                                                  switch,
+                                                                  phase)
 
                     fileName = os.path.join(arrayfolder, 'stations.txt')
                     Logfile.add('Write to file ' + fileName)
@@ -590,7 +591,6 @@ def processLoop():
                                                              FilterMetas, ev,
                                                              switch, W)
                     else:
-
                         Wdf = waveform.processWaveforms(Wd, Config, Folder,
                                                         arrayname, FilterMetas,
                                                         ev, switch, W)
@@ -608,7 +608,8 @@ def processLoop():
                         sembCalc.writeSembMatricesSingleArray(arraySemb,
                                                               Config, Origin,
                                                               arrayfolder,
-                                                              ntimes, switch)
+                                                              ntimes, switch,
+                                                              phase)
                     else:
                         nboot = cfg.Int('n_bootstrap')
                         tmp_general = 1
@@ -639,6 +640,7 @@ def processLoop():
                                                                   arrayfolder,
                                                                   ntimes,
                                                                   switch,
+                                                                  phase,
                                                                   bootstrap=ibootstrap)
 
                             if ASL:
@@ -652,6 +654,7 @@ def processLoop():
                                                                     len(networks),
                                                                     switch,
                                                                     array_centers,
+                                                                    phase,
                                                                     cboot=ibootstrap)
                                 tmp_general *= tmp
                                 ASL = []
@@ -661,6 +664,7 @@ def processLoop():
                                                             len(networks),
                                                             switch,
                                                             array_centers,
+                                                            phase,
                                                             cboot=None,
                                                             temp_comb=tmp_general)
                 if cfg.optimize_all() is True:
@@ -679,7 +683,8 @@ def processLoop():
                     sembmax, tmp = sembCalc.collectSemb(ASL, Config, Origin,
                                                         Folder,
                                                         ntimes, len(networks),
-                                                        switch, array_centers)
+                                                        switch, array_centers,
+                                                        phase)
                     if cfg.Bool('weight_by_noise') is True:
                         sembCalc.collectSembweighted(ASL, Config, Origin,
                                                      Folder, ntimes,

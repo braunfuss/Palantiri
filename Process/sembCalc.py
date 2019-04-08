@@ -198,7 +198,7 @@ def toAzimuth(latevent, lonevent, latsource, lonsource):
 
 
 def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
-                                 switch, bootstrap=None):
+                                 switch, phase, bootstrap=None):
     '''
     method to write semblance matrizes from one processes to file for each
     timestep.
@@ -253,12 +253,13 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
 
     for a, i in enumerate(SembList):
         if bootstrap is None:
-            fobj = open(os.path.join(arrayfolder, '%s-%s_%03d.ASC'
-                                     % (switch, Origin['depth'], a)), 'w')
+            fobj = open(os.path.join(arrayfolder, '%s-%s_%03d_%s.ASC'
+                                     % (switch, Origin['depth'], a,
+                                        phase)), 'w')
         else:
-            fobj = open(os.path.join(arrayfolder, '%s-%s-boot%s_%03d.ASC'
+            fobj = open(os.path.join(arrayfolder, '%s-%s-boot%s_%03d_%s.ASC'
                                      % (switch, Origin['depth'], bootstrap,
-                                        a)), 'w')
+                                        a, phase)), 'w')
 
         fobj.write('# %s , %s\n' % (d, rcs))
         fobj.write('# step %ds| ntimes %d| winlen: %ds\n' % (step, ntimes,
@@ -285,7 +286,7 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
 
 
 def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
-                array_centers, cboot=None, temp_comb=None):
+                array_centers, phase, cboot=None, temp_comb=None):
     '''
     method to collect semblance matrizes from all processes and write them to file for each timestep
     '''
@@ -414,8 +415,8 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         diff_center_lon = origin.lon-array_overlap[1]
 
 
-        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s.txt'
-                                        % (switch, boot)), 'w')
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
+                                        % (switch, boot, phase)), 'w')
         norm = num.max(num.max(tmp, axis=1))
         max_p = 0.
         sum_i = 0.
@@ -435,8 +436,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
         for a, i in enumerate(tmp):
             logger.info('timestep %d' % a)
-            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d.ASC'
-                                     % (switch, Origin['depth'], boot, a)),
+            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d_%s.ASC'
+                                     % (switch, Origin['depth'], boot, a,
+                                        phase)),
                         'w')
             fobj.write('# %s , %s\n' % (d, rcs))
             fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
@@ -490,39 +492,42 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
         fobjsembmax.close()
 
-        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s.ASC'
-                                     % (switch, Origin['depth'], boot)),
+        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s_%s.ASC'
+                                     % (switch, Origin['depth'], boot, phase)),
                         'w')
         for x, y, sembcums in zip(latv, lonv, semb_cum):
             fobj_cum.write('%.2f %.2f %.20f\n' % (x, y, sembcums))
         fobj_cum.close()
 
-        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_boot%s.ASC'
-                                         % (switch, Origin['depth'], boot)),
+        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_boot%s_%s.ASC'
+                                         % (switch, Origin['depth'], boot,
+                                            phase)),
                             'w')
         for x, y, timemax in zip(latv, lonv, times_max):
             fobj_timemax.write('%.2f %.2f %.20f\n' % (x, y, timemax))
         fobj_timemax.close()
 
-        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_boot%s.ASC'
-                                         % (switch, Origin['depth'], boot)),
+        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_boot%s_%s.ASC'
+                                         % (switch, Origin['depth'], boot,
+                                            phase)),
                             'w')
         for x, y, timecum in zip(latv, lonv, times_cum):
             fobj_timecum.write('%.2f %.2f %.20f\n' % (x, y, timecum))
         fobj_timecum.close()
 
-        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_boot%s.ASC'
-                                         % (switch, Origin['depth'], boot)),
+        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_boot%s_%s.ASC'
+                                         % (switch, Origin['depth'], boot,
+                                            phase)),
                             'w')
         for x, y, timexy in zip(latv, lonv, times_min):
             fobj_timemin.write('%.2f %.2f %.20f\n' % (x, y, timexy))
         fobj_timemin.close()
     if cboot is None:
-        fobjsembmax = open(os.path.join(folder, 'sembmax_%s.txt'
-                                        % (switch)), 'w')
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_%s.txt'
+                                        % (switch, phase)), 'w')
     else:
-        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s.txt'
-                                        % (switch, cboot)), 'w')
+        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
+                                        % (switch, cboot, phase)), 'w')
     if temp_comb is not None:
         tmp_general = temp_comb
         tmp = tmp_general
@@ -536,12 +541,13 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     for a, i in enumerate(tmp_general):
         logger.info('timestep %d' % a)
         if cboot is None:
-            fobj = open(os.path.join(folder, '%s-%s_%03d.ASC'
-                                     % (switch, Origin['depth'], a)),
+            fobj = open(os.path.join(folder, '%s-%s_%03d_%s.ASC'
+                                     % (switch, Origin['depth'], a, phase)),
                         'w')
         else:
-            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d.ASC'
-                                     % (switch, Origin['depth'], cboot, a)),
+            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d_%s.ASC'
+                                     % (switch, Origin['depth'], cboot, a,
+                                        phase)),
                         'w')
         fobj.write('# %s , %s\n' % (d, rcs))
         fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
@@ -595,48 +601,52 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     fobjsembmax.close()
 
     if cboot is None:
-        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s.ASC'
-                                     % (switch, Origin['depth'])),
+        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_%s.ASC'
+                                     % (switch, Origin['depth'], phase)),
                         'w')
     else:
-        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s.ASC'
-                                     % (switch, Origin['depth'], cboot)),
+        fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s_%s.ASC'
+                                     % (switch, Origin['depth'], cboot, phase)),
                         'w')
     for x, y, sembcums in zip(latv, lonv, semb_cum):
         fobj_cum.write('%.2f %.2f %.20f\n' % (x, y, sembcums))
     fobj_cum.close()
 
     if cboot is None:
-        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s.ASC'
-                                         % (switch, Origin['depth'])),
+        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_%s.ASC'
+                                         % (switch, Origin['depth'], phase)),
                             'w')
     else:
-        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_boot%s.ASC'
-                                         % (switch, Origin['depth'], cboot)),
+        fobj_timemax = open(os.path.join(folder, 'times_cum_%s_%s_boot%s_%s.ASC'
+                                         % (switch, Origin['depth'], cboot,
+                                            phase)),
                             'w')
     for x, y, timemax in zip(latv, lonv, times_max):
         fobj_timemax.write('%.2f %.2f %.20f\n' % (x, y, timemax))
     fobj_timemax.close()
 
     if cboot is None:
-        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s.ASC'
-                                         % (switch, Origin['depth'])),
+        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_%s.ASC'
+                                         % (switch, Origin['depth'], phase)),
                             'w')
     else:
-        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_boot%s.ASC'
-                                         % (switch, Origin['depth'], cboot)),
+        fobj_timecum = open(os.path.join(folder, 'times_max_%s_%s_boot%s_%s.ASC'
+                                         % (switch, Origin['depth'], cboot,
+                                            phase)),
                             'w')
     for x, y, timecum in zip(latv, lonv, times_cum):
         fobj_timecum.write('%.2f %.2f %.20f\n' % (x, y, timecum))
     fobj_timecum.close()
 
     if cboot is None:
-        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s.ASC'
-                                         % (switch, Origin['depth'])),
+        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_%s.ASC'
+                                         % (switch, Origin['depth'],
+                                            phase)),
                             'w')
     else:
-        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_boot%s.ASC'
-                                         % (switch, Origin['depth'], cboot)),
+        fobj_timemin = open(os.path.join(folder, 'times_min_%s_%s_boot%s_%s.ASC'
+                                         % (switch, Origin['depth'], cboot,
+                                            phase)),
                             'w')
     for x, y, timexy in zip(latv, lonv, times_min):
         fobj_timemin.write('%.2f %.2f %.20f\n' % (x, y, timexy))
@@ -861,7 +871,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 #==================================synthetic BeamForming======================
 
     if cfg.Bool('synthetic_test') is True:
-
         if sys.version_info.major >= 3:
             for trace in sorted(calcStreamMap.keys()):
                 for il in FilterMetaData:
@@ -923,6 +932,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         nucleation_x=syn_in.nucleation_x_0(),
                         slip=syn_in.slip_0(),
                         nucleation_y=syn_in.nucleation_y_0(),
+                        stf=stf,
                         time=util.str_to_time(syn_in.time_0())))
             if syn_in.source() == 'DCSource':
                     sources.append(DCSource(
@@ -934,6 +944,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         strike=syn_in.strike_0(),
                         dip=syn_in.dip_0(),
                         rake=syn_in.rake_0(),
+                        stf=stf,
                         time=util.str_to_time(syn_in.time_0()),
                         magnitude=syn_in.magnitude_0()))
             if syn_in.source() == 'MTSource':
@@ -975,6 +986,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             nucleation_x=syn_in.nucleation_x_1(i),
                             slip=syn_in.slip_1(i),
                             nucleation_y=syn_in.nucleation_y_1(i),
+                            stf=stf,
                             time=util.str_to_time(syn_in.time_1(i))))
 
                 if syn_in.source() == 'DCSource':
@@ -987,6 +999,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             strike=syn_in.strike_1(i),
                             dip=syn_in.dip_1(i),
                             rake=syn_in.rake_1(i),
+                            stf=stf,
                             time=util.str_to_time(syn_in.time_1(i)),
                             magnitude=syn_in.magnitude_1(i)))
         synthetic_traces = []
