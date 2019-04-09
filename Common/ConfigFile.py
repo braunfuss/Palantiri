@@ -218,6 +218,9 @@ class ConfigObj(object):
     def norm_all(self):
         return self.Bool('norm_all')
 
+    def futterman_attenuation(self):
+        return self.Bool('futterman_attenuation')
+
     def dynamic_filter(self):
         return self.Bool('dynamic_filter')
 

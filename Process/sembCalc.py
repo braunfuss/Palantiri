@@ -57,6 +57,36 @@ def make_bayesian_weights(narrays, nbootstrap=100,
     return ws
 
 
+def spectrum(data, deltat, pad_to_pow2=False, tfade=None):
+        '''
+        Get FFT spectrum of trace.
+        :param pad_to_pow2: whether to zero-pad the data to next larger
+            power-of-two length
+        :param tfade: ``None`` or a time length in seconds, to apply cosine
+            shaped tapers to both
+        :returns: a tuple with (frequencies, values)
+        '''
+
+        ndata = data.size
+
+        if pad_to_pow2:
+            ntrans = nextpow2(ndata)
+        else:
+            ntrans = ndata
+
+        if tfade is None:
+            ydata = data
+        else:
+            ydata = self.ydata * costaper(
+                0., tfade, deltat*(ndata-1)-tfade, deltat*ndata,
+                ndata, deltat)
+
+        fydata = num.fft.fft(ydata)
+        df = 1./(ntrans*deltat)
+        fxdata = num.arange(len(fydata))*df
+        return fxdata, fydata
+
+
 class CakeTiming(Object):
     '''Calculates and caches phase arrivals.
     :param fallback_time: returned, when no phase arrival was found for the
@@ -1156,6 +1186,42 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         weight = analyse(shifted_traces, engine, event, stations,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def=phase)
+
+    if cfg.Bool('futterman_attenuation') is True:
+        # todo: make attentuation path dependent
+        trs_orgs = []
+        for trace in calcStreamMap.keys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+
+                Q0_1 = 101
+                c0_1 = 3.95e3 # reference velocity in km/s
+                # trace 2 Q & V - slower c0 and more attenuated
+                Q0_2 = 40
+                c0_2 = 3.80e3 # reference velocity in km/s
+
+                L = 200.e3
+                npts = len(tr_org.ydata)
+                idat = tr_org.ydata
+                ffs = num.fft.rfft(idat)
+
+                ff, IDAT = spectrum(tr_org.ydata, tr_org.deltat)
+
+                w = 2*num.pi*ff
+                wabs = abs(w)
+
+                w0 = 2*num.pi
+                Aw = num.exp(-0.5*wabs*dtstar)
+                phiw = (1/num.pi)*dtstar*num.log(2*num.pi*num.exp(num.pi)/wabs)
+                # phiw = 0.5 * (wabs/w0)**(-1) * dtstar * 1./num.tan(1*num.pi/2)
+                phiw = num.nan_to_num(phiw)
+                Dwt = Aw * num.exp(-1j*w*phiw)
+                qdat = num.real(num.fft.ifft((IDAT*Dwt)))
+                tr_org.ydata = qdat
+                trs_orgs.append(tr_org)
+        for tracex in calcStreamMap.keys():
+                for trl in trs_orgs:
+                    obs_tr = obspy_compat.to_obspy_trace(trl)
+                    calcStreamMap[tracex] = obs_tr
 
     if cfg.Bool('array_response') is True:
         from obspy.signal import array_analysis
