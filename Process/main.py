@@ -534,7 +534,7 @@ def processLoop():
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMeta, mint, maxt,
                                 TTTGridMap, Folder, Origin, ntimes, switch, ev,
-                                arrayfolder, syn_in, refshift)
+                                arrayfolder, syn_in, refshift, phase)
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -601,7 +601,7 @@ def processLoop():
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
-                            ev, arrayfolder, syn_in, refshifts_global)
+                            ev, arrayfolder, syn_in, refshifts_global, phase)
                         ASL.append(arraySemb)
                         weights.append(weight)
                         array_centers.append(array_center)
@@ -629,7 +629,7 @@ def processLoop():
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
-                                bs_weights=ws)
+                                phase, bs_weights=ws)
 
                             ASL.append(arraySemb)
                             weights.append(weight)

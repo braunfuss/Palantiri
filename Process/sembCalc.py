@@ -21,6 +21,9 @@ from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTS
 from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
 km = 1000.
+r2d = 180./math.pi
+d2r = 1./r2d
+earthradius = 6371.*km
 import trigger
 from semp import semblance
 from beam_stack import BeamForming
@@ -824,7 +827,7 @@ def toMatrix(npVector, nColumns):
 
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in, refshifts, bs_weights=None):
+           syn_in, refshifts, phase, bs_weights=None):
     '''
     method for calculating semblance of one station array
     '''
@@ -1187,19 +1190,33 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def=phase)
 
-    if cfg.Bool('futterman_attenuation') is True:
-        # todo: make attentuation path dependent
+    if cfg.Bool('futterman_attenuation') is True and phase = 'S':
         trs_orgs = []
         for trace in calcStreamMap.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+                mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
+                timing = CakeTiming(
+                   phase_selection='first(S)',
+                   fallback_time=100.)
+                dist = ortho.distance_accurate50m(ev, event1)
+                ray = timing.t(mod,(ev.depth, dist), get_ray=True)
+                zx, xx, tx = ray.zxt_path_subdivided()
+                qs_int = 0.
+                vs_int = 0.
+                vp_int = 0.
+                qp_int = 0.
 
-                Q0_1 = 101
-                c0_1 = 3.95e3 # reference velocity in km/s
-                # trace 2 Q & V - slower c0 and more attenuated
-                Q0_2 = 40
-                c0_2 = 3.80e3 # reference velocity in km/s
-
+                zx = zx[0]
+                for z in zx:
+                	mat = mod.material(z)
+                	qs_int = qs_int + mat.qs
+                	vs_int = vs_int + mat.vs
+                	qp_int = qp_int + mat.qp
+                	vp_int = vp_int + mat.vp
+                #dist =ray.x*(d2r*earthradius/km)
+                #dtstar = dist/(qs_int*vs_int) #direct dstar
                 L = 200.e3
+                dtstar = L*(1./vp_int/qp_int - 1./vs_int/qs_int) # differential tstar measurement
                 npts = len(tr_org.ydata)
                 idat = tr_org.ydata
                 ffs = num.fft.rfft(idat)
