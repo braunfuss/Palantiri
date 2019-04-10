@@ -8,7 +8,7 @@ import config
 import Globals
 import Basic
 from optparse import OptionParser
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 from pyrocko import util, io, trace, cake
 from config import Event, Trigger
 from ConfigFile import ConfigObj, FilterCfg, OriginCfg
@@ -330,8 +330,10 @@ displacement_sites = []
 traces_sites = []
 trs_projected = []
 trs_projected_displacement = []
+minDist = float(params['mindist'])
+maxDist = float(params['maxdist'])
 
-sites = ['iris','orfeus', 'resif', 'usp', 'bgr', 'ingv', 'geonet', 'ethz', 'ncedc', 'knmi', 'usgs', 'isc', 'ipgp', 'koeri']
+sites = ['iris','orfeus', 'resif', 'usp', 'bgr', 'ingv', 'geonet', 'ethz', 'ncedc', 'knmi', 'isc', 'ipgp', 'koeri']
 for site in sites:
     try:
         stations_site = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
