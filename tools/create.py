@@ -1,9 +1,9 @@
 import os
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 import sys
 import shutil
 import logging
-import urllib
+from urllib.request import urlopen
 import dateutil.parser
 
 logger = logging.getLogger('ARRAY-MP')
@@ -37,17 +37,18 @@ def parseEvent(eventID):
     eventID = eventID[1].replace('_','')
 
     url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
-    f = urllib.urlopen(url)
-    try:
-        for i in f:
-            if i[0] != '#':
-                i = i.split('|')
-                time = i[1].replace(':','-').strip()
-                name = i[12].replace(' ','-').strip()
-                eventname =('%s_%s')%(name,time)
-        return eventname
-    except:
-        print('Event not retrivable from IRIS')
+    data = urlopen(url).read()
+    data = data.decode('utf_8')
+    data = data.split('\n')
+    dl = data[1:]
+    i = dl[0]
+    i = i.split('|')
+    time = i[1].replace(':','-').strip()
+    name = i[12].replace(' ','-').strip()
+    eventname =('%s_%s')%(name,time)
+
+    return eventname
+
 
 
 
@@ -81,67 +82,72 @@ def writeOriginFile(path,ev_id):
     eventID = ev_id[1].replace('_','')
 
     url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
-    f = urllib.urlopen(url)
-    for i in f:
-        if i[0] != '#':
-            i = i.split('|')
-            time = str(dateutil.parser.parse(i[1]))[:19]
-            fobj.write('region = %s\n' % i[12].strip())
-            fobj.write('lat = %s\n' % i[2])
-            fobj.write('lon = %s\n' % i[3])
-            fobj.write('depth = %s\n' % i[4])
-            fobj.write('time = %s\n' % time)
-            fobj.write('strike = -999\n')
-            fobj.write('dip = -999\n')
-            fobj.write('rake = -999\n')
+    data = urlopen(url).read()
+    data = data.decode('utf_8')
+    data = data.split('\n')
+    dl = data[1:]
+    i = dl[0]
+    i = i.split('|')
+    time = str(dateutil.parser.parse(i[1]))[:19]
+    fobj.write('region = %s\n' % i[12].strip())
+    fobj.write('lat = %s\n' % i[2])
+    fobj.write('lon = %s\n' % i[3])
+    fobj.write('depth = %s\n' % i[4])
+    fobj.write('time = %s\n' % time)
+    fobj.write('strike = -999\n')
+    fobj.write('dip = -999\n')
+    fobj.write('rake = -999\n')
+
     fobj.close()
 
     return time
 
-def writeSynFile(path,ev_id):
+
+def writeSynFile(path, ev_id):
     '''
     method to write synthetic input(event) file in the event directory to be processed
 
     '''
     fname = os.path.basename(path)+'.syn'
-    fobj = open(os.path.join(path,fname),'w')
+    fobj = open(os.path.join(path, fname), 'w')
     fobj.write('[synthetic parameter]\n\n')
 
-    eventID = ev_id[1].replace('_','')
+    eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
-    f = urllib.urlopen(url)
-    for i in f:
-        if i[0] != '#':
-            i = i.split('|')
-            print(i)
-            time = i[1]
-            fobj.write('region = %s\n' % i[12].strip())
-            fobj.write('nsources = 1\n')
-            fobj.write('lat_0 = %s\n' % i[2])
-            fobj.write('lon_0 = %s\n' % i[3])
-            fobj.write('depth_0 = %s\n' % i[4])
-            fobj.write('time_0 = %sZ\n' % i[1])
-            fobj.write('strike_0 = -999\n')
-            fobj.write('dip_0 = -999\n')
-            fobj.write('rake_0 = -999\n')
-            fobj.write('width_0 = -999\n')
-            fobj.write('length_0 = -999\n')
-            fobj.write('slip_0 = -999\n')
-            fobj.write('nucleation_x_0 = 0\n')
-            fobj.write('nucleation_y_0 = 0\n')
-            fobj.write('store = store_id\n')
-            fobj.write('store_superdirs = dir of store\n')
-            fobj.write('use_specific_stf = 0\n')
-            fobj.write('stf = stf=gf.HalfSinusoidSTF()\n')
-            fobj.write('source = RectangularSource\n')
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'% (eventID)
+    data = urlopen(url).read()
+    data = data.decode('utf_8')
+    data = data.split('\n')
+    dl = data[1:]
+    i = dl[0]
+    i = i.split('|')
+    time = i[1]
+    fobj.write('region = %s\n' % i[12].strip())
+    fobj.write('nsources = 1\n')
+    fobj.write('lat_0 = %s\n' % i[2])
+    fobj.write('lon_0 = %s\n' % i[3])
+    fobj.write('depth_0 = %s\n' % i[4])
+    fobj.write('time_0 = %sZ\n' % i[1])
+    fobj.write('strike_0 = -999\n')
+    fobj.write('dip_0 = -999\n')
+    fobj.write('rake_0 = -999\n')
+    fobj.write('width_0 = -999\n')
+    fobj.write('length_0 = -999\n')
+    fobj.write('slip_0 = -999\n')
+    fobj.write('nucleation_x_0 = 0\n')
+    fobj.write('nucleation_y_0 = 0\n')
+    fobj.write('store = store_id\n')
+    fobj.write('store_superdirs = dir of store\n')
+    fobj.write('use_specific_stf = 0\n')
+    fobj.write('stf = stf=gf.HalfSinusoidSTF()\n')
+    fobj.write('source = RectangularSource\n')
 
     fobj.close()
 
     return time
 
 
-def startAcquisition(sttime,sdsfolder,Dconfig):
+def startAcquisition(sttime, sdsfolder, Dconfig):
     '''
     method to download waveform data from stations in global.conf specified keyfolder for the event
     '''

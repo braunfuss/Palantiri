@@ -129,7 +129,7 @@ quantity_to_unit = {
     'velocity': 'M/S',
     'acceleration': 'M/S**2'}
 
-quantitiy = cfg.quantity()
+quantity = cfg.quantity()
 
 
 try:
@@ -157,10 +157,7 @@ try:
                         stations_real_geofon.append(st)
                         gaps.append(st.station)
         remove = [x for x in gaps if gaps.count(x) > 1]
-        for re in remove:
-            for st in stations_real_geofon:
-                if st.station == re:
-                    stations_real_geofon.remove(st)
+
         model.dump_stations(stations_real_geofon,
                             os.path.join(sdspath,
                                          'stations_geofon_part%s.txt' % l))
@@ -182,13 +179,12 @@ try:
 
         projections = []
         for station in stations_real_geofon:
-                try:
+
                     backazimuth = source.azibazi_to(station)[1]
                     projections.extend(station.guess_projections_to_rtu(
                                         out_channels=('R', 'T', 'Z'),
                                         backazimuth=backazimuth))
-                except:
-                    stations_real_geofon.remove(station)
+
 
         for matrix, in_channels, out_channels in projections:
             deps = trace.project_dependencies(
@@ -214,7 +210,7 @@ try:
                         freqlimits=(0.01, 0.1, 1., 2.),
                         transfer_function=polezero_response,
                         invert=True)
-                        if quantitiy == 'velocity':
+                        if quantity == 'velocity':
                             tr.ydata = num.diff(tr.ydata)
                         displacement_geofon.append(restituted)
                         disp_rot.append(restituted)
@@ -246,11 +242,7 @@ except:
                     if tr.station == st.station and tr.location == st.location:
                             stations_real_geofon.append(st)
                             gaps.append(st.station)
-            remove =[x for x in gaps if gaps.count(x) > 1]
-            for re in remove:
-                for st in stations_real_geofon:
-                    if st.station == re:
-                        stations_real_geofon.remove(st)
+
             model.dump_stations(stations_real_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
             request_response = fdsn.station(
                 site=site, selection=selection_geofon, level='response')
@@ -266,13 +258,11 @@ except:
 
             projections = []
             for station in stations_real_geofon:
-                    try:
                         backazimuth = source.azibazi_to(station)[1]
                         projections.extend(station.guess_projections_to_rtu(
                         out_channels=('R', 'T', 'Z'),
                         backazimuth=backazimuth))
-                    except:
-                        stations_real_geofon.remove(station)
+
 
             for matrix, in_channels, out_channels in projections:
                 deps = trace.project_dependencies(
@@ -297,7 +287,7 @@ except:
                             freqlimits=(0.01, 0.1, 1., 2.),
                             transfer_function=polezero_response,
                             invert=True)
-                            if quantitiy == 'velocity':
+                            if quantity == 'velocity':
                                 tr.ydata = num.diff(tr.ydata)
                             disp_rot.append(restituted)
 
@@ -363,12 +353,6 @@ for site in sites:
                         stations_real_site.append(st)
                         stations_real_sites.append(st)
                         gaps.append(st.station)
-        remove =[x for x in gaps if gaps.count(x) > 1]
-        for re in remove:
-            for st in stations_real_site:
-                if st.station == re:
-                    stations_real_sites.remove(st)
-                    stations_real_site.remove(st)
 
         model.dump_stations(stations_real_site, os.path.join(sdspath,'stations_%s.txt'%site))
 
@@ -386,13 +370,10 @@ for site in sites:
 
         projections = []
         for station in stations_real_site:
-                try:
                     backazimuth = source.azibazi_to(station)[1]
                     projections.extend(station.guess_projections_to_rtu(
                     out_channels=('R', 'T', 'Z'),
                     backazimuth=backazimuth))
-                except:
-                    stations_real_site.remove(station)
 
         for matrix, in_channels, out_channels in projections:
             deps = trace.project_dependencies(
@@ -420,7 +401,7 @@ for site in sites:
                         freqlimits=(0.01, 0.1, 1., 2.),
                         transfer_function=polezero_response,
                         invert=True)
-                        if quantitiy == 'velocity':
+                        if quantity == 'velocity':
                             tr.ydata = num.diff(tr.ydata)
 
                         displacement_site.append(restituted)
