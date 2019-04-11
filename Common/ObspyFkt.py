@@ -26,3 +26,6 @@ def obs_TravelTimes(delta1, depth1):
     model = obspy.taup.TauPyModel(model='ak135')
     return model.get_travel_times(distance_in_degree=delta1,
                                   source_depth_in_km=float(depth1))
+
+def obs_kilometer2degrees(km):
+    return kilometer2degrees(float (km))

@@ -25,7 +25,7 @@ def init():
     cmd = sys.executable + ' ' + at + ' -f '+ options.evpath
     print('cmd = ', cmd)
 
-    for i in xrange(tests):
+    for i in range(tests):
         print('RUN: ', i)
         os.system(cmd)
 
