@@ -85,9 +85,6 @@ def init(configFileName = None):
        if ConfigDict == None:  return False
     key = 'DEBUG_FLAG'
 
-    if not os.environ.has_key(key): isDebug = False
-    else:                            isDebug =(os.environ [key].strip() == '1')
-
     if not isClient:
        if isDebug: Logfile.add('Debugging is on')
 
