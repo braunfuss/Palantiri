@@ -161,9 +161,7 @@ try:
         remove = [x for x in gaps if gaps.count(x) > 3]
         for re in remove:
             stations_real_geofon.remove(re)
-        model.dump_stations(stations_real_geofon,
-                            os.path.join(sdspath,
-                                         'stations_geofon_part%s.txt' % l))
+
         request_response = fdsn.station(
             site=site, selection=selection_geofon, level='response')
         request_response.dump(filename=os.path.join(sdspath,
@@ -220,6 +218,9 @@ try:
                         stations_disp_geofon.append(station)
                     except:
                         pass
+        model.dump_stations(stations_disp_geofon,
+                            os.path.join(sdspath,
+                                         'stations_geofon_part%s.txt' % l))
         trs_projected_displacement_geofon.extend(
                 trace.project(
                 disp_rot, matrix,
@@ -250,7 +251,6 @@ except:
             remove = [x for x in gaps if gaps.count(x) > 3]
             for re in remove:
                 stations_real_geofon.remove(re)
-            model.dump_stations(stations_real_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
             request_response = fdsn.station(
                 site=site, selection=selection_geofon, level='response')
             request_response.dump(filename=os.path.join(sdspath,'responses_geofon_part%s.yml'%l))
@@ -304,6 +304,8 @@ except:
                             pass
         except:
             pass
+        model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_geofon_part%s.txt' %l))
+
         minDist = minDist+diffDist
         try:
             trs_projected_displacement_geofon.extend(
@@ -315,6 +317,7 @@ except:
 
 io.save(displacement_geofon, os.path.join(sdspath,'traces_restituted_geofon.mseed'))
 model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_disp_geofon.txt'))
+model.dump_stations(stations_disp_geofon, os.path.join(sdspath,'stations_geofon.txt'))
 io.save(trs_projected_displacement_geofon, os.path.join(sdspath,'traces_restituted_rotated_geofon.mseed'))
 io.save(trs_projected_geofon, os.path.join(sdspath,'traces_rotated_geofon.mseed'))
 
@@ -332,6 +335,7 @@ maxDist = float(params['maxdist'])
 
 sites = ['iris','orfeus', 'resif', 'usp', 'bgr', 'ingv', 'geonet', 'ethz', 'ncedc', 'knmi', 'isc', 'ipgp', 'koeri']
 for site in sites:
+    try:
         stations_site = get_stations(site, event.lat,event.lon,minDist, maxDist,tmin,tmax, 'BH*')
         if not stations_sites:
             stations_sites = stations_site
@@ -363,11 +367,7 @@ for site in sites:
                         gaps.append(st.station)
         remove = [x for x in gaps if gaps.count(x) > 3]
         for re in remove:
-            try:
                 stations_real_site.remove(re)
-            except:
-                pass
-        model.dump_stations(stations_real_site, os.path.join(sdspath,'stations_%s.txt'%site))
 
         request_response = fdsn.station(
             site=site, selection=selection_site, level='response')
@@ -430,9 +430,12 @@ for site in sites:
                 in_channels, out_channels))
         io.save(displacement_site, os.path.join(sdspath,'traces_restituted_%s.mseed'%site))
         model.dump_stations(stations_disp_site, os.path.join(sdspath,'stations_disp_%s.txt'%site))
+        model.dump_stations(stations_disp_site, os.path.join(sdspath,'stations_%s.txt'%site))
 
+    except:
+        pass
 
-stations_all  = stations_real_sites+stations_real_geofon
+stations_all  = stations_disp_sites+stations_disp_geofon
 for stg in stations_real_geofon:
     for sti in stations_real_sites:
         if sti.station == stg.station and sti.location == stg.location and sti.network == stg.network:
@@ -449,11 +452,14 @@ except:
     traces_all = traces_sites
     traces_all_rot = trs_projected
 
+for tr in traces_all:
+    tr.downsample_to(newFreq)
 io.save(traces_all, os.path.join(sdspath,'traces.mseed'))
 model.dump_stations(stations_all, os.path.join(sdspath,'stations.txt'))
 io.save(trs_projected_displacement, os.path.join(sdspath,'traces_restituted_rotated_sites.mseed'))
 io.save(trs_projected, os.path.join(sdspath,'traces_rotated_sites.mseed'))
 io.save(traces_all_rot, os.path.join(sdspath,'traces_rotated.mseed'))
+
 
 try:
     stations_all_disp = stations_disp_sites+stations_disp_geofon
@@ -468,6 +474,10 @@ try:
                 pass
     traces_all_disp = displacement_sites+displacement_geofon
     traces_all_rot_disp = trs_projected_displacement_geofon+trs_projected_displacement
+    for tr in traces_all_disp:
+        tr.downsample_to(newFreq)
+    for tr in traces_all_rot_disp:
+        tr.downsample_to(newFreq)
     io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
@@ -475,6 +485,10 @@ except:
     stations_all_disp = stations_disp_sites
     traces_all_disp = displacement_sites
     traces_all_rot_disp = trs_projected_displacement
+    for tr in traces_all_disp:
+        tr.downsample_to(newFreq)
+    for tr in traces_all_rot_disp:
+        tr.downsample_to(newFreq)
     io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
