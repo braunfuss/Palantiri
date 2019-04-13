@@ -1190,7 +1190,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def=phase)
 
-    if cfg.Bool('futterman_attenuation') is True and phase = 'S':
+    if cfg.Bool('futterman_attenuation') is True and phase is 'S':
         trs_orgs = []
         for trace in calcStreamMap.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
