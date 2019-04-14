@@ -203,7 +203,7 @@ class Xcorr(object):
 
         t2 = UTCDateTime(self.Origin.time)
         if cfg.quantity() == 'displacement':
-            traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
+            traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
         else:
             traces = io.load(self.EventPath+'/data/traces.mseed')
 
@@ -212,7 +212,8 @@ class Xcorr(object):
             for tr in traces:
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location +
                               '.'+tr.channel[:3])
-                if tr_name == str(station):
+
+                if tr_name == str(station)[:-2]:
                     traces_station = tr
                     es = obspy_compat.to_obspy_trace(traces_station)
                     streamData = station.net + '.' + station.sta + '.'\
@@ -304,8 +305,8 @@ class Xcorr(object):
         SNR = OrderedDict()
         Config = self.Config
         cfg = ConfigObj(dict=Config)
+        print(self.StationMeta)
         for i in self.StationMeta:
-
             Logfile.red('read in %s ' % (i))
             de = loc2degrees(self.Origin, i)
             Phase = cake.PhaseDef(phase)
@@ -341,7 +342,7 @@ class Xcorr(object):
                 w, snr = self.readWaveformsCross_colesseo(i, tw, ptime)
             else:
                 w, snr = self.readWaveformsCross(i, tw, ptime)
-
+            print(w)
             Wdict[i.getName()] = w
             SNR[i.getName()] = snr
 
@@ -379,13 +380,13 @@ class Xcorr(object):
         obspy_compat.plant()
         cfg = ConfigObj(dict=self.Config)
         if cfg.quantity() == 'displacement':
-            traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
+            traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
         else:
             traces = io.load(self.EventPath+'/data/traces.mseed')
         for tr in traces:
             tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'
                                     + tr.channel[:3])
-            if tr_name == str(station):
+            if tr_name == str(station)[:-2]:
                 traces_station = tr
 
                 es = obspy_compat.to_obspy_trace(traces_station)
@@ -448,7 +449,7 @@ class Xcorr(object):
     def searchMeta(self, sname, Metalist):
 
         for i in Metalist:
-            if sname == i.getName():
+            if sname == i.getName()[:-2]:
                 return i
 
     def refTrigger(self, RefWaveform, phase):
@@ -461,6 +462,7 @@ class Xcorr(object):
 
         i = self.searchMeta(name, self.StationMeta)
         de = loc2degrees(self.Origin, i)
+
         ptime = 0
 
         Phase = cake.PhaseDef(phase)

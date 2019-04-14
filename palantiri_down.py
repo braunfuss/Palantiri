@@ -1085,9 +1085,7 @@ if __name__ == '__main__':
         for tr in trss:
             for st in used_stations:
                 for channel in st.channels:
-                    if channel == 'BHE' or channel == 'BH1' or channel == 'BH2' or channel == "BHN" or channel == "BHZ":
-                        st.remove_channel_by_name(channel)
-                    elif tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
+                    if tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
                         gaps.append(st.station)
         remove = [x for x in gaps if gaps.count(x) > 3]
         for re in remove:
@@ -1097,8 +1095,9 @@ if __name__ == '__main__':
                 pass
 
     prep_stations = list(used_stations)
-    prep_stations_one =[]
-
+    prep_stations_one = []
+    cluster_stations_one = []
+    prep_stations_cluster = prep_stations.copy()
     for st in prep_stations:
         for channel in ['BHE', 'BHN', 'BHZ', 'BH1', 'BH2']:
             try:
@@ -1106,12 +1105,53 @@ if __name__ == '__main__':
             except:
                 pass
         prep_stations_one.append(st)
+
+    for st in prep_stations_cluster:
+        for channel in ['R', 'T']:
+            try:
+                st.remove_channel_by_name(channel)
+            except:
+                pass
+        cluster_stations_one.append(st)
+
     util.ensuredirs(fn_stations_prep)
-    model.dump_stations(prep_stations_one, fn_stations_prep)
     model.dump_events([event], fn_event)
     from subprocess import call
     script = "cat"+" "+ output_dir+"/rest/*.mseed" +"> "+ output_dir+"/traces.mseed"
     call(script, shell=True)
     script = "cat"+" "+ output_dir+"/prepared/*..*" +"> "+ output_dir+"/traces_rotated.mseed"
     call(script, shell=True)
+
+
+    traces = io.load(output_dir+"/traces_rotated.mseed")
+    cluster_stations_ones = []
+    for st in cluster_stations_one:
+        add = 0
+        for tr in traces:
+            if st.station == tr.station:
+                add = 1
+                for stx in cluster_stations_ones:
+                    if stx.station == st.station:
+                        add = 0
+                if add == 1:
+                    cluster_stations_ones.append(st)
+
+    prep_stations_ones = []
+    for st in prep_stations_one:
+        add = 0
+        for tr in traces:
+            if st.station == tr.station:
+                add = 1
+                for stx in prep_stations_ones:
+                    if stx.station == st.station:
+                        add = 0
+                if add == 1:
+                    prep_stations_ones.append(st)
+
+    fn_stations_cluster = op.join(output_dir, 'stations_cluster.txt')
+
+    model.dump_stations(prep_stations_ones, fn_stations_prep)
+    model.dump_stations(cluster_stations_ones, fn_stations_cluster)
+
+
     logger.info('prepared waveforms from %i stations' % len(stations))

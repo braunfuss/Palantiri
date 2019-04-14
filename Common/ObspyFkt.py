@@ -2,7 +2,7 @@ import obspy
 import obspy.core
 from obspy.geodetics import locations2degrees
 import Basic
-
+from obspy.geodetics import kilometers2degrees
 
 def loc2degrees(a, b):
 
@@ -28,4 +28,4 @@ def obs_TravelTimes(delta1, depth1):
                                   source_depth_in_km=float(depth1))
 
 def obs_kilometer2degrees(km):
-    return kilometer2degrees(float (km))
+    return kilometers2degrees(float(km))

@@ -106,7 +106,7 @@ def readWaveformsPyrockodummy(stationlist, w, EventPath, Origin):
 def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
     Wdict = OrderedDict()
     if desired is 'Z':
-        traces = io.load(EventPath+'/data/traces_restituted.mseed')
+        traces = io.load(EventPath+'/data/traces_rotated.mseed')
     else:
         traces = io.load(EventPath+'/data/traces_rotated.mseed')
 
@@ -123,6 +123,7 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
                     st.extend([es])
                     traces_dict.append(tr)
                     Wdict[il.getName()] = st
+                print(tr)
     return Wdict
 
 

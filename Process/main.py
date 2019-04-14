@@ -174,6 +174,7 @@ def processLoop():
             SL = {}
             for i in xcorrnetworks:
                 W = {}
+
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
                 arrayfolder = os.path.join(Folder['semb'], i)
@@ -574,11 +575,11 @@ def processLoop():
                         else:
                             if cfg.quantity() == 'displacement':
                                 Wd = waveform.readWaveformsPyrocko_restituted(
-                                    FilterMetas, tw, evpath, ev)
+                                    FilterMetas, tw, evpath, ev, desired)
                             else:
                                 Wd = waveform.readWaveformsPyrocko(FilterMetas,
                                                                    tw, evpath,
-                                                                   ev)
+                                                                   ev, desired)
                     elif cfg.colesseo_input() is True:
                         Wd = waveform.readWaveforms_colesseo(FilterMetas, tw,
                                                              evpath, ev, C)

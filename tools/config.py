@@ -36,7 +36,7 @@ class Station(object):
         self.sazi = sazi
 
     def getName(self):
-        return self.net+'.'+self.sta+'.'+self.loc+'.'+self.comp
+        return (self.net+'.'+self.sta+'.'+self.loc+'.'+self.comp)
 
     def pyr_name(self):
         return self.net+'.'+self.sta+'.'+self.loc+'.'
@@ -141,7 +141,7 @@ class Config(object):
         return FML
 
     def readpyrockostations(self):
-        stations = model.load_stations(self.eventpath+'/data/stations.txt')
+        stations = model.load_stations(self.eventpath+'/data/stations_disp.txt')
         MetaL =[]
         for sl in stations:
                 channel = sl.channels[0]

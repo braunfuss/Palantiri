@@ -100,7 +100,7 @@ def readMetaInfoFile(EventPath):
             azi = line[8]
             gain = line[9]
 
-            if fnmatch.fnmatch(comp, '*HZ'):
+            if fnmatch.fnmatch(comp, '**Z'):
                 MetaL.append(Station(net, sta, loc, comp, lat, lon, ele, dip,
                                      azi, gain))
 
@@ -113,17 +113,16 @@ def readMetaInfoFile(EventPath):
 def readpyrockostations(path, disp):
 
     if disp is True:
-        stations = model.load_stations(path+'/data/stations_disp.txt')
+        stations = model.load_stations(path+'/data/stations_cluster.txt')
     else:
-        stations = model.load_stations(path+'/data/stations.txt')
+        stations = model.load_stations(path+'/data/stations_cluster.txt')
     MetaL = []
     for sl in stations:
             channel = sl.channels[0]
             MetaL.append(Station(str(sl.network), str(sl.station),
-            str(sl.location), str(sl.channels[0])[:3], str(sl.lat), str(sl.lon),
+            str(sl.location), str(sl.channels[0].name), str(sl.lat), str(sl.lon),
             str(sl.elevation),str(channel.dip),str(channel.azimuth),
             str(channel.gain)))
-
     return MetaL
 
 def readcolosseostations(scenario_path):
@@ -348,8 +347,8 @@ def deleteFarStations(CentroidList, StationClusterList,Config):
     for i in CentroidList:
         for j in StationClusterList:
             if i.rank == j.member:
-                print('dist')
-                print(loc2degrees(i, j))
+            #    print('dist')
+            #    print(loc2degrees(i, j))
                 if loc2degrees(i, j) > stationdistance:
                    j.member = -1
     #endfor
