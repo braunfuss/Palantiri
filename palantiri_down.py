@@ -1079,21 +1079,29 @@ if __name__ == '__main__':
                 io.save(proc, fn_waveforms)
                 used_stations.append(s)
 
-        gaps= []
+        gaps = []
 
         for tr in trss:
             for st in used_stations:
                 for channel in st.channels:
-                    if tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
+                    if channel == 'BHE' or channel == 'BH1' or channel == 'BH2' or channel == "BHN" or channel == "BHZ":
+                        st.remove_channel_by_name(channel)
+                    elif tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
                         gaps.append(st.station)
         remove = [x for x in gaps if gaps.count(x) > 3]
         for re in remove:
             try:
                 used_stations.remove(re)
-            except:
+            except Exception:
                 pass
 
     prep_stations = list(used_stations)
+
+    for st in prep_stations:
+        for channel in st.channels:
+            if channel.name == 'BHE' or channel.name  == 'BH1' or channel.name  == 'BH2' or channel.name  == "BHN" or channel.name  == "BHZ":
+                st.remove_channel_by_name(channel)
+                print("removed")
     util.ensuredirs(fn_stations_prep)
     model.dump_stations(prep_stations, fn_stations_prep)
     model.dump_events([event], fn_event)
