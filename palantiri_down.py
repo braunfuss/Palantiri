@@ -627,17 +627,18 @@ if __name__ == '__main__':
 
     if all(sx is None for sx in sxs) and not options.local_data:
         sys.exit(1)
-
-    nsl_to_sites = defaultdict(list)
-    nsl_to_station = {}
-    for sx, site in zip(sxs, sites):
-        site_stations = sx.get_pyrocko_stations()
-        for s in site_stations:
-            nsl = s.nsl()
-            nsl_to_sites[nsl].append(site)
-            if nsl not in nsl_to_station:
-                nsl_to_station[nsl] = s  # using first site with this station
-
+    try:
+        nsl_to_sites = defaultdict(list)
+        nsl_to_station = {}
+        for sx, site in zip(sxs, sites):
+            site_stations = sx.get_pyrocko_stations()
+            for s in site_stations:
+                nsl = s.nsl()
+                nsl_to_sites[nsl].append(site)
+                if nsl not in nsl_to_station:
+                    nsl_to_station[nsl] = s  # using first site with this station
+    except:
+        raise Exception('No stations found')
     logger.info('number of stations found: %i' % len(nsl_to_station))
 
     # station weeding
@@ -1096,14 +1097,17 @@ if __name__ == '__main__':
                 pass
 
     prep_stations = list(used_stations)
+    prep_stations_one =[]
 
     for st in prep_stations:
-        for channel in st.channels:
-            if channel.name == 'BHE' or channel.name  == 'BH1' or channel.name  == 'BH2' or channel.name  == "BHN" or channel.name  == "BHZ":
+        for channel in ['BHE', 'BHN', 'BHZ', 'BH1', 'BH2']:
+            try:
                 st.remove_channel_by_name(channel)
-                print("removed")
+            except:
+                pass
+        prep_stations_one.append(st)
     util.ensuredirs(fn_stations_prep)
-    model.dump_stations(prep_stations, fn_stations_prep)
+    model.dump_stations(prep_stations_one, fn_stations_prep)
     model.dump_events([event], fn_event)
     from subprocess import call
     script = "cat"+" "+ output_dir+"/rest/*.mseed" +"> "+ output_dir+"/traces.mseed"
