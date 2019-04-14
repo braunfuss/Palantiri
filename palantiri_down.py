@@ -1082,17 +1082,7 @@ if __name__ == '__main__':
 
         gaps = []
 
-        for tr in trss:
-            for st in used_stations:
-                for channel in st.channels:
-                    if tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
-                        gaps.append(st.station)
-        remove = [x for x in gaps if gaps.count(x) > 3]
-        for re in remove:
-            try:
-                used_stations.remove(re)
-            except Exception:
-                pass
+
 
     prep_stations = list(used_stations)
     prep_stations_one = []
@@ -1124,6 +1114,8 @@ if __name__ == '__main__':
 
 
     traces = io.load(output_dir+"/traces_rotated.mseed")
+
+
     cluster_stations_ones = []
     for st in cluster_stations_one:
         add = 0
@@ -1147,6 +1139,38 @@ if __name__ == '__main__':
                         add = 0
                 if add == 1:
                     prep_stations_ones.append(st)
+    gaps = []
+    remove = []
+
+    for tr in traces:
+        for st in cluster_stations_ones:
+            for channel in st.channels:
+                if tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
+                    gaps.append(st.station)
+    remove = [x for x in gaps if gaps.count(x) > 1]
+    for re in remove:
+        for st in cluster_stations_ones:
+            if st.station == re:
+                try:
+                    cluster_stations_ones.remove(st)
+                except Exception:
+                    pass
+
+    gaps = []
+    remove = []
+    for tr in traces:
+        for st in prep_stations_ones:
+            for channel in st.channels:
+                if tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
+                    gaps.append(st.station)
+    remove = [x for x in gaps if gaps.count(x) > 1]
+    for re in remove:
+        for st in prep_stations_ones:
+            if st.station == re:
+                try:
+                    prep_stations_ones.remove(st)
+                except Exception:
+                    pass
 
     fn_stations_cluster = op.join(output_dir, 'stations_cluster.txt')
 
