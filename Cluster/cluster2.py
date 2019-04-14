@@ -108,7 +108,6 @@ def readMetaInfoFile(EventPath):
     except Exception:
         Logfile.red('METAFILE NOT READABLE')
 
-
     return MetaL
 
 def readpyrockostations(path, disp):
