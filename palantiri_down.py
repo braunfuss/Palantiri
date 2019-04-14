@@ -725,28 +725,29 @@ if __name__ == '__main__':
                     else:
                         depth_ = None
                         time_ = None
+                    try:
+                        tmin_, tmax_ = timewindow(time_, dist, depth_)
 
-                    tmin_, tmax_ = timewindow(time_, dist, depth_)
+                        tmin_this = tmin_ - tpad
+                        tmax_this = tmax_ + tpad
 
-                    tmin_this = tmin_ - tpad
-                    tmax_this = tmax_ + tpad
+                        tmin_req = max(tmin_win, tmin_this)
+                        tmax_req = min(tmax_win, tmax_this)
 
-                    tmin_req = max(tmin_win, tmin_this)
-                    tmax_req = min(tmax_win, tmax_this)
+                        if channel.sample_rate:
+                            deltat = 1.0 / channel.sample_rate.value
+                        else:
+                            deltat = 1.0
 
-                    if channel.sample_rate:
-                        deltat = 1.0 / channel.sample_rate.value
-                    else:
-                        deltat = 1.0
-
-                    if tmin_req < tmax_req:
-                        # extend time window by some samples because otherwise
-                        # sometimes gaps are produced
-                        selection.append(
-                            nslc + (
-                                tmin_req-deltat*10.0,
-                                tmax_req+deltat*10.0))
-
+                        if tmin_req < tmax_req:
+                            # extend time window by some samples because otherwise
+                            # sometimes gaps are produced
+                            selection.append(
+                                nslc + (
+                                    tmin_req-deltat*10.0,
+                                    tmax_req+deltat*10.0))
+                    except:
+                        pass
             if options.dry_run:
                 for (net, sta, loc, cha, tmin, tmax) in selection:
                     available_through[net, sta, loc, cha].add(site)
