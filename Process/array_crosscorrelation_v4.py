@@ -305,7 +305,6 @@ class Xcorr(object):
         SNR = OrderedDict()
         Config = self.Config
         cfg = ConfigObj(dict=Config)
-        print(self.StationMeta)
         for i in self.StationMeta:
             Logfile.red('read in %s ' % (i))
             de = loc2degrees(self.Origin, i)
@@ -327,24 +326,23 @@ class Xcorr(object):
                                               zstart=self.Origin.depth*km-2.1)
                     ptime = arrivals[0].t
                 except Exception:
-                    ptime = ptime
+                    ptime = 0
             T.append(ptime)
             if ptime == 0:
                 Logfile.red('Available phases for station %s in\
                             range %f deegree' % (i, de))
                 Logfile.red('you tried phase %s' % (phase))
                 raise Exception("ILLEGAL: phase definition")
-
-            tw = self.calculateTimeWindows(ptime)
-            if cfg.pyrocko_download() is True:
-                w, snr = self.readWaveformsCross_pyrocko(i, tw, ptime)
-            elif cfg.colesseo_input() is True:
-                w, snr = self.readWaveformsCross_colesseo(i, tw, ptime)
             else:
-                w, snr = self.readWaveformsCross(i, tw, ptime)
-            print(w)
-            Wdict[i.getName()] = w
-            SNR[i.getName()] = snr
+                tw = self.calculateTimeWindows(ptime)
+                if cfg.pyrocko_download() is True:
+                    w, snr = self.readWaveformsCross_pyrocko(i, tw, ptime)
+                elif cfg.colesseo_input() is True:
+                    w, snr = self.readWaveformsCross_colesseo(i, tw, ptime)
+                else:
+                    w, snr = self.readWaveformsCross(i, tw, ptime)
+                Wdict[i.getName()] = w
+                SNR[i.getName()] = snr
 
             Logfile.red('\n\n+++++++++++++++++++++++++++++++++++++++++++++++ ')
 
@@ -653,7 +651,11 @@ class Xcorr(object):
             t = self.Config[alternativeref]
 
         corrDict = {}
-        ref = StreamDict[t][0].data
+
+        try:
+            ref = StreamDict[t][0].data
+        except Exception:
+            ref = StreamDict[t].data
         Logfile.red('Reference Station of %s for Xcorr Procedure %s'
                     % (os.path.basename(self.AF), t))
         Logfile.red('Enter Xcorr Procedure ')

@@ -54,17 +54,15 @@ class TTTGrid(object):
 
 
 class MinTMaxT(object):
-    def __init__(self, mint,maxt):
+    def __init__(self, mint, maxt):
         self.mint = mint
         self.maxt = maxt
 
-# -------------------------------------------------------------------------------------------------
 
-def filterStations(StationList,Config,Origin,network):
+def filterStations(StationList, Config, Origin, network):
 
     F = []
     cfg = ConfigObj(dict=Config)
-    print(StationList)
     minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
     origin = Location(Origin['lat'], Origin['lon'])
 
@@ -76,7 +74,7 @@ def filterStations(StationList,Config,Origin,network):
         for i in StationList:
 
             if str(i.getcmpName()[:-2]) == str(j):
-                pos= Location(i.lat, i.lon)
+                pos = Location(i.lat, i.lon)
                 sdelta = loc2degrees(origin, pos)
                 if sdelta > minDist and sdelta < maxDist:
                     s = Station(i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain)
@@ -86,7 +84,6 @@ def filterStations(StationList,Config,Origin,network):
 
     return F
 
-# -------------------------------------------------------------------------------------------------
 
 def calctakeoff(Station,Event,Config):
 

@@ -345,28 +345,31 @@ def execsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleC
 
 def execsemblance2() :
 
-    for i in range(len(sys.argv)) : print(sys.argv[i])
+    for i in range(len(sys.argv)):
+        print(sys.argv[i])
 
     params = Basic.stringToFloat(sys.argv[1])
-    [nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount] = params
+    [nostat, nsamp, i, nstep, dimX, dimY, mint, new_freq, minSampleCount] = params
     backSemb = startsemblance(int(nostat), int(nsamp), int(i), int(nstep),
-                           int(dimX),   int(dimY),  mint, new_freq, int(minSampleCount), False)
+                              int(dimX), int(dimY),  mint, new_freq,
+                              int(minSampleCount), False)
 
     Basic.writeVector(semb_txt, backSemb)
 
 
-def startsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True) :
+def startsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount, isParent = True):
 
     backSemb = []
 
     if isParent:
-        backSemb = execsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount)
+        backSemb = execsemblance(nostat, nsamp, i, nstep, dimX, dimY, mint,
+                                 new_freq, minSampleCount)
 
     else:
-       trace  = Basic.readMatrix(trace_txt,  nostat, minSampleCount, '%e')
+       trace = Basic.readMatrix(trace_txt,  nostat, minSampleCount, '%e')
        traveltime = Basic.readMatrix(travel_txt, nostat, dimX * dimY, '%e')
-       latv   = Basic.readVector(latv_txt, '%e')
-       lonv   = Basic.readVector(lonv_txt, '%e')
+       latv = Basic.readVector(latv_txt, '%e')
+       lonv = Basic.readVector(lonv_txt, '%e')
 
     for j in range(dimX * dimY):
       semb  = 0

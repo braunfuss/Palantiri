@@ -523,8 +523,8 @@ if __name__ == '__main__':
 
     tpad = tfade
 
-    tmin -= tpad
-    tmax += tpad
+    tmin -= tpad+1000.
+    tmax += tpad+1000.
 
     tinc = None
 
@@ -1000,19 +1000,22 @@ if __name__ == '__main__':
                             (tr.nslc_id + (failure,)))
 
         if rest_traces_b:
-            rest_traces = trace.degapper(rest_traces_b + rest_traces_a,
-                                         deoverlap='crossfade_cos')
+            try:
+                rest_traces = trace.degapper(rest_traces_b + rest_traces_a,
+                                             deoverlap='crossfade_cos')
 
-            fns.extend(cut_n_dump(rest_traces, win_b, fn_template_rest))
-            rest_traces_a = []
-            if win_a:
-                for tr in rest_traces:
-                    try:
-                        rest_traces_a.append(
-                            tr.chop(win_a[0], win_a[1]+otpad,
-                                    inplace=False))
-                    except trace.NoData:
-                        pass
+                fns.extend(cut_n_dump(rest_traces, win_b, fn_template_rest))
+                rest_traces_a = []
+                if win_a:
+                    for tr in rest_traces:
+                        try:
+                            rest_traces_a.append(
+                                tr.chop(win_a[0], win_a[1]+otpad,
+                                        inplace=False))
+                        except trace.NoData:
+                            pass
+            except:
+                pass
 
         rest_traces_b = rest_traces_a
         win_b = win_a

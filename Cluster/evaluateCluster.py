@@ -57,6 +57,7 @@ def getStatistics(clusterresults):
     p= os.path.join(options.evpath,'stat.dat')
     fobjstat = open(p,'w')
     resDict  = {}
+
     for root,dirs,files in os.walk(clusterresults):
         for i in files:
             if i == 'event.statistic':

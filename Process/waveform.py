@@ -123,7 +123,7 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
                     st.extend([es])
                     traces_dict.append(tr)
                     Wdict[il.getName()] = st
-                print(tr)
+
     return Wdict
 
 
