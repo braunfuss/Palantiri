@@ -1053,7 +1053,7 @@ if __name__ == '__main__':
     for nsl, s in nsl_to_station.items():
         s.set_event_relative_data(event)
         traces = p.all(trace_selector=lambda tr: tr.nslc_id[:3] == nsl)
-
+        traces = trace.degapper(traces, maxgap=50, maxlap=50)
         keep = []
         for tr in traces:
             if deltat is not None:
