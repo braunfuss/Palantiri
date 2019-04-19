@@ -392,7 +392,6 @@ def processLoop():
                 maxts = []
 
                 for i in networks:
-
                     arrayname = i
                     arrayfolder = os.path.join(Folder['semb'], arrayname)
 
@@ -402,8 +401,6 @@ def processLoop():
                     FilterMeta = ttt.filterStations(Meta, Config, Origin,
                                                     network)
 
-                    if len(FilterMeta) < 3:
-                        continue
 
                     W = XDict[i]
                     refshift = RefDict[i]
@@ -472,7 +469,6 @@ def processLoop():
                     Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
                     switch = filterindex
-
                     tw = times.calculateTimeWindows(mint, maxt, Config,
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
@@ -551,7 +547,6 @@ def processLoop():
                     Logfile.add('Write to file ' + fileName)
 
                     fobjarraynetwork = open(fileName, 'w')
-
                     for i in FilterMeta:
                         fobjarraynetwork.write(('%s %s %s\n') %
                                                (i.getName(), i.lat, i.lon))
