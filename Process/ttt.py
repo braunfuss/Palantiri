@@ -72,8 +72,7 @@ def filterStations(StationList, Config, Origin, network):
 
     for j in network:
         for i in StationList:
-
-            if str(i.getcmpName()[:-2]) == str(j):
+            if str(i.getcmpName()[:-2]) == str(j) or str(i.getcmpName()[:]) == str(j):
                 pos = Location(i.lat, i.lon)
                 sdelta = loc2degrees(origin, pos)
                 if sdelta > minDist and sdelta < maxDist:

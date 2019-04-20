@@ -402,6 +402,7 @@ def processLoop():
                                                     network)
 
 
+
                     W = XDict[i]
                     refshift = RefDict[i]
 

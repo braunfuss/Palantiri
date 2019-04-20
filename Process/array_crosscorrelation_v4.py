@@ -213,7 +213,7 @@ class Xcorr(object):
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location +
                               '.'+tr.channel[:3])
 
-                if tr_name == str(station)[:-2]:
+                if tr_name == str(station)[:-2] or tr_name == str(station)[:]:
                     traces_station = tr
                     es = obspy_compat.to_obspy_trace(traces_station)
                     streamData = station.net + '.' + station.sta + '.'\
@@ -384,9 +384,8 @@ class Xcorr(object):
         for tr in traces:
             tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'
                                     + tr.channel[:3])
-            if tr_name == str(station)[:-2]:
+            if tr_name == str(station)[:-2] or tr_name == str(station)[:]:
                 traces_station = tr
-
                 es = obspy_compat.to_obspy_trace(traces_station)
 
                 st = obspy.Stream()
@@ -447,7 +446,7 @@ class Xcorr(object):
     def searchMeta(self, sname, Metalist):
 
         for i in Metalist:
-            if sname == i.getName()[:-2]:
+            if sname == i.getName()[:-2] or sname == i.getName()[:]:
                 return i
 
     def refTrigger(self, RefWaveform, phase):
