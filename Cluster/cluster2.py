@@ -10,7 +10,7 @@ import time
 import shutil
 import sys
 import math
-
+import time
 sys.path.append('../tools/')
 sys.path.append('../Common/')
 import Basic
@@ -233,24 +233,30 @@ def createRandomInitialCentroids(Config, StationMetaList):
        Logfile.red('Empty station list')
        return initialCentroids
 
+    MAX_TIME_ALLOWED = 5
+    start = time.time()
 
     while len(initialCentroids) != int(Config['maxcluster']):
 
             randomIndex = random.randint(0, len(StationMetaList)-1)
             usedIndexes.append(randomIndex)
 
-            around = checkStationAroundInitialCentroid(StationMetaList[randomIndex],Config,StationMetaList)
+            around = checkStationAroundInitialCentroid(StationMetaList[randomIndex],
+                                                       Config, StationMetaList)
             found = False
 
             if len(initialCentroids) == 0:
                 initialCentroids.append(StationMetaList[randomIndex])
                 found = True
+                start = time.time()
 
             else:
-                t = addOK(StationMetaList[randomIndex],initialCentroids,Config,StationMetaList)
-
+                t = addOK(StationMetaList[randomIndex], initialCentroids,
+                          Config, StationMetaList)
+                if (time.time() - start) > MAX_TIME_ALLOWED:
+                    break
                 if t == 1:
-                    initialCentroids.append(StationMetaList [randomIndex])
+                    initialCentroids.append(StationMetaList[randomIndex])
                     found = True
 
                 else:
@@ -263,7 +269,7 @@ def createRandomInitialCentroids(Config, StationMetaList):
 
     Logfile.red('Initial centroid search finished')
     return initialCentroids
-# -------------------------------------------------------------------------------------------------
+
 
 def stationBelongToCluster(Config, CentroidList, StationMetaList):
 
