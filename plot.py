@@ -168,7 +168,7 @@ def plot_cluster():
 
     for path in sorted(pathlist):
         path_in_str = str(path)
-        data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,2,3))
+        data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,3,4))
         try:
             lons = data[:,2]
             lats = data[:,1]
