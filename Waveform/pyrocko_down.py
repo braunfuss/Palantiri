@@ -512,3 +512,4 @@ except:
     io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
+    model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_cluster.txt'))
