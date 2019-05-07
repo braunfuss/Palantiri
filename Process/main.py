@@ -191,13 +191,17 @@ def processLoop():
 
                 print("run Xcorr")
                 phase = phases[0]
-                W, triggerobject = A.runXcorr(phase)
+                try:
+                    W, triggerobject = A.runXcorr(phase)
+                    XDict[i] = W
+                    RefDict[i] = triggerobject.tdiff
+                    SL[i] = len(network)
+                    for i in range(0, len(FilterMeta)):
+                        refshifts_global.append(triggerobject.tdiff)
+                except:
+                    pass
 
-                XDict[i] = W
-                RefDict[i] = triggerobject.tdiff
-                SL[i] = len(network)
-                for i in range(0, len(FilterMeta)):
-                    refshifts_global.append(triggerobject.tdiff)
+
 
             if sys.version_info.major >= 3:
                 fobjrefshift = open(rp, 'wb')
@@ -402,7 +406,6 @@ def processLoop():
                                                     network)
 
 
-
                     W = XDict[i]
                     refshift = RefDict[i]
 
@@ -474,6 +477,7 @@ def processLoop():
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
+                            print(yes)
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
                         elif cfg.Bool('synthetic_test') is True:

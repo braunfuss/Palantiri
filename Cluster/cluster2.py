@@ -233,7 +233,7 @@ def createRandomInitialCentroids(Config, StationMetaList):
        Logfile.red('Empty station list')
        return initialCentroids
 
-    MAX_TIME_ALLOWED = 5
+    MAX_TIME_ALLOWED = 50
     start = time.time()
 
     while len(initialCentroids) != int(Config['maxcluster']):

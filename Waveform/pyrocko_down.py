@@ -453,7 +453,10 @@ except:
     traces_all_rot = trs_projected
 
 for tr in traces_all:
-    tr.downsample_to(newFreq)
+    try:
+        tr.downsample_to(newFreq)
+    except:
+        pass
 io.save(traces_all, os.path.join(sdspath,'traces.mseed'))
 model.dump_stations(stations_all, os.path.join(sdspath,'stations.txt'))
 io.save(trs_projected_displacement, os.path.join(sdspath,'traces_restituted_rotated_sites.mseed'))
@@ -478,6 +481,15 @@ try:
         tr.downsample_to(newFreq)
     for tr in traces_all_rot_disp:
         tr.downsample_to(newFreq)
+
+    for st in stations_all_disp:
+        for channel in st.channels:
+            if channel.name == 'BHE':
+                channel.name = 'R'
+            if channel.name == 'BHN':
+                channel.name = 'T'
+            if channel.name == 'BHZ':
+                channel.name = 'Z'
     io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
@@ -489,6 +501,14 @@ except:
         tr.downsample_to(newFreq)
     for tr in traces_all_rot_disp:
         tr.downsample_to(newFreq)
+    for st in stations_all_disp:
+        for channel in st.channels:
+            if channel.name == 'BHE':
+                channel.name = 'R'
+            if channel.name == 'BHN':
+                channel.name = 'T'
+            if channel.name == 'BHZ':
+                channel.name = 'Z'
     io.save(traces_all_rot_disp, os.path.join(sdspath,'traces_restituted_rotated.mseed'))
     io.save(traces_all_disp, os.path.join(sdspath,'traces_restituted.mseed'))
     model.dump_stations(stations_all_disp, os.path.join(sdspath,'stations_disp.txt'))
