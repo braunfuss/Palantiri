@@ -234,21 +234,21 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-        if cfg.Bool('combine_all') is True:
+        #if cfg.Bool('combine_all') is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
             # when combing all waveforms/arrays from the world at once(only then)
             # for a single array with polarity issues we recommend fixing polarity.
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
-            tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.diff((tr_org.ydata),
-                                    append=num.min(tr_org.ydata))
-            tr_org.ydata = num.diff((tr_org.ydata),
-                                    append=num.min(tr_org.ydata))
-            tr_org.ydata = num.sqrt(tr_org.ydata**2 + hilbert(tr_org.ydata)**2)
-            tr_org.ydata = num.diff((tr_org.ydata),
-                                    append=num.min(tr_org.ydata))
+            #tr_org.ydata = abs(tr_org.ydata)
+            #tr_org.ydata = num.diff((tr_org.ydata),
+            #                        append=num.min(tr_org.ydata))
+            #tr_org.ydata = num.diff((tr_org.ydata),
+            #                        append=num.min(tr_org.ydata))
+            #tr_org.ydata = num.sqrt(tr_org.ydata**2 + hilbert(tr_org.ydata)**2)
+            #tr_org.ydata = num.diff((tr_org.ydata),
+            #                        append=num.min(tr_org.ydata))
         trs_orgs.append(tr_org)
 
     #trace  = toMatrix(trace_1, minSampleCount)
