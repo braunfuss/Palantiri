@@ -202,7 +202,7 @@ def checkStationAroundInitialCentroid(station, Config, StationMetaList):
 def addOK(station,stationList,Config,MetaList):
 
     cfg  = ConfigObj(dict=Config)
-    minDist  = cfg.Distance('centroidmindistance')
+    minDist  = 0
     minAround = cfg.UInt('minstationaroundinitialcluster')
     t  = 0
 
@@ -212,7 +212,8 @@ def addOK(station,stationList,Config,MetaList):
         if sdelta > minDist:
             aroundcounter = checkStationAroundInitialCentroid(station,Config,MetaList)
 
-            if aroundcounter >= minAround: t = 1
+            if aroundcounter >= minAround:
+                t = 1
             else:
                 t=0
                 return t
@@ -236,9 +237,24 @@ def createRandomInitialCentroids(Config, StationMetaList):
     MAX_TIME_ALLOWED = 50
     start = time.time()
 
-    while len(initialCentroids) != int(Config['maxcluster']):
+    while len(initialCentroids) < int(Config['maxcluster']):
+            dist_centroids = float(Config['centroidmindistance'])
 
             randomIndex = random.randint(0, len(StationMetaList)-1)
+            redraw = True
+            while redraw is True:
+                if randomIndex in usedIndexes:
+                    randomIndex = random.randint(0, len(StationMetaList)-1)
+                else:
+                    if len(usedIndexes) > 2:
+                        for rdx in usedIndexes:
+                            s1 = StationMetaList[randomIndex]
+                            s2 = StationMetaList[rdx]
+                            delta =  loc2degrees(s1, s2)
+                            if delta >= dist_centroids:
+                                redraw = False
+                    else:
+                        redraw = False
             usedIndexes.append(randomIndex)
 
             around = checkStationAroundInitialCentroid(StationMetaList[randomIndex],
@@ -256,8 +272,17 @@ def createRandomInitialCentroids(Config, StationMetaList):
                 if (time.time() - start) > MAX_TIME_ALLOWED:
                     break
                 if t == 1:
-                    initialCentroids.append(StationMetaList[randomIndex])
-                    found = True
+                    if len(usedIndexes) > 1:
+                        for rdx in usedIndexes:
+                            s1 = StationMetaList[randomIndex]
+                            s2 = StationMetaList[rdx]
+                            delta = loc2degrees(s1, s2)
+                            if delta >= dist_centroids:
+                                initialCentroids.append(StationMetaList[randomIndex])
+                                found = True
+                    else:
+                        initialCentroids.append(StationMetaList[randomIndex])
+                        found = True
 
                 else:
                     continue
