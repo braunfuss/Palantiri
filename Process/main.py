@@ -174,7 +174,7 @@ def processLoop():
             SL = {}
             for i in xcorrnetworks:
                 W = {}
-
+                print(i)
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
                 arrayfolder = os.path.join(Folder['semb'], i)
@@ -477,7 +477,6 @@ def processLoop():
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
-                            print(yes)
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
                         elif cfg.Bool('synthetic_test') is True:
