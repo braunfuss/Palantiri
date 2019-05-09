@@ -31,8 +31,8 @@ gcmt = catalog.GlobalCMT()
 tfade_factor = 1.0
 ffade_factors = 0.5, 1.5
 
-ws.g_timeout = 60.
-fdsn.g_timeout = 60.
+ws.g_timeout = 80.
+fdsn.g_timeout = 80.
 
 class starfill(object):
     def __getitem__(self, k):
@@ -51,7 +51,7 @@ def nice_seconds_floor(s):
     return s
 
 
-def get_events(time_range, region=None, catalog=geofon, **kwargs):
+def get_events(time_range, region=None, catalog=geofon, magmin=0., **kwargs):
     if not region:
         return catalog.get_events(time_range, **kwargs)
 
@@ -60,6 +60,7 @@ def get_events(time_range, region=None, catalog=geofon, **kwargs):
         events.extend(
             catalog.get_events(
                 time_range=time_range,
+                magmin=magmin,
                 lonmin=west,
                 lonmax=east,
                 latmin=south,
@@ -87,7 +88,7 @@ aliases = {
 }
 
 
-def get_events_by_name_or_date(event_names_or_dates, catalog=geofon):
+def get_events_by_name_or_date(event_names_or_dates, catalog=geofon, magmin=0.):
     stimes = []
     for sev in event_names_or_dates:
         if sev in aliases:
@@ -109,13 +110,13 @@ def get_events_by_name_or_date(event_names_or_dates, catalog=geofon):
             t = util.str_to_time(stime)
             try:
                 events = get_events(
-                    time_range=(t - 60., t + 60.), catalog=catalog)
+                    time_range=(t - 60., t + 60.), magmin=magmin, catalog=catalog)
                 events.sort(key=lambda ev: abs(ev.time - t))
                 event = events[0]
             except IndexError:
                 logger.info('Nothing found in geofon! Trying gCMT!')
                 events = get_events(
-                    time_range=(t - 60., t + 60.), catalog=gcmt)
+                    time_range=(t - 60., t + 60.), magmin=magmin, catalog=gcmt)
                 events.sort(key=lambda ev: abs(ev.time - t))
                 event = events[0]
             events_out.append(event)
@@ -294,7 +295,7 @@ if __name__ == '__main__':
     parser.add_option(
         '--padding-factor',
         type=float,
-        default=3.0,
+        default=6.0,
         dest='padding_factor',
         help='extend time window on either side, in multiples of 1/<fmin_hz> '
              '(default: 5)')
@@ -354,8 +355,25 @@ if __name__ == '__main__':
         type=int,
         help='number of stations to select initially')
 
-    (options, args) = parser.parse_args(sys.argv[1:])
+    parser.add_option(
+        '--magmin',
+        dest='magmin',
+        metavar='VALUE',
+        default=6.0,
+        type=float,
+        help='minimum magnitude of events')
 
+    parser.add_option(
+        '--minlen',
+        dest='minlen',
+        metavar='VALUE',
+        default=2100.0,
+        type=float,
+        help='minimum length of traces')
+
+    (options, args) = parser.parse_args(sys.argv[1:])
+    magmin = options.magmin
+    minlen = options.minlen
     if len(args) not in (9, 6, 5):
         parser.print_help()
         sys.exit(1)
@@ -419,7 +437,7 @@ if __name__ == '__main__':
 
         if len(args) in (7, 6) and sname_or_date is not None:
             events = get_events_by_name_or_date([sname_or_date],
-                                                catalog=geofon)
+                                                catalog=geofon, magmin=magmin)
             if len(events) == 0:
                 logger.critical('no event found')
                 sys.exit(1)
@@ -1081,12 +1099,11 @@ if __name__ == '__main__':
                         s.add_channel(ch)
                         trss.append(tr)
             if proc:
-                io.save(proc, fn_waveforms)
-                used_stations.append(s)
+                if tr.tmax - tr.tmin >= minlen:
+                    io.save(proc, fn_waveforms)
+                    used_stations.append(s)
 
         gaps = []
-
-
 
     prep_stations = list(used_stations)
     prep_stations_one = []
@@ -1151,6 +1168,8 @@ if __name__ == '__main__':
             for channel in st.channels:
                 if tr.station == st.station and tr.location == st.location and channel.name == tr.channel and tr.location == st.location and tr.network == st.network:
                     gaps.append(st.station)
+
+
     remove = [x for x in gaps if gaps.count(x) > 1]
     for re in remove:
         for st in cluster_stations_ones:
