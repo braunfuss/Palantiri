@@ -153,16 +153,16 @@ class ConfigObj(object):
         return self.Float('winlen')
 
     def step(self):
-        return self.UInt('step')
+        return self.Float('step')
 
     def winlen_f2(self):
         return self.Float('winlen_f2')
 
     def step_f2(self):
-        return self.UInt('step_f2')
+        return self.Float('step_f2')
 
     def cs(self):
-        return self.UInt('compressed_sensing')
+        return self.Bool('compressed_sensing')
 
     def synthetic_test(self):
         return self.Bool('synthetic_test')

@@ -81,7 +81,6 @@ def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
         traces = io.load(EventPath+'/data/traces_rotated.mseed')
 
     obspy_compat.plant()
-
     traces_dict = []
     for tr in traces:
         for il in stationlist:
@@ -113,7 +112,6 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
         traces = io.load(EventPath+'/data/traces_rotated.mseed')
 
     obspy_compat.plant()
-
     traces_dict = []
     for tr in traces:
         for il in stationlist:

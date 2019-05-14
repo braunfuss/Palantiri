@@ -141,10 +141,11 @@ class Config(object):
         return FML
 
     def readpyrockostations(self):
-        stations = model.load_stations(self.eventpath+'/data/stations_disp.txt')
-        MetaL =[]
+        stations = model.load_stations(self.eventpath+'/data/stations_cluster.txt')
+        MetaL = []
         for sl in stations:
-                channel = sl.channels[0]
+            for channel in sl.channels:
+                #channel = sl.channels[0]
                 MetaL.append(Station(str(sl.network),str(sl.station),
                 str(sl.location),str(sl.channels[0])[:3],str(sl.lat),str(sl.lon),
                 str(sl.elevation),str(channel.dip),str(channel.azimuth),

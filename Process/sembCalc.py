@@ -244,11 +244,11 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
     dimX = cfg.dimX()
     dimY = cfg.dimY()
     if switch == 0:
-        winlen = cfg.winlen()
-        step = cfg.step()
+        winlen = cfg.Float('winlen')
+        step = cfg.Float('step')
     if switch == 1:
-        winlen = cfg.winlen_f2()
-        step = cfg.step_f2()
+        winlen = cfg.Float('winlen_f2')
+        step = cfg.Float('step_f2')
 
     latv = []
     lonv = []
@@ -841,27 +841,27 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     dimX = cfg.dimX()
     dimY = cfg.dimY()
     if switch == 0:
-        winlen = cfg.winlen()
-        step = cfg.step()
+        winlen = cfg.Float('winlen')
+        step = cfg.Float('step')
     if switch == 1:
-        winlen = cfg.winlen_f2()
-        step = cfg.step_f2()
+        winlen = cfg.Float('winlen_f2')
+        step = cfg.Float('step_f2')
 
     new_frequence = cfg.newFrequency()
-    forerun = cfg.Int('forerun')
-    duration = cfg.Int('duration')
+    forerun = cfg.Float('forerun')
+    duration = cfg.Float('duration')
 
     nostat = len(WaveformDict)
     traveltimes = {}
     recordstarttime = ''
     minSampleCount = 999999999
 
-    if cfg.UInt('forerun')>0:
-        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration') ) / step )
+    if cfg.Float('forerun')>0:
+        ntimes = float((cfg.Float('forerun') + cfg.Float('duration') ) / step )
     else:
-        ntimes = int((cfg.UInt('duration') ) / step )
-    nsamp = int(winlen * new_frequence)
-    nstep = int(step * new_frequence)
+        ntimes = float((cfg.Float('duration') ) / step )
+    nsamp = float(winlen * new_frequence)
+    nstep = float(step * new_frequence)
 
     obspy_compat.plant()
 
@@ -1243,9 +1243,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if cfg.Bool('array_response') is True:
         from obspy.signal import array_analysis
         from obspy.core import stream
-        ntimesr = int((forerun + duration)/step)
-        nsampr = int(winlen)
-        nstepr = int(step)
+        ntimesr = float((forerun + duration)/step)
+        nsampr = float(winlen)
+        nstepr = float(step)
         sll_x=-3.0
         slm_x=3.0
         sll_y=-3.0
@@ -1516,12 +1516,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     if TTTGrid:
         start_time = time.time()
-        if cfg.UInt('forerun') > 0:
-            ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+        if cfg.Float('forerun') > 0:
+            ntimes = int((cfg.Float('forerun') + cfg.Float('duration'))/step)
         else:
-            ntimes = int((cfg.UInt('duration')) / step)
-        nsamp = int(winlen)
-        nstep = int(step)
+            ntimes = int((cfg.Float('duration')) / step)
+        nsamp = float(winlen)
+        nstep = float(step)
         Gmint = cfg.Int('forerun')
 
         k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,

@@ -650,7 +650,7 @@ class Xcorr(object):
             t = self.Config[alternativeref]
 
         corrDict = {}
-
+        print(StreamDict)
         try:
             ref = StreamDict[t][0].data
         except Exception:

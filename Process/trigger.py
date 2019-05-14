@@ -10,7 +10,7 @@ def writeSembMaxValue(sembmaxvalue,sembmaxlat,sembmaxlon,ntimes,Config,Folder):
     fobjsembmax = open(os.path.join(Folder['semb'],'sembmaxvalue.txt'),'w')
 
     for i in range(ntimes):
-        fobjsembmax.write ('%d %d %.20f %.2f %.2f\n'%(i,i*int(Config['step']),sembmaxvalue[i],sembmaxlat[i],sembmaxlon[i]))
+        fobjsembmax.write ('%d %d %.20f %.2f %.2f\n'%(i,i*float(Config['step']),sembmaxvalue[i],sembmaxlat[i],sembmaxlon[i]))
 
     fobjsembmax.close()
 

@@ -42,6 +42,11 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 evpath = None
 
+def frange(start, stop, step):
+     x = start
+     while x < stop:
+         yield x
+         x += step
 
 def initModule():
 
@@ -91,10 +96,10 @@ def processLoop():
 
     filter = FilterCfg(Config)
     if cfg.UInt('forerun') > 0:
-        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
-                     cfg.UInt('step'))
+        ntimes = int((cfg.Float('forerun') + cfg.Float('duration')) /
+                     cfg.Float('step'))
     else:
-        ntimes = int((cfg.UInt('duration')) / cfg.UInt('step'))
+        ntimes = int((cfg.Float('duration')) / cfg.Float('step'))
     origin = OriginCfg(Origin)
 
     if cfg.colesseo_input() is True:
@@ -143,7 +148,7 @@ def processLoop():
     refshifts_global = []
     newFreq = str(filter.newFrequency())
     xcorrnetworks = cfg.String('networks').split(',')
-
+    print(xcorrnetworks)
     if cfg.Int('xcorr') is 1:
 
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
@@ -178,7 +183,7 @@ def processLoop():
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
                 arrayfolder = os.path.join(Folder['semb'], i)
-
+                print(network)
                 if os.access(arrayfolder, os.F_OK) is False:
                     os.makedirs(arrayfolder)
                 if cfg.pyrocko_download() is True:
@@ -191,15 +196,12 @@ def processLoop():
 
                 print("run Xcorr")
                 phase = phases[0]
-                try:
-                    W, triggerobject = A.runXcorr(phase)
-                    XDict[i] = W
-                    RefDict[i] = triggerobject.tdiff
-                    SL[i] = len(network)
-                    for i in range(0, len(FilterMeta)):
-                        refshifts_global.append(triggerobject.tdiff)
-                except:
-                    pass
+                W, triggerobject = A.runXcorr(phase)
+                XDict[i] = W
+                RefDict[i] = triggerobject.tdiff
+                SL[i] = len(network)
+                for i in range(0, len(FilterMeta)):
+                    refshifts_global.append(triggerobject.tdiff)
 
 
 
@@ -357,11 +359,11 @@ def processLoop():
         Logfile.red('Start processing in %d seconds ' % (i))
 
     wd = Origin['depth']
-    start, stop, step = cfg.String('depths').split(',')
+    start, stop, step_depth = cfg.String('depths').split(',')
 
     start = int(start)
     stop = int(stop)+1
-    step = int(step)
+    step_depth = int(step_depth)
     filters = cfg.String('filters')
     filters = int(filters)
     Logfile.add('working on ' + Config['networks'])
@@ -375,7 +377,7 @@ def processLoop():
         # ==================================loop over filter setups=====
         for filterindex in xrange(0, filters):
             # ==================================loop over depth=======
-            for depthindex in xrange(start, stop, step):
+            for depthindex in xrange(start, stop, step_depth):
 
                 workdepth = float(wd) + depthindex
                 Origin['depth'] = workdepth
@@ -394,7 +396,7 @@ def processLoop():
                 TTTgrids = OrderedDict()
                 mints = []
                 maxts = []
-
+                print(networks)
                 for i in networks:
                     arrayname = i
                     arrayfolder = os.path.join(Folder['semb'], arrayname)
@@ -477,6 +479,7 @@ def processLoop():
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
+
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
                         elif cfg.Bool('synthetic_test') is True:
@@ -515,14 +518,14 @@ def processLoop():
                     TTTGridMap, mint, maxt = pickle.load(f)
                     f.close()
                     if switch == 0:
-                        step = cfg.step()
+                        step = cfg.Float('step')
                     if switch == 1:
-                        step = cfg.step_f2()
+                        step = cfg.Float('step_f2')
                     if cfg.UInt('forerun') > 0:
-                        ntimes = int((cfg.UInt('forerun') +
-                                      cfg.UInt('duration')) / step)
+                        ntimes = int((cfg.Float('forerun') +
+                                      cfg.Float('duration')) / step)
                     else:
-                        ntimes = int((cfg.UInt('duration')) / step)
+                        ntimes = int((cfg.Float('duration')) / step)
                     if cfg.Bool('combine_all') is False:
 
                         if cfg.optimize() is True:
