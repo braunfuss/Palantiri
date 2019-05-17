@@ -208,7 +208,7 @@ class Xcorr(object):
             except Exception:
                 traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
         else:
-            traces = io.load(self.EventPath+'/data/traces.mseed')
+            traces = io.load(self.EventPath+'/data/traces_velocity.mseed')
 
         found = False
         while found is False:

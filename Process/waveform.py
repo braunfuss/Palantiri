@@ -75,13 +75,7 @@ def readWaveforms(stationList, tw, EventPath, Origin):
 
 def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
     Wdict = OrderedDict()
-    if desired is 'Z':
-        try:
-            traces = io.load(EventPath+'/data/traces_rotated.mseed')
-        except Exception:
-            traces = io.load(EventPath+'/data/traces_restituted.mseed')
-    else:
-        traces = io.load(EventPath+'/data/traces_rotated.mseed')
+    traces = io.load(EventPath+'/data/traces_velocity.mseed')
 
     obspy_compat.plant()
     traces_dict = []
