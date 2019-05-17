@@ -141,7 +141,10 @@ class Config(object):
         return FML
 
     def readpyrockostations(self):
-        stations = model.load_stations(self.eventpath+'/data/stations_cluster.txt')
+        try:
+            stations = model.load_stations(self.eventpath+'/data/stations_cluster.txt')
+        except Exception:
+            stations = model.load_stations(self.eventpath+'/data/stations_disp.txt')
         MetaL = []
         for sl in stations:
             for channel in sl.channels:

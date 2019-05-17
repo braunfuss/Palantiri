@@ -1190,55 +1190,58 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def=phase)
 
-    if cfg.Bool('futterman_attenuation') is True and phase is 'S':
-        trs_orgs = []
-        for trace in calcStreamMap.keys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-                mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
-                timing = CakeTiming(
-                   phase_selection='first(S)',
-                   fallback_time=100.)
-                dist = ortho.distance_accurate50m(ev, event1)
-                ray = timing.t(mod,(ev.depth, dist), get_ray=True)
-                zx, xx, tx = ray.zxt_path_subdivided()
-                qs_int = 0.
-                vs_int = 0.
-                vp_int = 0.
-                qp_int = 0.
+    try:
+        if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+            trs_orgs = []
+            for trace in calcStreamMap.keys():
+                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+                    mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
+                    timing = CakeTiming(
+                       phase_selection='first(S)',
+                       fallback_time=100.)
+                    dist = ortho.distance_accurate50m(ev, event1)
+                    ray = timing.t(mod,(ev.depth, dist), get_ray=True)
+                    zx, xx, tx = ray.zxt_path_subdivided()
+                    qs_int = 0.
+                    vs_int = 0.
+                    vp_int = 0.
+                    qp_int = 0.
 
-                zx = zx[0]
-                for z in zx:
-                	mat = mod.material(z)
-                	qs_int = qs_int + mat.qs
-                	vs_int = vs_int + mat.vs
-                	qp_int = qp_int + mat.qp
-                	vp_int = vp_int + mat.vp
-                #dist =ray.x*(d2r*earthradius/km)
-                #dtstar = dist/(qs_int*vs_int) #direct dstar
-                L = 200.e3
-                dtstar = L*(1./vp_int/qp_int - 1./vs_int/qs_int) # differential tstar measurement
-                npts = len(tr_org.ydata)
-                idat = tr_org.ydata
-                ffs = num.fft.rfft(idat)
+                    zx = zx[0]
+                    for z in zx:
+                    	mat = mod.material(z)
+                    	qs_int = qs_int + mat.qs
+                    	vs_int = vs_int + mat.vs
+                    	qp_int = qp_int + mat.qp
+                    	vp_int = vp_int + mat.vp
+                    #dist =ray.x*(d2r*earthradius/km)
+                    #dtstar = dist/(qs_int*vs_int) #direct dstar
+                    L = 200.e3
+                    dtstar = L*(1./vp_int/qp_int - 1./vs_int/qs_int) # differential tstar measurement
+                    npts = len(tr_org.ydata)
+                    idat = tr_org.ydata
+                    ffs = num.fft.rfft(idat)
 
-                ff, IDAT = spectrum(tr_org.ydata, tr_org.deltat)
+                    ff, IDAT = spectrum(tr_org.ydata, tr_org.deltat)
 
-                w = 2*num.pi*ff
-                wabs = abs(w)
+                    w = 2*num.pi*ff
+                    wabs = abs(w)
 
-                w0 = 2*num.pi
-                Aw = num.exp(-0.5*wabs*dtstar)
-                phiw = (1/num.pi)*dtstar*num.log(2*num.pi*num.exp(num.pi)/wabs)
-                # phiw = 0.5 * (wabs/w0)**(-1) * dtstar * 1./num.tan(1*num.pi/2)
-                phiw = num.nan_to_num(phiw)
-                Dwt = Aw * num.exp(-1j*w*phiw)
-                qdat = num.real(num.fft.ifft((IDAT*Dwt)))
-                tr_org.ydata = qdat
-                trs_orgs.append(tr_org)
-        for tracex in calcStreamMap.keys():
-                for trl in trs_orgs:
-                    obs_tr = obspy_compat.to_obspy_trace(trl)
-                    calcStreamMap[tracex] = obs_tr
+                    w0 = 2*num.pi
+                    Aw = num.exp(-0.5*wabs*dtstar)
+                    phiw = (1/num.pi)*dtstar*num.log(2*num.pi*num.exp(num.pi)/wabs)
+                    # phiw = 0.5 * (wabs/w0)**(-1) * dtstar * 1./num.tan(1*num.pi/2)
+                    phiw = num.nan_to_num(phiw)
+                    Dwt = Aw * num.exp(-1j*w*phiw)
+                    qdat = num.real(num.fft.ifft((IDAT*Dwt)))
+                    tr_org.ydata = qdat
+                    trs_orgs.append(tr_org)
+            for tracex in calcStreamMap.keys():
+                    for trl in trs_orgs:
+                        obs_tr = obspy_compat.to_obspy_trace(trl)
+                        calcStreamMap[tracex] = obs_tr
+    except:
+        pass
 
     if cfg.Bool('array_response') is True:
         from obspy.signal import array_analysis

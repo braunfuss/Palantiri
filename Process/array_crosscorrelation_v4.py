@@ -203,7 +203,10 @@ class Xcorr(object):
 
         t2 = UTCDateTime(self.Origin.time)
         if cfg.quantity() == 'displacement':
-            traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
+            try:
+                traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
+            except Exception:
+                traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
         else:
             traces = io.load(self.EventPath+'/data/traces.mseed')
 
@@ -378,7 +381,10 @@ class Xcorr(object):
         obspy_compat.plant()
         cfg = ConfigObj(dict=self.Config)
         if cfg.quantity() == 'displacement':
-            traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
+            try:
+                traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
+            except:
+                traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
         else:
             traces = io.load(self.EventPath+'/data/traces.mseed')
         for tr in traces:
