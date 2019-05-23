@@ -1136,7 +1136,9 @@ if __name__ == '__main__':
 
     traces = io.load(output_dir+"/traces_rotated.mseed")
 
-
+    for tr in traces:
+        tr.ydata = num.diff(tr.ydata)
+    io.save(traces, output_dir+"/traces_velocity.mseed")
     cluster_stations_ones = []
     for st in cluster_stations_one:
         add = 0
