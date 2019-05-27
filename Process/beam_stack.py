@@ -31,6 +31,8 @@ def to_cartesian(items, reflatlon):
         res[item.nsl()[:2]] =(x, y, z)
     return res
 
+def cmp(a, b):
+    return (a > b) - (a < b)
 
 class BeamForming(Object):
     station_c = Station.T(optional=True)
@@ -52,6 +54,7 @@ class BeamForming(Object):
         self.post_normalize = post_normalize
         self.station_c = None
         self.diff_dt_treat = diff_dt_treat
+
 
     def process(self, event, timing, bazi=None, slow=None,  restitute=False, *args, **kwargs):
         '''
@@ -151,9 +154,8 @@ class BeamForming(Object):
             nslc_id = tr.nslc_id
 
             try:
-                stats = filter(lambda x: util.match_nslc(
-                    '%s.%s.%s.*' % x.nsl(), nslc_id), stations)
-
+                stats = list(filter(lambda x: util.match_nslc(
+                    '%s.%s.%s.*' % x.nsl(), nslc_id), stations))
                 stat = stats[0]
             except IndexError:
                 break

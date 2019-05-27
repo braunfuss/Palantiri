@@ -1147,17 +1147,17 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         i = 0
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-        for tracex in calcStreamMapshifted.keys():
-                for trl in shifted_traces:
-                    if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
-                        mod = trl
-                        recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
-                        recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
-                        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
-                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
-                        shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
-                        calcStreamMapshifted[tracex] = shifted_obs_tr
-        calcStreamMap = calcStreamMapshifted
+    #    for tracex in calcStreamMapshifted.keys():
+    #            for trl in shifted_traces:
+    #                if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
+    #                    mod = trl
+    #                    recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
+    #                    recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
+    #                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
+    #                    tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
+    #                    shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
+    #                    calcStreamMapshifted[tracex] = shifted_obs_tr
+    #    calcStreamMap = calcStreamMapshifted
 
     weight = 1.
     if cfg.Bool('weight_by_noise') is True:
