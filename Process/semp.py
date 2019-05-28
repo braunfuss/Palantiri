@@ -251,7 +251,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             #                        append=num.min(tr_org.ydata))
         trs_orgs.append(tr_org)
 
-    #trace  = toMatrix(trace_1, minSampleCount)
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
@@ -267,7 +266,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         sembmax = 0
         sembmaxX = 0
         sembmaxY = 0
-
         for j in range(dimX * dimY):
             semb = 0
             nomin = 0
@@ -282,15 +280,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
-                if cfg.Bool('combine_all') is False:
-
-                    tmin = time+relstart+(i*nstep)-mint#-refshifts
-                    tmax = time+relstart+(i*nstep)-mint+nsamp#-refshifts
-
-                else:
-                    tmin = time+relstart+(i*nstep)-mint#-refshifts[k]
-                    tmax = time+relstart+(i*nstep)-mint+nsamp#-refshifts[k]
-
+                tmin = time+relstart+(i*nstep)-mint-refshifts[k]
+                tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
@@ -326,7 +317,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str(sembmaxY))
 
-    backSemb = backSemb/num.max(num.max(backSemb))
+    backSemb = backSemb#/num.max(num.max(backSemb))
     return abs(backSemb)
 
 

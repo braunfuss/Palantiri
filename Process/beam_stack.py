@@ -72,7 +72,7 @@ class BeamForming(Object):
         network_code = kwargs.get('network', '')
         station_code = kwargs.get('station', 'STK')
         c_station_id =(network_code, station_code)
-
+        t_shifts = []
         lat_c, lon_c, z_c = self.c_lat_lon_z
 
         self.station_c = Station(lat=float(lat_c),
@@ -163,8 +163,8 @@ class BeamForming(Object):
             i = stations.index(stat)
             d = distances[i]
             t_shift = d*self.slow
+            t_shifts.append(t_shift)
             tr.shift(t_shift)
-            #stat = viewer.get_station(tr.nslc_id[:2])
             self.t_shifts[tr.nslc_id[:2]] = t_shift
             if self.normalize_std:
                 tr.ydata = tr.ydata/tr.ydata.std()
@@ -175,21 +175,18 @@ class BeamForming(Object):
                 elif self.diff_dt_treat=='upsample':
                     raise Exception('something went wrong with the upsampling, previously')
             stack_trace.add(tr)
-
-            #tr.set_station('%s_s' % tr.station)
             self.shifted_traces.append(tr)
 
         if self.post_normalize:
             for ch, tr in self.stacked.items():
                 tr.set_ydata(tr.get_ydata()/num_stacked[ch])
-        #for ch, tr in self.stacked.items():
-        #    if num_stacked[ch]>1:
-        #        self.add_trace(tr)
+
         self.save_station(fn_dump_center)
         self.checked_nslc([stack_trace])
         self.save(stack_trace, fn_beam)
-	#trace.snuffle(self.shifted_traces)
-        return self.shifted_traces, stack_trace
+        return self.shifted_traces, stack_trace, t_shifts
+
+
     def checked_nslc(self, trs):
         for tr in trs:
             oldids = tr.nslc_id

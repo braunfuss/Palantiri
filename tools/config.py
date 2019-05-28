@@ -62,7 +62,7 @@ class Event(object):
         self.depth = depth
         self.region = region
         self.time = time
-        self.strike= strike
+        self.strike = strike
         self.dip = dip
         self.rake = rake
 

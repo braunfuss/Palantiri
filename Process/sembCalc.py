@@ -20,21 +20,84 @@ from collections import defaultdict
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
 from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
-km = 1000.
-r2d = 180./math.pi
-d2r = 1./r2d
-earthradius = 6371.*km
 import trigger
 from semp import semblance
 from beam_stack import BeamForming
 from pyrocko.gf import STF
 from stacking import PWS_stack
 import copy
+from collections import OrderedDict
 if sys.version_info.major >= 3:
+    import _pickle as pickle
     xrange = range
+else:
+    import cPickle as pickle
+
 
 logger = logging.getLogger('ARRAY-MP')
+km = 1000.
+r2d = 180./math.pi
+d2r = 1./r2d
+earthradius = 6371.*km
 
+def optimization_timeshifts(*params, **args):
+    maxp = params[1]
+    nostat = params[2]
+    nsamp = params[3]
+    ntimes = params[4]
+    nstep = params[5]
+    dimX = params[6]
+    dimY = params[7]
+    Gmint = params[8]
+    new_frequence = params[9]
+    minSampleCount = params[10]
+    latv = params[11]
+    lonv = params[12]
+    traveltimes = params[13]
+    traces = params[14]
+    calcStreamMap = params[15]
+    timeev = params[16]
+    Config = params[17]
+    Origin = params[18]
+    refshifts = params[19]
+    params = num.asarray(params)
+    parameter = num.ndarray.tolist(params)
+    for j in range(0,len(refshifts)):
+        refshifts[j] = parameter[0][j]
+
+    k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                  new_frequence, minSampleCount, latv, lonv, traveltimes,
+                  traces, calcStreamMap, timeev, Config, Origin, refshifts)
+
+    partSemb = k
+    migpoints = dimX * dimY
+    partSemb = partSemb.reshape(ntimes, migpoints)
+
+    misfit_list = []  # init a list for a all the singular misfits
+    norm_list = []  # init a list for a all the singular normalizations
+    semblance_max = 1/max(max(partSemb))
+    print(semblance_max, refshifts)
+    return semblance_max
+
+
+def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+              new_frequence, minSampleCount, latv, lonv, traveltimes,
+              traces, calcStreamMap, timeev, Config, Origin, refshifts,cfg):
+    import scipy
+    t = time.time()  # start timing
+    # bounds given as (min,max)
+    bounds = []
+    low = -1.*cfg.Float('shift_max')
+    high = cfg.Float('shift_max')
+    for ref in refshifts:
+        bounds.append((low, high))
+    bounds = num.asarray(bounds)
+    result = scipy.optimize.differential_evolution(optimization_timeshifts, maxiter=3, popsize=3, bounds=bounds, args=(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                  new_frequence, minSampleCount, latv, lonv, traveltimes,
+                  traces, calcStreamMap, timeev, Config, Origin, refshifts))
+    elapsed = time.time() - t  # get the processing time
+    print("shifts:", result.x)
+    return result.x
 
 def make_bayesian_weights(narrays, nbootstrap=100,
                           type='bayesian', rstate=None):
@@ -244,11 +307,11 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
     dimX = cfg.dimX()
     dimY = cfg.dimY()
     if switch == 0:
-        winlen = cfg.Float('winlen')
-        step = cfg.Float('step')
+        winlen = cfg.winlen()
+        step = cfg.step()
     if switch == 1:
-        winlen = cfg.Float('winlen_f2')
-        step = cfg.Float('step_f2')
+        winlen = cfg.winlen_f2()
+        step = cfg.step_f2()
 
     latv = []
     lonv = []
@@ -417,26 +480,27 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         tmp = 1
 
         for a in SembList:
-            if cfg.Bool('weight_by_azimuth') is True:
-                tmp *= a*aziweights[c]
-            elif cfg.Bool('bootstrap_array_weights') is True:
-                tmp *= a*bs_weights[boot, c]
-            else:
-                tmp *= a
-            tmp_general *= tmp
-            deltas = []
-            x = array_centers[c][0]
-            y = array_centers[c][1]
+            if num.max(a) != 0:
+                if cfg.Bool('weight_by_azimuth') is True:
+                    tmp *= a*aziweights[c]
+                elif cfg.Bool('bootstrap_array_weights') is True:
+                    tmp *= a*bs_weights[boot, c]
+                else:
+                    tmp *= a
+                tmp_general *= tmp
+                deltas = []
+                x = array_centers[c][0]
+                y = array_centers[c][1]
 
-            for k in range(0, len(latv)):
-                delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k],
-                                                              lonv[k])
-                deltas.append(orthodrome.distance_accurate50m_numpy(x, y,
-                                                                    latv[k],
-                                                                    lonv[k]))
-                if delta <= num.min(deltas):
-                    min_coor[c] = [latv[k], lonv[k]]
-            c =+ 1
+                for k in range(0, len(latv)):
+                    delta = orthodrome.distance_accurate50m_numpy(x, y, latv[k],
+                                                                  lonv[k])
+                    deltas.append(orthodrome.distance_accurate50m_numpy(x, y,
+                                                                        latv[k],
+                                                                        lonv[k]))
+                    if delta <= num.min(deltas):
+                        min_coor[c] = [latv[k], lonv[k]]
+                c =+ 1
 
         array_overlap = num.average(min_coor, axis=0)
         delta_center = orthodrome.distance_accurate50m_numpy(array_overlap[0],
@@ -468,60 +532,61 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
 
         for a, i in enumerate(tmp):
-            logger.info('timestep %d' % a)
-            fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d_%s.ASC'
-                                     % (switch, Origin['depth'], boot, a,
-                                        phase)),
-                        'w')
-            fobj.write('# %s , %s\n' % (d, rcs))
-            fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
-                       % (step, ntimes, winlen))
-            fobj.write('# \n')
-            fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'
-                       % (Latul, gridspacing, dimX))
-            fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'
-                       % (Lonul, gridspacing, dimY))
-            fobj.write('# ddepth: 0 ndepth: 1 \n')
+            if num.max(a) != 0:
+                logger.info('timestep %d' % a)
+                fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d_%s.ASC'
+                                         % (switch, Origin['depth'], boot, a,
+                                            phase)),
+                            'w')
+                fobj.write('# %s , %s\n' % (d, rcs))
+                fobj.write('# step %ds| ntimes %d| winlen: %ds\n'
+                           % (step, ntimes, winlen))
+                fobj.write('# \n')
+                fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'
+                           % (Latul, gridspacing, dimX))
+                fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'
+                           % (Lonul, gridspacing, dimY))
+                fobj.write('# ddepth: 0 ndepth: 1 \n')
 
-            sembmax = 0
-            sembmaxX = 0
-            sembmaxY = 0
-            counter_time = 0
-            uncert = num.std(i)
-            semb_cum =+ i
-            for j in range(migpoints):
+                sembmax = 0
+                sembmaxX = 0
+                sembmaxY = 0
+                counter_time = 0
+                uncert = num.std(i)
+                semb_cum =+ i
+                for j in range(migpoints):
 
-                x = latv[j]
-                y = lonv[j]
+                    x = latv[j]
+                    y = lonv[j]
 
-                if cfg.Bool('norm_all') is True:
-                    semb = i[j]/norm
-                else:
-                    semb = i[j]
-                fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
-                if semb_prior[j] <= semb:
-                    semb_prior[j] = i[j]
-                    times_cum[j] = a
-                    times_max[j] = a*i[j]
-                if semb > sembmax:
-                    sembmax = semb
-                    sembmaxX = x
-                    sembmaxY = y
-                    if times_min[j] == 0:
-                        times_min[j] = a
+                    if cfg.Bool('norm_all') is True:
+                        semb = i[j]/norm
+                    else:
+                        semb = i[j]
+                    fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
+                    if semb_prior[j] <= semb:
+                        semb_prior[j] = i[j]
+                        times_cum[j] = a
+                        times_max[j] = a*i[j]
+                    if semb > sembmax:
+                        sembmax = semb
+                        sembmaxX = x
+                        sembmaxY = y
+                        if times_min[j] == 0:
+                            times_min[j] = a
 
-            delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
-                                                          origin.lon)
-            azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),
-                            float(sembmaxX), float(sembmaxY))
-            semb_prior = copy.copy(i)
-            sembmaxvaluev[a] = sembmax
-            sembmaxlatv[a] = sembmaxX
-            sembmaxlonv[a] = sembmaxY
-            fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n'
-                              % (a*step, sembmaxX, sembmaxY, sembmax, uncert,
-                                 usedarrays, delta, float(azi), delta*119.19))
-            fobj.close()
+                delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
+                                                              origin.lon)
+                azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),
+                                float(sembmaxX), float(sembmaxY))
+                semb_prior = copy.copy(i)
+                sembmaxvaluev[a] = sembmax
+                sembmaxlatv[a] = sembmaxX
+                sembmaxlonv[a] = sembmaxY
+                fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n'
+                                  % (a*step, sembmaxX, sembmaxY, sembmax, uncert,
+                                     usedarrays, delta, float(azi), delta*119.19))
+                fobj.close()
 
         fobjsembmax.close()
 
@@ -827,11 +892,11 @@ def toMatrix(npVector, nColumns):
 
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in, refshifts, phase, bs_weights=None):
+           syn_in, refshifts, phase, rp, bs_weights=None):
     '''
     method for calculating semblance of one station array
     '''
-    Logfile.add('PROCESS %d %s' % (flag,' Enters Semblance Calculation'))
+    Logfile.add('PROCESS %d %s' % (flag, 'Enters Semblance Calculation'))
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' % (Gmint, Gmaxt))
 
     cfg = ConfigObj(dict=Config)
@@ -841,31 +906,30 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     dimX = cfg.dimX()
     dimY = cfg.dimY()
     if switch == 0:
-        winlen = cfg.Float('winlen')
-        step = cfg.Float('step')
+        winlen = cfg.winlen()
+        step = cfg.step()
     if switch == 1:
-        winlen = cfg.Float('winlen_f2')
-        step = cfg.Float('step_f2')
+        winlen = cfg.winlen_f2()
+        step = cfg.step_f2()
 
     new_frequence = cfg.newFrequency()
-    forerun = cfg.Float('forerun')
-    duration = cfg.Float('duration')
+    forerun = cfg.Int('forerun')
+    duration = cfg.Int('duration')
 
     nostat = len(WaveformDict)
     traveltimes = {}
     recordstarttime = ''
     minSampleCount = 999999999
 
-    if cfg.Float('forerun')>0:
-        ntimes = float((cfg.Float('forerun') + cfg.Float('duration') ) / step )
+    if cfg.UInt('forerun') > 0:
+        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
     else:
-        ntimes = float((cfg.Float('duration') ) / step )
-    nsamp = float(winlen * new_frequence)
-    nstep = float(step * new_frequence)
+        ntimes = int((cfg.UInt('duration'))/step)
+    nsamp = int(winlen * new_frequence)
+    nstep = int(step * new_frequence)
 
     obspy_compat.plant()
 
-    ###########################################################################
     calcStreamMap = WaveformDict
 
     stations = []
@@ -901,7 +965,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             lons.append(float(il.lon))
         array_center = [num.mean(lats), num.mean(lons)]
 
-#==================================synthetic BeamForming======================
+# ==================================synthetic BeamForming======================
 
     if cfg.Bool('synthetic_test') is True:
         if sys.version_info.major >= 3:
@@ -1123,6 +1187,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     calcStreamMapshifted[trace] = shifted
         calcStreamMap = calcStreamMapshifted
 
+# ==================================empirical correction======================
+
     if cfg.Bool('shift_by_phase_onset') is True:
         pjoin = os.path.join
         timeev = util.str_to_time(ev.time)
@@ -1140,24 +1206,23 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         event = model.Event(lat=float(ev.lat), lon=float(ev.lon), depth=ev.depth*1000., time=timeev)
         directory = arrayfolder
         bf = BeamForming(stations, traces, normalize=True)
-        shifted_traces = bf.process(event=event,
+        shifted_traces, stack, shifts = bf.process(event=event,
                                     timing=timing,
                                     fn_dump_center=pjoin(directory, 'array_center.pf'),
                                     fn_beam=pjoin(directory, 'beam.mseed'))
+
         i = 0
-        store_id = syn_in.store()
-        engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-    #    for tracex in calcStreamMapshifted.keys():
-    #            for trl in shifted_traces:
-    #                if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
-    #                    mod = trl
-    #                    recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
-    #                    recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
-    #                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
-    #                    tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
-    #                    shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
-    #                    calcStreamMapshifted[tracex] = shifted_obs_tr
-    #    calcStreamMap = calcStreamMapshifted
+        for tracex in calcStreamMapshifted.keys():
+                for trl in shifted_traces:
+                    if str(trl.name()[4:12]) == str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
+                        mod = trl
+                        recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
+                        recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
+                        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
+                        tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
+                        shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
+                        calcStreamMapshifted[tracex] = shifted_obs_tr
+        calcStreamMap = calcStreamMapshifted
 
     weight = 1.
     if cfg.Bool('weight_by_noise') is True:
@@ -1190,65 +1255,62 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def=phase)
 
-    try:
-        if cfg.Bool('futterman_attenuation') is True and phase is 'S':
-            trs_orgs = []
-            for trace in calcStreamMap.keys():
-                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-                    mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
-                    timing = CakeTiming(
-                       phase_selection='first(S)',
-                       fallback_time=100.)
-                    dist = ortho.distance_accurate50m(ev, event1)
-                    ray = timing.t(mod,(ev.depth, dist), get_ray=True)
-                    zx, xx, tx = ray.zxt_path_subdivided()
-                    qs_int = 0.
-                    vs_int = 0.
-                    vp_int = 0.
-                    qp_int = 0.
+    if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+        trs_orgs = []
+        for trace in calcStreamMap.keys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+                mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
+                timing = CakeTiming(
+                   phase_selection='first(S)',
+                   fallback_time=100.)
+                dist = ortho.distance_accurate50m(ev, event1)
+                ray = timing.t(mod,(ev.depth, dist), get_ray=True)
+                zx, xx, tx = ray.zxt_path_subdivided()
+                qs_int = 0.
+                vs_int = 0.
+                vp_int = 0.
+                qp_int = 0.
 
-                    zx = zx[0]
-                    for z in zx:
-                    	mat = mod.material(z)
-                    	qs_int = qs_int + mat.qs
-                    	vs_int = vs_int + mat.vs
-                    	qp_int = qp_int + mat.qp
-                    	vp_int = vp_int + mat.vp
-                    #dist =ray.x*(d2r*earthradius/km)
-                    #dtstar = dist/(qs_int*vs_int) #direct dstar
-                    L = 200.e3
-                    dtstar = L*(1./vp_int/qp_int - 1./vs_int/qs_int) # differential tstar measurement
-                    npts = len(tr_org.ydata)
-                    idat = tr_org.ydata
-                    ffs = num.fft.rfft(idat)
+                zx = zx[0]
+                for z in zx:
+                	mat = mod.material(z)
+                	qs_int = qs_int + mat.qs
+                	vs_int = vs_int + mat.vs
+                	qp_int = qp_int + mat.qp
+                	vp_int = vp_int + mat.vp
+                #dist =ray.x*(d2r*earthradius/km)
+                #dtstar = dist/(qs_int*vs_int) #direct dstar
+                L = 200.e3
+                dtstar = L*(1./vp_int/qp_int - 1./vs_int/qs_int) # differential tstar measurement
+                npts = len(tr_org.ydata)
+                idat = tr_org.ydata
+                ffs = num.fft.rfft(idat)
 
-                    ff, IDAT = spectrum(tr_org.ydata, tr_org.deltat)
+                ff, IDAT = spectrum(tr_org.ydata, tr_org.deltat)
 
-                    w = 2*num.pi*ff
-                    wabs = abs(w)
+                w = 2*num.pi*ff
+                wabs = abs(w)
 
-                    w0 = 2*num.pi
-                    Aw = num.exp(-0.5*wabs*dtstar)
-                    phiw = (1/num.pi)*dtstar*num.log(2*num.pi*num.exp(num.pi)/wabs)
-                    # phiw = 0.5 * (wabs/w0)**(-1) * dtstar * 1./num.tan(1*num.pi/2)
-                    phiw = num.nan_to_num(phiw)
-                    Dwt = Aw * num.exp(-1j*w*phiw)
-                    qdat = num.real(num.fft.ifft((IDAT*Dwt)))
-                    tr_org.ydata = qdat
-                    trs_orgs.append(tr_org)
-            for tracex in calcStreamMap.keys():
-                    for trl in trs_orgs:
-                        obs_tr = obspy_compat.to_obspy_trace(trl)
-                        calcStreamMap[tracex] = obs_tr
-    except:
-        pass
+                w0 = 2*num.pi
+                Aw = num.exp(-0.5*wabs*dtstar)
+                phiw = (1/num.pi)*dtstar*num.log(2*num.pi*num.exp(num.pi)/wabs)
+                # phiw = 0.5 * (wabs/w0)**(-1) * dtstar * 1./num.tan(1*num.pi/2)
+                phiw = num.nan_to_num(phiw)
+                Dwt = Aw * num.exp(-1j*w*phiw)
+                qdat = num.real(num.fft.ifft((IDAT*Dwt)))
+                tr_org.ydata = qdat
+                trs_orgs.append(tr_org)
+        for tracex in calcStreamMap.keys():
+                for trl in trs_orgs:
+                    obs_tr = obspy_compat.to_obspy_trace(trl)
+                    calcStreamMap[tracex] = obs_tr
 
     if cfg.Bool('array_response') is True:
         from obspy.signal import array_analysis
         from obspy.core import stream
-        ntimesr = float((forerun + duration)/step)
-        nsampr = float(winlen)
-        nstepr = float(step)
+        ntimesr = int((forerun + duration)/step)
+        nsampr = int(winlen)
+        nstepr = int(step)
         sll_x=-3.0
         slm_x=3.0
         sll_y=-3.0
@@ -1466,7 +1528,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             except:
                 pass
 
-
 # ==================================semblance calculation=======
 
     t1 = time.time()
@@ -1517,16 +1578,44 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k = backSemb
         TTTGrid = False
 
-    if TTTGrid:
-        start_time = time.time()
-        if cfg.Float('forerun') > 0:
-            ntimes = int((cfg.Float('forerun') + cfg.Float('duration'))/step)
+    if cfg.Bool('correct_shifts_empirical_run') is True:
+
+        trs_orgs = []
+        calcStreamMapshifted = calcStreamMap.copy()
+        for trace in calcStreamMapshifted.keys():
+                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                trs_orgs.append(tr_org)
+        if cfg.UInt('forerun') > 0:
+            ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
         else:
-            ntimes = int((cfg.Float('duration')) / step)
-        nsamp = float(winlen)
-        nstep = float(step)
+            ntimes = int((cfg.UInt('duration')) / step)
+        nsamp = int(winlen)
+        nstep = int(step)
         Gmint = cfg.Int('forerun')
 
+        shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                      new_frequence, minSampleCount, latv, lonv, traveltimes,
+                      traces, calcStreamMap, timeev, Config, Origin, refshifts, cfg)
+
+        RefDict = OrderedDict()
+        print(shifts)
+        for j in range(0,len(trs_orgs)):
+            RefDict[j] = shifts[j]
+        if sys.version_info.major >= 3:
+            fobjrefshift = open(rp, 'wb')
+        else:
+            fobjrefshift = open(rp, 'w')
+        pickle.dump(RefDict, fobjrefshift)
+        fobjrefshift.close()
+    if TTTGrid:
+        start_time = time.time()
+        if cfg.UInt('forerun') > 0:
+            ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+        else:
+            ntimes = int((cfg.UInt('duration')) / step)
+        nsamp = int(winlen)
+        nstep = int(step)
+        Gmint = cfg.Int('forerun')
         k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                       new_frequence, minSampleCount, latv, lonv, traveltimes,
                       traces, calcStreamMap, timeev, Config, Origin, refshifts,

@@ -42,11 +42,6 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 evpath = None
 
-def frange(start, stop, step):
-     x = start
-     while x < stop:
-         yield x
-         x += step
 
 def initModule():
 
@@ -96,10 +91,10 @@ def processLoop():
 
     filter = FilterCfg(Config)
     if cfg.UInt('forerun') > 0:
-        ntimes = int((cfg.Float('forerun') + cfg.Float('duration')) /
-                     cfg.Float('step'))
+        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
+                     cfg.UInt('step'))
     else:
-        ntimes = int((cfg.Float('duration')) / cfg.Float('step'))
+        ntimes = int((cfg.UInt('duration')) / cfg.UInt('step'))
     origin = OriginCfg(Origin)
 
     if cfg.colesseo_input() is True:
@@ -148,11 +143,13 @@ def processLoop():
     refshifts_global = []
     newFreq = str(filter.newFrequency())
     xcorrnetworks = cfg.String('networks').split(',')
-    print(xcorrnetworks)
+
     if cfg.Int('xcorr') is 1:
 
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
+        fobjreferenceshiftnameemp = newFreq + '_' + filtername + 'emp' + '.refpkl'
+        rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp)
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
 
@@ -179,31 +176,24 @@ def processLoop():
             SL = {}
             for i in xcorrnetworks:
                 W = {}
-                print(i)
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
                 arrayfolder = os.path.join(Folder['semb'], i)
-                print(network)
+
                 if os.access(arrayfolder, os.F_OK) is False:
                     os.makedirs(arrayfolder)
                 if cfg.pyrocko_download() is True:
                     # TODO check seperate xcoor nescessity
                     A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
                               arrayfolder)
-                else:
-                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
-                              arrayfolder)
-
                 print("run Xcorr")
                 phase = phases[0]
                 W, triggerobject = A.runXcorr(phase)
                 XDict[i] = W
                 RefDict[i] = triggerobject.tdiff
                 SL[i] = len(network)
-                for i in range(0, len(FilterMeta)):
+                for j in range(0, len(FilterMeta)):
                     refshifts_global.append(triggerobject.tdiff)
-
-
 
             if sys.version_info.major >= 3:
                 fobjrefshift = open(rp, 'wb')
@@ -222,6 +212,8 @@ def processLoop():
     else:
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
+        fobjreferenceshiftnameemp = newFreq + '_' + filtername + 'emp' + '.refpkl'
+        rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp)
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
         refshift = 0
@@ -241,12 +233,12 @@ def processLoop():
             XDict = pickle.load(x)
 
             for i in xcorrnetworks:
-                SL[i] = len(Config[i].split('|'))
+                SL[i] = len(Config[j].split('|'))
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
                 RefDict[i] = refshift
 
-                for i in range(0, len(FilterMeta)):
+                for j in range(0, len(FilterMeta)):
                     refshifts_global.append(refshift)
         else:
             SL = {}
@@ -271,10 +263,10 @@ def processLoop():
                 phase = phases[0]
                 W, triggerobject = A.runXcorr_dummy(phase)
 
-                XDict[i] = W
-                RefDict[i] = refshift
-                SL[i] = len(network)
-                for i in range(0, len(FilterMeta)):
+                XDict[j] = W
+                RefDict[j] = refshift
+                SL[j] = len(network)
+                for j in range(0, len(FilterMeta)):
                     refshifts_global.append(refshift)
 
             if sys.version_info.major >= 3:
@@ -292,13 +284,13 @@ def processLoop():
             output.close()
 
     if sys.version_info.major >= 3:
-        for i in sorted(XDict.keys()):
+        for j in sorted(XDict.keys()):
             Logfile.red('Array %s has %3d of %3d Stations left' %
-                        (i, len(XDict[i]), SL[i]))
+                        (j, len(XDict[j]), SL[j]))
     else:
-        for i in sorted(XDict.keys()):
+        for j in sorted(XDict.keys()):
             Logfile.red('Array %s has %3d of %3d Stations left' %
-                        (i, len(XDict[i]), SL[i]))
+                        (j, len(XDict[j]), SL[j]))
     while True:
         if sys.version_info.major >= 3:
             nnl = input("please enter your choice: ")
@@ -347,23 +339,23 @@ def processLoop():
                     isOk = False
                     break
             if not isOk:
-                continue   # Illegal network : input again
+                continue
 
             Logfile.add('This networks will be used for processing: %s'
                         % (nnl))
             Config['networks'] = nnl
             break
 
-    for i in range(3, 0, -1):
+    for j in range(3, 0, -1):
         time.sleep(1)
-        Logfile.red('Start processing in %d seconds ' % (i))
+        Logfile.red('Start processing in %d seconds ' % (j))
 
     wd = Origin['depth']
-    start, stop, step_depth = cfg.String('depths').split(',')
+    start, stop, step = cfg.String('depths').split(',')
 
     start = int(start)
     stop = int(stop)+1
-    step_depth = int(step_depth)
+    step_depth = int(step)
     filters = cfg.String('filters')
     filters = int(filters)
     Logfile.add('working on ' + Config['networks'])
@@ -396,7 +388,7 @@ def processLoop():
                 TTTgrids = OrderedDict()
                 mints = []
                 maxts = []
-                print(networks)
+                refshifts = []
                 for i in networks:
                     arrayname = i
                     arrayfolder = os.path.join(Folder['semb'], arrayname)
@@ -407,10 +399,22 @@ def processLoop():
                     FilterMeta = ttt.filterStations(Meta, Config, Origin,
                                                     network)
 
-
                     W = XDict[i]
                     refshift = RefDict[i]
-
+                    for j in range(0, len(FilterMeta)):
+                        if cfg.correct_shifts() is False:
+                            refshift = refshift*0.
+                        refshifts.append(refshift)
+                    if cfg.Bool('correct_shifts_empirical') is True:
+                        if sys.version_info.major >= 3:
+                            f = open(rpe+str(arrayname), 'rb')
+                        else:
+                            f = open(rpe+str(arrayname))
+                        RefDict_empirical = pickle.load(f)
+                        refshifts = RefDict_empirical 
+                        for j in range(0, len(FilterMeta)):
+                            if cfg.correct_shifts() is False:
+                                refshifts[j] = refshifts[j]*0.
                     FilterMeta = cmpFilterMetavsXCORR(W, FilterMeta)
 
                     Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
@@ -479,7 +483,6 @@ def processLoop():
                                                     ev, switch)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
-
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
                         elif cfg.Bool('synthetic_test') is True:
@@ -518,14 +521,14 @@ def processLoop():
                     TTTGridMap, mint, maxt = pickle.load(f)
                     f.close()
                     if switch == 0:
-                        step = cfg.Float('step')
+                        step = cfg.step()
                     if switch == 1:
-                        step = cfg.Float('step_f2')
+                        step = cfg.step_f2()
                     if cfg.UInt('forerun') > 0:
-                        ntimes = int((cfg.Float('forerun') +
-                                      cfg.Float('duration')) / step)
+                        ntimes = int((cfg.UInt('forerun') +
+                                      cfg.UInt('duration')) / step)
                     else:
-                        ntimes = int((cfg.Float('duration')) / step)
+                        ntimes = int((cfg.UInt('duration')) / step)
                     if cfg.Bool('combine_all') is False:
 
                         if cfg.optimize() is True:
@@ -534,11 +537,10 @@ def processLoop():
                                         ntimes, switch, ev, arrayfolder,
                                         syn_in)
                         else:
-
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMeta, mint, maxt,
                                 TTTGridMap, Folder, Origin, ntimes, switch, ev,
-                                arrayfolder, syn_in, refshift, phase)
+                                arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -604,7 +606,8 @@ def processLoop():
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
-                            ev, arrayfolder, syn_in, refshifts_global, phase)
+                            ev, arrayfolder, syn_in, refshifts_global, phase,
+                            rpe+str(arrayname))
                         ASL.append(arraySemb)
                         weights.append(weight)
                         array_centers.append(array_center)
@@ -632,7 +635,7 @@ def processLoop():
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
-                                phase, bs_weights=ws)
+                                phase, rpe+str(arrayname), bs_weights=ws)
 
                             ASL.append(arraySemb)
                             weights.append(weight)

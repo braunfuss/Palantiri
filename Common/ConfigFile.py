@@ -233,6 +233,16 @@ class ConfigObj(object):
     def weight_by_azimuth(self):
         return self.Bool('weight_by_azimuth')
 
+    def correct_shifts(self):
+        return self.Bool('correct_shifts')
+
+    def correct_shifts_empirical(self):
+        return self.Bool('correct_shifts_empirical')
+
+    def correct_shifts_empirical_run(self):
+        return self.Bool('correct_shifts_empirical_run')
+
+
     def _error0(self, msg):
 
         Logfile.error(msg)
