@@ -73,15 +73,14 @@ def initModule():
 
 def processLoop():
 
-    # ==================================get meta info========================
     C = config.Config(evpath)
     Origin = C.parseConfig('origin')
-
+    flag_rpe = False
 
     try:
         Syn_in = C.parseConfig('syn')
         syn_in = SynthCfg(Syn_in)
-    except Exception:
+    except TypeError:
         pass
     Config = C.parseConfig('config')
 
@@ -602,10 +601,11 @@ def processLoop():
                     if cfg.Bool('combine_all') is False:
 
                         if cfg.optimize() is True:
-                            optim.solve(counter, Config, Wdf, FilterMeta, mint,
-                                        maxt, TTTGridMap, Folder, Origin,
-                                        ntimes, switch, ev, arrayfolder,
-                                        syn_in)
+                            optim.solve(counter, Config, Wdf, FilterMeta,
+                                        mint, maxt, TTTGridMap, Folder,
+                                        Origin, ntimes, switch, ev,
+                                        arrayfolder, syn_in, refshifts, phase,
+                                        rpe+str(arrayname), flag_rpe)
                         else:
                             if cfg.Bool('correct_shifts_empirical') is True:
                                 if cfg.Bool('correct_shifts_empirical_run') is True:
