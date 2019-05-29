@@ -41,14 +41,21 @@ def start(config):
     intern = Intern()
 
     if sys.argv[1] == 'process':
-        intern.checkProgramParameter(3, 3)
+        intern.checkProgramParameter(3, 4)
 
         path = Globals.EventDir()
-        at = os.path.join(os.getcwd(), 'Process', 'main.py')
-        workDir = [path, 'tmp2', 'process']
-        workDir = ['tmpProcess']
-        cmd = sys.executable + ' ' + at + ' -f ' + path
-
+        path_emp = Globals.EventDir_emp()
+        try:
+            path_emp = Globals.EventDir_emp()
+            at = os.path.join(os.getcwd(), 'Process', 'main.py')
+            workDir = [path, 'tmp2', 'process']
+            workDir = ['tmpProcess']
+            cmd = sys.executable + ' ' + at + ' -f ' + path + ' -e ' + path_emp
+        except IndexError:
+            at = os.path.join(os.getcwd(), 'Process', 'main.py')
+            workDir = [path, 'tmp2', 'process']
+            workDir = ['tmpProcess']
+            cmd = sys.executable + ' ' + at + ' -f ' + path
     else:
         return False
 

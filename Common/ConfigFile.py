@@ -137,6 +137,12 @@ class ConfigObj(object):
     def depth(self):
         return self.Float('depth')
 
+    def duration_emp(self):
+        return self.Float('duration_emp')
+
+    def forerun_emp(self):
+        return self.Float('forerun_emp')
+
     def inspect_semb(self):
         return self.Bool('inspect_semb')
 
@@ -148,6 +154,18 @@ class ConfigObj(object):
 
     def dimY(self):
         return self.UInt('dimy')
+
+    def dimX_emp(self):
+        return self.UInt('dimx_emp')
+
+    def dimY_emp(self):
+        return self.UInt('dimy_emp')
+
+    def winlen_emp(self):
+        return self.Float('winlen_emp')
+
+    def step_emp(self):
+        return self.Float('step_emp')
 
     def winlen(self):
         return self.Float('winlen')

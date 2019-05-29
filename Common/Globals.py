@@ -15,8 +15,8 @@ ProtFileDir = None                        # directory for protocol files
 EVENTS = 'events'
 
 _eventDir = None
+_eventDir_emp = None
 
-# -------------------------------------------------------------------------------------------------
 
 def setEventDir(s):
     global _eventDir
@@ -24,20 +24,31 @@ def setEventDir(s):
     _eventDir = s
     return s
 
+def setEventDir_emp(s):
+    global _eventDir_emp
+
+    _eventDir_emp = s
+    return s
 
 def EventDir():                          # event directory
     global _eventDir
 
-    if _eventDir == None:
+    s = os.path.join(os.getcwd(), EVENTS)
+    n = len(sys.argv)
+
+    eventDir = os.path.join(s, sys.argv[2])
+
+    return eventDir
 
 
-       s = os.path.join(os.getcwd(), EVENTS)
-       n = len(sys.argv)
+def EventDir_emp():                          # event directory
+    global _eventDir_emp
 
-       if   n < 3 : _eventDir = s
-       else:        _eventDir = os.path.join(s, sys.argv[2])
+    s = os.path.join(os.getcwd(), EVENTS)
+    n = len(sys.argv)
+    _eventDir_emp  = os.path.join(s, sys.argv[3])
 
-    return _eventDir
+    return _eventDir_emp
 
 def TempFileName(name):
 

@@ -892,7 +892,7 @@ def toMatrix(npVector, nColumns):
 
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in, refshifts, phase, rp, bs_weights=None):
+           syn_in, refshifts, phase, rp, flag_rpe, bs_weights=None):
     '''
     method for calculating semblance of one station array
     '''
@@ -903,8 +903,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     cfg_f = FilterCfg(Config)
 
     timeev = util.str_to_time(ev.time)
-    dimX = cfg.dimX()
-    dimY = cfg.dimY()
+    if flag_rpe is True:
+        dimX = cfg.dimX_emp()
+        dimY = cfg.dimY_emp()
+    else:
+        dimX = cfg.dimX()
+        dimY = cfg.dimY()
     if switch == 0:
         winlen = cfg.winlen()
         step = cfg.step()
@@ -1578,20 +1582,22 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k = backSemb
         TTTGrid = False
 
-    if cfg.Bool('correct_shifts_empirical_run') is True:
+    if cfg.Bool('correct_shifts_empirical_run') is True and flag_rpe is True:
 
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.keys():
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
                 trs_orgs.append(tr_org)
+        winlen_emp = cfg.winlen_emp()
+        step_emp = cfg.step_emp()
         if cfg.UInt('forerun') > 0:
-            ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+            ntimes = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step)
         else:
-            ntimes = int((cfg.UInt('duration')) / step)
-        nsamp = int(winlen)
-        nstep = int(step)
-        Gmint = cfg.Int('forerun')
+            ntimes = int((cfg.UInt('duration_emp')) / step)
+        nsamp = int(winlen_emp)
+        nstep = int(step_emp)
+        Gmint = cfg.Int('forerun_emp')
 
         shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                       new_frequence, minSampleCount, latv, lonv, traveltimes,

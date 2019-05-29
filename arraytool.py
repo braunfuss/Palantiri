@@ -95,14 +95,6 @@ def parseArguments(args):
     if sys.argv[1] == 'list':
         listEvents()
 
-    elif sys.argv[1] == 'process':
-
-        path = os.path.join(os.getcwd(),'events',sys.argv[2])
-        at   = os.path.join(os.getcwd(), dir,      'main.py')
-        cmd  = sys.executable+' '+at+' -f '+ path
-
-        os.chdir (os.path.join(os.getcwd(),"tools"))
-        os.system(cmd)
 
     elif sys.argv[1] == 'create':
 

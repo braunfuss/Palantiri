@@ -136,8 +136,12 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
                phase):
 
     cfg = ConfigObj(dict=Config)
-    dimX = cfg.Int('dimx')
-    dimY = cfg.Int('dimy')
+    if cfg.Bool('correct_shifts_empirical') is True:
+        dimX = cfg.Int('dimx_emp')
+        dimY = cfg.Int('dimy_emp')
+    else:
+        dimX = cfg.Int('dimx')
+        dimY = cfg.Int('dimy')
     gridspacing = cfg.Float('gridspacing')
     traveltime_model = cfg.Str('traveltime_model')
 
