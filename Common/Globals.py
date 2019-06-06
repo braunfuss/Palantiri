@@ -46,8 +46,10 @@ def EventDir_emp():                          # event directory
 
     s = os.path.join(os.getcwd(), EVENTS)
     n = len(sys.argv)
-    _eventDir_emp  = os.path.join(s, sys.argv[3])
-
+    try:
+        _eventDir_emp  = os.path.join(s, sys.argv[3])
+    except IndexError:
+        _eventDir_emp  = None
     return _eventDir_emp
 
 def TempFileName(name):

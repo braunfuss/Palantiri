@@ -55,16 +55,12 @@ def initModule():
                       help="evpath_emp")
 
     (options, args) = parser.parse_args()
-    print(options)
     if options.evpath is None:
         parser.error("non existing eventpath")
         return False
-    if options.evpath_emp is None:
-        parser.error("non existing eventpath_emp")
-        return False
+
     evpath = options.evpath
     evpath_emp = options.evpath_emp
-    print(evpath, evpath_emp)
     Globals.setEventDir(evpath)
     Globals.setEventDir_emp(evpath_emp)
 
@@ -101,10 +97,10 @@ def processLoop():
 
     filter = FilterCfg(Config)
     if cfg.UInt('forerun') > 0:
-        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
-                     cfg.UInt('step'))
+        ntimes = float((cfg.UInt('forerun') + cfg.UInt('duration')) /
+                        cfg.Float('step'))
     else:
-        ntimes = int((cfg.UInt('duration')) / cfg.UInt('step'))
+        ntimes = float((cfg.UInt('duration')) / cfg.Float('step'))
     origin = OriginCfg(Origin)
 
     if cfg.colesseo_input() is True:

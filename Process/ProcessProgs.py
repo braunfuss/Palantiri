@@ -51,7 +51,7 @@ def start(config):
             workDir = [path, 'tmp2', 'process']
             workDir = ['tmpProcess']
             cmd = sys.executable + ' ' + at + ' -f ' + path + ' -e ' + path_emp
-        except IndexError:
+        except Exception:
             at = os.path.join(os.getcwd(), 'Process', 'main.py')
             workDir = [path, 'tmp2', 'process']
             workDir = ['tmpProcess']
