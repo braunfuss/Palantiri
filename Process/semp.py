@@ -234,21 +234,15 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-        #if cfg.Bool('combine_all') is True:
+        if cfg.Bool('combine_all') is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
             # when combing all waveforms/arrays from the world at once(only then)
             # for a single array with polarity issues we recommend fixing polarity.
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
-            #tr_org.ydata = abs(tr_org.ydata)
-            #tr_org.ydata = num.diff((tr_org.ydata),
-            #                        append=num.min(tr_org.ydata))
-            #tr_org.ydata = num.diff((tr_org.ydata),
-            #                        append=num.min(tr_org.ydata))
-            #tr_org.ydata = num.sqrt(tr_org.ydata**2 + hilbert(tr_org.ydata)**2)
-            #tr_org.ydata = num.diff((tr_org.ydata),
-            #                        append=num.min(tr_org.ydata))
+            tr_org.ydata = abs(tr_org.ydata)
+            tr_org.ydata = num.diff(tr_org.ydata)
         trs_orgs.append(tr_org)
 
     traveltime = []
@@ -261,6 +255,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     Basic.writeVector(latv_txt,   latv, '%e')
     Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
+    if nsamp == 0:
+        nsamp = 1
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
     for i in range(ntimes):
         sembmax = 0
@@ -317,7 +313,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str(sembmaxY))
 
-    backSemb = backSemb#/num.max(num.max(backSemb))
+    backSemb = backSemb
     return abs(backSemb)
 
 

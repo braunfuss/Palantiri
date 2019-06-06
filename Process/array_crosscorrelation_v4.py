@@ -386,7 +386,7 @@ class Xcorr(object):
             except:
                 traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
         else:
-            traces = io.load(self.EventPath+'/data/traces.mseed')
+            traces = io.load(self.EventPath+'/data/traces_velocity.mseed')
         for tr in traces:
             tr_name = str(tr.network+'.'+tr.station+'.'+tr.location+'.'
                                     + tr.channel[:3])

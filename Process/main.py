@@ -97,10 +97,10 @@ def processLoop():
 
     filter = FilterCfg(Config)
     if cfg.UInt('forerun') > 0:
-        ntimes = float((cfg.UInt('forerun') + cfg.UInt('duration')) /
+        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
                         cfg.Float('step'))
     else:
-        ntimes = float((cfg.UInt('duration')) / cfg.Float('step'))
+        ntimes = int((cfg.UInt('duration')) / cfg.Float('step'))
     origin = OriginCfg(Origin)
 
     if cfg.colesseo_input() is True:

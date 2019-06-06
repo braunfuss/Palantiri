@@ -76,7 +76,6 @@ def optimization_timeshifts(*params, **args):
     misfit_list = []  # init a list for a all the singular misfits
     norm_list = []  # init a list for a all the singular normalizations
     semblance_max = 1/max(max(partSemb))
-    print(semblance_max, refshifts)
     return semblance_max
 
 
@@ -926,11 +925,11 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     minSampleCount = 999999999
 
     if cfg.UInt('forerun') > 0:
-        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+        ntimes = float((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
     else:
-        ntimes = int((cfg.UInt('duration'))/step)
-    nsamp = int(winlen * new_frequence)
-    nstep = int(step * new_frequence)
+        ntimes = float((cfg.UInt('duration'))/step)
+    nsamp = float(winlen * new_frequence)
+    nstep = float(step * new_frequence)
 
     obspy_compat.plant()
 
@@ -1596,7 +1595,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         else:
             ntimes = int((cfg.UInt('duration_emp')) / step)
         nsamp = int(winlen_emp)
-        nstep = int(step_emp)
+        nstep = float(step_emp)
         Gmint = cfg.Int('forerun_emp')
 
         shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
@@ -1604,7 +1603,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                       traces, calcStreamMap, timeev, Config, Origin, refshifts, cfg)
 
         RefDict = OrderedDict()
-        print(shifts)
         for j in range(0,len(trs_orgs)):
             RefDict[j] = shifts[j]
         if sys.version_info.major >= 3:
@@ -1620,7 +1618,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         else:
             ntimes = int((cfg.UInt('duration')) / step)
         nsamp = int(winlen)
-        nstep = int(step)
+        nstep = float(step)
         Gmint = cfg.Int('forerun')
         k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                       new_frequence, minSampleCount, latv, lonv, traveltimes,
