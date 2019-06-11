@@ -1626,7 +1626,9 @@ def plot_semb():
 
         plt.plot(l, astf_data, 'k')
         plt.ylabel('Beampower', fontsize=22)
-
+        if sys.argv[2]:
+            scardec = num.loadtxt(sys.argv[1], skiprows=2)
+            plt.plot(scardec[:,0], scardec[:,1])
         plt.xlabel('Time [s]', fontsize=22)
 
         plt.savefig(rel+'semblance_1.pdf', bbox_inches='tight')
