@@ -75,7 +75,13 @@ def optimization_timeshifts(*params, **args):
 
     misfit_list = []  # init a list for a all the singular misfits
     norm_list = []  # init a list for a all the singular normalizations
-    semblance_max = 1/max(max(partSemb))
+    semblance_max = 0.
+    for a in range(0, ntimes):
+        semb_max = max(partSemb[a])
+        if semb_max > semblance_max:
+            semblance_max = semb_max
+    semblance_max = 1./semblance_max
+
     return semblance_max
 
 
@@ -902,6 +908,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     cfg_f = FilterCfg(Config)
 
     timeev = util.str_to_time(ev.time)
+    print(ev.time)
+    print(jasdsd)
     if flag_rpe is True:
         dimX = cfg.dimX_emp()
         dimY = cfg.dimY_emp()
@@ -1591,9 +1599,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         winlen_emp = cfg.winlen_emp()
         step_emp = cfg.step_emp()
         if cfg.UInt('forerun') > 0:
-            ntimes = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step)
+            ntimes = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
         else:
-            ntimes = int((cfg.UInt('duration_emp')) / step)
+            ntimes = int((cfg.UInt('duration_emp')) / step_emp)
         nsamp = int(winlen_emp)
         nstep = float(step_emp)
         Gmint = cfg.Int('forerun_emp')

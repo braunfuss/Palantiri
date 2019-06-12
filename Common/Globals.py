@@ -74,17 +74,13 @@ def checkNrOfParameter(nMin, nMax):
     if len(sys.argv) > nMax: _error('Too many parameters')
 
 
-# Exists event directory ?
 
 def checkEventDirParameter(param):
 
     s1  = os.path.basename(param)
     dir = os.path.join(os.getcwd(), EVENTS, s1)
-    #print 'dir=', dir
-
     return os.path.isdir(dir)
 
-# -------------------------------------------------------------------------------------------------
 
 def init(configFileName = None):
 
