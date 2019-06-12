@@ -337,7 +337,7 @@ if __name__ == '__main__':
         '--instrument-codes',
         dest='priority_instrument_code',
         metavar='H,L,G,...',
-        default='H,L',
+        default='H',
         help='select and prioritize instrument codes (default: %default)')
 
     parser.add_option(
@@ -1010,7 +1010,7 @@ if __name__ == '__main__':
                     rest_tr = tr.transfer(tfade, ftap, response, invert=True)
                     rest_traces_a.append(rest_tr)
 
-                except (trace.TraceTooShort, trace.NoData):
+                except (trace.TraceTooShort, trace.NoData, trace.InfiniteResponse):
                     failure = 'trace too short'
 
             if failure:
