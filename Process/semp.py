@@ -276,8 +276,12 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
-                tmin = time+relstart+(i*nstep)-mint-refshifts[k]
-                tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
+                try:
+                    tmin = time+relstart+(i*nstep)-mint-refshifts[k]
+                    tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
+                except IndexError:
+                    tmin = time+relstart+(i*nstep)-mint
+                    tmax = time+relstart+(i*nstep)-mint+nsamp
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
