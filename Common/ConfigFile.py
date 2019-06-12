@@ -257,6 +257,12 @@ class ConfigObj(object):
     def correct_shifts_empirical(self):
         return self.Bool('correct_shifts_empirical')
 
+    def correct_shifts_empirical(self):
+        return self.Bool('correct_shifts_empirical')
+
+    def correct_shifts_empirical_manual(self):
+        return self.Bool('correct_shifts_empirical_manual')
+
     def correct_shifts_empirical_run(self):
         return self.Bool('correct_shifts_empirical_run')
 

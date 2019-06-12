@@ -1587,7 +1587,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k = backSemb
         TTTGrid = False
 
-    if cfg.Bool('correct_shifts_empirical_run') is True and flag_rpe is True:
+    if cfg.Bool('correct_shifts_empirical_run') is True and cfg.Bool('correct_shifts_empirical_manual') is False and flag_rpe is True:
 
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
@@ -1618,19 +1618,55 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         pickle.dump(RefDict, fobjrefshift)
         fobjrefshift.close()
     if TTTGrid:
-        start_time = time.time()
-        if cfg.UInt('forerun') > 0:
-            ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+        if cfg.Bool('correct_shifts_empirical_run') is True and cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
+            start_time = time.time()
+            if cfg.UInt('forerun') > 0:
+                ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+            else:
+                ntimes = int((cfg.UInt('duration')) / step)
+            nsamp = int(winlen)
+            nstep = float(step)
+            Gmint = cfg.Int('forerun')
+            max_shifts = cfg.Float('shift_max')
+            for shft in np.arange(-max_shifts,max_shifts,0.01):
+                k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                              new_frequence, minSampleCount, latv, lonv, traveltimes,
+                              traces, calcStreamMap, timeev+shft, Config, Origin, refshifts,
+                              bs_weights=bs_weights)
+                partSemb = k
+                partSemb = partSemb.reshape(ntimes, migpoints)
+                semblance_max = 0.
+                for a in range(0, ntimes):
+                    semb_max = max(partSemb[a])
+                    if semb_max > semblance_max:
+                        semblance_max = semb_max
+                        array_shift = shft
+
+            RefDict = OrderedDict()
+            for j in range(0,len(trs_orgs)):
+                RefDict[j] = shft
+            if sys.version_info.major >= 3:
+                fobjrefshift = open(rp, 'wb')
+            else:
+                fobjrefshift = open(rp, 'w')
+            pickle.dump(RefDict, fobjrefshift)
+            fobjrefshift.close()
+                print("--- %s seconds ---" % (time.time() - start_time))
+
         else:
-            ntimes = int((cfg.UInt('duration')) / step)
-        nsamp = int(winlen)
-        nstep = float(step)
-        Gmint = cfg.Int('forerun')
-        k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
-                      new_frequence, minSampleCount, latv, lonv, traveltimes,
-                      traces, calcStreamMap, timeev, Config, Origin, refshifts,
-                      bs_weights=bs_weights)
-        print("--- %s seconds ---" % (time.time() - start_time))
+            start_time = time.time()
+            if cfg.UInt('forerun') > 0:
+                ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+            else:
+                ntimes = int((cfg.UInt('duration')) / step)
+            nsamp = int(winlen)
+            nstep = float(step)
+            Gmint = cfg.Int('forerun')
+            k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                          new_frequence, minSampleCount, latv, lonv, traveltimes,
+                          traces, calcStreamMap, timeev, Config, Origin, refshifts,
+                          bs_weights=bs_weights)
+            print("--- %s seconds ---" % (time.time() - start_time))
 
     t2 = time.time()
 
