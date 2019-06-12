@@ -84,8 +84,9 @@ class Config(object):
     initialize with eventpath
     '''
 
-    def __init__(self, eventpath):
+    def __init__(self, eventpath, eventpath_emp=None):
         self.eventpath = eventpath
+        self.eventpath_emp = eventpath_emp
 
     def parseConfig(self,suffix):
         '''
@@ -93,9 +94,11 @@ class Config(object):
         return Configdictionary
         '''
         cDict = {}
-        files = glob.glob(os.path.join(self.eventpath, '*.'+suffix))
+        if suffix == "origin_emp":
+            files = glob.glob(os.path.join(self.eventpath_emp, '*.'+'origin'))
+        else:
+            files = glob.glob(os.path.join(self.eventpath, '*.'+suffix))
         parser = SafeConfigParser()
-
         parser.read(files[0])
 
         for section_name in parser.sections():

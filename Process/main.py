@@ -63,13 +63,12 @@ def initModule():
     evpath_emp = options.evpath_emp
     Globals.setEventDir(evpath)
     Globals.setEventDir_emp(evpath_emp)
-
     return True
 
 
 def processLoop():
 
-    C = config.Config(evpath)
+    C = config.Config(evpath, eventpath_emp=evpath_emp)
     Origin = C.parseConfig('origin')
     flag_rpe = False
 
@@ -604,7 +603,14 @@ def processLoop():
                                         rpe+str(arrayname), flag_rpe)
                         else:
                             if cfg.Bool('correct_shifts_empirical') is True:
+
                                 if cfg.Bool('correct_shifts_empirical_run') is True:
+                                    winlen_emp = cfg.winlen_emp()
+                                    step_emp = cfg.step_emp()
+                                    if cfg.UInt('forerun') > 0:
+                                        ntimes_emp = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
+                                    else:
+                                        ntimes_emp = int((cfg.UInt('duration_emp')) / step_emp)
                                     f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                              % (phase, ttt_model, ev_emp.time, arrayname,
                                                 workdepth), 'rb')
@@ -612,8 +618,8 @@ def processLoop():
                                     f.close()
                                     flag_rpe = True
                                     arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wdf_emp, FilterMeta, mint, maxt,
-                                        TTTGridMap_emp, Folder, Origin, ntimes, switch, ev_emp,
+                                        counter, Config, Wdf_emp, FilterMeta, mint_emp, maxt_emp,
+                                        TTTGridMap_emp, Folder, Origin_emp, ntimes_emp, switch, ev_emp,
                                         arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname), flag_rpe)
                                     if sys.version_info.major >= 3:
                                         f = open(rpe+str(arrayname), 'rb')

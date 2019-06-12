@@ -278,6 +278,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 tr = trs_orgs[k]
                 tmin = time+relstart+(i*nstep)-mint-refshifts[k]
                 tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
+                tr.snuffle()
+                print(tmin, tmax)
                 try:
                     ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
                     iend = min(
