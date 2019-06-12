@@ -908,8 +908,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     cfg_f = FilterCfg(Config)
 
     timeev = util.str_to_time(ev.time)
-    print(ev.time)
-    print(jasdsd)
     if flag_rpe is True:
         dimX = cfg.dimX_emp()
         dimY = cfg.dimY_emp()
