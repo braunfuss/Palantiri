@@ -337,7 +337,7 @@ if __name__ == '__main__':
         '--instrument-codes',
         dest='priority_instrument_code',
         metavar='H,L,G,...',
-        default='H',
+        default='H,L',
         help='select and prioritize instrument codes (default: %default)')
 
     parser.add_option(
@@ -370,6 +370,13 @@ if __name__ == '__main__':
         default=2100.0,
         type=float,
         help='minimum length of traces')
+
+    parser.add_option(
+        '--selection',
+        dest='selection_file',
+        action='append',
+        help='add local stations file')
+
 
     (options, args) = parser.parse_args(sys.argv[1:])
     magmin = options.magmin
@@ -645,20 +652,34 @@ if __name__ == '__main__':
 
     if all(sx is None for sx in sxs) and not options.local_data:
         sys.exit(1)
-    try:
-        nsl_to_sites = defaultdict(list)
-        nsl_to_station = {}
-        for sx, site in zip(sxs, sites):
-            site_stations = sx.get_pyrocko_stations()
-            for s in site_stations:
-                nsl = s.nsl()
-                nsl_to_sites[nsl].append(site)
-                if nsl not in nsl_to_station:
-                    nsl_to_station[nsl] = s  # using first site with this station
-    except:
-        raise Exception('No stations found')
-    logger.info('number of stations found: %i' % len(nsl_to_station))
 
+    nsl_to_sites = defaultdict(list)
+    nsl_to_station = {}
+
+    if options.selection_file:
+        logger.info('using stations from stations file!')
+        stations = []
+        for fn in options.selection_file:
+            stations.extend(model.load_stations(fn))
+
+        nsls_selected = set(s.nsl() for s in stations)
+    else:
+        nsls_selected = None
+
+    for sx, site in zip(sxs, sites):
+        site_stations = sx.get_pyrocko_stations()
+        for s in site_stations:
+            nsl = s.nsl()
+
+            nsl_to_sites[nsl].append(site)
+            if nsl not in nsl_to_station:
+                if nsls_selected:
+                    if nsl in nsls_selected:
+                        nsl_to_station[nsl] = s
+                else:
+                    nsl_to_station[nsl] = s  # using first site with this station
+
+        logger.info('number of stations found: %i' % len(nsl_to_station))
     # station weeding
 
     nsls_selected = None
@@ -929,7 +950,7 @@ if __name__ == '__main__':
 
     # chapter 1.6: dump raw data stations file
 
-    nsl_to_station = {}
+    #nsl_to_station = {}
     for site in sites:
         if site in sxs:
             stations = sxs[site].get_pyrocko_stations(timespan=(tmin, tmax))
@@ -1010,7 +1031,7 @@ if __name__ == '__main__':
                     rest_tr = tr.transfer(tfade, ftap, response, invert=True)
                     rest_traces_a.append(rest_tr)
 
-                except (trace.TraceTooShort, trace.NoData, trace.InfiniteResponse):
+                except (trace.TraceTooShort, trace.NoData):
                     failure = 'trace too short'
 
             if failure:
