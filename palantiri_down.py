@@ -1031,7 +1031,7 @@ if __name__ == '__main__':
                     rest_tr = tr.transfer(tfade, ftap, response, invert=True)
                     rest_traces_a.append(rest_tr)
 
-                except (trace.TraceTooShort, trace.NoData):
+                except (trace.TraceTooShort, trace.NoData, trace.InfiniteResponse):
                     failure = 'trace too short'
 
             if failure:
