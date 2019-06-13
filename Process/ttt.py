@@ -133,10 +133,10 @@ def backazi(Station, Event):
 
 
 def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
-               phase):
+               phase, flag_rpe=False):
 
     cfg = ConfigObj(dict=Config)
-    if cfg.Bool('correct_shifts_empirical') is True:
+    if flag_rpe is True:
         dimX = cfg.Int('dimx_emp')
         dimY = cfg.Int('dimy_emp')
     else:
@@ -253,12 +253,15 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
 
 
 def calcTTTAdvTauP(Config, station, Origin, flag, Xcorrshift=None,
-                   Refshift=None):
+                   Refshift=None, flag_rpe=False):
 
     cfg = ConfigObj(dict=Config)
-
-    dimX = cfg.Int('dimx')
-    dimY = cfg.Int('dimy')
+    if flag_rpe is False:
+        dimX = cfg.Int('dimx')
+        dimY = cfg.Int('dimy')
+    else:
+        dimX = cfg.Int('dimx_emp')
+        dimY = cfg.Int('dimy_emp')
     gridspacing = cfg.Float('gridspacing')
 
     o_lat = float(Origin['lat'])

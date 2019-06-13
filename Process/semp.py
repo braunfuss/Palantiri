@@ -115,14 +115,14 @@ def toMatrix(npVector, nColumns):
 def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
               new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
               trace_1, calcStreamMap, time, Config, Origin, refshifts,
-              bs_weights=None):
+              bs_weights=None, flag_rpe=False):
 
         cfg = ConfigObj(dict=Config)
         origin = OriginCfg(Origin)
         cfg_f = FilterCfg(Config)
 
         if cfg.Bool('dynamic_filter') is False:
-            if cfg.Bool('correct_shifts_empirical_manual') is True:
+            if cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
                return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
@@ -336,8 +336,7 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     snap = (round, round)
     index_mean_x = dimX/2
     index_mean_y = dimY/2
-    j_mean = (dimX * dimY)/2
-
+    j_mean = int((dimX * dimY)/2)
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
@@ -415,7 +414,8 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             sum = abs(num.sum(((sums))))
             semb = sum
 
-            backSemb[i][j] = sum
+            backSemb[i] = sum
+
             if semb > sembmax:
                 sembmax  = semb   # search for maximum and position of maximum on semblance
                                  # grid for given time step
@@ -424,7 +424,6 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str(sembmaxY))
 
-    backSemb = backSemb
     return abs(backSemb)
 
 

@@ -266,6 +266,8 @@ class ConfigObj(object):
     def correct_shifts_empirical_run(self):
         return self.Bool('correct_shifts_empirical_run')
 
+    def correct_shifts_empirical_manual_station_wise(self):
+        return self.Bool('correct_shifts_empirical_manual_station_wise')
 
     def _error0(self, msg):
 

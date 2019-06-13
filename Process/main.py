@@ -438,15 +438,6 @@ def processLoop():
                     ttt_model = cfg.Str('traveltime_model')
 
                     try:
-                        if cfg.Bool('correct_shifts_empirical') is True:
-                            f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                     % (phase, ttt_model, ev_emp.time, arrayname,
-                                        workdepth), 'rb')
-                            print("loading travel time grid%s_%s_%s_%s_%s_emp.pkl"
-                                  % (phase, ttt_model, ev_emp.time, arrayname,
-                                     workdepth))
-                            TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
-                            f.close()
                         f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                  % (phase, ttt_model, ev.time, arrayname,
                                     workdepth), 'rb')
@@ -455,6 +446,7 @@ def processLoop():
                                  workdepth))
                         TTTGridMap, mint, maxt = pickle.load(f)
                         f.close()
+
                         print("loading of travel time grid sucessful")
                     except Exception:
                         print("loading of travel time grid unsucessful,\n \
@@ -489,24 +481,58 @@ def processLoop():
                         print("dumping the traveltime grid for this array")
                         pickle.dump([TTTGridMap, mint, maxt], f)
                         f.close()
-
-                        if cfg.Bool('correct_shifts_empirical') is True:
-                            ttt.calcTTTAdv(Config, FilterMeta[i], Origin_emp,
-                                           i, arrayname, W, refshift,
-                                           phase)
-
-                            assert len(FilterMeta) > 0
-                            TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta))
-                            mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta))
-                            f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                     % (phase, ttt_model, ev_emp.time, arrayname,
-                                        workdepth), 'wb')
-                            print("dumping the traveltime grid for this array")
-                            pickle.dump([TTTGridMap_emp, mint_emp, maxt_emp], f)
-                            f.close()
-
                     t2 = time.time()
                     Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
+
+                    if cfg.Bool('correct_shifts_empirical') is True:
+
+                        Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
+                                    %s \n' % (Config['dimx_emp'], Config['dimy_emp'],
+                                              Config['gridspacing']))
+
+                        try:
+                            f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                     % (phase, ttt_model, ev_emp.time, arrayname,
+                                        workdepth), 'rb')
+                            print("loading travel time grid%s_%s_%s_%s_%s_emp.pkl"
+                                  % (phase, ttt_model, ev_emp.time, arrayname,
+                                     workdepth))
+                            TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
+                            f.close()
+
+                            print("loading of travel time grid sucessful")
+                        except Exception:
+                            print("loading of travel time grid unsucessful,\n \
+                                  will now calculate the grid:")
+                            if isParallel:
+                                maxp = 6
+                                po = multiprocessing.Pool(maxp)
+
+                                for i in xrange(len(FilterMeta)):
+                                    po.apply_async(ttt.calcTTTAdv,
+                                                   (Config, FilterMeta[i], Origin,
+                                                    i, arrayname, W, refshift))
+
+                                    po.close()
+                                    po.join()
+                            else:
+                                for i in xrange(len(FilterMeta)):
+                                    t1 = time.time()
+                                    ttt.calcTTTAdv(Config, FilterMeta[i], Origin_emp,
+                                                   i, arrayname, W, refshift,
+                                                   phase, flag_rpe=True)
+
+                                    assert len(FilterMeta) > 0
+                                    TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta))
+                                    mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta))
+                                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                             % (phase, ttt_model, ev_emp.time, arrayname,
+                                                workdepth), 'wb')
+                                    print("dumping the traveltime grid for this array")
+                                    pickle.dump([TTTGridMap_emp, mint_emp, maxt_emp], f)
+                                    f.close()
+                        t2 = time.time()
+                        Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
                     switch = filterindex
                     tw = times.calculateTimeWindows(mint, maxt, Config,
@@ -631,9 +657,18 @@ def processLoop():
                                         if cfg.correct_shifts() is False:
                                             refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
+                            f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                     % (phase, ttt_model, ev.time, arrayname,
+                                        workdepth), 'rb')
+                            print("loading travel time grid%s_%s_%s_%s_%s.pkl"
+                                   % (phase, ttt_model, ev.time, arrayname,
+                                      workdepth))
+                            TTTGridMap_mew, mintt, maxtt = pickle.load(f)
+                            f.close()
+
                             arraySemb, weight, array_center = sembCalc.doCalc(
-                                counter, Config, Wdf, FilterMeta, mint, maxt,
-                                TTTGridMap, Folder, Origin, ntimes, switch, ev,
+                                counter, Config, Wdf, FilterMeta, mintt, maxtt,
+                                TTTGridMap_mew, Folder, Origin, ntimes, switch, ev,
                                 arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname), flag_rpe)
                             weights.append(weight)
                             array_centers.append(array_center)

@@ -1376,17 +1376,15 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     streamCounter = 0
     if sys.version_info.major >= 3:
         for key in sorted(calcStreamMap.keys()):
+
             streamID = key
             c2 = 0
-
             for o in calcStreamMap[key]:
                 if c2 < minSampleCount:
                     traces[c][c2] = o
 
                     c2 += 1
-
             for key in sorted(TTTGridMap.keys()):
-
                 if streamID == key:
                     traveltimes[streamCounter] = TTTGridMap[key]
                 else:
@@ -1403,7 +1401,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             for x in range(dimX):
                 for y in range(dimY):
                     elem = gridElem[x, y]
-
                     traveltime[c][x * dimY + y] = elem.tt
                     latv[x * dimY + y] = elem.lat
                     lonv[x * dimY + y] = elem.lon
@@ -1620,38 +1617,71 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if TTTGrid:
         if cfg.Bool('correct_shifts_empirical_run') is True and cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
             start_time = time.time()
-            if cfg.UInt('forerun') > 0:
-                ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+            for s in range(0, nostat):
+                refshifts[s] = refshifts[s]*0.
+            step_emp = cfg.Float('step_emp')
+            if cfg.UInt('forerun_emp') > 0:
+                ntimes = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
             else:
-                ntimes = int((cfg.UInt('duration')) / step)
+                ntimes = int((cfg.UInt('duration_emp')) / step_emp)
             nsamp = int(winlen)
             nstep = float(step)
             Gmint = cfg.Int('forerun')
             max_shifts = cfg.Float('shift_max')
-            for shft in np.arange(-max_shifts,max_shifts,0.01):
-                k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
-                              new_frequence, minSampleCount, latv, lonv, traveltimes,
-                              traces, calcStreamMap, timeev+shft, Config, Origin, refshifts,
-                              bs_weights=bs_weights)
-                partSemb = k
-                partSemb = partSemb.reshape(ntimes, migpoints)
-                semblance_max = 0.
-                for a in range(0, ntimes):
-                    semb_max = max(partSemb[a])
-                    if semb_max > semblance_max:
-                        semblance_max = semb_max
-                        array_shift = shft
+            semblance_max = 0. #TODO auf station basis
+            if cfg.Bool('correct_shifts_empirical_manual_station_wise') is True:
+                for niter in range(0,10000):
+                    for s in range(0, nostat):
+                        refshifts[s] = num.random.uniform(-max_shifts,max_shifts)
 
-            RefDict = OrderedDict()
-            for j in range(0,len(trs_orgs)):
-                RefDict[j] = shft
-            if sys.version_info.major >= 3:
-                fobjrefshift = open(rp, 'wb')
-            else:
-                fobjrefshift = open(rp, 'w')
-            pickle.dump(RefDict, fobjrefshift)
-            fobjrefshift.close()
+                        k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                                      new_frequence, minSampleCount, latv, lonv, traveltimes,
+                                      traces, calcStreamMap, timeev, Config, Origin, refshifts,
+                                      bs_weights=bs_weights, flag_rpe=True)
+                        partSemb = k
+                        partSemb = partSemb.reshape(ntimes, 1)
+                        for a in range(0, ntimes):
+                            semb_max = max(partSemb[a])
+                            if semb_max > semblance_max:
+                                semblance_max = semb_max
+                                refshifts_best = refshifts
+                RefDict = OrderedDict()
+                for j in range(0, nostat):
+                    RefDict[j] = refshifts_best[j]
+                if sys.version_info.major >= 3:
+                    fobjrefshift = open(rp, 'wb')
+                else:
+                    fobjrefshift = open(rp, 'w')
+                pickle.dump(RefDict, fobjrefshift)
+                fobjrefshift.close()
                 print("--- %s seconds ---" % (time.time() - start_time))
+                return partSemb, weight, array_center
+
+            else:
+                for shft in num.arange(-max_shifts, max_shifts, 0.01):
+                    k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
+                                  new_frequence, minSampleCount, latv, lonv, traveltimes,
+                                  traces, calcStreamMap, timeev+shft, Config, Origin, refshifts,
+                                  bs_weights=bs_weights, flag_rpe=True)
+                    partSemb = k
+                    partSemb = partSemb.reshape(ntimes, 1)
+                    for a in range(0, ntimes):
+                        semb_max = max(partSemb[a])
+                        if semb_max > semblance_max:
+                            semblance_max = semb_max
+                            array_shift = shft
+                RefDict = OrderedDict()
+                for j in range(0, nostat):
+                    RefDict[j] = shft
+                if sys.version_info.major >= 3:
+                    fobjrefshift = open(rp, 'wb')
+                else:
+                    fobjrefshift = open(rp, 'w')
+                pickle.dump(RefDict, fobjrefshift)
+                fobjrefshift.close()
+                print("--- %s seconds ---" % (time.time() - start_time))
+
+                return partSemb, weight, array_center
 
         else:
             start_time = time.time()
@@ -1665,14 +1695,14 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                           new_frequence, minSampleCount, latv, lonv, traveltimes,
                           traces, calcStreamMap, timeev, Config, Origin, refshifts,
-                          bs_weights=bs_weights)
+                          bs_weights=bs_weights, flag_rpe=False)
             print("--- %s seconds ---" % (time.time() - start_time))
 
-    t2 = time.time()
+            t2 = time.time()
 
-    Logfile.add('%s took %0.3f s' % ('CALC:', (t2-t1)))
+            Logfile.add('%s took %0.3f s' % ('CALC:', (t2-t1)))
 
-    partSemb = k
-    partSemb = partSemb.reshape(ntimes, migpoints)
+            partSemb = k
+            partSemb = partSemb.reshape(ntimes, migpoints)
 
-    return partSemb, weight, array_center
+            return partSemb, weight, array_center
