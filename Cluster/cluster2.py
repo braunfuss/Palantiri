@@ -22,8 +22,6 @@ from ObspyFkt import loc2degrees
 from ConfigFile import ConfigObj
 from pyrocko import model
 import config
-from Version import VERSION_STRING
-
 sys.setrecursionlimit(1500)
 
 logger = logging.getLogger(sys.argv[0])
@@ -445,9 +443,9 @@ def calcMinValue(CentroidList):
     minval = sumdelta / len(CentroidList)
 
     return minval
-# -------------------------------------------------------------------------------------------------
 
-def write4Plot(Config,Origin,StationClusterList,CentroidList,Folder,flag):
+
+def write4Plot(Config, Origin, StationClusterList, CentroidList, Folder, flag):
 
     plotfolder = 'plot-'+str(flag)
     p = os.path.join(Folder['cluster'],plotfolder)
@@ -458,6 +456,10 @@ def write4Plot(Config,Origin,StationClusterList,CentroidList,Folder,flag):
     fobjorigin = open(os.path.join(p,'event.orig'),'w')
     fobjorigin.write(Origin['lat']+','+Origin['lon'])
     fobjorigin.close()
+
+    dst = os.path.join(p,'plot_cluster.py')
+    src = os.path.join(os.getcwd(),'..','skeleton','plot_cluster.py')
+    shutil.copy(src, dst)
 
     fobjcentroid = open(os.path.join(p,'event.centroid'),'w')
 
@@ -484,7 +486,7 @@ def write4Plot(Config,Origin,StationClusterList,CentroidList,Folder,flag):
     fobjcentroid.close()
 
 
-def km(Config,FilterMeta,Folder,Origin,flag):
+def km(Config, FilterMeta, Folder, Origin, flag):
 
     ic = createRandomInitialCentroids(Config, FilterMeta)
 
@@ -553,7 +555,7 @@ class ClusterMain(MainObj):
 
         Basic.checkExistsDir(self.eventpath, isAbort=True)
         Globals.setEventDir(self.eventpath)
-        MainObj.__init__(self, self, VERSION_STRING, 'cluster_run.log',
+        MainObj.__init__(self, self, 'ok', 'cluster_run.log',
                          'cluster.log')
 
     def init(self):
