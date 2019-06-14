@@ -143,20 +143,26 @@ class Config(object):
 
         return FML
 
-    def readpyrockostations(self):
+    def readpyrockostations(self, phases):
         try:
             stations = model.load_stations(self.eventpath+'/data/stations_cluster.txt')
         except Exception:
             stations = model.load_stations(self.eventpath+'/data/stations_disp.txt')
         MetaL = []
-        for sl in stations:
-            for channel in sl.channels:
-                #channel = sl.channels[0]
-                MetaL.append(Station(str(sl.network),str(sl.station),
-                str(sl.location),str(sl.channels[0])[:3],str(sl.lat),str(sl.lon),
-                str(sl.elevation),str(channel.dip),str(channel.azimuth),
-                str(channel.gain)))
-
+        for phase in phases:
+            if phase is 'P':
+                desired = 'Z'
+            if phase is 'S':
+                desired = 'T'
+            for sl in stations:
+                count_channel = 0
+                for channel in sl.channels:
+                    if channel.name[-1] == desired and channel.name is not "HHZ":
+                        MetaL.append(Station(str(sl.network),str(sl.station),
+                        str(sl.location),str(channel)[:3],str(sl.lat),str(sl.lon),
+                        str(sl.elevation),str(channel.dip),str(channel.azimuth),
+                        str(channel.gain)))
+                    count_channel = count_channel+1
         FML = self.checkMetaInfoFile(MetaL)
 
         return FML
