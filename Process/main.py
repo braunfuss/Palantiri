@@ -84,7 +84,7 @@ def processLoop():
     phases = phases.split(',')
 
     if cfg.pyrocko_download() is True:
-        Meta = C.readpyrockostations()
+        Meta = C.readpyrockostations(phases)
     elif cfg.colesseo_input() is True:
         scenario = guts.load(filename=cfg.colosseo_scenario_yml())
         scenario_path = cfg.colosseo_scenario_yml()[:-12]

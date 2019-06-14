@@ -67,9 +67,6 @@ def filterStations(StationList, Config, Origin, network):
     origin = Location(Origin['lat'], Origin['lon'])
 
     Logfile.red('Filter stations with configured parameters...')
-    print('nr networks = ', len(network))
-    print('nr stations = ', len(StationList))
-
     for j in network:
         for i in StationList:
             if str(i.getcmpName()[:-2]) == str(j) or str(i.getcmpName()[:]) == str(j):
