@@ -73,7 +73,8 @@ def filterStations(StationList, Config, Origin, network):
                 pos = Location(i.lat, i.lon)
                 sdelta = loc2degrees(origin, pos)
                 if sdelta > minDist and sdelta < maxDist:
-                    s = Station(i.net,i.sta,i.loc,i.comp,i.lat,i.lon,i.ele,i.dip,i.azi,i.gain)
+                    s = Station(i.net, i.sta, i.loc, i.comp, i.lat, i.lon,
+                                i.ele, i.dip, i.azi, i.gain)
                     if s not in F:
                         F.append(s)
     Logfile.red('%d STATIONS LEFT IN LIST' % len(F))
@@ -81,17 +82,17 @@ def filterStations(StationList, Config, Origin, network):
     return F
 
 
-def calctakeoff(Station,Event,Config):
+def calctakeoff(Station, Event, Config):
 
     de = loc2degrees(Event, Station)
     Phase = cake.PhaseDef('P')
     model = cake.load_model()
-    arrivals= model.arrivals([de,de], phases=Phase, zstart=Event.depth*km)
+    arrivals = model.arrivals([de, de], phases=Phase, zstart=Event.depth*km)
 
     return arrivals[0].takeoff_angle()
 
 
-def bearing(Station ,Event):
+def bearing(Station, Event):
 
         lat1 = d2r * float(Station.lat)
         lon1 = d2r * float(Station.lon)
@@ -188,23 +189,21 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
                     tt = obs_TravelTimes(de, o_depth)
                     for k in tt:
                         if k['phase_name'] == 'P' or k['phase_name'] ==('%sdiff')%(Config[phasename]):
-                            ttime = k ['time']
+                            ttime = k['time']
                         print("Something wrong with phase arrival, too large\
                              distances choosen?")
 
-                GridArray[(i,j)] = GridElem(oLatul, oLonul, depth[j],ttime,de)
-                LMINMAX.append(ttime)
-
-                GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
+                GridArray[(i, j)] = GridElem(oLatul, oLonul, depth[j],
+                                             ttime, de)
                 LMINMAX.append(ttime)
 
                 if ttime == 0:
                     raise Exception("\033[31mILLEGAL: phase definition\033[0m")
     else:
         for i in xrange(dimX):
-            oLatul = o_lat -((dimX-1)/2) * gridspacing + i * gridspacing
+            oLatul = o_lat - ((dimX - 1)/2) * gridspacing + i * gridspacing
 
-            if z == 0 and i == 0 :
+            if z == 0 and i == 0:
                 Latul = oLatul
             o=0
             for j in xrange(dimY):
@@ -233,20 +232,108 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
 
                 GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
                 LMINMAX.append(ttime)
+                if ttime == 0:
+                            raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
-                GridArray[(i, j)] = GridElem(oLatul, oLonul, o_depth, ttime, de)
+    mint = min(LMINMAX)
+    maxt = max(LMINMAX)
+    TTTGridMap[station.getName()] = TTTGrid(o_depth, mint, maxt, Latul, Lonul,
+                                            oLator, oLonor, GridArray)
+    k = MinTMaxT(mint, maxt)
+
+    Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
+    Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
+    Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
+
+
+def calcTTTAdv_cube(Config, station, Origin, flag, arrayname, Xcorrshift,
+                      Refshift, phase, flag_rpe=False):
+
+    cfg = ConfigObj(dict=Config)
+    if flag_rpe is True:
+        dimX = cfg.Int('dimx_emp')
+        dimY = cfg.Int('dimy_emp')
+        dimZ = cfg.Int('dimz_emp')
+    else:
+        dimX = cfg.Int('dimx')
+        dimY = cfg.Int('dimy')
+        dimZ = cfg.Int('dimz')
+
+    orig_depth = float(Origin['depth'])
+
+    start, stop, step = cfg.String('depths').split(',')
+    start = orig_depth+float(start)
+    stop = orig_depth+float(stop)
+    depths = np.linspace(start, stop, num=dimZ)
+
+    gridspacing = cfg.Float('gridspacing')
+    traveltime_model = cfg.Str('traveltime_model')
+
+    o_lat = float(Origin['lat'])
+    o_lon = float(Origin['lon'])
+
+    oLator = o_lat + dimX/2
+    oLonor = o_lon + dimY/2
+    oLatul = 0
+    oLonul = 0
+    o_dip = 80.
+    plane = False
+
+    TTTGridMap = {}
+    LMINMAX = []
+    GridArray = {}
+    locStation = Location(station.lat, station.lon)
+    sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
+    Phase = cake.PhaseDef(phase)
+    model = cake.load_model('../data/'+traveltime_model)
+    for depth in depths:
+        o_depth = depth
+        for i in xrange(dimX):
+            oLatul = o_lat - ((dimX - 1)/2) * gridspacing + i * gridspacing
+
+            if i == 0:
+                Latul = oLatul
+            o=0
+            for j in xrange(dimY):
+                oLonul = o_lon-((dimY-1)/2) * gridspacing + j * gridspacing
+
+                if o==0 and j==0:
+                    Lonul = oLonul
+                de = loc2degrees(Location(oLatul, oLonul), locStation)
+                arrivals = model.arrivals([de, de], phases=Phase,
+                                          zstart=o_depth*km)
+                try:
+                    ttime = arrivals[0].t
+                except Exception:
+                    try:
+                        arrivals = model.arrivals([de, de], phases=Phase,
+                                                  zstart=o_depth*km,
+                                                  zstop=o_depth*km,
+                                                  refine=True)
+                        ttime = arrivals[0].t
+                    except Exception:
+                        arrivals = model.arrivals([de, de], phases=Phase,
+                                                  zstart=o_depth*km-2.5,
+                                                  zstop=o_depth*km+2.5,
+                                                  refine=True)
+                        ttime = arrivals[0].t
+
+                GridArray[(i, j, depth)] = GridElem(oLatul, oLonul, o_depth, ttime,
+                                             de)
                 LMINMAX.append(ttime)
+
                 if ttime == 0:
                             raise Exception("\033[31mILLEGAL: phase definition\033[0m")
 
     mint = min(LMINMAX)
     maxt = max(LMINMAX)
     TTTGridMap[station.getName()] = TTTGrid(o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)
-    k = MinTMaxT(mint,maxt)
+    k = MinTMaxT(mint, maxt)
 
     Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
     Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
     Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
+
 
 
 def calcTTTAdvTauP(Config, station, Origin, flag, Xcorrshift=None,

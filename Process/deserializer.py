@@ -34,6 +34,27 @@ def deserializeTTT(numproc):
 
         return TTTGridMap
 
+def deserializeTTT_cube(numproc):
+
+        L = []
+
+        for i in range(numproc):
+            data = Basic.loadDump(str(i)+'-ttt.pkl')
+
+            if data is not None:
+                L.append(data)
+
+        TTTGridMap = OrderedDict()
+
+        for i in L:
+            if sys.version_info.major >= 3:
+                for j in sorted(i.keys()):
+                    TTTGridMap[j] = i[j]
+            else:
+                for j in i.keys():
+                    TTTGridMap[j] = i[j]
+
+        return TTTGridMap
 
 def deserializeMinTMaxT(numproc):
 

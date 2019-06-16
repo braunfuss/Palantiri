@@ -397,6 +397,8 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
     dimX = cfg.dimX()
     dimY = cfg.dimY()
+    dimZ = cfg.Int('dimz')
+
     if switch == 0:
         winlen = cfg.winlen()
         step = cfg.step()
@@ -413,7 +415,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     o_lon = origin.lon()
     oLatul = 0
     oLonul = 0
-
     z=0
 
     for i in xrange(dimX):
@@ -1366,8 +1367,14 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount),
                          dtype=float)
-    traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY),
-                             dtype=float)
+
+    if cfg.Int('dimz') != 0:
+        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.Int('dimz')),
+                                 dtype=float)
+    else:
+
+        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY),
+                                 dtype=float)
 
     latv = num.ndarray(dimX*dimY, dtype=float)
     lonv = num.ndarray(dimX*dimY, dtype=float)
@@ -1398,12 +1405,29 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             mint = g.mint
             gridElem = g.GridArray
 
-            for x in range(dimX):
-                for y in range(dimY):
-                    elem = gridElem[x, y]
-                    traveltime[c][x * dimY + y] = elem.tt
-                    latv[x * dimY + y] = elem.lat
-                    lonv[x * dimY + y] = elem.lon
+            if cfg.Int('dimz') != 0:
+                orig_depth = float(Origin['depth'])
+                start, stop, step_depth = cfg.String('depths').split(',')
+                start = orig_depth+float(start)
+                stop = orig_depth+float(stop)
+                depths = num.linspace(start, stop, num=cfg.Int('dimz'))
+                for x in range(dimX):
+                    for y in range(dimY):
+                        depth_counter = 0
+                        for z in depths:
+                            elem = gridElem[x, y, z]
+                            #z here false index, must be integer
+                            traveltime[c][x * dimY + y + depth_counter] = elem.tt
+                            latv[x * dimY + y] = elem.lat
+                            lonv[x * dimY + y] = elem.lon
+                            depth_counter =+ 1
+            else:
+                for x in range(dimX):
+                    for y in range(dimY):
+                        elem = gridElem[x, y]
+                        traveltime[c][x * dimY + y] = elem.tt
+                        latv[x * dimY + y] = elem.lat
+                        lonv[x * dimY + y] = elem.lon
             c += 1
             streamCounter += 1
 
@@ -1448,7 +1472,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     ################ CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ########
     nsamp = winlen * new_frequence
-
     nstep = step*new_frequence
     migpoints = dimX * dimY
 
@@ -1538,8 +1561,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     t1 = time.time()
     traces = traces.reshape(1, nostat*minSampleCount)
-
-    traveltimes = traveltime.reshape(1, nostat*dimX*dimY)
+    if cfg.Int('dimz') != 0:
+        traveltimes = traveltime.reshape(1, nostat*dimX*dimY*cfg.Int('dimz'))
+    else:
+        traveltimes = traveltime.reshape(1, nostat*dimX*dimY)
     TTTGrid = True
     manual_shift = False
 
@@ -1638,7 +1663,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                       new_frequence, minSampleCount, latv, lonv, traveltimes,
                                       traces, calcStreamMap, timeev, Config, Origin, refshifts,
                                       bs_weights=bs_weights, flag_rpe=True)
-                        partSemb = k
+                        partSembsemblance = k
                         partSemb = partSemb.reshape(ntimes, 1)
                         for a in range(0, ntimes):
                             semb_max = max(partSemb[a])

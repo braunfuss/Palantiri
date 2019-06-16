@@ -387,7 +387,8 @@ def processLoop():
             for depthindex in xrange(start, stop, step_depth):
 
                 workdepth = float(wd) + depthindex
-                Origin['depth'] = workdepth
+                if cfg.Int('dimz') == 0:
+                    Origin['depth'] = workdepth
                 ev = Event(Origin['lat'], Origin['lon'], Origin['depth'],
                            Origin['time'], strike=strike, dip=dip, rake=rake)
                 Logfile.add('WORKDEPTH: ' + str(Origin['depth']))
@@ -464,17 +465,29 @@ def processLoop():
                                 po.join()
                         else:
                             for i in xrange(len(FilterMeta)):
-                                t1 = time.time()
-                                ttt.calcTTTAdv(Config, FilterMeta[i], Origin,
-                                               i, arrayname, W, refshift,
-                                               phase)
+                                if cfg.Int('dimz') != 0:
+                                    t1 = time.time()
+                                    ttt.calcTTTAdv_cube(Config, FilterMeta[i],
+                                                          Origin, i, arrayname,
+                                                          W, refshift, phase)
 
-                                Logfile.add('ttt.calcTTTAdv : '
-                                            + str(time.time() - t1) + ' sec.')
+                                    Logfile.add('ttt.calcTTTAdv : '
+                                                + str(time.time() - t1) + ' sec.')
+                                else:
+                                    t1 = time.time()
+                                    ttt.calcTTTAdv(Config, FilterMeta[i], Origin,
+                                                   i, arrayname, W, refshift,
+                                                   phase)
+
+                                    Logfile.add('ttt.calcTTTAdv : '
+                                                + str(time.time() - t1) + ' sec.')
                         assert len(FilterMeta) > 0
-
-                        TTTGridMap = deserializer.deserializeTTT(len(FilterMeta))
-                        mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
+                        if cfg.Int('dimz') != 0 :
+                            TTTGridMap = deserializer.deserializeTTT_cube(len(FilterMeta))
+                            mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
+                        else:
+                            TTTGridMap = deserializer.deserializeTTT(len(FilterMeta))
+                            mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
                         f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                  % (phase, ttt_model, ev.time, arrayname,
                                     workdepth), 'wb')

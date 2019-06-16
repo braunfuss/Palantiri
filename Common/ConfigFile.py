@@ -149,6 +149,9 @@ class ConfigObj(object):
     def array_response(self):
         return self.Bool('array_response')
 
+    def dimZ(self):
+        return self.UInt('dimz')
+
     def dimX(self):
         return self.UInt('dimx')
 
