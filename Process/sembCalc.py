@@ -1318,6 +1318,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if cfg.Bool('array_response') is True:
         from obspy.signal import array_analysis
         from obspy.core import stream
+        from obspy.core.util import AttribDict
+
         ntimesr = int((forerun + duration)/step)
         nsampr = int(winlen)
         nstepr = int(step)
@@ -1325,22 +1327,38 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         slm_x=3.0
         sll_y=-3.0
         slm_y=3.0
-        sl_s=0.03,
+        sl_s=0.03
         # sliding window properties
 
         # frequency properties
-        frqlow=1.0,
-        frqhigh=8.0
+        if switch == 0:
+            frqlow = cfg_f.flo()
+            frqhigh = cfg_f.fhi()
+        elif switch == 1:
+            frqlow = cfg_f.flo2()
+            frqhigh = cfg_f.fhi2()
         prewhiten=0
         # restrict output
         semb_thres=-1e9
         vel_thres=-1e9
-        stime=stime
-        etime=etime
+        forerun_r = util.time_to_str(util.str_to_time(Origin['time'])-forerun)
+        duration_r = util.time_to_str(util.str_to_time(Origin['time'])+duration)
+
+        stime = UTCDateTime(forerun_r)
+        etime = UTCDateTime(duration_r)
         stream_arr = stream.Stream()
-        for trace in calcStreamMapshifted.keys():
-            stream_arr.append(calcStreamMapshifted[trace])
-        results = array_analysis.array_processing(stream_arr, nsamp, nstep,
+        for trace in calcStreamMap.keys():
+            for il in FilterMetaData:
+                if str(il) == str(trace):
+                    print(calcStreamMap[trace].stats)
+                    calcStreamMap[trace].stats.coordinates = AttribDict({
+                        'latitude': il.lat,
+                        'elevation': 0.450000,
+                        'longitude': il.lon})
+                    print(calcStreamMap[trace].stats)
+
+                    stream_arr.append(calcStreamMap[trace])
+        results = array_analysis.array_processing(stream_arr, nsampr, nstepr,
                                                   sll_x, slm_x, sll_y, slm_y,
                                                    sl_s, semb_thres, vel_thres,
                                                    frqlow, frqhigh, stime,
@@ -1348,6 +1366,64 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         timestemp = results[0]
         relative_relpow = results[1]
         absolute_relpow = results[2]
+        out =  results
+        import numpy as np
+        import matplotlib.pyplot as plt
+        from matplotlib.colorbar import ColorbarBase
+        from matplotlib.colors import Normalize
+
+        import obspy
+        from obspy.core.util import AttribDict
+        from obspy.imaging.cm import obspy_sequential
+        from obspy.signal.invsim import corn_freq_2_paz
+        from obspy.signal.array_analysis import array_processing
+        cmap = obspy_sequential
+
+        # make output human readable, adjust backazimuth to values between 0 and 360
+        t, rel_power, abs_power, baz, slow = out.T
+        baz[baz < 0.0] += 360
+
+        # choose number of fractions in plot (desirably 360 degree/N is an integer!)
+        N = 36
+        N2 = 30
+        abins = np.arange(N + 1) * 360. / N
+        sbins = np.linspace(0, 3, N2 + 1)
+
+        # sum rel power in bins given by abins and sbins
+        hist, baz_edges, sl_edges = \
+            np.histogram2d(baz, slow, bins=[abins, sbins], weights=rel_power)
+
+        # transform to radian
+        baz_edges = np.radians(baz_edges)
+
+        # add polar and colorbar axes
+        fig = plt.figure(figsize=(8, 8))
+        cax = fig.add_axes([0.85, 0.2, 0.05, 0.5])
+        ax = fig.add_axes([0.10, 0.1, 0.70, 0.7], polar=True)
+        ax.set_theta_direction(-1)
+        ax.set_theta_zero_location("N")
+
+        dh = abs(sl_edges[1] - sl_edges[0])
+        dw = abs(baz_edges[1] - baz_edges[0])
+
+        # circle through backazimuth
+        for i, row in enumerate(hist):
+            bars = ax.bar(left=(i * dw) * np.ones(N2),
+                          height=dh * np.ones(N2),
+                          width=dw, bottom=dh * np.arange(N2),
+                          color=cmap(row / hist.max()))
+
+        ax.set_xticks(np.linspace(0, 2 * np.pi, 4, endpoint=False))
+        ax.set_xticklabels(['N', 'E', 'S', 'W'])
+
+        # set slowness limits
+        ax.set_ylim(0, 3)
+        [i.set_color('grey') for i in ax.get_yticklabels()]
+        ColorbarBase(cax, cmap=cmap,
+                     norm=Normalize(vmin=hist.min(), vmax=hist.max()))
+
+        plt.show()
+
     if sys.version_info.major >= 3:
         for trace in sorted(calcStreamMap.keys()):
             recordstarttime = calcStreamMap[trace].stats.starttime
