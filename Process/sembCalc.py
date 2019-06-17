@@ -1343,19 +1343,17 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         vel_thres=-1e9
         forerun_r = util.time_to_str(util.str_to_time(Origin['time'])-forerun)
         duration_r = util.time_to_str(util.str_to_time(Origin['time'])+duration)
-
+        from pprint import pprint
         stime = UTCDateTime(forerun_r)
         etime = UTCDateTime(duration_r)
         stream_arr = stream.Stream()
         for trace in calcStreamMap.keys():
             for il in FilterMetaData:
                 if str(il) == str(trace):
-                    print(calcStreamMap[trace].stats)
                     calcStreamMap[trace].stats.coordinates = AttribDict({
                         'latitude': il.lat,
-                        'elevation': 0.450000,
+                        'elevation': il.ele,
                         'longitude': il.lon})
-                    print(calcStreamMap[trace].stats)
 
                     stream_arr.append(calcStreamMap[trace])
         results = array_analysis.array_processing(stream_arr, nsampr, nstepr,
