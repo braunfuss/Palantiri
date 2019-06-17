@@ -10,7 +10,7 @@
 ### Installation from source
 
 ```
-git clone https://github.org/braunfuss/seismoBat
+git clone https://github.org/braunfuss/Palantiri
 
 Prequsites:
 pyrocko: https://github.com/pyrocko/pyrocko
