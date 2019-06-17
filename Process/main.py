@@ -405,8 +405,9 @@ def processLoop():
                 TTTgrids = OrderedDict()
                 mints = []
                 maxts = []
-                refshifts = []
                 for i in networks:
+                    refshifts = []
+
                     arrayname = i
                     arrayfolder = os.path.join(Folder['semb'], arrayname)
 
