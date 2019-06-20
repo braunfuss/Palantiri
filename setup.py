@@ -16,14 +16,14 @@ setup(
 
     name='palantiri',
 
-    description='A probabilistic earthquake source inversion framework. '
-                'Designed and crafted in Mordor.',
+    description='A python based seismological backprojection tool.\
+                 In Quenya, palantíri means "far-seeing"',
 
-    version='0.3',
+    version='0.4',
 
-    author='The palantiri Developers',
+    author='Andreas Steinberg',
 
-    author_email='info@pyrocko.org',
+    author_email='andreas.steinberg@ifg.uni-kiel.de',
 
     packages=[
         'palantiri',
@@ -36,7 +36,7 @@ setup(
         'palantiri.data',
         'palantiri.waveform',
     ],
-    #python_requires='>=3.5',
+    python_requires='>=3.5',
     entry_points={
         'console_scripts': [
             'bat = palantiri.apps.arraytool:main',
