@@ -1,7 +1,7 @@
 # Palantiri
 
 ### A seismological backprojection array tool
-
+In Quenya, palantíri means "far-seeing".
 
 ## Installation
 
