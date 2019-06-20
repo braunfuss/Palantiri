@@ -11,7 +11,8 @@ In Quenya, palantíri means "far-seeing".
 
 ```
 git clone https://github.org/braunfuss/Palantiri
-
+and than in the cloned directory:
+sudo python3 setup.py install
 Prequsites:
 pyrocko: https://github.com/pyrocko/pyrocko
 obspy: https://github.com/obspy/obspy
