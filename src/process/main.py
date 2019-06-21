@@ -13,9 +13,7 @@ else:
     import cPickle as pickle
 
 from palantiri.process import optim
-from palantiri.common import Basic
-from palantiri.common import Globals
-from palantiri.common import Logfile
+from palantiri.common import Basic, Globals, Logfile
 from palantiri.common.Program import MainObj
 from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 from collections import OrderedDict
@@ -26,7 +24,9 @@ from palantiri.process import ttt
 from palantiri.process import sembCalc
 from palantiri.process import waveform
 from palantiri.process import times
+from palantiri.process import array_crosscorrelation_v4
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
+
 import numpy as num
 
 rstate = num.random.RandomState()
@@ -177,7 +177,6 @@ def processLoop():
             else:
                 x = open(ps)
             XDict = pickle.load(x)
-
             for i in xcorrnetworks:
                 SL[i] = len(Config[i].split('|'))
         else:
@@ -435,12 +434,13 @@ def processLoop():
                     mint = []
                     maxt = []
                     ttt_model = cfg.Str('traveltime_model')
-
                     try:
-                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+
+                        f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                  % (phase, ttt_model, ev.time, arrayname,
                                     workdepth), 'rb')
-                        print("loading travel time grid%s_%s_%s_%s_%s.pkl"
+
+                        print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
                               % (phase, ttt_model, ev.time, arrayname,
                                  workdepth))
                         TTTGridMap, mint, maxt = pickle.load(f)
@@ -486,10 +486,13 @@ def processLoop():
                         else:
                             TTTGridMap = deserializer.deserializeTTT(len(FilterMeta))
                             mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
-                        f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+
+                        px = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+                        pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                  % (phase, ttt_model, ev.time, arrayname,
-                                    workdepth), 'wb')
-                        print("dumping the traveltime grid for this array")
+                                    workdepth))
+                        px_path = px+pdx
+                        f = open(px_path, 'wb')
                         pickle.dump([TTTGridMap, mint, maxt], f)
                         f.close()
                     t2 = time.time()
@@ -502,7 +505,7 @@ def processLoop():
                                               Config['gridspacing']))
 
                         try:
-                            f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                            f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                      % (phase, ttt_model, ev_emp.time, arrayname,
                                         workdepth), 'rb')
                             print("loading travel time grid%s_%s_%s_%s_%s_emp.pkl"
@@ -536,7 +539,7 @@ def processLoop():
                                     assert len(FilterMeta) > 0
                                     TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta))
                                     mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta))
-                                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                    f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                              % (phase, ttt_model, ev_emp.time, arrayname,
                                                 workdepth), 'wb')
                                     print("dumping the traveltime grid for this array")
@@ -577,9 +580,21 @@ def processLoop():
                                                                  switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                         else:
-                            Wdf_emp = waveform.processWaveforms(Wd_emp, Config, Folder,
-                                                            arrayname, FilterMeta,
-                                                            ev_emp, switch, W)
+                            ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s" %(arrayname))
+
+                            try:
+                                f = open(ps_wdf, 'rb')
+                                Wdf_emp = pickle.load(f)
+                            except:
+                                Wdf_emp = waveform.processWaveforms(Wd_emp, Config, Folder,
+                                                                arrayname, FilterMeta,
+                                                                ev_emp, switch, W)
+
+                                fobj_proc = open(ps_wdf_emp, 'wb')
+                                pickle.dump(Wdf_emp, fobj_proc)
+                                f = open(ps_wdf_emp, 'rb')
+                                Wdf_emp = pickle.load(f)
+
                             Wdfs_emp.extend(Wdf_emp)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
@@ -606,9 +621,20 @@ def processLoop():
                                                              switch, W)
                         Wdfs.extend(Wdf)
                     else:
-                        Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                        arrayname, FilterMeta,
-                                                        ev, switch, W)
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s" %(arrayname))
+
+                        try:
+                            f = open(ps_wdf, 'rb')
+                            Wdf = pickle.load(f)
+                        except:
+                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                                                            arrayname, FilterMeta,
+                                                            ev, switch, W)
+
+                            fobj_proc = open(ps_wdf, 'wb')
+                            pickle.dump(Wdf, fobj_proc)
+                            f = open(ps_wdf, 'rb')
+                            Wdf = pickle.load(f)
                         Wdfs.extend(Wdf)
 
                     C.writeStationFile(FilterMeta, Folder, counter)
@@ -616,7 +642,7 @@ def processLoop():
 
                     t1 = time.time()
 
-                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                    f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                              % (phase, ttt_model, ev.time, arrayname,
                                 workdepth), 'rb')
                     TTTGridMap, mint, maxt = pickle.load(f)
@@ -648,7 +674,7 @@ def processLoop():
                                         ntimes_emp = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
                                     else:
                                         ntimes_emp = int((cfg.UInt('duration_emp')) / step_emp)
-                                    f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                        f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                              % (phase, ttt_model, ev_emp.time, arrayname,
                                                 workdepth), 'rb')
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
@@ -668,7 +694,7 @@ def processLoop():
                                         if cfg.correct_shifts() is False:
                                             refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
-                            f = open('../tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                            f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                      % (phase, ttt_model, ev.time, arrayname,
                                         workdepth), 'rb')
                             print("loading travel time grid%s_%s_%s_%s_%s.pkl"
@@ -736,9 +762,21 @@ def processLoop():
                                                              FilterMetas, ev,
                                                              switch, W)
                     else:
-                        Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                        arrayname, FilterMetas,
-                                                        ev, switch, W)
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s" %(arrayname))
+
+                        try:
+                            f = open(ps_wdf, 'rb')
+                            Wdf = pickle.load(f)
+                        except:
+                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                                                            arrayname, FilterMeta,
+                                                            ev, switch, W)
+
+                            fobj_proc = open(ps_wdf, 'wb')
+                            pickle.dump(Wdf, fobj_proc)
+                            f = open(ps_wdf, 'rb')
+                            Wdf = pickle.load(f)
+
                     mint = num.min(mints)
                     maxt = num.max(maxts)
                     flag_rpe = False
@@ -852,13 +890,6 @@ class ProcessMain(MainObj):
         MainObj.__init__(self, self, '0.3', 'process_run.log', 'process.log')
 
     def init(self):
-        file = 'ak135.model'
-
-        if not os.path.isfile(file):
-            source = os.path.join('..', 'tools', file)
-            Basic.checkFileExists(source, isAbort=True)
-            shutil.copy(source, file)
-
         return True
 
     def process(self):

@@ -3,36 +3,29 @@ import sys
 import math
 from math import radians, cos, sin, atan2
 import logging
-sys.path.append ('../tools/')
-sys.path.append ('../Common/')
 from obspy.core.utcdatetime import UTCDateTime
-import Basic
-import Globals
-import Logfile
-import  DataTypes
-from DataTypes import Location
-from ObspyFkt import loc2degrees
-from ConfigFile import ConfigObj, OriginCfg, SynthCfg
+from palantiri.common import Basic, Globals, Logfile, DataTypes
+from palantiri.common.DataTypes import Location
+from palantiri.common.ObspyFkt import loc2degrees
+from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg
 import time
 import numpy as num
 from collections import OrderedDict, defaultdict
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource
 from pyrocko import util, pile, model, catalog, gf, cake, io, trace
 from pyrocko.guts import Object, String, Float, List
-km = 1000.
-import trigger
-from semp import otest
-from beam_stack import BeamForming
+from palantiri.process.semp import otest
+from palantiri.process.beam_stack import BeamForming
 from pyrocko.gf import STF
-from stacking import PWS_stack
-import sembCalc
-import ttt
-import config
-from    array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR, getArrayShiftValue
+from palantiri.process.stacking import PWS_stack
+from palantiri.process import sembCalc
+from palantiri.process import ttt, waveform, sembCalc, trigger
+from palantiri.tools import config
+from palantiri.process.array_crosscorrelation_v4  import Xcorr, cmpFilterMetavsXCORR, getArrayShiftValue
 import cPickle  as pickle
-import  times
-import  waveform
-# -------------------------------------------------------------------------------------------------
+import times
+
+km = 1000.
 
 
 logger = logging.getLogger('ARRAY-MP')
