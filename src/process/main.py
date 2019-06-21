@@ -582,7 +582,13 @@ def processLoop():
                                                                  switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                         else:
-                            ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s_%s" %(arrayname, switch))
+                            if switch == 0:
+                                ff1 = cfg.flo()
+                                ff2 = cfg.fhi()
+                            if switch == 1:
+                                ff1 = cfg.flo2()
+                                ff2 = cfg.fhi2()
+                            ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s_%s%s" %(arrayname, ff1, ff2))
                             if cfg.Bool('load_wdf') is True:
                                 try:
                                     f = open(ps_wdf_emp, 'rb')
@@ -626,7 +632,13 @@ def processLoop():
                                                              switch, W)
                         Wdfs.extend(Wdf)
                     else:
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s" %(arrayname, switch))
+                        if switch == 0:
+                            ff1 = cfg.flo()
+                            ff2 = cfg.fhi()
+                        if switch == 1:
+                            ff1 = cfg.flo2()
+                            ff2 = cfg.fhi2()
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" %(arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
@@ -771,7 +783,13 @@ def processLoop():
                                                              FilterMetas, ev,
                                                              switch, W)
                     else:
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s_combined" %(arrayname, switch))
+                        if switch == 0:
+                            ff1 = cfg.flo()
+                            ff2 = cfg.fhi()
+                        if switch == 1:
+                            ff1 = cfg.flo2()
+                            ff2 = cfg.fhi2()
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s_combined" %(arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
