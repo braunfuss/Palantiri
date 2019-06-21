@@ -583,20 +583,23 @@ def processLoop():
                             Wdfs_emp.extend(Wdf_emp)
                         else:
                             ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s_%s" %(arrayname, switch))
+                            if cfg.Bool('load_wdf') is True:
+                                try:
+                                    f = open(ps_wdf_emp, 'rb')
+                                    Wdf_emp = pickle.load(f)
+                                except:
+                                    Wdf_emp = waveform.processWaveforms(Wd_emp, Config, Folder,
+                                                                    arrayname, FilterMeta,
+                                                                    ev_emp, switch, W)
 
-                            try:
-                                f = open(ps_wdf, 'rb')
-                                Wdf_emp = pickle.load(f)
-                            except:
+                                    fobj_proc = open(ps_wdf_emp, 'wb')
+                                    pickle.dump(Wdf_emp, fobj_proc)
+                                    f = open(ps_wdf_emp, 'rb')
+                                    Wdf_emp = pickle.load(f)
+                            else:
                                 Wdf_emp = waveform.processWaveforms(Wd_emp, Config, Folder,
                                                                 arrayname, FilterMeta,
                                                                 ev_emp, switch, W)
-
-                                fobj_proc = open(ps_wdf_emp, 'wb')
-                                pickle.dump(Wdf_emp, fobj_proc)
-                                f = open(ps_wdf_emp, 'rb')
-                                Wdf_emp = pickle.load(f)
-
                             Wdfs_emp.extend(Wdf_emp)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
@@ -624,19 +627,23 @@ def processLoop():
                         Wdfs.extend(Wdf)
                     else:
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s" %(arrayname, switch))
+                        if cfg.Bool('load_wdf') is True:
+                            try:
+                                f = open(ps_wdf, 'rb')
+                                Wdf = pickle.load(f)
+                            except:
+                                Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                                                                arrayname, FilterMeta,
+                                                                ev, switch, W)
 
-                        try:
-                            f = open(ps_wdf, 'rb')
-                            Wdf = pickle.load(f)
-                        except:
+                                fobj_proc = open(ps_wdf, 'wb')
+                                pickle.dump(Wdf, fobj_proc)
+                                f = open(ps_wdf, 'rb')
+                                Wdf = pickle.load(f)
+                        else:
                             Wdf = waveform.processWaveforms(Wd, Config, Folder,
                                                             arrayname, FilterMeta,
                                                             ev, switch, W)
-
-                            fobj_proc = open(ps_wdf, 'wb')
-                            pickle.dump(Wdf, fobj_proc)
-                            f = open(ps_wdf, 'rb')
-                            Wdf = pickle.load(f)
                         Wdfs.extend(Wdf)
 
                     C.writeStationFile(FilterMeta, Folder, counter)
@@ -765,19 +772,23 @@ def processLoop():
                                                              switch, W)
                     else:
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s" %(arrayname, switch))
+                        if cfg.Bool('load_wdf') is True:
+                            try:
+                                f = open(ps_wdf, 'rb')
+                                Wdf = pickle.load(f)
+                            except:
+                                Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                                                                arrayname, FilterMeta,
+                                                                ev, switch, W)
 
-                        try:
-                            f = open(ps_wdf, 'rb')
-                            Wdf = pickle.load(f)
-                        except:
+                                fobj_proc = open(ps_wdf, 'wb')
+                                pickle.dump(Wdf, fobj_proc)
+                                f = open(ps_wdf, 'rb')
+                                Wdf = pickle.load(f)
+                        else:
                             Wdf = waveform.processWaveforms(Wd, Config, Folder,
                                                             arrayname, FilterMeta,
                                                             ev, switch, W)
-
-                            fobj_proc = open(ps_wdf, 'wb')
-                            pickle.dump(Wdf, fobj_proc)
-                            f = open(ps_wdf, 'rb')
-                            Wdf = pickle.load(f)
 
                     mint = num.min(mints)
                     maxt = num.max(maxts)

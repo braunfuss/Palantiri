@@ -185,6 +185,9 @@ class ConfigObj(object):
     def cs(self):
         return self.Bool('compressed_sensing')
 
+    def load_wdf(self):
+        return self.Bool('load_wdf')
+
     def synthetic_test(self):
         return self.Bool('synthetic_test')
 

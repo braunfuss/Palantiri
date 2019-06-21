@@ -6,12 +6,13 @@ from threading import Thread
 from obspy.signal.headers import clibsignal
 from obspy import Stream, Trace
 # add local directories to import path
-from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
+sys.path.append('../Common/')
+from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 
 import numpy as np
 
-from palantiri.common import Logfile
-from palantiri.common import Basic
+import Logfile
+import Basic
 import ctypes as C
 from pyrocko import trace as trld
 from pyrocko.marker import PhaseMarker
@@ -240,11 +241,18 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
-
+    if cfg.Bool('combine_all') is True:
+        combine = True
+    else:
+        combine = False
+    if cfg.Bool('bootstrap_array_weights') is True:
+        do_bs_weights = True
+    else:
+        do_bs_weights = False
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-        if cfg.Bool('combine_all') is True:
+        if combine is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
             # when combing all waveforms/arrays from the world at once(only then)
@@ -253,12 +261,47 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # mechanism.
             tr_org.ydata = abs(tr_org.ydata)
             tr_org.ydata = num.diff(tr_org.ydata)
+
         trs_orgs.append(tr_org)
 
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
     lonv = lonv_1.tolist()
+
+    from collections import OrderedDict
+    index_begins = OrderedDict()
+
+    index_steps = []
+    index_window = []
+
+    for j in range(dimX * dimY):
+        for k in range(nostat):
+            relstart = traveltime[k][j]
+            tr = trs_orgs[k]
+
+            try:
+                tmin = time+relstart-mint-refshifts[k]
+                tmax = time+relstart-mint+nsamp-refshifts[k]
+            except IndexError:
+                tmin = time+relstart-mint
+                tmax = time+relstart-mint+nsamp
+
+            ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+            index_begins[str(j)+str(k)]= [ibeg, tmin]
+
+            iend = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
+
+            iend_step = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin+nstep, tr.deltat, snap[1]))
+            index_steps.append(iend_step-iend)
+
+            index_window.append(iend-ibeg)
+
+
     '''
     Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
     Basic.writeMatrix(travel_txt, traveltime, nostat, dimX * dimY, '%e')
@@ -276,7 +319,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             semb = 0
             nomin = 0
             denom = 0
-            if cfg.Bool('combine_all') is True:
+            if combine is True:
                 sums = 1
             else:
                 sums = 0
@@ -286,25 +329,13 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
-                try:
-                    tmin = time+relstart+(i*nstep)-mint-refshifts[k]
-                    tmax = time+relstart+(i*nstep)-mint+nsamp-refshifts[k]
-                except IndexError:
-                    tmin = time+relstart+(i*nstep)-mint
-                    tmax = time+relstart+(i*nstep)-mint+nsamp
-                try:
-                    ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
-                    iend = min(
-                        tr.data_len(),
-                        t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
-                except Exception:
-                    print('Loaded traveltime grid wrong!')
-
+                ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
+                iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
 
                 try:
-                    if cfg.Bool('combine_all') is True:
-                        if cfg.Bool('bootstrap_array_weights') is True:
+                    if combine is True:
+                        if do_bs_weights is True:
                             sums *= (data)*bs_weights[k]
                         else:
                             sums *= (data)
@@ -339,11 +370,18 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
-
+    if cfg.Bool('combine_all') is True:
+        combine = True
+    else:
+        combine = False
+    if cfg.Bool('bootstrap_array_weights') is True:
+        do_bs_weights = True
+    else:
+        do_bs_weights = False
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-        if cfg.Bool('combine_all') is True:
+        if combine is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
             # when combing all waveforms/arrays from the world at once(only then)
@@ -375,7 +413,7 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             semb = 0
             nomin = 0
             denom = 0
-            if cfg.Bool('combine_all') is True:
+            if combine is True:
                 sums = 1
             else:
                 sums = 0
@@ -402,8 +440,8 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 data = tr.ydata[ibeg:iend]
 
                 try:
-                    if cfg.Bool('combine_all') is True:
-                        if cfg.Bool('bootstrap_array_weights') is True:
+                    if combine is True:
+                        if do_bs_weights is True:
                             sums *= (data)*bs_weights[k]
                         else:
                             sums *= (data)
@@ -437,13 +475,22 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
+    if cfg.Bool('combine_all') is True:
+        combine = True
+    else:
+        combine = False
+    if cfg.Bool('bootstrap_array_weights') is True:
+        do_bs_weights = True
+    else:
+        do_bs_weights = False
+
     index_mean_x = dimX/2
     index_mean_y = dimY/2
     j_mean = int((dimX * dimY)/2)
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-        if cfg.Bool('combine_all') is True:
+        if combine is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
             # when combing all waveforms/arrays from the world at once(only then)
@@ -475,7 +522,7 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         semb = 0
         nomin = 0
         denom = 0
-        if cfg.Bool('combine_all') is True:
+        if combine is True:
             sums = 1
         else:
             sums = 0
@@ -502,8 +549,8 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             data = tr.ydata[ibeg:iend]
 
             try:
-                if cfg.Bool('combine_all') is True:
-                    if cfg.Bool('bootstrap_array_weights') is True:
+                if combine is True:
+                    if do_bs_weights is True:
                         sums *= (data)*bs_weights[k]
                     else:
                         sums *= (data)
@@ -594,7 +641,6 @@ def startsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSample
 
     return backSemb
 
-# -------------------------------------------------------------------------------------------------
 
 if __name__ == "__main__":
    execsemblance2()
