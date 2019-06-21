@@ -771,24 +771,25 @@ def processLoop():
                                                              FilterMetas, ev,
                                                              switch, W)
                     else:
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s" %(arrayname, switch))
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s_combined" %(arrayname, switch))
                         if cfg.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
+                                print('loaded wdf')
+                                print(ps_wdf)
                             except:
                                 Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                                arrayname, FilterMeta,
-                                                                ev, switch, W)
+                                                        arrayname, FilterMetas,
+                                                        ev, switch, W)
 
                                 fobj_proc = open(ps_wdf, 'wb')
                                 pickle.dump(Wdf, fobj_proc)
-                                f = open(ps_wdf, 'rb')
-                                Wdf = pickle.load(f)
+                                print('dumped wdf')
                         else:
                             Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                            arrayname, FilterMeta,
-                                                            ev, switch, W)
+                                                        arrayname, FilterMetas,
+                                                        ev, switch, W)
 
                     mint = num.min(mints)
                     maxt = num.max(maxts)
