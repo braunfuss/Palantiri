@@ -435,10 +435,12 @@ def processLoop():
                     maxt = []
                     ttt_model = cfg.Str('traveltime_model')
                     try:
-
-                        f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                        px = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+                        pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                  % (phase, ttt_model, ev.time, arrayname,
-                                    workdepth), 'rb')
+                                    workdepth))
+                        px_path = px+pdx
+                        f = open(px_path, 'rb')
 
                         print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
                               % (phase, ttt_model, ev.time, arrayname,
