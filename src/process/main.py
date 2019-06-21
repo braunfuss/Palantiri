@@ -580,7 +580,7 @@ def processLoop():
                                                                  switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                         else:
-                            ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s" %(arrayname))
+                            ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s_%s" %(arrayname, switch))
 
                             try:
                                 f = open(ps_wdf, 'rb')
@@ -621,7 +621,7 @@ def processLoop():
                                                              switch, W)
                         Wdfs.extend(Wdf)
                     else:
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s" %(arrayname))
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s" %(arrayname, switch))
 
                         try:
                             f = open(ps_wdf, 'rb')
@@ -762,7 +762,7 @@ def processLoop():
                                                              FilterMetas, ev,
                                                              switch, W)
                     else:
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s" %(arrayname))
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s" %(arrayname, switch))
 
                         try:
                             f = open(ps_wdf, 'rb')
