@@ -6,12 +6,6 @@ import shutil
 import time
 import multiprocessing
 from optparse import OptionParser
-if sys.version_info.major >= 3:
-    import _pickle as pickle
-    xrange = range
-else:
-    import cPickle as pickle
-
 from palantiri.process import optim
 from palantiri.common import Basic, Globals, Logfile
 from palantiri.common.Program import MainObj
@@ -19,15 +13,15 @@ from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCf
 from collections import OrderedDict
 from palantiri.tools import config
 from palantiri.tools.config import Event
-from palantiri.process import deserializer
-from palantiri.process import ttt
-from palantiri.process import sembCalc
-from palantiri.process import waveform
-from palantiri.process import times
-from palantiri.process import array_crosscorrelation_v4
+from palantiri.process import ttt, sembCalc, waveform, times, array_crosscorrelation_v4, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
-
 import numpy as num
+if sys.version_info.major >= 3:
+    import _pickle as pickle
+    xrange = range
+else:
+    import cPickle as pickle
+
 
 rstate = num.random.RandomState()
 logger = logging.getLogger(sys.argv[0])
@@ -63,7 +57,7 @@ def initModule():
     return True
 
 
-def processLoop():
+def processLoop(traces=None, stations=None, cluster=None):
 
     C = config.Config(evpath, eventpath_emp=evpath_emp)
     Origin = C.parseConfig('origin')
@@ -583,11 +577,11 @@ def processLoop():
                             Wdfs_emp.extend(Wdf_emp)
                         else:
                             if switch == 0:
-                                ff1 = cfg.flo()
-                                ff2 = cfg.fhi()
+                                ff1 = filter.flo()
+                                ff2 = filter.fhi()
                             if switch == 1:
-                                ff1 = cfg.flo2()
-                                ff2 = cfg.fhi2()
+                                ff1 = filter.flo2()
+                                ff2 = filter.fhi2()
                             ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s_%s%s" %(arrayname, ff1, ff2))
                             if cfg.Bool('load_wdf') is True:
                                 try:
@@ -633,11 +627,11 @@ def processLoop():
                         Wdfs.extend(Wdf)
                     else:
                         if switch == 0:
-                            ff1 = cfg.flo()
-                            ff2 = cfg.fhi()
+                            ff1 = filter.flo()
+                            ff2 = filter.fhi()
                         if switch == 1:
-                            ff1 = cfg.flo2()
-                            ff2 = cfg.fhi2()
+                            ff1 = filter.flo2()
+                            ff2 = filter.fhi2()
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" %(arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:
@@ -784,11 +778,11 @@ def processLoop():
                                                              switch, W)
                     else:
                         if switch == 0:
-                            ff1 = cfg.flo()
-                            ff2 = cfg.fhi()
+                            ff1 = filter.flo()
+                            ff2 = filter.fhi()
                         if switch == 1:
-                            ff1 = cfg.flo2()
-                            ff2 = cfg.fhi2()
+                            ff1 = filter.flo2()
+                            ff2 = filter.fhi2()
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s_combined" %(arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:

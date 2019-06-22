@@ -5,14 +5,9 @@ import numpy as num
 from threading import Thread
 from obspy.signal.headers import clibsignal
 from obspy import Stream, Trace
-# add local directories to import path
-sys.path.append('../Common/')
-from ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
-
+from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCfg
 import numpy as np
-
-import Logfile
-import Basic
+from palantiri.common import Basic, Logfile
 import ctypes as C
 from pyrocko import trace as trld
 from pyrocko.marker import PhaseMarker
