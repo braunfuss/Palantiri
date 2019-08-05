@@ -394,68 +394,192 @@ class SynthCfg(ConfigObj):
 
     def __init__(self, dict):   ConfigObj.__init__(self, None, dict)
 
-    def lat_0(self): return self.Float('lat_0')
-    def lon_0(self): return self.Float('lon_0')
-    def north_shift_0(self): return self.Float('north_shift_0')
-    def east_shift_0(self): return self.Float('east_shift_0')
-    def strike_0(self): return self.Float('strike_0')
-    def dip_0(self): return self.Float('dip_0')
-    def rake_0(self): return self.Float('rake_0')
-    def length_0(self): return self.Float('length_0')
-    def width_0(self): return self.Float('width_0')
-    def depth_syn_0(self): return self.Float('depth_0')
-    def nucleation_x_0(self): return self.Float('nucleation_x_0')
-    def nucleation_y_0(self): return self.Float('nucleation_y_0')
-    def slip_0(self): return self.Float('slip_0')
-    def rmnn(self): return self.Float('rmnn')
-    def rmee(self): return self.Float('rmee')
-    def rmdd(self): return self.Float('rmdd')
-    def rmne(self): return self.Float('rmne')
-    def rmnd(self): return self.Float('rmnd')
-    def rmed(self): return self.Float('rmed')
-    def duration(self): return self.Float('duration')
-    def magnitude_0(self): return self.Float('magnitude_0')
-    def mag_0_low(self): return self.Float('mag_low_0')
-    def mag_0_high(self): return self.Float('mag_high_0')
-    def dip_0_low(self): return self.Float('dip_low_0')
-    def dip_0_high(self): return self.Float('dip_high_0')
-    def depth_0_low(self): return self.Float('depth_low_0')
-    def depth_0_high(self): return self.Float('depth_high_0')
-    def rake_0_low(self): return self.Float('rake_low_0')
-    def rake_0_high(self): return self.Float('rake_high_0')
-    def strike_0_low(self): return self.Float('strike_low_0')
-    def strike_0_high(self): return self.Float('strike_high_0')
-    def north_shift_0_low(self): return self.Float('north_shift_low_0')
-    def north_shift_0_high(self): return self.Float('north_shift_high_0')
-    def east_shift_0_low(self): return self.Float('east_shift_low_0')
-    def east_shift_0_high(self): return self.Float('east_shift_high_0')
-    def time_0_low(self): return self.Float('time_low_0')
-    def time_0_high(self): return self.Float('time_high_0')
+    def lat_0(self):
+        return self.Float('lat_0')
 
-    def time_0(self): return self.String('time_0')
-    def store_superdirs(self): return self.Str('store_superdirs')
-    def store(self): return self.Str('store')
-    def source(self): return self.Str('source')
-    def stf(self): return self.Str('stf')
-    def use_specific_stf(self): return self.Bool('use_specific_stf')
-    def nsources(self): return self.Int('nsources')
-    def stf(self): return self.Str('stf')
+    def lon_0(self):
+        return self.Float('lon_0')
 
-    def lat_1(self, i): return self.Float(('lat_%s' % i))
-    def lon_1(self, i): return self.Float(('lon_%s' % i))
-    def north_shift_1(self, i): return self.Float(('north_shift_%s' % i))
-    def east_shift_1(self, i): return self.Float(('east_shift_%s' % i))
-    def strike_1(self, i): return self.Float(('strike_%s' % i))
-    def depth_syn_1(self, i): return self.Float(('depth_%s' % i))
-    def dip_1(self, i): return self.Float(('dip_%s' % i))
-    def rake_1(self, i): return self.Float(('rake_%s' % i))
-    def length_1(self, i): return self.Float(('length_%s' % i))
-    def width_1(self, i): return self.Float(('width_%s' % i))
-    def nucleation_x_1(self, i): return self.Float(('nucleation_x_%s' % i))
-    def nucleation_y_1(self, i): return self.Float(('nucleation_y_%s' % i))
-    def slip_1(self, i): return self.Float(('slip_%s' % i))
-    def magnitude_1(self, i): return self.Float(('magnitude_%s' % i))
-    def time_1(self, i): return self.String(('time_%s' % i))
+    def north_shift_0(self):
+        try:
+            return self.Float('north_shift_0')
+        except TypeError:
+            return 0.
+
+    def east_shift_0(self):
+        try:
+            return self.Float('east_shift_0')
+        except TypeError:
+            return 0.
+
+    def strike_0(self):
+        return self.Float('strike_0')
+
+    def dip_0(self):
+        return self.Float('dip_0')
+
+    def rake_0(self):
+        return self.Float('rake_0')
+
+    def length_0(self):
+        return self.Float('length_0')
+
+
+    def width_0(self):
+        return self.Float('width_0')
+
+    def depth_syn_0(self):
+        return self.Float('depth_0')
+
+    def nucleation_x_0(self):
+        return self.Float('nucleation_x_0')
+
+    def nucleation_y_0(self):
+        return self.Float('nucleation_y_0')
+
+    def slip_0(self):
+        return self.Float('slip_0')
+
+    def rmnn(self):
+        return self.Float('rmnn')
+
+    def rmee(self):
+        return self.Float('rmee')
+
+    def rmdd(self):
+        return self.Float('rmdd')
+
+    def rmne(self):
+        return self.Float('rmne')
+
+    def rmnd(self):
+        return self.Float('rmnd')
+
+    def rmed(self):
+        return self.Float('rmed')
+
+    def duration(self):
+        return self.Float('duration')
+
+    def magnitude_0(self):
+        return self.Float('magnitude_0')
+
+    def mag_0_low(self):
+        return self.Float('mag_low_0')
+
+    def mag_0_high(self):
+        return self.Float('mag_high_0')
+
+    def dip_0_low(self):
+        return self.Float('dip_low_0')
+
+    def dip_0_high(self):
+        return self.Float('dip_high_0')
+
+    def depth_0_low(self):
+        return self.Float('depth_low_0')
+
+    def depth_0_high(self):
+        return self.Float('depth_high_0')
+
+    def rake_0_low(self):
+        return self.Float('rake_low_0')
+
+    def rake_0_high(self):
+        return self.Float('rake_high_0')
+
+    def strike_0_low(self):
+        return self.Float('strike_low_0')
+
+    def strike_0_high(self):
+        return self.Float('strike_high_0')
+
+    def north_shift_0_low(self):
+        return self.Float('north_shift_low_0')
+
+    def north_shift_0_high(self):
+        return self.Float('north_shift_high_0')
+
+    def east_shift_0_low(self):
+        return self.Float('east_shift_low_0')
+
+    def east_shift_0_high(self):
+        return self.Float('east_shift_high_0')
+
+    def time_0_low(self):
+        return self.Float('time_low_0')
+
+    def time_0_high(self):
+        return self.Float('time_high_0')
+
+    def time_0(self):
+        return self.String('time_0')
+
+    def store_superdirs(self):
+        return self.Str('store_superdirs')
+
+    def store(self):
+        return self.Str('store')
+
+    def source(self):
+        return self.Str('source')
+
+    def stf(self):
+        return self.Str('stf')
+
+    def use_specific_stf(self):
+        return self.Bool('use_specific_stf')
+
+    def nsources(self):
+        return self.Int('nsources')
+
+    def stf(self):
+        return self.Str('stf')
+
+    def lat_1(self, i):
+        return self.Float(('lat_%s' % i))
+
+    def lon_1(self, i):
+        return self.Float(('lon_%s' % i))
+
+    def north_shift_1(self, i):
+        return self.Float(('north_shift_%s' % i))
+
+    def east_shift_1(self, i):
+        return self.Float(('east_shift_%s' % i))
+
+    def strike_1(self, i):
+        return self.Float(('strike_%s' % i))
+
+    def depth_syn_1(self, i):
+        return self.Float(('depth_%s' % i))
+
+    def dip_1(self, i):
+        return self.Float(('dip_%s' % i))
+
+    def rake_1(self, i):
+        return self.Float(('rake_%s' % i))
+
+    def length_1(self, i):
+        return self.Float(('length_%s' % i))
+
+    def width_1(self, i):
+        return self.Float(('width_%s' % i))
+
+    def nucleation_x_1(self, i):
+        return self.Float(('nucleation_x_%s' % i))
+
+    def nucleation_y_1(self, i):
+        return self.Float(('nucleation_y_%s' % i))
+
+    def slip_1(self, i):
+        return self.Float(('slip_%s' % i))
+
+    def magnitude_1(self, i):
+        return self.Float(('magnitude_%s' % i))
+
+    def time_1(self, i):
+        return self.String(('time_%s' % i))
 
 
 DEFAULT_CONFIG_FILE = 'global.conf'

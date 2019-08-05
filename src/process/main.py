@@ -13,7 +13,7 @@ from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCf
 from collections import OrderedDict
 from palantiri.tools import config
 from palantiri.tools.config import Event
-from palantiri.process import ttt, sembCalc, waveform, times, array_crosscorrelation_v4, deserializer
+from palantiri.process import ttt, sembCalc, waveform, times, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
 import numpy as num
 if sys.version_info.major >= 3:
