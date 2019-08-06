@@ -3,6 +3,7 @@
 ### A seismological backprojection array tool
 In Quenya, palantíri means "far-seeing".
 
+
 ## Installation
 
 
@@ -186,4 +187,6 @@ You should have received a copy of the GNU General Public License along with thi
  24118 Kiel, Germany, Germany
 
 ```
+
+Avatar Image by By xDisciplExX, https://www.deviantart.com/xdisciplexx/art/Palantir-Stock-PNG-458559037 under Creative Commons Attribution-Noncommercial 3.0 License
 
