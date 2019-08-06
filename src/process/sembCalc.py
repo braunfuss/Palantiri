@@ -24,6 +24,8 @@ from palantiri.process.beam_stack import BeamForming
 from pyrocko.gf import STF
 from palantiri.process.stacking import PWS_stack
 import copy
+import scipy
+
 from collections import OrderedDict
 if sys.version_info.major >= 3:
     import _pickle as pickle
@@ -37,6 +39,7 @@ km = 1000.
 r2d = 180./math.pi
 d2r = 1./r2d
 earthradius = 6371.*km
+
 
 def optimization_timeshifts(*params, **args):
     maxp = params[1]
@@ -60,7 +63,7 @@ def optimization_timeshifts(*params, **args):
     refshifts = params[19]
     params = num.asarray(params)
     parameter = num.ndarray.tolist(params)
-    for j in range(0,len(refshifts)):
+    for j in range(0, len(refshifts)):
         refshifts[j] = parameter[0][j]
 
     k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
@@ -84,9 +87,8 @@ def optimization_timeshifts(*params, **args):
 
 
 def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
-              new_frequence, minSampleCount, latv, lonv, traveltimes,
-              traces, calcStreamMap, timeev, Config, Origin, refshifts,cfg):
-    import scipy
+                     new_frequence, minSampleCount, latv, lonv, traveltimes,
+                     traces, calcStreamMap, timeev, Config, Origin, refshifts,cfg):
     t = time.time()  # start timing
     # bounds given as (min,max)
     bounds = []
@@ -95,9 +97,18 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
     for ref in refshifts:
         bounds.append((low, high))
     bounds = num.asarray(bounds)
-    result = scipy.optimize.differential_evolution(optimization_timeshifts, maxiter=3, popsize=3, bounds=bounds, args=(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
-                  new_frequence, minSampleCount, latv, lonv, traveltimes,
-                  traces, calcStreamMap, timeev, Config, Origin, refshifts))
+    result = scipy.optimize.differential_evolution(optimization_timeshifts,
+                                                   maxiter=3, popsize=3,
+                                                   bounds=bounds,
+                                                   args=(maxp, nostat,
+                                                         nsamp, ntimes, nstep,
+                                                         dimX, dimY,
+                                                         Gmint, new_frequence,
+                                                         minSampleCount, latv,
+                                                         lonv, traveltimes,
+                                                         traces, calcStreamMap,
+                                                         timeev, Config, Origin,
+                                                         refshifts))
     elapsed = time.time() - t  # get the processing time
     print("shifts:", result.x)
     return result.x
@@ -209,7 +220,7 @@ class CakeTiming(Object):
             distances=[dist*cake.m2d], phases=phases, zstart=z)
         if arrivals == []:
             logger.warn(
-                'no phase at d=%s, z=%s.(return fallback time)' %(dist, z))
+                'no phase at d=%s, z=%s.(return fallback time)' % (dist, z))
             want = None
         else:
             want = self.phase_selector(arrivals)
@@ -256,7 +267,8 @@ class FileSembMax(object):
     class to strore sembmax object for the sembmaxvalue file
     '''
 
-    def __init__(self,istep,sembmaxX,sembmaxY,sembmax,usedarrays,delta,azi,deltakm):
+    def __init__(self, istep, sembmaxX, sembmaxY, sembmax, usedarrays, delta,
+                 azi, deltakm):
 
         self.istep = istep
         self.sembmaxX = sembmaxX
@@ -268,9 +280,13 @@ class FileSembMax(object):
         self.deltakm= deltakm
 
     def get(self):
-        return('%d %.2f %.2f %f %d %03f %f %03f\n' %(self.istep,self.sembmaxX,self.sembmaxY,
-                                                       self.sembmax,self.usedarrays,self.delta,
-                                                       self.azi,self.delta*119.19))
+        return('%d %.2f %.2f %f %d %03f %f %03f\n' % (self.istep, self.sembmaxX,
+                                                      self.sembmaxY,
+                                                      self.sembmax,
+                                                      self.usedarrays,
+                                                      self.delta,
+                                                      self.azi,
+                                                      self.delta*119.19))
 
 
 def toAzimuth(latevent, lonevent, latsource, lonsource):
@@ -283,12 +299,12 @@ def toAzimuth(latevent, lonevent, latsource, lonsource):
         lat2 = radians(latevent)
         lon2 = radians(lonevent)
 
-        x = sin(lon1-lon2 ) * cos(lat2)
+        x = sin(lon1-lon2) * cos(lat2)
         y = cos(lat1) * sin(lat2) - sin(lat1) * cos(lat2) * cos(lon1-lon2)
         angle = -atan2(x, y)
 
         if angle < 0.0:
-         angle  += math.pi * 2.0
+            angle  += math.pi * 2.0
 
         angle = math.degrees(angle)
         angle = '%02f' % angle
@@ -383,11 +399,11 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
         fobj.close()
 
 
-
 def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 array_centers, phase, cboot=None, temp_comb=None):
     '''
-    method to collect semblance matrizes from all processes and write them to file for each timestep
+    method to collect semblance matrizes from all processes and write them
+    to file for each timestep.
     '''
     Logfile.add('start collect in collectSemb')
     cfg = ConfigObj(dict=Config)
@@ -413,23 +429,23 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     o_lon = origin.lon()
     oLatul = 0
     oLonul = 0
-    z=0
+    z = 0
 
     for i in xrange(dimX):
-         oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
+        oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
 
-         if z == 0 and i == 0 :
-             Latul = oLatul
-         o=0
+        if z == 0 and i == 0:
+            Latul = oLatul
+        o = 0
 
-         for j in xrange(dimY):
-               oLonul = o_lon -((dimY-1)/2) * gridspacing + j*gridspacing
+        for j in xrange(dimY):
+            oLonul = o_lon -((dimY-1)/2) * gridspacing + j*gridspacing
 
-               if o==0 and j==0:
-                    Lonul = oLonul
+            if o==0 and j==0:
+                Lonul = oLonul
 
-               latv.append(oLatul)
-               lonv.append(oLonul)
+                latv.append(oLatul)
+                lonv.append(oLonul)
 
     origin = DataTypes.dictToLocation(Origin)
     icount = 0
@@ -515,7 +531,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         diff_center_lat = origin.lat-array_overlap[0]
         diff_center_lon = origin.lon-array_overlap[1]
 
-
         fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
                                         % (switch, boot, phase)), 'w')
         norm = num.max(num.max(tmp, axis=1))
@@ -533,7 +548,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     #    for j in range(migpoints):
     #                latv[j] = latv[j]#+diff_center_lat
     #                lonv[j] = lonv[j]#+diff_center_lon
-
 
         for a, i in enumerate(tmp):
             if num.max(a) != 0:
@@ -588,8 +602,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 sembmaxlatv[a] = sembmaxX
                 sembmaxlonv[a] = sembmaxY
                 fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n'
-                                  % (a*step, sembmaxX, sembmaxY, sembmax, uncert,
-                                     usedarrays, delta, float(azi), delta*119.19))
+                                  % (a*step, sembmaxX, sembmaxY, sembmax,
+                                     uncert, usedarrays, delta, float(azi),
+                                     delta*119.19))
                 fobj.close()
 
         fobjsembmax.close()
@@ -766,11 +781,12 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
                         switch, weights):
     '''
-    method to collect semblance matrizes from all processes and write them to file for each timestep
+    method to collect semblance matrizes from all processes and write them to
+    file for each timestep
     '''
     Logfile.add('start collect in collectSemb')
 
-    cfg= ConfigObj(dict=Config)
+    cfg = ConfigObj(dict=Config)
     origin = ConfigObj(dict=Origin)
 
     dimX = cfg.dimX()
@@ -792,7 +808,7 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
     oLatul = 0
     oLonul = 0
 
-    z=0
+    z = 0
 
     for i in xrange(dimX):
          oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
@@ -811,38 +827,43 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
                lonv.append(oLonul)
 
 
-    tmp=1
+    tmp = 1
     weight_norm = num.sum(weights)
     for a, w in zip(SembList, weights):
-        if num.mean(a)>0:
+        if num.mean(a) > 0:
             tmp *= a*(w/weight_norm)
 
-    sembmaxvaluev = num.ndarray(ntimes,dtype=float)
-    sembmaxlatv = num.ndarray(ntimes,dtype=float)
-    sembmaxlonv = num.ndarray(ntimes,dtype=float)
+    sembmaxvaluev = num.ndarray(ntimes, dtype=float)
+    sembmaxlatv = num.ndarray(ntimes, dtype=float)
+    sembmaxlonv = num.ndarray(ntimes, dtype=float)
 
-    rc= UTCDateTime(Origin['time'])
-    rcs= '%s-%s-%s_%02d:%02d:%02d'%(rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
+    rc = UTCDateTime(Origin['time'])
+    rcs = '%s-%s-%s_%02d:%02d:%02d'%(rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
     d = rc.timestamp
     usedarrays = arrays
 
 
     folder = Folder['semb']
-    fobjsembmax = open(os.path.join(folder,'sembmax_weighted_%s.txt' %(switch)),'w')
+    fobjsembmax = open(os.path.join(folder,
+                                    'sembmax_weighted_%s.txt' %(switch)),'w')
 
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
 
-
-        fobj = open(os.path.join(folder,'%s-%s_%03d._weighted_semblance.ASC' %(switch,Origin['depth'],a)),'w')
+        fobj = open(os.path.join(folder, '%s-%s_%03d._weighted_semblance.ASC'
+                                 % (switch, Origin['depth'], a)), 'w')
 
         fobj.write('# %s , %s\n' %(d,rcs))
-        fobj.write('# step %ds| ntimes %d| winlen: %ds\n' %(step,ntimes,winlen))
+        fobj.write('# step %ds| ntimes %d| winlen: %ds\n' % (step, ntimes,
+                                                             winlen))
         fobj.write('# \n')
-        fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n'%(Latul,gridspacing,dimX))
-        fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n'%(Lonul,gridspacing,dimY))
+        fobj.write('# southwestlat: %.2f dlat: %f nlat: %f \n' % (Latul,
+                                                                  gridspacing,
+                                                                  dimX))
+        fobj.write('# southwestlon: %.2f dlon: %f nlon: %f \n' % (Lonul,
+                                                                  gridspacing,
+                                                                  dimY))
         fobj.write('# ddepth: 0 ndepth: 1 \n')
-
 
         sembmax = 0
         sembmaxX = 0
@@ -851,19 +872,20 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
         origin = DataTypes.dictToLocation(Origin)
         uncert = num.std(i) #maybe not std?
         for j in range(migpoints):
-            x= latv[j]
-            y= lonv[j]
+            x = latv[j]
+            y = lonv[j]
             semb = i[j]
 
-            fobj.write('%.2f %.2f %.20f %.20f\n' %(x,y,semb))
-
-            if  semb > sembmax:
-                sembmax = semb# search for maximum and position of maximum on semblance grid for given time step
+            fobj.write('%.2f %.2f %.20f %.20f\n' % (x, y, semb))
+            # search for maximum and position of maximum on semblance grid at t
+            if semb > sembmax:
+                sembmax = semb
                 sembmaxX = x
                 sembmaxY = y
 
         delta = loc2degrees(Location(sembmaxX, sembmaxY), origin)
-        azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),float(sembmaxX), float(sembmaxY))
+        azi = toAzimuth(float(Origin['lat']), float(Origin['lon']),
+                        float(sembmaxX), float(sembmaxY))
 
         sembmaxvaluev[a] = sembmax
         sembmaxlatv[a] = sembmaxX
@@ -872,11 +894,11 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
         fobjsembmax.write('%d %.2f %.2f %.20f %.20f %d %03f %f %03f\n' %(a*step,sembmaxX,sembmaxY,sembmax,uncert,usedarrays,delta,float(azi),delta*119.19))
         fobj.close()
 
-
     fobjsembmax.close()
 
     trigger.writeSembMaxValue(sembmaxvaluev,sembmaxlatv,sembmaxlonv,ntimes,Config,Folder)
     trigger.semblancestalta(sembmaxvaluev,sembmaxlatv,sembmaxlonv)
+
 
 def toMatrix(npVector, nColumns):
 
