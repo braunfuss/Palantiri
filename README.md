@@ -2,7 +2,7 @@
 
 ### A seismological backprojection array tool
 
-Since last week, GitHub is restricting access to their services based on user nationality and residence. Such restrictions are incompatible with scientific standards in international research communities like seismology. See the statement at https://pyrocko.org/. 
+GitHub is restricting access to their services based on user nationality and residence. Such restrictions are incompatible with scientific standards in international research communities like seismology. See the statement at https://pyrocko.org/. 
 
 As researchers, we are obligated to retain open access to all. To achieve this, we are now migrating our code repositories away from GitHub to a new safe home. The new home of the Palantiri repository is at https://git.pyrocko.org/asteinbe/Palantiri.
 
