@@ -134,8 +134,8 @@ def processLoop(traces=None, stations=None, cluster=None):
 
         Origin_emp = C.parseConfig('origin_emp')
         origin_emp = OriginCfg(Origin_emp)
-        ev_emp = Event(origin_emp.lat(), origin_emp.lon(), origin_emp.depth(), origin_emp.time(),
-                   strike=strike, dip=dip, rake=rake)
+        ev_emp = Event(origin_emp.lat(), origin_emp.lon(), origin_emp.depth(),
+                       origin_emp.time(), strike=strike, dip=dip, rake=rake)
     filtername = filter.filterName()
     Logfile.add('filtername = ' + filtername)
 
