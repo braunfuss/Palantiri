@@ -6,7 +6,7 @@ GitHub is restricting access to their services based on user nationality and res
 
 As researchers, we are obligated to retain open access to all. To achieve this, we are now migrating our code repositories away from GitHub to a new safe home. The new home of the Palantiri repository is at https://git.pyrocko.org/asteinbe/Palantiri.
 
-To ensure a smooth transition, we will keep a version of the code repository at GitHub until 2019-10-01, when it will be deleted.
+To ensure a smooth transition, we will keep a read-only version of the code repository at GitHub until 2019-10-01, when it will be deleted.
 
 ## Installation
 
