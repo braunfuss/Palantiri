@@ -572,8 +572,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 counter_time = 0
                 uncert = num.std(i)
                 semb_cum =+ i
-                for j in range(migpoints):
-
+                for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]
 
@@ -682,8 +681,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         counter_time = 0
         uncert = num.std(i)
         semb_cum =+ i
-        for j in range(migpoints):
-
+        for j in range(num.shape(latv)[0]):
             x = latv[j]
             y = lonv[j]
 
@@ -1031,8 +1029,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     lat=st.lat,
                     lon=st.lon,
                     store_id=store_id,
-                    tmin=-1000,
-                    tmax=1000,
                     codes=(st.network, st.station, st.location, 'BHZ'),
                     interpolation='multilinear',
                     quantity=cfg.quantity())
@@ -1133,7 +1129,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         for source in sources:
             response = engine.process(source, targets)
             synthetic_traces_source = response.pyrocko_traces()
-            from pyrocko import trace as trld
             if not synthetic_traces:
                 synthetic_traces = synthetic_traces_source
             else:
@@ -1141,6 +1136,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                         synthetic_traces):
                         tr.add(trsource)
             #debug
+        from pyrocko import trace as trld
         #trld.snuffle(synthetic_traces)
 
         timeev = util.str_to_time(syn_in.time_0())
