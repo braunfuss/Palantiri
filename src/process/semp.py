@@ -331,9 +331,9 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 try:
                     if combine is True:
                         if do_bs_weights is True:
-                            sums *= (data)*bs_weights[k]
+                            sums += (data)*bs_weights[k]
                         else:
-                            sums *= (data)
+                            sums += (data)
 
                     else:
                         sums += (data)
@@ -354,7 +354,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                     str(sembmaxX) + ','+ str(sembmaxY))
 
     backSemb = backSemb
-    return abs(backSemb)
+    return abs(backSemb)/num.max(abs(backSemb))
 
 
 def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
@@ -384,7 +384,7 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
             tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.diff(tr_org.ydata)
+            #tr_org.ydata = num.diff(tr_org.ydata)
         trs_orgs.append(tr_org)
 
     traveltime = []

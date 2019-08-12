@@ -345,21 +345,21 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
 
     z = 0
 
+
     for i in xrange(dimX):
-        oLatul = o_lat - ((dimX-1)/2) * gridspacing + i*gridspacing
+         oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
 
-        if z == 0 and i == 0:
-            Latul = oLatul
-        o = 0
+         if z == 0 and i == 0:
+             Latul = oLatul
+         o=0
 
-        for j in xrange(dimY):
-            oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
+         for j in xrange(dimY):
+               oLonul = o_lon -((dimY-1)/2) * gridspacing + j * gridspacing
 
-            if o == 0 and j == 0:
-                Lonul = oLonul
+               if o==0 and j==0:  Lonul = oLonul
 
-            latv.append(oLatul)
-            lonv.append(oLonul)
+               latv.append(oLatul)
+               lonv.append(oLonul)
 
     rc = UTCDateTime(Origin['time'])
     rcs = '%s-%s-%s_%02d:%02d:%02d' % (rc.day, rc.month, rc.year, rc.hour,
@@ -432,20 +432,19 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     z = 0
 
     for i in xrange(dimX):
-        oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
+         oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
 
-        if z == 0 and i == 0:
-            Latul = oLatul
-        o = 0
+         if z == 0 and i == 0:
+             Latul = oLatul
+         o=0
 
-        for j in xrange(dimY):
-            oLonul = o_lon -((dimY-1)/2) * gridspacing + j*gridspacing
+         for j in xrange(dimY):
+               oLonul = o_lon -((dimY-1)/2) * gridspacing + j * gridspacing
 
-            if o==0 and j==0:
-                Lonul = oLonul
+               if o==0 and j==0:  Lonul = oLonul
 
-                latv.append(oLatul)
-                lonv.append(oLonul)
+               latv.append(oLatul)
+               lonv.append(oLonul)
 
     origin = DataTypes.dictToLocation(Origin)
     icount = 0
@@ -809,21 +808,20 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
     z = 0
 
     for i in xrange(dimX):
-         oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
+        oLatul = o_lat - ((dimX-1)/2) * gridspacing + i*gridspacing
 
-         if z == 0 and i == 0 :
-             Latul = oLatul
-         o=0
+        if z == 0 and i == 0:
+            Latul = oLatul
+        o = 0
 
-         for j in xrange(dimY):
-               oLonul = o_lon -((dimY-1)/2) * gridspacing + j*gridspacing
+        for j in xrange(dimY):
+            oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
 
-               if o==0 and j==0:
-                    Lonul = oLonul
+            if o == 0 and j == 0:
+                Lonul = oLonul
 
-               latv.append(oLatul)
-               lonv.append(oLonul)
-
+            latv.append(oLatul)
+            lonv.append(oLonul)
 
     tmp = 1
     weight_norm = num.sum(weights)
