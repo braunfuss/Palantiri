@@ -112,7 +112,6 @@ class ConfigObj(object):
 
         return a, b
 
-
     def Distance(self, key, maxVal=40 * 1000):
         return self.UFloat(key, maxVal)
 
@@ -424,7 +423,6 @@ class SynthCfg(ConfigObj):
     def length_0(self):
         return self.Float('length_0')
 
-
     def width_0(self):
         return self.Float('width_0')
 
@@ -432,13 +430,49 @@ class SynthCfg(ConfigObj):
         return self.Float('depth_0')
 
     def nucleation_x_0(self):
-        return self.Float('nucleation_x_0')
+        try:
+            return self.Float('nucleation_x_0')
+        except TypeError:
+            return 0.
 
     def nucleation_y_0(self):
-        return self.Float('nucleation_y_0')
+        try:
+            return self.Float('nucleation_y_0')
+        except TypeError:
+            return 0.
 
     def slip_0(self):
         return self.Float('slip_0')
+
+    def velocity_0(self):
+        try:
+            return self.Float('velocity_0')
+        except TypeError:
+            return 3500.
+
+    def anchor(self):
+        try:
+            return self.Float('anchor')
+        except TypeError:
+            return 0.
+
+    def velocites(self):
+        return 'velocities'
+
+    def slips(self):
+        return 'slips'
+
+    def ellipse_angles(self):
+        return 'ellipse_angles'
+
+    def ellipse_widths(self):
+        return 'ellipse_widths'
+
+    def ellipse_lengths(self):
+        return 'ellipse_lengths'
+
+    def ellipse_orientations(self):
+        return 'ellipse_orientations'
 
     def rmnn(self):
         return self.Float('rmnn')

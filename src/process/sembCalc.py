@@ -15,7 +15,7 @@ from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCf
 import time
 import numpy as num
 from collections import defaultdict
-from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
+from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource, MultiEllipticalSource
 from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
 from palantiri.process import trigger
@@ -1053,7 +1053,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         nucleation_x=syn_in.nucleation_x_0(),
                         slip=syn_in.slip_0(),
                         nucleation_y=syn_in.nucleation_y_0(),
+                        velocity=syn_in.velocity_0(),
                         stf=stf,
+                        anchor=syn_in.anchor(),
                         time=util.str_to_time(syn_in.time_0())))
             if syn_in.source() == 'DCSource':
                     sources.append(DCSource(
@@ -1068,6 +1070,32 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         stf=stf,
                         time=util.str_to_time(syn_in.time_0()),
                         magnitude=syn_in.magnitude_0()))
+            if syn_in.source() == 'SlipPatches':
+                    sources.append(MultiEllipticalSource(
+                        lat=float(syn_in.lat_0()),
+                        lat=float(syn_in.lat_0()),
+                        lon=float(syn_in.lon_0()),
+                        east_shift=float(syn_in.east_shift_0())*1000.,
+                        north_shift=float(syn_in.north_shift_0())*1000.,
+                        depth=syn_in.depth_syn_0()*1000.,
+                        strike=syn_in.strike_0(),
+                        dip=syn_in.dip_0(),
+                        rake=syn_in.rake_0(),
+                        width=syn_in.width_0()*1000.,
+                        length=syn_in.length_0()*1000.,
+                        nucleation_x=syn_in.nucleation_x_0(),
+                        slip=syn_in.slips(),
+                        nucleation_y=syn_in.nucleation_y_0(),
+                        ellipse_angles = syn_in.ellipse_angles(),
+                        ellipse_widths = syn_in.ellipse_widths(),
+                        ellipse_lengths = syn_in.ellipse_lengths(),
+                        ellipse_orientations = syn_in.ellipse_orientations(),
+                        npatches = syn_in.patches(),
+                        anchor = syn_in.anchor(),
+                        velocity = syn_in.velocities(),
+                        stf=stf,
+                        time=util.str_to_time(syn_in.time_0())))
+
             if syn_in.source() == 'MTSource':
                     sources.append(MTSource(
                         lat=float(syn_in.lat_0()),
