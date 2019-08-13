@@ -15,7 +15,7 @@ from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg, FilterCf
 import time
 import numpy as num
 from collections import defaultdict
-from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource, MultiEllipticalSource
+from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
 from pyrocko import util, pile, model, catalog, gf, cake
 from pyrocko.guts import Object, String, Float, List
 from palantiri.process import trigger
@@ -1071,8 +1071,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         time=util.str_to_time(syn_in.time_0()),
                         magnitude=syn_in.magnitude_0()))
             if syn_in.source() == 'SlipPatches':
+                    from pyrocko.gf import MultiEllipticalSource
                     sources.append(MultiEllipticalSource(
-                        lat=float(syn_in.lat_0()),
                         lat=float(syn_in.lat_0()),
                         lon=float(syn_in.lon_0()),
                         east_shift=float(syn_in.east_shift_0())*1000.,
