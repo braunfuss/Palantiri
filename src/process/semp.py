@@ -244,9 +244,13 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         do_bs_weights = True
     else:
         do_bs_weights = False
+
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+    #    tr_org.ydata = tr_org.ydata /tr_max
+        #tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
+        #tr_org.ydata = num.diff(tr_org.ydata)
+
         if combine is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
@@ -256,6 +260,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # mechanism.
             tr_org.ydata = abs(tr_org.ydata)
             tr_org.ydata = num.diff(tr_org.ydata)
+        #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
 
         trs_orgs.append(tr_org)
 
@@ -311,13 +316,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         sembmaxX = 0
         sembmaxY = 0
         for j in range(dimX * dimY):
-            semb = 0
+            semb = 0.
             nomin = 0
             denom = 0
-            if combine is True:
-                sums = 1
-            else:
-                sums = 0
+            sums = num.zeros(max(index_steps))
             relstart = []
             relstarts = nostat
 
@@ -327,18 +329,18 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
-
                 try:
-                    if combine is True:
-                        if do_bs_weights is True:
-                            sums += (data)*bs_weights[k]
-                        else:
-                            sums += (data)
-
+                    if do_bs_weights is True:
+                        sums += data*bs_weights[k]
                     else:
-                        sums += (data)
-                except Exception:
-                    pass
+                        sums += data
+                except ValueError:
+                        if num.shape(data)< num.shape(sums):
+                            data = tr.ydata[ibeg:iend+1]
+                        else:
+                            data = tr.ydata[ibeg:iend-1]
+                        sums += data
+
                 relstarts -= relstart
 
             sum = abs(num.sum(((sums))))
@@ -353,8 +355,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                     str(sembmaxX) + ','+ str(sembmaxY))
 
-    backSemb = backSemb
-    return abs(backSemb)/num.max(abs(backSemb))
+    #backSemb = backSemb/num.max(num.max(backSemb))
+    return backSemb
 
 
 def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
@@ -384,7 +386,7 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
             tr_org.ydata = abs(tr_org.ydata)
-            #tr_org.ydata = num.diff(tr_org.ydata)
+            tr_org.ydata = num.diff(tr_org.ydata)
         trs_orgs.append(tr_org)
 
     traveltime = []
@@ -409,7 +411,7 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             nomin = 0
             denom = 0
             if combine is True:
-                sums = 1
+                sums = 0
             else:
                 sums = 0
             relstart = []
@@ -434,17 +436,15 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
                 data = tr.ydata[ibeg:iend]
 
-                try:
-                    if combine is True:
-                        if do_bs_weights is True:
-                            sums *= (data)*bs_weights[k]
-                        else:
-                            sums *= (data)
-
+                if combine is True:
+                    if do_bs_weights is True:
+                        sums += (data)*bs_weights[k]
                     else:
                         sums += (data)
-                except Exception:
-                    pass
+
+                else:
+                    sums += (data)
+
                 relstarts -= relstart
 
             sum = abs(num.sum(((sums))))
@@ -543,17 +543,15 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
             data = tr.ydata[ibeg:iend]
 
-            try:
-                if combine is True:
-                    if do_bs_weights is True:
-                        sums *= (data)*bs_weights[k]
-                    else:
-                        sums *= (data)
-
+            if combine is True:
+                if do_bs_weights is True:
+                    sums *= (data)*bs_weights[k]
                 else:
-                    sums += (data)
-            except Exception:
-                pass
+                    sums *= (data)
+
+            else:
+                sums += (data)
+
             relstarts -= relstart
 
             sum = abs(num.sum(((sums))))

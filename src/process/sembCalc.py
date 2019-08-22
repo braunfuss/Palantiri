@@ -1199,6 +1199,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                 trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
                             elif switch == 1:
                                 trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
+
                         synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
                         calcStreamMap[tracex] = synthetic_obs_tr
         else:
@@ -1385,7 +1386,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         vel_thres=-1e9
         forerun_r = util.time_to_str(util.str_to_time(Origin['time'])-forerun)
         duration_r = util.time_to_str(util.str_to_time(Origin['time'])+duration)
-        from pprint import pprint
         stime = UTCDateTime(forerun_r)
         etime = UTCDateTime(duration_r)
         stream_arr = stream.Stream()
