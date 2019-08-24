@@ -274,6 +274,12 @@ class ConfigObj(object):
     def correct_shifts_empirical_manual_station_wise(self):
         return self.Bool('correct_shifts_empirical_manual_station_wise')
 
+    def bp_freq(self):
+        try:
+            return self.Bool('bp_freq')
+        except TypeError:
+            return False
+
     def _error0(self, msg):
 
         Logfile.error(msg)

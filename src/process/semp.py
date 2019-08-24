@@ -11,6 +11,7 @@ from palantiri.common import Basic, Logfile
 import ctypes as C
 from pyrocko import trace as trld
 from pyrocko.marker import PhaseMarker
+from pyrocko import obspy_compat
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -117,18 +118,23 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         cfg_f = FilterCfg(Config)
 
         if cfg.Bool('dynamic_filter') is False:
+            if cfg.Bool('bp_freq') is True:
+               return semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                                   mint, new_frequence, minSampleCount, latv_1,
+                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
+                                   time, cfg, refshifts, bs_weights=bs_weights)
             if cfg.Int('dimz') != 0:
                return semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, bs_weights=bs_weights)
 
-            if cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
+            elif cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
                return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, bs_weights=bs_weights)
-            else:
+            elif:
                return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
@@ -153,7 +159,6 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                             traveltime_1, trace_1, calcStreamMap, time,
                             origin, FilterCfg):
 
-    from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs  = []
     for tr in calcStreamMap:
@@ -232,7 +237,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts,
                  bs_weights=None):
-    from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
@@ -359,11 +363,146 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     return backSemb
 
 
+def semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+                 new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
+                 trace_1, calcStreamMap, time, cfg, refshifts,
+                 bs_weights=None):
+    obspy_compat.plant()
+    trs_orgs = []
+    snap = (round, round)
+    if cfg.Bool('combine_all') is True:
+        combine = True
+    else:
+        combine = False
+    if cfg.Bool('bootstrap_array_weights') is True:
+        do_bs_weights = True
+    else:
+        do_bs_weights = False
+    trs_data = []
+
+    for tr in sorted(calcStreamMap):
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+    #    tr_org.ydata = tr_org.ydata /tr_max
+        #tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
+        #tr_org.ydata = num.diff(tr_org.ydata)
+
+        #if combine is True:
+            # some trickery to make all waveforms have same polarity, while still
+            # considering constructive/destructive interferences. This is needed
+            # when combing all waveforms/arrays from the world at once(only then)
+            # for a single array with polarity issues we recommend fixing polarity.
+            # advantage of the following is that nothing needs to be known about the
+            # mechanism.
+
+            #tr_org.ydata = abs(tr_org.ydata)
+            #tr_org.ydata = num.diff(tr_org.ydata)
+        #    freqs, fdata = trace.spectrum(pad_to_pow2=True, tfade=None)
+        #    trs_data.append(fdata)
+        #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+        trs_orgs.append(tr_org)
+
+    traveltime = []
+    traveltime = toMatrix(traveltime_1, dimX * dimY)
+    latv = latv_1.tolist()
+    lonv = lonv_1.tolist()
+
+    from collections import OrderedDict
+    index_begins = OrderedDict()
+
+    index_steps = []
+    index_window = []
+
+
+    for j in range(dimX * dimY):
+        for k in range(nostat):
+            relstart = traveltime[k][j]
+            tr = trs_orgs[k]
+
+            try:
+                tmin = time+relstart-mint-refshifts[k]
+                tmax = time+relstart-mint+nsamp-refshifts[k]
+            except IndexError:
+                tmin = time+relstart-mint
+                tmax = time+relstart-mint+nsamp
+
+            ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+            index_begins[str(j)+str(k)]= [ibeg, tmin]
+
+            iend = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
+
+            iend_step = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin+nstep, tr.deltat, snap[1]))
+            index_steps.append(iend_step-iend)
+            index_window.append(iend-ibeg)
+
+
+    '''
+    Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
+    Basic.writeMatrix(travel_txt, traveltime, nostat, dimX * dimY, '%e')
+    Basic.writeVector(latv_txt,   latv, '%e')
+    Basic.writeVector(lonv_txt,   lonv, '%e')
+    '''
+    if nsamp == 0:
+        nsamp = 1
+    backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+    for i in range(ntimes):
+        sembmax = 0
+        sembmaxX = 0
+        sembmaxY = 0
+        for j in range(dimX * dimY):
+            semb = 0.
+            nomin = 0
+            denom = 0
+            sums = 1.
+            relstart = []
+            relstarts = nostat
+            ws = []
+            # or normalize group
+
+            #for k in range(nostat):
+            #    relstart = traveltime[k][j]
+            #    tr = trs_orgs[k]
+            #    ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
+            #    iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
+            #    data_tr = tr.ydata[ibeg:iend]
+            #    w = 1. / np.sqrt(np.mean(np.square(tr_org.ydata)))
+            #    ws.append(w)
+            for k in range(nostat):
+                relstart = traveltime[k][j]
+                tr = trs_orgs[k]
+                ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
+                iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
+                data_tr = tr.ydata[ibeg:iend]
+                fydata = num.fft.rfft(data_tr, data.size)
+                df = 1./(ntrans*tr.deltat)
+                fxdata = num.arange(len(fydata))*df
+                w = 1. / np.sqrt(np.mean(np.square(tr_org.ydata)))
+                data = fydata * (num.exp(relstart)*num.imag*(2*math.pi*fxdata))*w
+
+                if do_bs_weights is True:
+                    sums *= data
+                else:
+                    sums *= data
+
+            backSemb[i][j] = sums
+            if semb > sembmax:
+                sembmax  = semb   # search for maximum and position of maximum on semblance
+                                 # grid for given time step
+                sembmaxX = latv[j]
+                sembmaxY = lonv[j]
+        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                    str(sembmaxX) + ','+ str(sembmaxY))
+
+    return backSemb
+
+
 def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts,
                  bs_weights=None):
-    from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
@@ -466,7 +605,6 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts,
                  bs_weights=None):
-    from pyrocko import obspy_compat
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
