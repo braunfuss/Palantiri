@@ -1152,17 +1152,25 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             time=util.str_to_time(syn_in.time_1(i)),
                             magnitude=syn_in.magnitude_1(i)))
         synthetic_traces = []
+
         for source in sources:
             response = engine.process(source, targets)
             synthetic_traces_source = response.pyrocko_traces()
             if not synthetic_traces:
-                synthetic_traces = synthetic_traces_source
+                synthetic_traces = []
+                for tr in synthetic_traces_source:
+                        trzero = tr.copy()
+                        trzero.shift(-200)
+                        trzero.ydata = trzero.ydata*0.
+                        trzero.add(tr)
+                        synthetic_traces.append(trzero)
             else:
                 for trsource, tr in zip(synthetic_traces_source,
                                         synthetic_traces):
                         tr.add(trsource)
+
             #debug
-        from pyrocko import trace as trld
+        #from pyrocko import trace as trld
         #trld.snuffle(synthetic_traces)
 
         timeev = util.str_to_time(syn_in.time_0())
