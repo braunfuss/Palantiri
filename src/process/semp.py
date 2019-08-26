@@ -134,7 +134,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, bs_weights=bs_weights)
-            elif:
+            else:
                return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
@@ -252,7 +252,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
     #    tr_org.ydata = tr_org.ydata /tr_max
-        #tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
+        tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
         #tr_org.ydata = num.diff(tr_org.ydata)
 
         if combine is True:
