@@ -249,30 +249,18 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     else:
         do_bs_weights = False
 
+
+
+
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-    #    tr_org.ydata = tr_org.ydata /tr_max
-        tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
-        #tr_org.ydata = num.diff(tr_org.ydata)
-
-        if combine is True:
-            # some trickery to make all waveforms have same polarity, while still
-            # considering constructive/destructive interferences. This is needed
-            # when combing all waveforms/arrays from the world at once(only then)
-            # for a single array with polarity issues we recommend fixing polarity.
-            # advantage of the following is that nothing needs to be known about the
-            # mechanism.
-            tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.diff(tr_org.ydata)
-        #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-
         trs_orgs.append(tr_org)
 
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
     lonv = lonv_1.tolist()
-
+    print(traveltime_1, trace_1)
     from collections import OrderedDict
     index_begins = OrderedDict()
 
@@ -280,6 +268,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     index_window = []
 
     for j in range(dimX * dimY):
+        markers = []
+
         for k in range(nostat):
             relstart = traveltime[k][j]
             tr = trs_orgs[k]
@@ -291,6 +281,14 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 tmin = time+relstart-mint
                 tmax = time+relstart-mint+nsamp
 
+
+                m = PhaseMarker(tmin=tmin,
+                                tmax=tmax,
+                                phasename='P',
+                                nslc_ids=(tr.nslc_id,))
+                markers.append(m)
+
+            # Finally, let's scrutinize these traces.
             ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
             index_begins[str(j)+str(k)]= [ibeg, tmin]
 
@@ -304,6 +302,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             index_steps.append(iend_step-iend)
 
             index_window.append(iend-ibeg)
+    #    trld.snuffle(trs_orgs, markers=markers)
 
 
     '''
@@ -312,6 +311,27 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     Basic.writeVector(latv_txt,   latv, '%e')
     Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
+    trs_orgs = []
+
+    for tr in sorted(calcStreamMap):
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+    #    tr_org.ydata = tr_org.ydata /tr_max
+        #tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
+
+        if combine is True:
+            # some trickery to make all waveforms have same polarity, while still
+            # considering constructive/destructive interferences. This is needed
+            # when combing all waveforms/arrays from the world at once(only then)
+            # for a single array with polarity issues we recommend fixing polarity.
+            # advantage of the following is that nothing needs to be known about the
+            # mechanism.
+            #tr_org.ydata = num.diff(tr_org.ydata)
+            tr_org.ydata = abs(tr_org.ydata)
+            tr_org.ydata = num.diff(tr_org.ydata, n = max(index_steps)-1)
+        #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+
+        trs_orgs.append(tr_org)
+
     if nsamp == 0:
         nsamp = 1
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
@@ -333,6 +353,9 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
+                #data = data / np.sqrt(np.mean(np.square(data)))
+                #data = num.diff(data, n = len(data)-1)
+
                 try:
                     if do_bs_weights is True:
                         sums += data*bs_weights[k]
@@ -346,8 +369,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                         sums += data
 
                 relstarts -= relstart
-
-            sum = abs(num.sum(((sums))))
+            sum = abs(num.sum(sums))
+            sum = (1./nostat)* ((abs(num.sum((sums)))**2) /num.sum(sums))
             semb = sum
 
             backSemb[i][j] = sum
@@ -359,7 +382,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                     str(sembmaxX) + ','+ str(sembmaxY))
 
-    #backSemb = backSemb/num.max(num.max(backSemb))
+    backSemb = backSemb/num.max(num.max(backSemb))
     return backSemb
 
 
