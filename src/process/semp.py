@@ -316,7 +316,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
     #    tr_org.ydata = tr_org.ydata /tr_max
-        #tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
+    #    tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
 
         if combine is True:
             # some trickery to make all waveforms have same polarity, while still
@@ -327,7 +327,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # mechanism.
             #tr_org.ydata = num.diff(tr_org.ydata)
             tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.diff(tr_org.ydata, n = max(index_steps)-1)
+        #    tr_org.ydata = num.diff(tr_org.ydata, n = 2)
         #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
 
         trs_orgs.append(tr_org)
@@ -354,7 +354,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
                 #data = data / np.sqrt(np.mean(np.square(data)))
-                #data = num.diff(data, n = len(data)-1)
+                data = num.diff(data, n = len(data)-1)
 
                 try:
                     if do_bs_weights is True:
