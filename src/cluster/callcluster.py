@@ -7,13 +7,15 @@ from palantiri.common import Globals
 
 parser = OptionParser(usage="%prog -f eventpath ")
 parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
-
 (options, args) = parser.parse_args()
+options.evpath = args[0]
 
+print(options, args)
 
 def init():
 
     C = config.Config(options.evpath)
+    print(options.evpath)
     Config = C.parseConfig('config')
 
     tests = int(Config['runs'])
