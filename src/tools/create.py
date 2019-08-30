@@ -175,7 +175,7 @@ def copyConfigSkeleton(evfolder):
 
     event = evfolder.split('/')[-1]
 
-    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      python arraytool.py pyrocko_download {evdirectory} \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
+    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      palantiri_down {evdirectory} \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
 
 
 def main():
