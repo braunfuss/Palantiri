@@ -16,12 +16,13 @@ import csv
 from obspy.imaging.beachball import beach
 import matplotlib.colors as colors
 import matplotlib.tri as tri
-from pyrocko import trace, io, model
+from pyrocko import trace, io, model, orthodrome
 from matplotlib.colors import LinearSegmentedColormap
 from palantiri.common import ConfigFile
 from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 from palantiri.common import Globals
 from palantiri.tools import config
+from palantiri.process.sembCalc import toAzimuth
 global  evpath
 
 w=25480390.0
@@ -131,6 +132,100 @@ def equi(m, centerlon, centerlat, radius, *args, **kwargs):
 
     X,Y = m(X,Y)
     plt.plot(X,Y,color='gray',**kwargs)
+
+def distance_time():
+
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    evpath = 'events/'+ str(sys.argv[1])
+
+    C  = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    step = cfg.UInt('step')
+    step2 = cfg.UInt('step_f2')
+    winlen = cfg.UInt('winlen')
+    winlen2= cfg.UInt('winlen_f2')
+
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+    pathlist = Path(rel).glob('0-*.ASC')
+    maxs = 0.
+    if sys.argv[3] == 'combined':
+
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                max = np.max(data[:, 2])
+                if maxs < max:
+                    maxs = max
+                    datamax = np.max(data[:, 2])
+
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                for i in range(0, len(data[:, 2])):
+                    if data[i, 2] > datamax*0.9:
+                        lats = data[i, 1]
+                        lons = data[i, 0]
+                        datas.append(data[i, 2])
+                        dist = orthodrome.distance_accurate50m(lats, lons,
+                                                               lat_ev,
+                                                               lon_ev)
+                        azis.append(toAzimuth(lat_ev, lon_ev,
+                                              lats, lons))
+                        distances.append(dist)
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+    if sys.argv[3] == 'stepwise':
+        datamax = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                max = np.max(data[:, 2])
+                datamax.append(np.max(data[:, 2]))
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        k = 0
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                for i in range(0, len(data[:, 2])):
+                    if data[i, 2] == datamax[k]:
+                        lats = data[i, 1]
+                        lons = data[i, 0]
+                        datas.append(data[i, 2])
+                        dist = orthodrome.distance_accurate50m(lats, lons,
+                                                               lat_ev,
+                                                               lon_ev)
+                        azis.append(toAzimuth(lat_ev, lon_ev,
+                                              lats, lons))
+                        distances.append(dist)
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+                k = k+1
+        plt.figure()
+        plt.scatter(distances, times, s=datas*10)
+        plt.show()
 
 def plot_cluster():
 
@@ -338,6 +433,7 @@ def plot_movie():
                 except:
                     plt.close()
                     pass
+
 
 def integrated_scatter():
 
@@ -2000,3 +2096,5 @@ def main():
             plot_semb_equal()
         elif sys.argv[2] == 'integrated_timestep':
             plot_integrated_timestep()
+        elif sys.argv[2] == 'distance_time':
+            distance_time()

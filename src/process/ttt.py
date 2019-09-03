@@ -10,16 +10,18 @@ from palantiri.tools.config import Station
 import fnmatch
 import logging
 import math
-from   math  import sin, cos, atan2
+from  math  import sin, cos, atan2
 import time
 import subprocess
 from palantiri.common import Basic
 from palantiri.common import Logfile
-from palantiri.common.DataTypes  import Location
+from palantiri.common.DataTypes import Location
 from palantiri.common.ConfigFile import ConfigObj
-from palantiri.common.ObspyFkt   import loc2degrees, obs_TravelTimes
+from palantiri.common.ObspyFkt import loc2degrees, obs_TravelTimes
 from pyrocko import cake
 import numpy as np
+import palantiri
+
 km = 1000.
 
 logger = logging.getLogger(sys.argv[0])
@@ -81,7 +83,6 @@ def calctakeoff(Station, Event, Config):
 
     de = loc2degrees(Event, Station)
     Phase = cake.PhaseDef('P')
-    model = cake.load_model()
     arrivals = model.arrivals([de, de], phases=Phase, zstart=Event.depth*km)
 
     return arrivals[0].takeoff_angle()
@@ -136,7 +137,6 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
         dimX = cfg.Int('dimx')
         dimY = cfg.Int('dimy')
     gridspacing = cfg.Float('gridspacing')
-    traveltime_model = cfg.Str('traveltime_model')
 
     o_lat = float(Origin['lat'])
     o_lon = float(Origin['lon'])
@@ -155,8 +155,8 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
     locStation = Location(station.lat, station.lon)
     sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
     Phase = cake.PhaseDef(phase)
-    import palantiri
     path = palantiri.__path__
+    traveltime_model = cfg.Str('traveltime_model')
     model = cake.load_model(path[0]+'/data/'+traveltime_model)
     z = 0
     if plane is True:
@@ -281,7 +281,6 @@ def calcTTTAdv_cube(Config, station, Origin, flag, arrayname, Xcorrshift,
     locStation = Location(station.lat, station.lon)
     sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
     Phase = cake.PhaseDef(phase)
-    import palantiri
     path = palantiri.__path__
     model = cake.load_model(path[0]+'/data/'+traveltime_model)
     for depth in depths:

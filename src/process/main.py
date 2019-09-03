@@ -68,6 +68,11 @@ def processLoop(traces=None, stations=None, cluster=None):
         syn_in = SynthCfg(Syn_in)
     except TypeError:
         pass
+    try:
+        Syn_in_emp = C.parseConfig('syn_emp')
+        syn_in_emp = SynthCfg(Syn_in_emp)
+    except IndexError:
+        pass
     Config = C.parseConfig('config')
 
     cfg = ConfigObj(dict=Config)
@@ -698,7 +703,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     arraySemb, weight, array_center = sembCalc.doCalc(
                                         counter, Config, Wdf_emp, FilterMeta, mint_emp, maxt_emp,
                                         TTTGridMap_emp, Folder, Origin_emp, ntimes_emp, switch, ev_emp,
-                                        arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname), flag_rpe)
+                                        arrayfolder, syn_in_emp, refshifts, phase, rpe+str(arrayname), flag_rpe)
                                     if sys.version_info.major >= 3:
                                         f = open(rpe+str(arrayname), 'rb')
                                     else:
@@ -721,7 +726,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMeta, mintt, maxtt,
                                 TTTGridMap_mew, Folder, Origin, ntimes, switch, ev,
-                                arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname), flag_rpe)
+                                arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname), flag_rpe, len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -805,14 +810,14 @@ def processLoop(traces=None, stations=None, cluster=None):
 
                     mint = num.min(mints)
                     maxt = num.max(maxts)
+                    nstats = stations_per_array
                     flag_rpe = False
                     if cfg.Bool('bootstrap_array_weights') is False:
-
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
                             ev, arrayfolder, syn_in, refshifts_global, phase,
-                            rpe+str(arrayname), flag_rpe)
+                            rpe+str(arrayname), flag_rpe, nstats)
                         ASL.append(arraySemb)
                         weights.append(weight)
                         array_centers.append(array_center)
@@ -840,7 +845,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
-                                phase, rpe+str(arrayname), flag_rpe, bs_weights=ws)
+                                phase, rpe+str(arrayname), flag_rpe, nstats, bs_weights=ws)
 
                             ASL.append(arraySemb)
                             weights.append(weight)

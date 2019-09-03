@@ -914,7 +914,7 @@ def toMatrix(npVector, nColumns):
 
 def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in, refshifts, phase, rp, flag_rpe, bs_weights=None):
+           syn_in, refshifts, phase, rp, flag_rpe, nstats, bs_weights=None):
     '''
     method for calculating semblance of one station array
     '''
@@ -1219,8 +1219,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                     trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
                             synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
                             calcStreamMap[tracex] = synthetic_obs_tr
-
-    if cfg.Bool('shift_by_phase_pws') is True:
+    do_pws=False
+    if cfg.Bool('shift_by_phase_pws') is True and do_pws is True:
         calcStreamMapshifted= calcStreamMap.copy()
         from obspy.core import stream
         stream = stream.Stream()
@@ -1725,6 +1725,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                                          'array_center.pf'),
                                                    fn_beam=pjoin(directory,
                                                                  'beam.mseed'))
+                #todo for times
                 tmin = stack.tmin+(i*nstep)+20
                 tmax = stack.tmin+(i*nstep)+60
                 stack.chop(tmin, tmax)
@@ -1786,6 +1787,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                                       new_frequence, minSampleCount, latv, lonv, traveltimes,
                                       traces, calcStreamMap, timeev, Config, Origin, refshifts,
+                                      nstats,
                                       bs_weights=bs_weights, flag_rpe=True)
                         partSembsemblance = k
                         partSemb = partSemb.reshape(ntimes, 1)
@@ -1811,6 +1813,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                                   new_frequence, minSampleCount, latv, lonv, traveltimes,
                                   traces, calcStreamMap, timeev+shft, Config, Origin, refshifts,
+                                  nstats,
                                   bs_weights=bs_weights, flag_rpe=True)
                     partSemb = k
                     partSemb = partSemb.reshape(ntimes, 1)
@@ -1844,6 +1847,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                           new_frequence, minSampleCount, latv, lonv, traveltimes,
                           traces, calcStreamMap, timeev, Config, Origin, refshifts,
+                          nstats,
                           bs_weights=bs_weights, flag_rpe=False)
             print("--- %s seconds ---" % (time.time() - start_time))
 
