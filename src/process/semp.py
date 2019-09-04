@@ -12,6 +12,8 @@ import ctypes as C
 from pyrocko import trace as trld
 from pyrocko.marker import PhaseMarker
 from pyrocko import obspy_compat
+import math
+from scipy.signal import coherence
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -123,6 +125,12 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights)
+            if cfg.Bool('bp_coh') is True:
+               return semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                                   mint, new_frequence, minSampleCount, latv_1,
+                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
+                                   time, cfg, refshifts, nstats, bs_weights=bs_weights)
+
             if cfg.Int('dimz') != 0:
                return semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
@@ -375,24 +383,38 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     '''
     trs_orgs = []
     do_trad = False
-    print(max(index_steps)%2)
+    k = 0
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         if combine is True and cfg.Bool('shift_by_phase_pws') is True:
-#            tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
             num_step = max(index_steps)
-
+        #    relstart = num.mean(traveltime[k][:])
+        #    tmin = time+relstart-5
+        #    tmax = time+relstart+5
+        #    tr_org_polarity = tr_org.copy()
+    #        tr_org_polarity.chop(tmin=tmin, tmax=tmax)
+    #        k = k+1
+        #    tr_org.ydata = tr_org.ydata/max(tr_org.ydata)
+            if num.max(tr_org.ydata)<0.:
+                tr_org.ydata = tr_org.ydata*-1.
             tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.gradient(tr_org.ydata)
-        #    tr_org.ydata = abs(tr_org.ydata)
-        #    tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
 
-            analytic = hilbert(tr_org.ydata)
-            envelope = np.sqrt(np.sum((np.square(analytic),
-                                       np.square(tr_org.ydata)), axis=0))
+
+            #trld.snuffle([tr_org] + [tr_org_polarity])
+
+            #tr_org.ydata = num.gradient(abs(tr_org.ydata), max(index_steps))
+
+
+        #    tr_org.ydata = num.gradient(tr_org.ydata)
+        #    tr_org.ydata = abs(tr_org.ydata)
+    #        tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+
+            #analytic = hilbert(tr_org.ydata)
+        #    envelope = np.sqrt(np.sum((np.square(analytic),
+                #                       np.square(tr_org.ydata)), axis=0))
         #    tr_org.ydata = analytic / envelope
-            if (num_step % 2) == 1:
-                tr_org.ydata = envelope
+        #    tr_org.ydata = envelope
+        #    tr_org.ydata = hilbert(tr_org.ydata)
 
         #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
         #    tr_org.ydata = tr_org.ydata / np.max(tr_org.ydata)
@@ -403,16 +425,17 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         #               np.sqrt(np.mean(np.square(tr_org.ydata)))
         #    else:
         #           norm = tr_org.ydata
-            tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+        #    tr_org.ydata = abs(tr_org.ydata)
+        #    tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
 
-            if (num_step % 2) == 1:
-                tr_org.ydata = abs(tr_org.ydata)
-                tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+        #    tr_org.ydata = abs(tr_org.ydata)
+            tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
 #            tr_org.ydata = num.gradient(tr_org.ydata)
+    #        tr_org.ydata = tr_org.ydata/max(tr_org.ydata)
 
     #        tr_org.ydata = abs(tr_org.ydata)
-    #        tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+        #    tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+        #    tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
 
             #tr_org.ydata = np.sum((norm, tr_org.ydata), axis=0)
             #weight = 1.
@@ -423,7 +446,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         #      np.abs(tr_org.ydata ** weight)
 
         #    tr_org.ydata = abs(tr_org.ydata)
-        #    tr_org.ydata = num.ediff1d(tr_org.ydata)
+            #tr_org.ydata = num.ediff1d(tr_org.ydata)
+        #    tr_org.ydata = num.gradient(abs(tr_org.ydata), max(index_steps))
 
         if combine is True and do_trad is True:
             # some trickery to make all waveforms have same polarity, while still
@@ -466,21 +490,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
-                if combine is False:
 
-                    data = data / np.sqrt(np.mean(np.square(data)))
-                #if combine is True and cfg.Bool('shift_by_phase_pws') is True:
-
-                #    if normalize:
-                #            norm = data /\
-                #                np.sqrt(np.mean(np.square(data)))
-                #    else:
-                #            norm = data
-                #    data = np.sum((norm, data), axis=0)
-                #    weight = 1.
-                #    data = data *\
-                #        np.abs(data ** weight)
-
+            #    data = data / np.sqrt(np.mean(np.square(data)))
                 try:
                     if do_bs_weights is True:
                         sums += data*bs_weights[k]
@@ -512,9 +523,169 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     return backSemb
 
 
+
+
+def semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+                 new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
+                 trace_1, calcStreamMap, time, cfg, refshifts, nstats,
+                 bs_weights=None):
+    obspy_compat.plant()
+    trs_orgs = []
+    snap = (round, round)
+    if cfg.Bool('combine_all') is True:
+        combine = True
+    else:
+        combine = False
+    if cfg.Bool('bootstrap_array_weights') is True:
+        do_bs_weights = True
+    else:
+        do_bs_weights = False
+
+    do_weight_by_array = True
+    if do_weight_by_array:
+        tr_bases = []
+        k = 0
+        s_index = 0
+        for tr in calcStreamMap:
+            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+            if k == 1:
+                tr_bases.append(tr_org)
+
+
+            tr_org.set_location('%s' % s_index)
+            if k == nstats[s_index]:
+                s_index = s_index+1
+                k = 0
+            if k < nstats[s_index]:
+                k = k+1
+            calcStreamMap[tr] = obspy_compat.to_obspy_trace(tr_org)
+
+    trs_orgs = []
+    for tr in sorted(calcStreamMap):
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        trs_orgs.append(tr_org)
+    traveltime = []
+    traveltime = toMatrix(traveltime_1, dimX * dimY)
+    latv = latv_1.tolist()
+    lonv = lonv_1.tolist()
+    from collections import OrderedDict
+    index_begins = OrderedDict()
+
+    index_steps = []
+    index_window = []
+    for j in range(dimX * dimY):
+        markers = []
+
+        for k in range(nostat):
+            relstart = traveltime[k][j]
+            tr = trs_orgs[k]
+
+            try:
+                tmin = time+relstart-mint-refshifts[k]
+                tmax = time+relstart-mint+nsamp-refshifts[k]
+            except IndexError:
+                tmin = time+relstart-mint
+                tmax = time+relstart-mint+nsamp
+
+
+                m = PhaseMarker(tmin=tmin,
+                                tmax=tmax,
+                                phasename='P',
+                                nslc_ids=(tr.nslc_id,))
+                markers.append(m)
+
+            ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+            index_begins[str(j)+str(k)]= [ibeg, tmin]
+
+            iend = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
+
+            iend_step = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin+nstep, tr.deltat, snap[1]))
+            index_steps.append(iend_step-iend)
+
+            index_window.append(iend-ibeg)
+    #    trld.snuffle(trs_orgs, markers=markers)
+
+
+    '''
+    Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
+    Basic.writeMatrix(travel_txt, traveltime, nostat, dimX * dimY, '%e')
+    Basic.writeVector(latv_txt,   latv, '%e')
+    Basic.writeVector(lonv_txt,   lonv, '%e')
+    '''
+    trs_orgs = []
+    do_trad = False
+    for tr in sorted(calcStreamMap):
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        if combine is True:
+        #    tr_org.ydata = tr_org.ydata/num.max(tr_org.ydata)
+#            tr_org.ydata = abs(tr_org.ydata)
+                tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+
+
+        trs_orgs.append(tr_org)
+
+    if nsamp == 0:
+        nsamp = 1
+    backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+    for i in range(ntimes):
+        sembmax = 0
+        sembmaxX = 0
+        sembmaxY = 0
+        for j in range(dimX * dimY):
+            semb = 0.
+            nomin = 0
+            denom = 0
+            sums = num.zeros(max(index_steps))
+            sums = 0.
+            relstart = []
+            relstarts = nostat
+            data_comp = False
+            for k in range(nostat):
+                relstart = traveltime[k][j]
+                tr = trs_orgs[k]
+                ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
+                iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
+                data = tr.ydata[ibeg:iend]
+                #data = data / np.sqrt(np.mean(np.square(data)))
+                if combine is True:
+                        ind = int(tr_org.location)
+                        data_comp = tr_bases[ind].ydata[ibeg:iend]
+                else:
+                    if data_comp is False:
+                        data_comp = data
+            #    cfx = num.fft.fft(data)
+            #    cfy = num.fft.fft(data_comp)
+
+                # Get cross spectrum
+            #    cross = cfx.conj()*cfy
+                cross = abs(num.correlate(data, data_comp))
+                #f, coh = coherence(data, data_comp, fs=tr.deltat)
+                sums = sums+cross
+
+                relstarts -= relstart
+            sum = abs(num.sum(sums))
+
+            semb = sum
+
+            backSemb[i][j] = sum
+            if semb > sembmax:
+                sembmax  = semb   # search for maximum and position of maximum on semblance
+                                 # grid for given time step
+                sembmaxX = latv[j]
+                sembmaxY = lonv[j]
+        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                    str(sembmaxX) + ','+ str(sembmaxY))
+
+    backSemb = backSemb/num.max(num.max(backSemb))
+    return backSemb
+
 def semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
-                 trace_1, calcStreamMap, time, cfg, refshifts,
+                 trace_1, calcStreamMap, time, cfg, refshifts, nstats,
                  bs_weights=None):
     obspy_compat.plant()
     trs_orgs = []
@@ -531,23 +702,6 @@ def semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-    #    tr_org.ydata = tr_org.ydata /tr_max
-        #tr_org.ydata = tr_org.ydata / np.max(abs(tr_org.ydata))
-        #tr_org.ydata = num.diff(tr_org.ydata)
-
-        #if combine is True:
-            # some trickery to make all waveforms have same polarity, while still
-            # considering constructive/destructive interferences. This is needed
-            # when combing all waveforms/arrays from the world at once(only then)
-            # for a single array with polarity issues we recommend fixing polarity.
-            # advantage of the following is that nothing needs to be known about the
-            # mechanism.
-
-            #tr_org.ydata = abs(tr_org.ydata)
-            #tr_org.ydata = num.diff(tr_org.ydata)
-        #    freqs, fdata = trace.spectrum(pad_to_pow2=True, tfade=None)
-        #    trs_data.append(fdata)
-        #    tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
         trs_orgs.append(tr_org)
 
     traveltime = []
@@ -619,24 +773,26 @@ def semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             #    data_tr = tr.ydata[ibeg:iend]
             #    w = 1. / np.sqrt(np.mean(np.square(tr_org.ydata)))
             #    ws.append(w)
+
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data_tr = tr.ydata[ibeg:iend]
-                fydata = num.fft.rfft(data_tr, data.size)
-                df = 1./(ntrans*tr.deltat)
+                fydata = num.fft.rfft(data_tr, data_tr.size)
+                df = 1./(tr.deltat)
                 fxdata = num.arange(len(fydata))*df
                 w = 1. / np.sqrt(np.mean(np.square(tr_org.ydata)))
-                data = fydata * (num.exp(relstart)*num.imag*(2*math.pi*fxdata))*w
+                data = fydata * (num.exp(relstart)*num.imag(2*math.pi*fxdata))*w
 
                 if do_bs_weights is True:
                     sums *= data
                 else:
                     sums *= data
 
-            backSemb[i][j] = sums
+            backSemb[i][j] = num.sum(sums)
+
             if semb > sembmax:
                 sembmax  = semb   # search for maximum and position of maximum on semblance
                                  # grid for given time step
