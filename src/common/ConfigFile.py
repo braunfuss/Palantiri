@@ -460,7 +460,7 @@ class SynthCfg(ConfigObj):
         try:
             return self.Float('anchor')
         except TypeError:
-            return 0.
+            return 'top'
 
     def velocites(self):
         return 'velocities'
