@@ -764,10 +764,9 @@ def plot_integrated():
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
 
             try:
-                pathlist = Path(rel).glob('0-'+ str(sys.argv[5])+'*002_P.ASC')
+                pathlist = Path(rel).glob('0-'+ str(sys.argv[5])+'*.ASC')
             except:
-                pathlist = Path(rel).glob('0-*009_P.ASC')
-            print('maxs')
+                pathlist = Path(rel).glob('0-*P.ASC')
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
@@ -778,10 +777,9 @@ def plot_integrated():
                         datamax = data[:, 2]
             if sys.argv[3] == 'max':
                 try:
-                    pathlist = Path(rel).glob('0-'+ str(sys.argv[5])+'009_P.ASC')
+                    pathlist = Path(rel).glob('0-'+ str(sys.argv[5])+'*.ASC')
                 except:
-                    pathlist = Path(rel).glob('0-*002_P.ASC')
-                print('max')
+                    pathlist = Path(rel).glob('0-*.ASC')
                 data_int = num.zeros(num.shape(data[:, 2]))
                 for path in sorted(pathlist):
                         path_in_str = str(path)
