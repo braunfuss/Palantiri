@@ -382,7 +382,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     Basic.writeVector(lonv_txt,   lonv, '%e')
     '''
     trs_orgs = []
-    do_trad = False
+    do_trad = True
     k = 0
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
@@ -395,9 +395,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     #        tr_org_polarity.chop(tmin=tmin, tmax=tmax)
     #        k = k+1
         #    tr_org.ydata = tr_org.ydata/max(tr_org.ydata)
-            if num.max(tr_org.ydata)<0.:
-                tr_org.ydata = tr_org.ydata*-1.
-            tr_org.ydata = abs(tr_org.ydata)
+        #    if num.max(tr_org.ydata)<0.:
+        #        tr_org.ydata = tr_org.ydata*-1.
 
 
             #trld.snuffle([tr_org] + [tr_org_polarity])
@@ -429,6 +428,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         #    tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
 
         #    tr_org.ydata = abs(tr_org.ydata)
+            tr_org.ydata = abs(tr_org.ydata)
+
             tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
 #            tr_org.ydata = num.gradient(tr_org.ydata)
     #        tr_org.ydata = tr_org.ydata/max(tr_org.ydata)
@@ -457,12 +458,19 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
 
+            tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+
+        #    analytic = hilbert(tr_org.ydata)
+        #    envelope = np.sqrt(np.sum((np.square(analytic),
+        #                               np.square(tr_org.ydata)), axis=0))
+        #    tr_org.ydata = analytic / envelope
+        #    tr_org.ydata = envelope
             tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.gradient(tr_org.ydata)
-            tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.ediff1d(tr_org.ydata)
-            tr_org.ydata = abs(tr_org.ydata)
-            tr_org.ydata = num.ediff1d(tr_org.ydata)
+
+            tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+            if max(index_steps) % 2 == 1:
+                tr_org.ydata = abs(tr_org.ydata)
+                tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
         #    tr_org.ydata = abs(tr_org.ydata)
 
 
@@ -491,7 +499,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
 
-            #    data = data / np.sqrt(np.mean(np.square(data)))
+                data = data / np.sqrt(np.mean(np.square(data)))
                 try:
                     if do_bs_weights is True:
                         sums += data*bs_weights[k]
@@ -544,13 +552,17 @@ def semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint
     do_weight_by_array = True
     if do_weight_by_array:
         tr_bases = []
+        tr_bases_data = []
         k = 0
+        ks = 0
         s_index = 0
         for tr in calcStreamMap:
             tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        #    tr_org.ydata = abs(tr_org.ydata)
+
+        #    tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
             if k == 1:
                 tr_bases.append(tr_org)
-
 
             tr_org.set_location('%s' % s_index)
             if k == nstats[s_index]:
@@ -559,7 +571,7 @@ def semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint
             if k < nstats[s_index]:
                 k = k+1
             calcStreamMap[tr] = obspy_compat.to_obspy_trace(tr_org)
-
+            ks = ks +1
     trs_orgs = []
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
@@ -620,10 +632,14 @@ def semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint
     do_trad = False
     for tr in sorted(calcStreamMap):
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
-        if combine is True:
-        #    tr_org.ydata = tr_org.ydata/num.max(tr_org.ydata)
+    #    if combine is True:
+    #        tr_org.ydata = abs(tr_org.ydata)
+
+    #        tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+
+#            tr_org.ydata = tr_org.ydata/num.max(tr_org.ydata)
 #            tr_org.ydata = abs(tr_org.ydata)
-                tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+#                tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
 
 
         trs_orgs.append(tr_org)
@@ -650,21 +666,23 @@ def semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
-                #data = data / np.sqrt(np.mean(np.square(data)))
+                data = data / np.sqrt(np.mean(np.square(data)))
                 if combine is True:
                         ind = int(tr_org.location)
                         data_comp = tr_bases[ind].ydata[ibeg:iend]
+                #        data_comp = data
+
                 else:
                     if data_comp is False:
                         data_comp = data
-            #    cfx = num.fft.fft(data)
-            #    cfy = num.fft.fft(data_comp)
+                cfx = num.fft.fft(data)
+                cfy = num.fft.fft(data_comp)
 
                 # Get cross spectrum
-            #    cross = cfx.conj()*cfy
-                cross = abs(num.correlate(data, data_comp))
+                cross = cfx.conj()*cfy
+        #        cross = num.correlate(data, data_comp)
                 #f, coh = coherence(data, data_comp, fs=tr.deltat)
-                sums = sums+cross
+                sums = sums+num.sum(abs(cross))
 
                 relstarts -= relstart
             sum = abs(num.sum(sums))
