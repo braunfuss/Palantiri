@@ -322,7 +322,7 @@ def main():
         '--sites',
         dest='sites',
         metavar='SITE1,SITE2,...',
-        default='geofon,iris,orfeus',
+        default='geofon,iris',
         help='sites to query (available: %s, default: "%%default"'
         % ', '.join(g_sites_available))
 

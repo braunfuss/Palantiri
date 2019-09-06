@@ -88,7 +88,7 @@ class Config(object):
         self.eventpath = eventpath
         self.eventpath_emp = eventpath_emp
 
-    def parseConfig(self,suffix):
+    def parseConfig(self, suffix):
         '''
         method to parse config files(origin,config)
         return Configdictionary

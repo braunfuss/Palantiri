@@ -34,15 +34,26 @@ def parseIrisEventWebservice(searchparameter):
         searchparameter['resultlimit'] = 10
 
     url = 'http://service.iris.edu/fdsnws/event/1/query?'
-    parameter = urlencode({
-                 'catalog': searchparameter['catalog'],
-                 'minmag': searchparameter['magmin'],
-                 'starttime': searchparameter['date_min'],
-                 'endtime': searchparameter['date_max'],
-                 'format': 'text',
-                 'orderby': 'time',
-                 'limit': searchparameter['resultlimit'],
-            })
+    catalog = searchparameter['catalog']
+    if len(catalog) > 1:
+            parameter = urlencode({
+                         'catalog': searchparameter['catalog'],
+                         'minmag': searchparameter['magmin'],
+                         'starttime': searchparameter['date_min'],
+                         'endtime': searchparameter['date_max'],
+                         'format': 'text',
+                         'orderby': 'time',
+                         'limit': searchparameter['resultlimit'],
+                    })
+    else:
+        parameter = urlencode({
+                     'minmag': searchparameter['magmin'],
+                     'starttime': searchparameter['date_min'],
+                     'endtime': searchparameter['date_max'],
+                     'format': 'text',
+                     'orderby': 'time',
+                     'limit': searchparameter['resultlimit'],
+                })
     u = ('%s%s') % (url, parameter)
 
     data = urlopen(u).read()

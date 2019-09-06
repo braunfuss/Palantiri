@@ -14,13 +14,14 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 
+
 def init():
     '''
     method to parse global conf
 
     return Configdictionary
     '''
-    confname = os.path.join(os.getcwd(),'..','global.conf')
+    confname = os.path.join(os.getcwd(), '..', 'global.conf')
 
     cDict = {}
     parser = SafeConfigParser()
@@ -29,27 +30,26 @@ def init():
         for name, value in parser.items(section_name):
             cDict[name] = value
 
-    logger.info('\033[31m Global Configuration %s \033[0m \n'%(cDict))
+    logger.info('\033[31m Global Configuration %s \033[0m \n' % (cDict))
     return cDict
+
 
 def parseEvent(eventID):
 
-    eventID = eventID[1].replace('_','')
+    eventID = eventID[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
     dl = data[1:]
     i = dl[0]
     i = i.split('|')
-    time = i[1].replace(':','-').strip()
-    name = i[12].replace(' ','-').strip()
-    eventname =('%s_%s')%(name,time)
+    time = i[1].replace(':', '-').strip()
+    name = i[12].replace(' ', '-').strip()
+    eventname =('%s_%s') % (name,time)
 
     return eventname
-
-
 
 
 def createWorkingDirectory(args):
@@ -59,27 +59,28 @@ def createWorkingDirectory(args):
     return folder path and event_id
     '''
     foldername = parseEvent(args)
-    absfolder = os.path.join(os.getcwd(),'..','events',foldername)
+    absfolder = os.path.join(os.getcwd(), 'events', foldername)
 
-    if os.access(absfolder,os.F_OK) == False:
+    if os.access(absfolder,os.F_OK) is False:
             os.makedirs(absfolder)
             logger.info('\033[31m WORKING FOLDER CREATED \033[0m \n')
 
-    logger.info('\033[31m Folder: %s  EventID: %s \033[0m \n'%(absfolder,foldername))
+    logger.info('\033[31m Folder: %s  EventID: %s \033[0m \n' % (absfolder,foldername))
 
-    return absfolder,foldername
+    return absfolder, foldername
 
-def writeOriginFile(path,ev_id):
+
+def writeOriginFile(path, ev_id):
     '''
     method to write origin(event) file in the event directory to be processed
 
     return origin time of event
     '''
     fname = os.path.basename(path)+'.origin'
-    fobj = open(os.path.join(path,fname),'w')
+    fobj = open(os.path.join(path, fname),'w')
     fobj.write('[origin]\n\n')
 
-    eventID = ev_id[1].replace('_','')
+    eventID = ev_id[1].replace('_', '')
 
     url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
     data = urlopen(url).read()
@@ -159,6 +160,7 @@ def startAcquisition(sttime, sdsfolder, Dconfig):
     sds = os.path.join(sdsfolder,'data')
     cmd = sys.executable+' '+tool+' -t '+ sttime +' -d '+Dconfig['duration'] +' -m ' + sds + ' -k '+keyfolder+ ' -s '+Dconfig['keyfiles']
 
+
 def copyConfigSkeleton(evfolder):
     '''
     method to copy the example config from skeleton directory to event directory
@@ -175,16 +177,14 @@ def copyConfigSkeleton(evfolder):
 
     event = evfolder.split('/')[-1]
 
-    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      palantiri_down {evdirectory} \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
+    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      palantiri_down {evdirectory} "time" 10352.323104588522 0.001 10 --radius-min=1110 "name" \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
 
 
 def main():
-    options = init()
 
     if len(sys.argv) == 2:
-        absf,evid = createWorkingDirectory(sys.argv)
-        time = writeOriginFile(absf,sys.argv)
-        writeSynFile(absf,sys.argv)
+        absf, evid = createWorkingDirectory(sys.argv)
+        writeSynFile(absf, sys.argv)
         copyConfigSkeleton(absf)
     else:
         logger.info('\033[31m Nothing to do %s \033[0m \n')
