@@ -467,10 +467,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         #    tr_org.ydata = envelope
             tr_org.ydata = abs(tr_org.ydata)
 
-            tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+            tr_org.ydata = num.ediff1d(tr_org.ydata)
             if max(index_steps) % 2 == 1:
                 tr_org.ydata = abs(tr_org.ydata)
-                tr_org.ydata = num.ediff1d(tr_org.ydata, to_end=tr_org.ydata[-1])
+                tr_org.ydata = num.ediff1d(tr_org.ydata)
         #    tr_org.ydata = abs(tr_org.ydata)
 
 

@@ -23,7 +23,8 @@ from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCf
 from palantiri.common import Globals
 from palantiri.tools import config
 from palantiri.process.sembCalc import toAzimuth
-global  evpath
+global evpath
+from pyrocko import util
 
 w=25480390.0
 
@@ -636,13 +637,13 @@ def inspect_spectrum():
 
 def plot_integrated_movie():
     evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
-    duration = cfg.UInt ('duration')
-    forerun = cfg.UInt ('forerun')
+    C  = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    step = cfg.UInt('step')
+    step2 = cfg.UInt('step_f2')
+    duration = cfg.UInt('duration')
+    forerun = cfg.UInt('forerun')
 
     ntimes = int((forerun+duration)/step)
 
@@ -671,6 +672,156 @@ def plot_integrated_movie():
                     pathlist = Path(rel).glob('0-'+ str(sys.argv[5])+'00%s_*.ASC' %i)
                 except:
                     pathlist = Path(rel).glob('0-*00%s_*.ASC' %i)
+                if sys.argv[3] == 'max':
+
+                    data_int = num.zeros(num.shape(data[:, 2]))
+                    for path in sorted(pathlist):
+                            path_in_str = str(path)
+                            print(path_in_str)
+
+                            data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                            i = 0
+                            for k in np.nan_to_num(data[:,2]):
+                                if k>data_int[i]:
+                                    data_int[i]= k
+                                i = i+1
+
+                if sys.argv[3] == 'combined':
+                    data_int = num.zeros(num.shape(data[:, 2]))
+                    for path in sorted(pathlist):
+                            path_in_str = str(path)
+                            data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                            data_int += np.nan_to_num(data[:,2])
+
+                eastings = data[:,1]
+                northings =  data[:,0]
+                fig = plt.figure()
+                ax = fig.axes
+                map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                              llcrnrlat=num.min(northings),
+                              urcrnrlon=num.max(eastings),
+                              urcrnrlat=num.max(northings),
+                              resolution='h', epsg=3395)
+                ratio_lat = num.max(northings)/num.min(northings)
+                ratio_lon = num.max(eastings)/num.min(eastings)
+
+                map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
+
+                parallels = np.arange(num.min(northings),num.max(northings),0.2)
+                meridians = np.arange(num.min(eastings),num.max(eastings),0.2)
+
+
+                eastings, northings = map(eastings, northings)
+                map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+                map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22)
+                x, y = map(data[:,1], data[:,0])
+                mins = np.max(data[:,2])
+                triang = tri.Triangulation(x, y)
+                isbad = np.less(data_int, 0.001)
+                mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
+                triang.set_mask(mask)
+                plt.tricontourf(triang, data_int, vmax=maxs, vmin=0, cmap=cm.coolwarm)
+                #plt.tricontourf(triang, data_int, cmap=cm.coolwarm)
+
+                m = plt.cm.ScalarMappable(cmap=cm.coolwarm)
+                m.set_array(data_int)
+                m.set_clim(0., maxs)
+                plt.colorbar(m, orientation="horizontal", boundaries=np.linspace(0, maxs, 10))
+            #    plt.colorbar(orientation="horizontal")
+
+                plt.title(path_in_str)
+
+                event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+                desired=[3,4]
+                with open(event, 'r') as fin:
+                    reader=csv.reader(fin)
+                    event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+                desired=[7,8,9]
+                with open(event, 'r') as fin:
+                    reader=csv.reader(fin)
+                    event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+                x, y = map(event_cor[1][0],event_cor[0][0])
+                ax = plt.gca()
+                np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+                beach1 = beach(np1, xy=(x, y), width=0.09)
+                ax.add_collection(beach1)
+                for argv in sys.argv:
+                    if argv == "--topography":
+                        try:
+                            xpixels = 1000
+                            map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+                        except:
+                            pass
+                plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
+
+                if cfg.Bool('synthetic_test') is True:
+                    from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
+                    Syn_in = C.parseConfig('syn')
+                    syn_in = SynthCfg(Syn_in)
+                    sources = []
+
+                    if syn_in.source() == 'RectangularSource':
+                        sources.append(RectangularSource(
+                            lat=float(syn_in.lat_0()),
+                            lon=float(syn_in.lon_0()),
+                            east_shift=float(syn_in.east_shift_0())*1000.,
+                            north_shift=float(syn_in.north_shift_0())*1000.,
+                            depth=syn_in.depth_syn_0()*1000.,
+                            strike=syn_in.strike_0(),
+                            dip=syn_in.dip_0(),
+                            rake=syn_in.rake_0(),
+                            width=syn_in.width_0()*1000.,
+                            length=syn_in.length_0()*1000.,
+                            nucleation_x=syn_in.nucleation_x_0(),
+                            slip=syn_in.slip_0(),
+                            nucleation_y=syn_in.nucleation_y_0(),
+                            velocity=syn_in.velocity_0(),
+                            anchor=syn_in.anchor(),
+                            time=util.str_to_time(syn_in.time_0())))
+                    if syn_in.source() == 'DCSource':
+                            sources.append(DCSource(
+                                lat=float(syn_in.lat_0()),
+                                lon=float(syn_in.lon_0()),
+                                east_shift=float(syn_in.east_shift_0())*1000.,
+                                north_shift=float(syn_in.north_shift_0())*1000.,
+                                depth=syn_in.depth_syn_0()*1000.,
+                                strike=syn_in.strike_0(),
+                                dip=syn_in.dip_0(),
+                                rake=syn_in.rake_0(),
+                                time=util.str_to_time(syn_in.time_0()),
+                                magnitude=syn_in.magnitude_0()))
+                    for source in sources:
+                        print(source)
+                        n, e = source.outline(cs='latlon').T
+                        e, n = map(e,n)
+
+                        ax.fill(e, n, color=(0.5, 0.5, 0.5), lw = 2)
+                plt.show()
+
+
+    try:
+        pathlist = Path(rel).glob('1-'+ str(sys.argv[5])+'*.ASC')
+    except:
+        pathlist = Path(rel).glob('1-*.ASC')
+    maxs = 0.
+
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+
+            data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+            max = np.max(data[:, 2])
+            if maxs < max:
+                maxs = max
+                datamax = data[:, 2]
+
+    for i in range(0,ntimes):
+        if len(sys.argv)<4:
+            print("missing input arrayname")
+        else:
+                try:
+                    pathlist = Path(rel).glob('1-'+ str(sys.argv[5])+'00%s_*.ASC' %i)
+                except:
+                    pathlist = Path(rel).glob('1-*00%s_*.ASC' %i)
                 if sys.argv[3] == 'max':
 
                     data_int = num.zeros(num.shape(data[:, 2]))
@@ -755,7 +906,6 @@ def plot_integrated_movie():
                 plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
 
                 plt.show()
-
 
 def plot_integrated():
     if len(sys.argv)<4:
