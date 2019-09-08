@@ -1,9 +1,9 @@
 
-seismoBat Manual
+Palantiri Manual
 ==============
 
-seismoBat (Backprojection array tool) is an open source toolbox for seismological backprojection to investigate source properties 
-based on teleseismic data and clustering stations into synthetics arrays. A number of synthetic test are possible using Greensfunctions 
+Palantiri (Backprojection array tool) is an open source toolbox for seismological backprojection to investigate source properties
+based on teleseismic data and clustering stations into synthetics arrays. A number of synthetic test are possible using Greensfunctions
 
 based on:
 
@@ -24,7 +24,7 @@ Features
     <span>automatic download of data for given event</span>
     <span>automatic clustering of stations into synthetic arrays</span>
     <span>waveform selection by cross-correlation</span>
-    <span>manual qc shift for each array  possible</span>
+    <span>manual qc shift for each array </span>
     <span>synthetic backprojections for different sources</span>
     <span>pyrocko scenario generator (colosseo) input possible </span>
     <span>calculate seperate and total semblance for each time step</span>
@@ -47,6 +47,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
-
-

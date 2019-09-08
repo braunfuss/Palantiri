@@ -2,7 +2,7 @@
 Overview
 ========
 
-seismoBat is an open source seismology toolbox for backprojection. 
+Palantiri is an open source seismology toolbox for backprojection using a multi-array approach.
 
 .. raw:: html
 
