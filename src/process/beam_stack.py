@@ -28,11 +28,13 @@ def to_cartesian(items, reflatlon):
         dz = elevation - depth
         lat = item.lat/180.*num.pi
         z = r_earth+dz*num.sin(lat)
-        res[item.nsl()[:2]] =(x, y, z)
+        res[item.nsl()[:2]] = (x, y, z)
     return res
+
 
 def cmp(a, b):
     return (a > b) - (a < b)
+
 
 class BeamForming(Object):
     station_c = Station.T(optional=True)
@@ -55,8 +57,8 @@ class BeamForming(Object):
         self.station_c = None
         self.diff_dt_treat = diff_dt_treat
 
-
-    def process(self, event, timing, bazi=None, slow=None,  restitute=False, *args, **kwargs):
+    def process(self, event, timing, bazi=None, slow=None,  restitute=False,
+                *args, **kwargs):
         '''
       :param timing: CakeTiming. Uses the definition without the offset.
       :param fn_dump_center: filename to where center stations shall be dumped
@@ -71,7 +73,7 @@ class BeamForming(Object):
         network_code = kwargs.get('responses', None)
         network_code = kwargs.get('network', '')
         station_code = kwargs.get('station', 'STK')
-        c_station_id =(network_code, station_code)
+        c_station_id = (network_code, station_code)
         t_shifts = []
         lat_c, lon_c, z_c = self.c_lat_lon_z
 
@@ -87,10 +89,11 @@ class BeamForming(Object):
         if event:
             mod = cake.load_model(crust2_profile=(event.lat, event.lon))
             dist = ortho.distance_accurate50m(event, self.station_c)
-            ray = timing.t(mod,(event.depth, dist), get_ray=True)
+            ray = timing.t(mod, (event.depth, dist), get_ray=True)
 
             if ray is None:
-                logger.error('None of defined phases available at beam station:\n %s' % self.station_c)
+                logger.error('None of defined phases available at beam \
+                              station:\n %s' % self.station_c)
                 return
             else:
                 b = ortho.azimuth(self.station_c, event)
@@ -103,8 +106,9 @@ class BeamForming(Object):
             self.bazi = bazi
             self.slow = slow
 
-        logger.info('stacking %s with slowness %1.4f s/km at back azimut %1.1f '
-                    'degrees' %('.'.join(c_station_id), self.slow*cake.km, self.bazi))
+        logger.info('stacking %s with slowness %1.4f s/km at back azimut %1.1f'
+                    'degrees' % ('.'.join(c_station_id),
+                                 self.slow*cake.km, self.bazi))
 
         lat0 = num.array([lat_c]*len(stations))
         lon0 = num.array([lon_c]*len(stations))
@@ -113,7 +117,7 @@ class BeamForming(Object):
         ns, es = ortho.latlon_to_ne_numpy(lat0, lon0, lats, lons)
         theta = num.float(self.bazi*num.pi/180.)
         R = num.array([[num.cos(theta), -num.sin(theta)],
-                        [num.sin(theta), num.cos(theta)]])
+                       [num.sin(theta), num.cos(theta)]])
         distances = R.dot(num.vstack((es, ns)))[1]
         channels = set()
         self.stacked = {}
@@ -121,9 +125,9 @@ class BeamForming(Object):
         self.t_shifts = {}
         self.shifted_traces = []
         taperer = trace.CosFader(xfrac=0.05)
-        if self.diff_dt_treat=='downsample':
+        if self.diff_dt_treat == 'downsample':
             self.traces.sort(key=lambda x: x.deltat)
-        elif self.diff_dt_treat=='oversample':
+        elif self.diff_dt_treat == 'oversample':
             dts = [t.deltat for t in self.traces]
             for tr in self.traces:
                 tr.resample(min(dts))
@@ -169,11 +173,12 @@ class BeamForming(Object):
             if self.normalize_std:
                 tr.ydata = tr.ydata/tr.ydata.std()
 
-            if num.abs(tr.deltat-stack_trace.deltat)>0.000001:
-                if self.diff_dt_treat=='downsample':
+            if num.abs(tr.deltat-stack_trace.deltat) > 0.000001:
+                if self.diff_dt_treat == 'downsample':
                     stack_trace.downsample_to(tr.deltat)
-                elif self.diff_dt_treat=='upsample':
-                    raise Exception('something went wrong with the upsampling, previously')
+                elif self.diff_dt_treat == 'upsample':
+                    raise Exception('something went wrong with the upsampling,\
+                                     previously')
             stack_trace.add(tr)
             self.shifted_traces.append(tr)
 
@@ -186,15 +191,16 @@ class BeamForming(Object):
         self.save(stack_trace, fn_beam)
         return self.shifted_traces, stack_trace, t_shifts
 
-
     def checked_nslc(self, trs):
         for tr in trs:
             oldids = tr.nslc_id
-            n,s,l,c = oldids
-            tr.set_codes(network=n[:2], station=s[:5], location=l[:2], channel=c[:3])
+            n, s, l, c = oldids
+            tr.set_codes(network=n[:2], station=s[:5], location=l[:2],
+                         channel=c[:3])
             newids = tr.nslc_id
             if cmp(oldids, newids) != 0:
-                logger.warn('nslc id truncated: %s to %s' %('.'.join(oldids), '.'.join(newids)))
+                logger.warn('nslc id truncated: %s to %s' %
+                            ('.'.join(oldids), '.'.join(newids)))
 
     def snuffle(self):
         '''Scrutinize the shifted traces.'''
@@ -236,11 +242,11 @@ class BeamForming(Object):
 
             try:
                 sizes[i] = self.t_shifts[nsl[:2]]
-                stat_labels.append('%s' %('.'.join(nsl)))
+                stat_labels.append('%s' % ('.'.join(nsl)))
             except AttributeError:
                 self.fail('Run the snuffling first')
             except KeyError:
-                stat_labels.append('%s' %('.'.join(nsl)))
+                stat_labels.append('%s' % ('.'.join(nsl)))
                 continue
             finally:
                 i += 1
@@ -263,8 +269,8 @@ class BeamForming(Object):
         for i, lab in enumerate(stat_labels):
             ax.text(x[i], y[i], lab, size=14)
 
-        x = x[num.where(sizes==0.)]
-        y = y[num.where(sizes==0.)]
+        x = x[num.where(sizes == 0.)]
+        y = y[num.where(sizes == 0.)]
         ax.scatter(x, y, c='black', alpha=0.4, s=200)
 
         ax.arrow(center_xyz[0]/1000.,

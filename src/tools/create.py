@@ -47,7 +47,7 @@ def parseEvent(eventID):
     i = i.split('|')
     time = i[1].replace(':', '-').strip()
     name = i[12].replace(' ', '-').strip()
-    eventname =('%s_%s') % (name,time)
+    eventname = ('%s_%s') % (name,time)
 
     return eventname
 
@@ -61,11 +61,12 @@ def createWorkingDirectory(args):
     foldername = parseEvent(args)
     absfolder = os.path.join(os.getcwd(), 'events', foldername)
 
-    if os.access(absfolder,os.F_OK) is False:
+    if os.access(absfolder, os.F_OK) is False:
             os.makedirs(absfolder)
             logger.info('\033[31m WORKING FOLDER CREATED \033[0m \n')
 
-    logger.info('\033[31m Folder: %s  EventID: %s \033[0m \n' % (absfolder,foldername))
+    logger.info('\033[31m Folder: %s  EventID: %s \033[0m \n' % (absfolder,
+                foldername))
 
     return absfolder, foldername
 
@@ -77,12 +78,12 @@ def writeOriginFile(path, ev_id):
     return origin time of event
     '''
     fname = os.path.basename(path)+'.origin'
-    fobj = open(os.path.join(path, fname),'w')
+    fobj = open(os.path.join(path, fname), 'w')
     fobj.write('[origin]\n\n')
 
     eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'%(eventID)
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -115,7 +116,7 @@ def writeSynFile(path, ev_id):
 
     eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text'% (eventID)
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -155,24 +156,24 @@ def startAcquisition(sttime, sdsfolder, Dconfig):
     sttime = str(sttime)
 
     keyfolder = Dconfig['keyfilefolder']
-    tool = os.path.join(os.getcwd(),'ev_wave_mt4.py')
+    tool = os.path.join(os.getcwd(), 'ev_wave_mt4.py')
 
-    sds = os.path.join(sdsfolder,'data')
-    cmd = sys.executable+' '+tool+' -t '+ sttime +' -d '+Dconfig['duration'] +' -m ' + sds + ' -k '+keyfolder+ ' -s '+Dconfig['keyfiles']
+    sds = os.path.join(sdsfolder, 'data')
+    cmd = sys.executable + ' ' + tool + ' -t ' + sttime + ' -d ' + Dconfig['duration'] +' -m ' + sds + ' -k '+keyfolder+ ' -s '+Dconfig['keyfiles']
 
 
 def copyConfigSkeleton(evfolder):
     '''
     method to copy the example config from skeleton directory to event directory
     '''
-    logger.info('\033[31m Copy example.config to %s \033[0m \n'%(evfolder))
+    logger.info('\033[31m Copy example.config to %s \033[0m \n' % (evfolder))
 
     dstfile = os.path.split(evfolder)[1]+'.config'
     import palantiri
     path = palantiri.__path__
-    src = os.path.join(path[0],'skeleton','example.config')
-    dst = os.path.join(evfolder,dstfile)
-    logger.info('\033[31m Created event directory  %s \033[0m \n'%(evfolder.split('/')[-1]))
+    src = os.path.join(path[0], 'skeleton', 'example.config')
+    dst = os.path.join(evfolder, dstfile)
+    logger.info('\033[31m Created event directory  %s \033[0m \n' % (evfolder.split('/')[-1]))
     shutil.copy(src, dst)
 
     event = evfolder.split('/')[-1]

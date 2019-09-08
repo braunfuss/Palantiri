@@ -1,1 +1,1 @@
-VERSION_STRING  = 'Version 0.3 Feb. 2019'
+VERSION_STRING = 'Version 0.4 Sept. 2019'

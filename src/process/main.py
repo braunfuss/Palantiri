@@ -95,7 +95,7 @@ def processLoop(traces=None, stations=None, cluster=None):
     filter = FilterCfg(Config)
     if cfg.UInt('forerun') > 0:
         ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
-                        cfg.Float('step'))
+                     cfg.Float('step'))
     else:
         ntimes = int((cfg.UInt('duration')) / cfg.Float('step'))
     origin = OriginCfg(Origin)
@@ -435,10 +435,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                     maxt = []
                     ttt_model = cfg.Str('traveltime_model')
                     try:
-                        px = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+                        px = os.path.abspath(os.path.join(os.getcwd(),
+                                             os.pardir))
                         pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
-                                 % (phase, ttt_model, ev.time, arrayname,
-                                    workdepth))
+                                  % (phase, ttt_model, ev.time, arrayname,
+                                     workdepth))
                         px_path = px+pdx
                         f = open(px_path, 'rb')
 
@@ -468,28 +469,32 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 if cfg.Int('dimz') != 0:
                                     t1 = time.time()
                                     ttt.calcTTTAdv_cube(Config, FilterMeta[i],
-                                                          Origin, i, arrayname,
-                                                          W, refshift, phase)
+                                                        Origin, i, arrayname,
+                                                        W, refshift, phase)
 
                                     Logfile.add('ttt.calcTTTAdv : '
-                                                + str(time.time() - t1) + ' sec.')
+                                                + str(time.time() - t1)
+                                                + ' sec.')
                                 else:
                                     t1 = time.time()
-                                    ttt.calcTTTAdv(Config, FilterMeta[i], Origin,
+                                    ttt.calcTTTAdv(Config, FilterMeta[i],
+                                                   Origin,
                                                    i, arrayname, W, refshift,
                                                    phase)
 
                                     Logfile.add('ttt.calcTTTAdv : '
-                                                + str(time.time() - t1) + ' sec.')
+                                                + str(time.time() - t1)
+                                                + ' sec.')
                         assert len(FilterMeta) > 0
-                        if cfg.Int('dimz') != 0 :
+                        if cfg.Int('dimz') != 0:
                             TTTGridMap = deserializer.deserializeTTT_cube(len(FilterMeta))
                             mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
                         else:
                             TTTGridMap = deserializer.deserializeTTT(len(FilterMeta))
                             mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
 
-                        px = os.path.abspath(os.path.join(os.getcwd(), os.pardir))
+                        px = os.path.abspath(os.path.join(os.getcwd(),
+                                             os.pardir))
                         pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                  % (phase, ttt_model, ev.time, arrayname,
                                     workdepth))
@@ -503,13 +508,15 @@ def processLoop(traces=None, stations=None, cluster=None):
                     if cfg.Bool('correct_shifts_empirical') is True:
 
                         Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
-                                    %s \n' % (Config['dimx_emp'], Config['dimy_emp'],
+                                    %s \n' % (Config['dimx_emp'],
+                                              Config['dimy_emp'],
                                               Config['gridspacing']))
 
                         try:
-                            f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                     % (phase, ttt_model, ev_emp.time, arrayname,
-                                        workdepth), 'rb')
+                            f = open(os.path.abspath(os.path.join(os.getcwd(),
+                                                     os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                     % (phase, ttt_model, ev_emp.time,
+                                        arrayname, workdepth), 'rb')
                             print("loading travel time grid%s_%s_%s_%s_%s_emp.pkl"
                                   % (phase, ttt_model, ev_emp.time, arrayname,
                                      workdepth))
@@ -526,26 +533,31 @@ def processLoop(traces=None, stations=None, cluster=None):
 
                                 for i in xrange(len(FilterMeta)):
                                     po.apply_async(ttt.calcTTTAdv,
-                                                   (Config, FilterMeta[i], Origin,
-                                                    i, arrayname, W, refshift))
+                                                   (Config, FilterMeta[i],
+                                                    Origin, i, arrayname,
+                                                    W, refshift))
 
                                     po.close()
                                     po.join()
                             else:
                                 for i in xrange(len(FilterMeta)):
                                     t1 = time.time()
-                                    ttt.calcTTTAdv(Config, FilterMeta[i], Origin_emp,
+                                    ttt.calcTTTAdv(Config, FilterMeta[i],
+                                                   Origin_emp,
                                                    i, arrayname, W, refshift,
                                                    phase, flag_rpe=True)
 
                                     assert len(FilterMeta) > 0
                                     TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta))
                                     mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta))
-                                    f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                             % (phase, ttt_model, ev_emp.time, arrayname,
-                                                workdepth), 'wb')
+                                    f = open(os.path.abspath(os.path.join(os.getcwd(),
+                                             os.pardir))+'/tttgrid/tttgrid%s_\
+                                             %s_%s_%s_%s_emp.pkl'
+                                             % (phase, ttt_model, ev_emp.time,
+                                                arrayname, workdepth), 'wb')
                                     print("dumping the traveltime grid for this array")
-                                    pickle.dump([TTTGridMap_emp, mint_emp, maxt_emp], f)
+                                    pickle.dump([TTTGridMap_emp, mint_emp,
+                                                 maxt_emp], f)
                                     f.close()
                         t2 = time.time()
                         Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
@@ -554,8 +566,9 @@ def processLoop(traces=None, stations=None, cluster=None):
                     tw = times.calculateTimeWindows(mint, maxt, Config,
                                                     ev, switch)
                     if cfg.Bool('correct_shifts_empirical') is True:
-                        tw_emp = times.calculateTimeWindows(mint_emp, maxt_emp, Config,
-                                                        ev_emp, switch)
+                        tw_emp = times.calculateTimeWindows(mint_emp, maxt_emp,
+                                                            Config, ev_emp,
+                                                            switch)
 
                         if cfg.pyrocko_download() is True:
                             if cfg.quantity() == 'displacement':
@@ -563,17 +576,23 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     FilterMeta, tw, evpath, ev_emp, desired)
                             elif cfg.Bool('synthetic_test') is True:
                                 Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
-                                                                        tw_emp, evpath_emp,
+                                                                        tw_emp,
+                                                                        evpath_emp,
                                                                         ev_emp)
                             else:
-                                Wd_emp = waveform.readWaveformsPyrocko(FilterMeta, tw_emp,
-                                                                   evpath_emp, ev_emp,
-                                                                   desired)
+                                Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
+                                                                       tw_emp,
+                                                                       evpath_emp,
+                                                                       ev_emp,
+                                                                       desired)
                         elif cfg.colesseo_input() is True:
-                            Wd_emp = waveform.readWaveforms_colesseo(FilterMeta, tw_emp,
-                                                                 evpath_emp, ev_emp, C)
+                            Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
+                                                                     tw_emp,
+                                                                     evpath_emp,
+                                                                     ev_emp, C)
                         else:
-                            Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp, evpath_emp, ev_emp)
+                            Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
+                                                            evpath_emp, ev_emp)
                         if cfg.Bool('synthetic_test') is True\
                            or cfg.Bool('dynamic_filter') is True:
                             Wdf_emp = waveform.processdummyWaveforms(Wd_emp, Config,
@@ -588,24 +607,36 @@ def processLoop(traces=None, stations=None, cluster=None):
                             if switch == 1:
                                 ff1 = filter.flo2()
                                 ff2 = filter.fhi2()
-                            ps_wdf_emp = os.path.join(Folder['semb'], "fobjpickle_process_emp_%s_%s%s" %(arrayname, ff1, ff2))
+                            ps_wdf_emp = os.path.join(Folder['semb'],
+                                                      "fobjpickle_process_emp\
+                                                      _%s_%s%s"
+                                                      % (arrayname, ff1, ff2))
                             if cfg.Bool('load_wdf') is True:
                                 try:
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
-                                except:
-                                    Wdf_emp = waveform.processWaveforms(Wd_emp, Config, Folder,
-                                                                    arrayname, FilterMeta,
-                                                                    ev_emp, switch, W)
+                                except Exception:
+                                    Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                                                        Config,
+                                                                        Folder,
+                                                                        arrayname,
+                                                                        FilterMeta,
+                                                                        ev_emp,
+                                                                        switch,
+                                                                        W)
 
                                     fobj_proc = open(ps_wdf_emp, 'wb')
                                     pickle.dump(Wdf_emp, fobj_proc)
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                             else:
-                                Wdf_emp = waveform.processWaveforms(Wd_emp, Config, Folder,
-                                                                arrayname, FilterMeta,
-                                                                ev_emp, switch, W)
+                                Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                                                    Config,
+                                                                    Folder,
+                                                                    arrayname,
+                                                                    FilterMeta,
+                                                                    ev_emp,
+                                                                    switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                     if cfg.pyrocko_download() is True:
                         if cfg.quantity() == 'displacement':
@@ -638,14 +669,16 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if switch == 1:
                             ff1 = filter.flo2()
                             ff2 = filter.fhi2()
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" %(arrayname, ff1, ff2))
+                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" % (arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                                arrayname, FilterMeta,
+                                Wdf = waveform.processWaveforms(Wd, Config,
+                                                                Folder,
+                                                                arrayname,
+                                                                FilterMeta,
                                                                 ev, switch, W)
 
                                 fobj_proc = open(ps_wdf, 'wb')
@@ -654,7 +687,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 Wdf = pickle.load(f)
                         else:
                             Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                            arrayname, FilterMeta,
+                                                            arrayname,
+                                                            FilterMeta,
                                                             ev, switch, W)
                         Wdfs.extend(Wdf)
 
@@ -696,15 +730,19 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     else:
                                         ntimes_emp = int((cfg.UInt('duration_emp')) / step_emp)
                                         f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                             % (phase, ttt_model, ev_emp.time, arrayname,
+                                             % (phase, ttt_model, ev_emp.time,
+                                                arrayname,
                                                 workdepth), 'rb')
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                                     f.close()
                                     flag_rpe = True
                                     arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wdf_emp, FilterMeta, mint_emp, maxt_emp,
-                                        TTTGridMap_emp, Folder, Origin_emp, ntimes_emp, switch, ev_emp,
-                                        arrayfolder, syn_in_emp, refshifts, phase, rpe+str(arrayname), flag_rpe)
+                                        counter, Config, Wdf_emp, FilterMeta,
+                                        mint_emp, maxt_emp,
+                                        TTTGridMap_emp, Folder, Origin_emp,
+                                        ntimes_emp, switch, ev_emp,
+                                        arrayfolder, syn_in_emp, refshifts,
+                                        phase, rpe+str(arrayname), flag_rpe)
                                     if sys.version_info.major >= 3:
                                         f = open(rpe+str(arrayname), 'rb')
                                     else:
@@ -715,19 +753,21 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         if cfg.correct_shifts() is False:
                                             refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
-                            f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                            f = open(os.path.abspath(os.path.join(os.getcwd(),
+                                     os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                      % (phase, ttt_model, ev.time, arrayname,
                                         workdepth), 'rb')
                             print("loading travel time grid%s_%s_%s_%s_%s.pkl"
-                                   % (phase, ttt_model, ev.time, arrayname,
+                                  % (phase, ttt_model, ev.time, arrayname,
                                       workdepth))
                             TTTGridMap_mew, mintt, maxtt = pickle.load(f)
                             f.close()
 
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMeta, mintt, maxtt,
-                                TTTGridMap_mew, Folder, Origin, ntimes, switch, ev,
-                                arrayfolder, syn_in, refshifts, phase, rpe+str(arrayname), flag_rpe, len(FilterMeta))
+                                TTTGridMap_mew, Folder, Origin, ntimes, switch,
+                                ev, arrayfolder, syn_in, refshifts, phase,
+                                rpe+str(arrayname), flag_rpe, len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -789,7 +829,9 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if switch == 1:
                             ff1 = filter.flo2()
                             ff2 = filter.fhi2()
-                        ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s_combined" %(arrayname, ff1, ff2))
+                        ps_wdf = os.path.join(Folder['semb'],
+                                              "fobjpickle_process_%s_%s%s_\
+                                              combined" % (arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
@@ -797,17 +839,20 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 print('loaded wdf')
                                 print(ps_wdf)
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                        arrayname, FilterMetas,
-                                                        ev, switch, W)
+                                Wdf = waveform.processWaveforms(Wd, Config,
+                                                                Folder,
+                                                                arrayname,
+                                                                FilterMetas,
+                                                                ev, switch, W)
 
                                 fobj_proc = open(ps_wdf, 'wb')
                                 pickle.dump(Wdf, fobj_proc)
                                 print('dumped wdf')
                         else:
                             Wdf = waveform.processWaveforms(Wd, Config, Folder,
-                                                        arrayname, FilterMetas,
-                                                        ev, switch, W)
+                                                            arrayname,
+                                                            FilterMetas,
+                                                            ev, switch, W)
 
                     mint = num.min(mints)
                     maxt = num.max(maxts)
@@ -846,7 +891,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
-                                phase, rpe+str(arrayname), flag_rpe, nstats, bs_weights=ws)
+                                phase, rpe+str(arrayname), flag_rpe, nstats,
+                                bs_weights=ws)
 
                             ASL.append(arraySemb)
                             weights.append(weight)
@@ -940,6 +986,7 @@ def MainProc():
 
 
 isClient = False
+
 
 def main():
 

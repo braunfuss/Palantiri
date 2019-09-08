@@ -3,8 +3,7 @@ import logging
 import numpy as num
 from pyrocko.guts import Int, Bool, Float, String
 from pyrocko.gf.meta import OutOfBounds
-from pyrocko import io, trace, pile
-
+from pyrocko import io, pile
 
 
 def get_phase_arrival_time(engine, source, station, wavename, store_id):
@@ -67,7 +66,8 @@ def add_noise(traces, engine, event, stations, store_id,
             mean = num.mean(extracted.ydata)
             var = num.var(extracted.ydata)
             noise_data = num.random.normal(loc=mean,
-            scale=var, size=num.shape(tr.ydata))
+                                           scale=var,
+                                           size=num.shape(tr.ydata))
             tr.ydata = tr.ydata+(noise_data)
             noised_traces.append(tr)
     return noised_traces

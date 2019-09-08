@@ -20,7 +20,6 @@ from pyrocko.client import fdsn
 from pyrocko import trace, util, io, cake, catalog, automap, pile, model
 from pyrocko import orthodrome, weeding
 from pyrocko.fdsn import ws, station, resp, enhanced_sacpz as epz
-import subprocess
 km = 1000.
 
 g_sites_available = sorted(ws.g_site_abbr.keys())
@@ -33,6 +32,7 @@ ffade_factors = 0.5, 1.5
 
 ws.g_timeout = 80.
 fdsn.g_timeout = 80.
+
 
 class starfill(object):
     def __getitem__(self, k):
@@ -213,6 +213,7 @@ SS>" \\
                                [--] <lat> <lon> <radius_km> <fmin_hz> \\
                                <sampling_rate_hz> <eventname>
 '''.strip()
+
 
 def main():
     parser = OptionParser(

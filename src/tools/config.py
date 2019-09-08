@@ -5,12 +5,13 @@ import shutil
 import glob
 import numpy as np
 import sys
+from pyrocko import model
+
 if sys.version_info.major >= 3:
     from configparser import SafeConfigParser
 else:
     from ConfigParser import SafeConfigParser
 
-from pyrocko import model
 logger = logging.getLogger('ARRAY-MP')
 
 
@@ -43,20 +44,22 @@ class Station(object):
 
     def getcmpName(self):
         if self.loc == '--':
-            self.loc=''
+            self.loc = ''
         return self.net+'.'+self.sta+'.'+self.loc+'.'+self.comp
 
     def __str__(self):
-        return('%s.%s.%s.%s')%(self.net,self.sta,self.loc,self.comp)
+        return('%s.%s.%s.%s') % (self.net, self.sta, self.loc, self.comp)
 
     def __eq__(self, other):
         return self.getName() == other.getName()
+
 
 class Event(object):
     '''
     class to store event object form origin file
     '''
-    def __init__(self,lat,lon,depth,time='',region='',strike=0,dip=0,rake=0):
+    def __init__(self, lat, lon, depth, time='', region='', strike=0,
+                 dip=0, rake=0):
         self.lat = lat
         self.lon = lon
         self.depth = depth
@@ -65,6 +68,7 @@ class Event(object):
         self.strike = strike
         self.dip = dip
         self.rake = rake
+
 
 class Trigger(object):
     '''
@@ -112,7 +116,7 @@ class Config(object):
         method to parse metadata file
         return List of Station Objects
         '''
-        MetaL =[]
+        MetaL = []
         logger.info('\033[31m Parsing MetaInfoFile \033[0m \n')
         try:
             for i in os.listdir(self.eventpath):
@@ -135,7 +139,7 @@ class Config(object):
                             MetaL.append(Station(net, sta, loc, comp, lat, lon,
                                                  ele, dip, azi, gain))
 
-            logger.info('\033[31m %d ENTRIES IN METAFILE FOUND \033[0m \n' %(len(MetaL)))
+            logger.info('\033[31m %d ENTRIES IN METAFILE FOUND \033[0m \n' % (len(MetaL)))
         except:
             logger.info('\033[31m METAFILE NOT READABLE \033[0m \n')
 
@@ -158,10 +162,14 @@ class Config(object):
                 count_channel = 0
                 for channel in sl.channels:
                     if channel.name[-1] == desired and channel.name is not "HHZ":
-                        MetaL.append(Station(str(sl.network),str(sl.station),
-                        str(sl.location),str(channel)[:3],str(sl.lat),str(sl.lon),
-                        str(sl.elevation),str(channel.dip),str(channel.azimuth),
-                        str(channel.gain)))
+                        MetaL.append(Station(str(sl.network), str(sl.station),
+                                             str(sl.location),
+                                             str(channel)[:3], str(sl.lat),
+                                             str(sl.lon),
+                                             str(sl.elevation),
+                                             str(channel.dip),
+                                             str(channel.azimuth),
+                                             str(channel.gain)))
                     count_channel = count_channel+1
         FML = self.checkMetaInfoFile(MetaL)
 
@@ -170,40 +178,41 @@ class Config(object):
     def readcolosseostations(self, scenario_path):
         stations = model.load_stations(scenario_path+'/meta/stations.txt')
 
-        MetaL =[]
+        MetaL = []
         for sl in stations:
                 channel = sl.channels[2]
-                MetaL.append(Station(str(sl.network),str(sl.station),
-                str(sl.location),str(sl.channels[2])[:3],str(sl.lat),str(sl.lon),
-                str(sl.elevation),str(channel.dip),str(channel.azimuth),
-                str(channel.gain)))
+                MetaL.append(Station(str(sl.network), str(sl.station),
+                             str(sl.location), str(sl.channels[2])[:3],
+                             str(sl.lat), str(sl.lon), str(sl.elevation),
+                             str(channel.dip), str(channel.azimuth),
+                             str(channel.gain)))
         FML = self.checkMetaInfoFile(MetaL)
 
         return FML
 
-    def checkMetaInfoFile(self ,MetaList):
+    def checkMetaInfoFile(self, MetaList):
 
-        ML =[]
-        DL =[]
-        LL =[]
+        ML = []
+        DL = []
+        LL = []
 
         for i in MetaList:
             try:
                 if float(i.gain) == 0:
                     print('GAIN IS ZERO ', i)
-                    search = ('%s.%s.%s')%(i.net,i.sta,i.loc)
+                    search = ('%s.%s.%s') % (i.net, i.sta, i.loc)
                     DL.append(search)
                     LL.append(i)
             except:
-                i.gain = (np.float(i.gain[:-3])) #careful, there is something off with some japanese/chinese stats.
-                search = ('%s.%s.%s')%(i.net,i.sta,i.loc)
+                i.gain = (np.float(i.gain[:-3]))  # careful, there is something off with some japanese/chinese stats.
+                search = ('%s.%s.%s') % (i.net, i.sta, i.loc)
                 DL.append(search)
                 LL.append(i)
 
         if len(DL) > 0:
             for i in DL:
                 for j in MetaList:
-                    metaname =('%s.%s.%s')%(j.net,j.sta,j.loc)
+                    metaname = ('%s.%s.%s') % (j.net, j.sta, j.loc)
                     if i != metaname:
                         ML.append(j)
         else:
@@ -219,46 +228,44 @@ class Config(object):
         logger.info('\033[31m Create working environment \033[0m \n')
         if os.access(os.getcwd(), os.W_OK):
 
-            basedir = os.path.join(self.eventpath,'work')
+            basedir = os.path.join(self.eventpath, 'work')
             sembdir = os.path.join(basedir, 'semblance')
             ascdir = os.path.join(basedir, 'asc')
             mseeddir = os.path.join(basedir, 'mseed')
 
             Folder['base'] = basedir
             Folder['semb'] = sembdir
-            Folder['asc']  = ascdir
+            Folder['asc'] = ascdir
             Folder['mseed'] = mseeddir
 
             for key in Folder:
-                if os.access(Folder[key],os.F_OK) == False:
+                if os.access(Folder[key], os.F_OK) is False:
                     os.makedirs(Folder[key])
 
         else:
             print("no write permissions")
 
-        Folder['config'] = os.path.join('..','skeleton')
+        Folder['config'] = os.path.join('..', 'skeleton')
         return Folder
-
 
     def writeConfig(self, Config, Origin, Folder):
         '''
         method to write recently used config to event folder
         '''
-        dst_dir= os.path.join(Folder['semb'],'config_file.cfg')
+        dst_dir = os.path.join(Folder['semb'], 'config_file.cfg')
 
-        files  = glob.glob(os.path.join(self.eventpath,'*.'+'config'))
+        files = glob.glob(os.path.join(self.eventpath, '*.'+'config'))
         parser = SafeConfigParser()
         src_file = parser.read(files[0])
 
-        shutil.copy(src_file[0],dst_dir)
-
+        shutil.copy(src_file[0], dst_dir)
 
     def writeStationFile(self, StationMetaData, Folder, flag):
         '''
         method to write recently used stations for processing to event folder
         '''
         name = 'stations_'+str(flag)+'.dat'
-        fobj = open(os.path.join(Folder['semb'],name),'w')
+        fobj = open(os.path.join(Folder['semb'], name), 'w')
         for i in StationMetaData:
-            fobj.write('%s %s %s %s\n' %(flag,i.getName(),i.lat,i.lon))
+            fobj.write('%s %s %s %s\n' % (flag, i.getName(), i.lat, i.lon))
         fobj.close()
