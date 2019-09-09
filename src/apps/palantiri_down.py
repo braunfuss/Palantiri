@@ -30,8 +30,8 @@ gcmt = catalog.GlobalCMT()
 tfade_factor = 1.0
 ffade_factors = 0.5, 1.5
 
-ws.g_timeout = 80.
-fdsn.g_timeout = 80.
+ws.g_timeout = 280.
+fdsn.g_timeout = 280.
 
 
 class starfill(object):
