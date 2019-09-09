@@ -1,5 +1,4 @@
 from configparser import SafeConfigParser
-import urllib
 from urllib.parse import urlencode
 from urllib.request import urlopen
 

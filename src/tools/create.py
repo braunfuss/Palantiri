@@ -8,7 +8,8 @@ import dateutil.parser
 
 logger = logging.getLogger('ARRAY-MP')
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+formatter = logging.Formatter("%(asctime)s - %(name)s -\
+                               %(levelname)s - %(message)s")
 ch = logging.StreamHandler()
 ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
@@ -38,7 +39,8 @@ def parseEvent(eventID):
 
     eventID = eventID[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
+    url = 'http://service.iris.edu/fdsnws/event\
+           /1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -47,7 +49,7 @@ def parseEvent(eventID):
     i = i.split('|')
     time = i[1].replace(':', '-').strip()
     name = i[12].replace(' ', '-').strip()
-    eventname = ('%s_%s') % (name,time)
+    eventname = ('%s_%s') % (name, time)
 
     return eventname
 
@@ -83,7 +85,8 @@ def writeOriginFile(path, ev_id):
 
     eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
+    url = 'http://service.iris.edu/fdsnws/event\
+           /1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -107,7 +110,8 @@ def writeOriginFile(path, ev_id):
 
 def writeSynFile(path, ev_id):
     '''
-    method to write synthetic input(event) file in the event directory to be processed
+    method to write synthetic input(event) file in the event directory to be
+    processed
 
     '''
     fname = os.path.basename(path)+'.syn'
@@ -116,7 +120,8 @@ def writeSynFile(path, ev_id):
 
     eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
+    url = 'http://service.iris.edu/fdsnws/\
+           event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -149,22 +154,10 @@ def writeSynFile(path, ev_id):
     return time
 
 
-def startAcquisition(sttime, sdsfolder, Dconfig):
-    '''
-    method to download waveform data from stations in global.conf specified keyfolder for the event
-    '''
-    sttime = str(sttime)
-
-    keyfolder = Dconfig['keyfilefolder']
-    tool = os.path.join(os.getcwd(), 'ev_wave_mt4.py')
-
-    sds = os.path.join(sdsfolder, 'data')
-    cmd = sys.executable + ' ' + tool + ' -t ' + sttime + ' -d ' + Dconfig['duration'] +' -m ' + sds + ' -k '+keyfolder+ ' -s '+Dconfig['keyfiles']
-
-
 def copyConfigSkeleton(evfolder):
     '''
-    method to copy the example config from skeleton directory to event directory
+    method to copy the example config from skeleton directory to the
+    event directory
     '''
     logger.info('\033[31m Copy example.config to %s \033[0m \n' % (evfolder))
 
@@ -173,12 +166,16 @@ def copyConfigSkeleton(evfolder):
     path = palantiri.__path__
     src = os.path.join(path[0], 'skeleton', 'example.config')
     dst = os.path.join(evfolder, dstfile)
-    logger.info('\033[31m Created event directory  %s \033[0m \n' % (evfolder.split('/')[-1]))
+    logger.info('\033[31m Created event directory \
+                %s \033[0m \n' % (evfolder.split('/')[-1]))
     shutil.copy(src, dst)
 
     event = evfolder.split('/')[-1]
 
-    logger.info('\033[31mNEXT PROCESSING STEP: \n\n                      palantiri_down {evdirectory} "time" 10352.323104588522 0.001 10 --radius-min=1110 "name" \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
+    logger.info('\033[31mNEXT PROCESSING STEP: \n\n   \
+                 palantiri_down {evdirectory} "time" 10352.323104588522\
+                 0.001 10 --radius-min=1110 "name"\
+                 \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
 
 
 def main():

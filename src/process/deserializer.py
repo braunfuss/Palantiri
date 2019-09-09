@@ -1,14 +1,11 @@
-import os
 import sys
 from palantiri.common import Basic
-from palantiri.common import Globals
-from palantiri.common import Logfile
 from collections import OrderedDict
-from palantiri.process.ttt import MinTMaxT
 
 '''
 modul for deserializing pickle data from different processes
 '''
+
 
 def deserializeTTT(numproc):
 
@@ -32,6 +29,7 @@ def deserializeTTT(numproc):
 
         return TTTGridMap
 
+
 def deserializeTTT_cube(numproc):
 
         L = []
@@ -53,6 +51,7 @@ def deserializeTTT_cube(numproc):
                     TTTGridMap[j] = i[j]
 
         return TTTGridMap
+
 
 def deserializeMinTMaxT(numproc):
 
