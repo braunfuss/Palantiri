@@ -80,17 +80,18 @@ def xcorr(tr1, tr2, shift_len, full_xcorr=False):
 
 class MyThread(Thread):
 
-    def __init__(self, nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount):
+    def __init__(self, nostat, nsamp, i, nstep, dimX,
+                 dimY, mint, new_freq, minSampleCount):
         Thread.__init__(self)
 
-        self.nostat= nostat
+        self.nostat = nostat
         self.nsamp = nsamp
-        self.i= i
+        self.i = i
         self.nstep = nstep
-        self.dimX  = dimX
-        self.dimY  = dimY
-        self.mint  = mint
-        self.new_freq  = new_freq
+        self.dimX = dimX
+        self.dimY = dimY
+        self.mint = mint
+        self.new_freq = new_freq
         self.minSampleCount = minSampleCount
 
 
@@ -100,12 +101,12 @@ def toMatrix(npVector, nColumns):
     n   = nColumns
     mat = []
 
-    for i in range(int(len(t) / n)) :
-       pos1  = i * n
-       pos2  = pos1 + n
-       slice = t [pos1:pos2]
-       assert len(slice) == nColumns
-       mat.append(slice)
+    for i in range(int(len(t) / n)):
+        pos1 = i * n
+        pos2 = pos1 + n
+        slice = t[pos1:pos2]
+        assert len(slice) == nColumns
+        mat.append(slice)
 
     return mat
 
@@ -136,6 +137,12 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, bs_weights=bs_weights)
+
+            if cfg.Bool('bp_music') is True:
+               return music(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                                   mint, new_frequence, minSampleCount, latv_1,
+                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
+                                   time, cfg, refshifts, nstats, bs_weights=bs_weights)
 
             elif cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
                return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
@@ -485,6 +492,166 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     backSemb = backSemb/num.max(num.max(backSemb))
     return backSemb
 
+
+
+def music(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+                 new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
+                 trace_1, calcStreamMap, time, cfg, refshifts, nstats,
+                 bs_weights=None):
+    obspy_compat.plant()
+    trs_orgs = []
+    snap = (round, round)
+    if cfg.Bool('combine_all') is True:
+        combine = True
+    else:
+        combine = False
+    if cfg.Bool('bootstrap_array_weights') is True:
+        do_bs_weights = True
+    else:
+        do_bs_weights = False
+
+    do_weight_by_array = False
+    if do_weight_by_array:
+        k = 0
+        stats_done = 0
+        for k in range(0, len(nstats)):
+            for stats in range(0, nstats[k]):
+                list(calcStreamMap.keys())[stats].data = list(calcStreamMap.keys())[stats].data/np.max(list(calcStreamMap.keys())[0].data)
+                stats_done = stats_done + nstats[k]
+
+        k = 0
+        s_index = 0
+        for tr in calcStreamMap:
+            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+            trs_orgs.append(tr_org)
+
+        for tr in calcStreamMap:
+            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+            datas = trs_orgs[0:s_index].ydata
+            if k <= nstats[s_index]:
+                k = k+1
+                tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(datas)))
+
+            if k == nstats[s_index]:
+                s_index = s_index+1
+            calcStreamMap[tr] = obspy_compat.to_obspy_trace(tr_org)
+
+            stats_done = stats_done + nstats[k]
+    trs_orgs = []
+    for tr in sorted(calcStreamMap):
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        trs_orgs.append(tr_org)
+        array_lats, array_lons = calcStreamMap[tr].lat, calcStreamMap[tr].lon
+    traveltime = []
+    traveltime = toMatrix(traveltime_1, dimX * dimY)
+    latv = latv_1.tolist()
+    lonv = lonv_1.tolist()
+    from collections import OrderedDict
+    index_begins = OrderedDict()
+
+    index_steps = []
+    index_window = []
+    for j in range(dimX * dimY):
+        markers = []
+
+        for k in range(nostat):
+            relstart = traveltime[k][j]
+            tr = trs_orgs[k]
+
+            try:
+                tmin = time+relstart-mint-refshifts[k]
+                tmax = time+relstart-mint+nsamp-refshifts[k]
+            except IndexError:
+                tmin = time+relstart-mint
+                tmax = time+relstart-mint+nsamp
+
+
+                m = PhaseMarker(tmin=tmin,
+                                tmax=tmax,
+                                phasename='P',
+                                nslc_ids=(tr.nslc_id,))
+                markers.append(m)
+
+            ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
+            index_begins[str(j)+str(k)]= [ibeg, tmin]
+
+            iend = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin, tr.deltat, snap[1]))
+
+            iend_step = min(
+                tr.data_len(),
+                t2ind_fast(tmax-tr.tmin+nstep, tr.deltat, snap[1]))
+            index_steps.append(iend_step-iend)
+
+            index_window.append(iend-ibeg)
+    #    trld.snuffle(trs_orgs, markers=markers)
+
+
+    '''
+    Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
+    Basic.writeMatrix(travel_txt, traveltime, nostat, dimX * dimY, '%e')
+    Basic.writeVector(latv_txt,   latv, '%e')
+    Basic.writeVector(lonv_txt,   lonv, '%e')
+    '''
+    trs_orgs = []
+    k = 0
+    for tr in sorted(calcStreamMap):
+        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        trs_orgs.append(tr_org)
+
+    if nsamp == 0:
+        nsamp = 1
+    backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
+    for i in range(ntimes):
+        sembmax = 0
+        sembmaxX = 0
+        sembmaxY = 0
+        for j in range(dimX * dimY):
+            semb = 0.
+            nomin = 0
+            denom = 0
+            sums = num.zeros(max(index_steps))
+            sums = 0.
+            relstart = []
+            relstarts = nostat
+            sums_schimmel = 0
+
+            for k in range(nostat):
+                relstart = traveltime[k][j]
+                tr = trs_orgs[k]
+                ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
+                iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
+                data = tr.ydata[ibeg:iend]
+                # normalize:
+                #data = data / np.sqrt(np.mean(np.square(data)))
+                try:
+                    if do_bs_weights is True:
+                        sums += data*bs_weights[k]
+                    else:
+                        sums = sums+data
+                except ValueError:
+                        if num.shape(data) < num.shape(sums):
+                            data = tr.ydata[ibeg:iend+1]
+                        else:
+                            data = tr.ydata[ibeg:iend-1]
+                        sums = sums+data
+
+                relstarts -= relstart
+            sums_schimmel = abs(sums_schimmel)**2.
+
+            sum = abs(num.sum(sums))
+
+            semb = sum
+
+            backSemb[i][j] = sum
+            if semb > sembmax:
+                sembmax  = semb
+                sembmaxX = latv[j]
+                sembmaxY = lonv[j]
+        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                    str(sembmaxX) + ',' + str(sembmaxY))
+    return backSemb
 
 
 

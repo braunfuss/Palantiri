@@ -532,6 +532,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
         fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
                                         % (switch, boot, phase)), 'w')
+        norm = num.max(num.max(tmp, axis=1))
         max_p = 0.
         sum_i = 0.
 
@@ -570,8 +571,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 counter_time = 0
                 uncert = num.std(i)
                 semb_cum =+ i
-                norm = num.max(num.max(i))
-
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]

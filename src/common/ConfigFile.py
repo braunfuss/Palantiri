@@ -286,6 +286,12 @@ class ConfigObj(object):
         except TypeError:
             return False
 
+    def bp_music(self):
+        try:
+            return self.Bool('bp_music')
+        except TypeError:
+            return False
+
     def _error0(self, msg):
 
         Logfile.error(msg)
