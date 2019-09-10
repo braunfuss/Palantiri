@@ -31,13 +31,12 @@ class Intern(object):
            self.error(s)
 
 
-
 def start(config):
 
     intern = Intern()
 
     if sys.argv[1] == 'cluster':
-       intern.checkProgramParameter(3,4)
+       intern.checkProgramParameter(3, 4)
 
        workDir = [Globals.EventDir(), 'tmp2', 'cluster']                   # ???
        workDir = ['cluster']
@@ -47,7 +46,6 @@ def start(config):
        return False
 
     Basic.changeDirectory(workDir)         # create working directory
-   #Basic.removeFiles('.')             # ... and empty it
 
     os.system(cmd)
     return True

@@ -1,16 +1,13 @@
 import os
 import sys
 from optparse import OptionParser
-
 from palantiri.tools import config
-from palantiri.common import Globals
 
 parser = OptionParser(usage="%prog -f eventpath ")
 parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
 (options, args) = parser.parse_args()
 options.evpath = args[0]
 
-print(options, args)
 
 def init():
 
@@ -22,7 +19,7 @@ def init():
     import palantiri
     path = palantiri.__path__
     at = os.path.join(path[0], 'cluster/cluster2.py')
-    cmd = sys.executable + ' ' + at + ' -f '+ options.evpath
+    cmd = sys.executable + ' ' + at + ' -f ' + options.evpath
     print('cmd = ', cmd)
 
     for i in range(tests):
@@ -34,9 +31,9 @@ def init():
                                                           'cluster'))
 
     at = os.path.join(path[0], 'cluster/evaluateCluster.py')
-    cmd = sys.executable + ' ' + at + ' -f '+ os.path.join(options.evpath, "cluster")
+    cmd = sys.executable + ' ' + at + ' -f ' + os.path.join(options.evpath,
+                                                            "cluster")
     os.system(cmd)
-
 
 
 def main():

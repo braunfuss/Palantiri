@@ -39,8 +39,7 @@ def parseEvent(eventID):
 
     eventID = eventID[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event\
-           /1/query?eventid=%s&format=text' % (eventID)
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -85,8 +84,7 @@ def writeOriginFile(path, ev_id):
 
     eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/event\
-           /1/query?eventid=%s&format=text' % (eventID)
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -120,8 +118,7 @@ def writeSynFile(path, ev_id):
 
     eventID = ev_id[1].replace('_', '')
 
-    url = 'http://service.iris.edu/fdsnws/\
-           event/1/query?eventid=%s&format=text' % (eventID)
+    url = 'http://service.iris.edu/fdsnws/event/1/query?eventid=%s&format=text' % (eventID)
     data = urlopen(url).read()
     data = data.decode('utf_8')
     data = data.split('\n')
@@ -173,9 +170,7 @@ def copyConfigSkeleton(evfolder):
     event = evfolder.split('/')[-1]
 
     logger.info('\033[31mNEXT PROCESSING STEP: \n\n   \
-                 palantiri_down {evdirectory} "time" 10352.323104588522\
-                 0.001 10 --radius-min=1110 "name"\
-                 \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
+                 palantiri_down {evdirectory} "time" 10352.323104588522 0.001 10 --radius-min=1110 "name" \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
 
 
 def main():

@@ -1,7 +1,8 @@
 """
-Utility module of the EQcorrscan package to allow for different methods of \
-stacking of seismic signal in one place.
+Modififed Utility module of the EQcorrscan package to allow for different
+methods of stacking of seismic signal in one place.
 
+Modififed: Andreas Steinberg,
 :copyright:
     EQcorrscan developers.
 
