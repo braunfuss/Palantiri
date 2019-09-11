@@ -196,19 +196,14 @@ class Xcorr(object):
 
         return stream, snr
 
-    def readWaveformsCross_pyrocko(self, station, tw, ttime):
+    def readWaveformsCross_pyrocko(self, station, tw, ttime, traces):
         obspy_compat.plant()
+
         cfg = ConfigObj(dict=self.Config)
 
         t2 = UTCDateTime(self.Origin.time)
-        if cfg.quantity() == 'displacement':
-            try:
-                traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
-            except Exception:
-                traces = io.load(self.EventPath+'/data/traces_restituted.mseed')
-        else:
-            traces = io.load(self.EventPath+'/data/traces_velocity.mseed')
 
+        print('cant find')
         found = False
         while found is False:
             for tr in traces:
@@ -246,7 +241,7 @@ class Xcorr(object):
                     stream.trim(tw['xcorrstart'], tw['xcorrend'])
                     found = True
                     return stream, snr
-
+        print('found')
         if found is False:
                     print('Waveform missing!', tr_name, str(station))
 
@@ -297,7 +292,7 @@ class Xcorr(object):
             else:
                 pass
 
-    def traveltimes(self, phase):
+    def traveltimes(self, phase, traces):
 
         Logfile.red('Enter AUTOMATIC CROSSCORRELATION ')
         Logfile.red('\n\n+++++++++++++++++++++++++++++++++++++++++++++++\n ')
@@ -306,6 +301,7 @@ class Xcorr(object):
         SNR = OrderedDict()
         Config = self.Config
         cfg = ConfigObj(dict=Config)
+
         for i in self.StationMeta:
             Logfile.red('read in %s ' % (i))
             de = loc2degrees(self.Origin, i)
@@ -339,7 +335,8 @@ class Xcorr(object):
             else:
                 tw = self.calculateTimeWindows(ptime)
                 if cfg.pyrocko_download() is True:
-                    w, snr = self.readWaveformsCross_pyrocko(i, tw, ptime)
+                    w, snr = self.readWaveformsCross_pyrocko(i, tw, ptime,
+                                                             traces)
                 elif cfg.colesseo_input() is True:
                     w, snr = self.readWaveformsCross_colesseo(i, tw, ptime)
                 else:
@@ -640,8 +637,8 @@ class Xcorr(object):
 
         return fCD
 
-    def doXcorr(self, phase):
-        StreamDict, SNRDict = self.traveltimes(phase)
+    def doXcorr(self, phase, traces):
+        StreamDict, SNRDict = self.traveltimes(phase, traces)
         t = self.f6(SNRDict)
         Logfile.add('doXcorr: REFERENCE: ' + t)
 
@@ -698,9 +695,9 @@ class Xcorr(object):
 
         return corrDict, StreamDict[t], StreamDict
 
-    def runXcorr(self, phase):
+    def runXcorr(self, phase, traces):
 
-        CD, ref, WD = self.doXcorr(phase)
+        CD, ref, WD = self.doXcorr(phase, traces)
         onset = 0
         tdiff, triggerobject = self.refTrigger(ref, phase)
 

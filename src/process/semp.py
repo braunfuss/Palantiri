@@ -441,7 +441,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                     cfx = num.fft.fft(data)
                     sums_schimmel = sums_schimmel + (cfx/(abs(cfx)) * num.exp(1j*2*num.pi*cfx))
                 try:
-                    if do_bs_weights is True:
+                    if do_bs_weights is True and combine is True:
                         sums += data*bs_weights[k]
                     else:
                         sums = sums+data

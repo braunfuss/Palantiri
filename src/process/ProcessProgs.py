@@ -49,7 +49,7 @@ def start(config):
             at = os.path.join(os.getcwd(), 'Process', 'main.py')
             workDir = [path, 'tmp2', 'process']
             workDir = ['tmpProcess']
-            cmd = "palantiri_process"+ '  -f ' + path + ' -e ' + path_emp
+            cmd = "palantiri_process" + '  -f ' + path + ' -e ' + path_emp
         except Exception:
             at = os.path.join(os.getcwd(), 'Process', 'main.py')
             workDir = [path, 'tmp2', 'process']

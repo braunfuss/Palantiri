@@ -15,7 +15,7 @@ from palantiri.tools import config
 from palantiri.tools.config import Event
 from palantiri.process import ttt, sembCalc, waveform, times, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
-from pyrocko import util
+from pyrocko import util, io
 
 import numpy as num
 if sys.version_info.major >= 3:
@@ -160,7 +160,14 @@ def processLoop(traces=None, stations=None, cluster=None):
         rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp)
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
-
+        if cfg.Bool('synthetic_test') is False:
+            if cfg.quantity() == 'displacement':
+                try:
+                    traces = io.load(evpath+'/data/traces_rotated.mseed')
+                except Exception:
+                    traces = io.load(evpath+'/data/traces_restituted.mseed')
+            else:
+                traces = io.load(evpath+'/data/traces_velocity.mseed')
         if(os.path.isfile(rp) and os.path.getsize(rp) != 0
            and os.path.isfile(ps) and os.path.getsize(ps) != 0):
             Logfile.add('xcorr/reference shift file exits : ' + rp)
@@ -180,6 +187,14 @@ def processLoop(traces=None, stations=None, cluster=None):
             for i in xcorrnetworks:
                 SL[i] = len(Config[i].split('|'))
         else:
+            if cfg.Bool('synthetic_test') is False:
+                if cfg.quantity() == 'displacement':
+                    try:
+                        traces = io.load(evpath+'/data/traces_rotated.mseed')
+                    except Exception:
+                        traces = io.load(evpath+'/data/traces_restituted.mseed')
+                else:
+                    traces = io.load(evpath+'/data/traces_velocity.mseed')
             SL = {}
             for i in xcorrnetworks:
                 W = {}
@@ -195,7 +210,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                               arrayfolder)
                 print("run Xcorr")
                 phase = phases[0]
-                W, triggerobject = A.runXcorr(phase)
+                W, triggerobject = A.runXcorr(phase, traces)
                 XDict[i] = W
                 RefDict[i] = triggerobject.tdiff
                 SL[i] = len(network)
@@ -721,7 +736,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         rpe+str(arrayname), flag_rpe)
                         else:
                             if cfg.Bool('correct_shifts_empirical') is True:
-
                                 if cfg.Bool('correct_shifts_empirical_run') is True:
                                     winlen_emp = cfg.winlen_emp()
                                     step_emp = cfg.step_emp()
@@ -941,7 +955,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                       syn_in, ASL, sembmax, evpath, XDict,
                                       RefDict, workdepth, filterindex, Wdfs)
 
-                if ASL and cfg.Bool('bootstrap_array_weights') is False:
+                if ASL:
                     Logfile.red('collect semblance matrices from all arrays')
                     sembmax, tmp = sembCalc.collectSemb(ASL, Config, Origin,
                                                         Folder,

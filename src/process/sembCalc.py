@@ -480,8 +480,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
     if temp_comb is not None:
         nboot = 0
-    else:
-        nboot = 1
 
     folder = Folder['semb']
     sembmaxvaluev = num.ndarray(ntimes, dtype=float)
@@ -494,8 +492,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     d = rc.timestamp
 
     usedarrays = arrays
-    for boot in range(nboot):
+    for boot in range(0, nboot):
         c = 0
+        print('booting', boot, 'of', nboot)
         tmp = 1
 
         for a in SembList:

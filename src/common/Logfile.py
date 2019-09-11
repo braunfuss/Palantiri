@@ -2,32 +2,27 @@ import os
 import getpass
 import datetime
 import sys
-import traceback
 from palantiri.common import Basic
 from palantiri.common import Globals
 
 MSG_TOKEN = '##'
-MAX_LINES = 200000               # Max number of lines in one program run
+MAX_LINES = 200000
 
 ABORT_TOKEN = MSG_TOKEN + ' ABORT '
 
-#      Global variables
+g_ProtLineNr = 1
 
-g_ProtLineNr= 1              # current linenumber in runtime log
-
-g_RuntimeLog= None           # Filename
+g_RuntimeLog = None
 g_UseRunTimeLog = True
-g_ErrorLog  = None
-g_UseErrorLog   = False
+g_ErrorLog = None
+g_UseErrorLog = False
 
-g_IsVisible = True           # Output to terminal
-
+g_IsVisible = True
 
 
 def baseLogFileName(postfix):
 
-
-    s = sys.argv [0]
+    s = sys.argv[0]
 
     return Basic.baseFileName(s) + postfix + '.log'
 
@@ -45,11 +40,6 @@ def setRuntimeLog(onOff):
     global g_UseRunTimeLog
     g_UseRunTimeLog = onOff
 
-def onlyErrorLog(onOff):
-    if onOff: setVisible(False); setRuntimeLog(False); setErrorLog(True)
-    else:     setVisible(True);  setRuntimeLog(True);  setErrorLog(False)
-
-# -------------------------------------------------------------------------------------------------
 
 def init(runTimeLog=None, errorLog=None, startMsg=None):
 
@@ -64,11 +54,12 @@ def init(runTimeLog=None, errorLog=None, startMsg=None):
     else:
        g_RuntimeLog = initFile(runTimeLog)
 
-    if errorLog == None:  g_ErrorLog = initFile()
-    else:                 g_ErrorLog = initFile(errorLog)
+    if errorLog == None:
+         g_ErrorLog = initFile()
+    else:
+        g_ErrorLog = initFile(errorLog)
 
-    #  Remove information of older versions from errorlog
-    #
+
     if startMsg:
        if g_ErrorLog and os.path.isfile(g_ErrorLog):
           lines = Basic.readTextFile(g_ErrorLog); lines2 = []; found = False
@@ -81,14 +72,11 @@ def init(runTimeLog=None, errorLog=None, startMsg=None):
           if len(lines2) > 0:
              os.remove(g_ErrorLog)
              Basic.writeTextFile(g_ErrorLog, lines2)
-    #endif
 
-    # Set start information
-    #
     if startMsg != None: return setStartMsg(startMsg)
     else:                return True
 
-# -------------------------------------------------------------------------------------------------
+
 
 def initFile(fileName=None, postfix=''):
 
@@ -121,11 +109,11 @@ def initFile(fileName=None, postfix=''):
        newLines = lines [n-MAX_LINES:]
        Basic.writeTextFile(log1, newLines)
 
-    #endif
+
 
     return log1
 
-# -------------------------------------------------------------------------------------------------
+
 def appendToFile(fileName, lines):
 
     if fileName == None: return
@@ -140,7 +128,7 @@ def appendToFile(fileName, lines):
 
     fp.close()
 
-# -------------------------------------------------------------------------------------------------
+
 def addLines(lines):
     global g_ProtLineNr
 
@@ -178,21 +166,23 @@ def addLines(lines):
        print(MSG_TOKEN + ' Exception in Logfile.add() ')
        sys.exit(1)
 
-# -------------------------------------------------------------------------------------------------
+
 def add(text, text2 = None, text3 = None):
-    lines = [text, text2, text3];  addLines(lines)
+    lines = [text, text2, text3]
+    addLines(lines)
+
 
 def add2(prefix, text, text2, text3):
 
-    lines  = [text, text2, text3]
+    lines = [text, text2, text3]
     lines2 = []
 
     for s in lines:
-        if s != None: lines2.append(prefix + s)
+        if s is not None:
+            lines2.append(prefix + s)
 
     addLines(lines2)
 
-# -------------------------------------------------------------------------------------------------
 
 def showLabel(msg):
 
@@ -201,16 +191,15 @@ def showLabel(msg):
     add('*********** ' + msg)
     add('********************************************************')
 
+
 def red(line):
     add(line)
 
-# -------------------------------------------------------------------------------------------------
 
 DELIM = '----------------------------------------------------------------'
 
-def addDelim():   add(DELIM)
 
-def error(text, text2 = None, text3 = None):
+def error(text, text2=None, text3=None):
 
     setErrorLog(True)
     add2(MSG_TOKEN + ' Error  : ', text, text2, text3)
@@ -228,7 +217,7 @@ def warning(text, text2 = None, text3 = None):
     return True
 
 
-def debug(text, text2 = None, text3 = None):
+def debug(text, text2=None, text3=None):
 
     if Globals.isDebug:
        setErrorLog(True)
@@ -241,49 +230,13 @@ def fileOpenError(fileName):
 
 
 def abort(text = None):
-    if text != None: add(text)
+    if text != None:
+        add(text)
 
     add(ABORT_TOKEN + ' Abort program')
-   #assert False
     sys.exit(1)
 
 
-def exception(proc, text = None, abortProg = False):
-
-    if text != None: s = proc + ' - ' + text
-    else:            s = proc
-
-    setErrorLog(True)
-
-    add(MSG_TOKEN + ' Exception: ' + s)
-    traceback.print_exc(file=sys.stdout)
-
-    setErrorLog(False)
-
-    if abortProg: abort()
-    return False
-
-# -------------------------------------------------------------------------------------------------------------------------------
-
-def addFile(dir, fileName = None):
-
-    try:
-       if fileName != None: name = dir
-       else:                name = os.path.join(dir, fileName)
-
-       fp = openTextFile(name, 'r')
-
-       if fp == None: return
-
-       lines = fp.readlines(1000)
-       fp.close()
-
-       for s in lines: add(s[:-1])
-
-    except:
-       exception('addFile()', abortProg = True)
-
-# -------------------------------------------------------------------------------------------------------------------------------
 
 localTest = False
 
@@ -322,7 +275,7 @@ def saveLogfile(errorLog, runtimeLog):
     remove1(fileName_2)
     return ret
 
-# -------------------------------------------------------------------------------------------------------------------------------
+
 def setStartMsg(version_string):
 
     s  = []
