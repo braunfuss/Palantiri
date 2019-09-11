@@ -16,7 +16,7 @@ import time
 import numpy as num
 from collections import defaultdict
 from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
-from pyrocko import util, pile, model, catalog, gf, cake
+from pyrocko import util, pile, model, catalog, gf, cake, io
 from pyrocko.guts import Object, String, Float, List
 from palantiri.process import trigger
 from palantiri.process.semp import semblance
@@ -24,6 +24,7 @@ from palantiri.process.beam_stack import BeamForming
 from pyrocko.gf import STF
 from palantiri.process.stacking import PWS_stack
 from palantiri.process.noise_addition import add_noise
+from pyrocko import trace as tracemodule
 
 import copy
 import scipy
@@ -983,12 +984,16 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 # ==================================synthetic BeamForming======================
 
     if cfg.Bool('synthetic_test') is True:
+        if phase is 'P':
+            desired = 'Z'
+        if phase is 'S':
+            desired = 'ENZ'
         for trace in sorted(calcStreamMap.keys()):
             for il in FilterMetaData:
                 if str(il) == str(trace):
                         szo = model.Station(lat=float(il.lat), lon=float(il.lon),
                                             station=il.sta, network=il.net,
-                                            channels='BHZ',
+                                            channels=desired,
                                             elevation=il.ele, location=il.loc)
                         stations.append(szo)
                         lats.append(float(il.lat))
@@ -1001,14 +1006,15 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         targets = []
         sources = []
         for st in stations:
-            target = Target(
-                    lat=st.lat,
-                    lon=st.lon,
-                    store_id=store_id,
-                    codes=(st.network, st.station, st.location, 'BHZ'),
-                    interpolation='multilinear',
-                    quantity=cfg.quantity())
-            targets.append(target)
+            for channel in st.channels:
+                target = Target(
+                        lat=st.lat,
+                        lon=st.lon,
+                        store_id=store_id,
+                        codes=(st.network, st.station, st.location, channel),
+                        interpolation='multilinear',
+                        quantity=cfg.quantity())
+                targets.append(target)
 
         if syn_in.nsources() == 1:
             if syn_in.use_specific_stf() is True:
@@ -1150,6 +1156,36 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         #from pyrocko import trace as trld
         #trld.snuffle(synthetic_traces)
 
+        if phase is 'S':
+            nsl_to_station = {}
+            for s in stations:
+                nsl = s.nsl()
+                nsl_to_station[nsl] = s
+            for nsl, s in nsl_to_station.items():
+                io.save(synthetic_traces, '/tmp/synthetic_traces.mseed')
+
+                p = pile.make_pile('/tmp/synthetic_traces.mseed', show_progress=False)
+                trss = []
+                for [nsl, s] in nsl_to_station.items():
+                    s.channels = []
+                    s.add_channel(
+                        model.Channel(
+                            name='E'))
+                    s.add_channel(
+                        model.Channel(
+                            name='N'))
+                    s.add_channel(
+                        model.Channel(
+                            name='Z'))
+                    s.set_event_relative_data(sources[0].pyrocko_event())
+                    pios = s.guess_projections_to_rtu(out_channels=('R', 'T', 'Z'))
+                    traces = p.all(trace_selector=lambda tr: tr.nslc_id[:3] == nsl)
+                    for (proj, in_channels, out_channels) in pios:
+                        proc = tracemodule.project(traces, proj, in_channels, out_channels)
+                    for tr in proc:
+                        if tr.channel == 'T':
+                            trss.append(tr)
+            synthetic_traces = trss
         timeev = util.str_to_time(syn_in.time_0())
 
         trs_org = []

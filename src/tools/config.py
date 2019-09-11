@@ -147,7 +147,7 @@ class Config(object):
 
         return FML
 
-    def readpyrockostations(self, phases):
+    def readpyrockostations(self, phases, test=False):
         try:
             stations = model.load_stations(self.eventpath+'/data/stations_cluster.txt')
         except Exception:
@@ -171,6 +171,7 @@ class Config(object):
                                              str(channel.azimuth),
                                              str(channel.gain)))
                     count_channel = count_channel+1
+
         FML = self.checkMetaInfoFile(MetaL)
 
         return FML

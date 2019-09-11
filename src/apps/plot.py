@@ -45,7 +45,7 @@ def load(filter, step=None):
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                 except:
-                    pathlist = Path(rel).glob('%s-*P.ASC' % filter)
+                    pathlist = Path(rel).glob('%s-*.ASC' % filter)
             else:
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
@@ -64,7 +64,7 @@ def load(filter, step=None):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                     except:
-                        pathlist = Path(rel).glob('%s-*P.ASC' % filter)
+                        pathlist = Path(rel).glob('%s-*.ASC' % filter)
                 else:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
@@ -88,7 +88,7 @@ def load(filter, step=None):
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
                             except:
-                                pathlist = Path(rel).glob('%s-*boot**P.ASC' % filter)
+                                pathlist = Path(rel).glob('%s-*boot**.ASC' % filter)
                         else:
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
@@ -113,7 +113,7 @@ def load(filter, step=None):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                     except:
-                        pathlist = Path(rel).glob('%s-*P.ASC' % filter)
+                        pathlist = Path(rel).glob('%s-*.ASC' % filter)
                 else:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
@@ -134,7 +134,7 @@ def load(filter, step=None):
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
                             except:
-                                pathlist = Path(rel).glob('%s-*boot*P.ASC' % filter)
+                                pathlist = Path(rel).glob('%s-*boot*.ASC' % filter)
                         else:
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
@@ -151,8 +151,8 @@ def load(filter, step=None):
             return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
 def make_map(data):
-        eastings = data[:,1]
-        northings = data[:,0]
+        eastings = data[:, 1]
+        northings = data[:, 0]
         map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
                       llcrnrlat=num.min(northings),
                       urcrnrlon=num.max(eastings),
@@ -970,11 +970,16 @@ def plot_integrated():
     else:
             data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-            boot = False
+            try:
+                if sys.argv[4] == 'boot':
+                    boot = True
+            except:
+                boot = False
+
             evpath = 'events/'+ str(sys.argv[1])
-            C  = config.Config (evpath)
-            Config = C.parseConfig ('config')
-            cfg = ConfigObj (dict=Config)
+            C  = config.Config(evpath)
+            Config = C.parseConfig('config')
+            cfg = ConfigObj(dict=Config)
             dimx = int(Config['dimx'])
             dimy = int(Config['dimy'])
 

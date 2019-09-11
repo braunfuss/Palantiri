@@ -60,6 +60,7 @@ class MinTMaxT(object):
 def filterStations(StationList, Config, Origin, network):
 
     F = []
+
     cfg = ConfigObj(dict=Config)
     minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
     origin = Location(Origin['lat'], Origin['lon'])

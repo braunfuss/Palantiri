@@ -83,6 +83,8 @@ def processLoop(traces=None, stations=None, cluster=None):
 
     if cfg.pyrocko_download() is True:
         Meta = C.readpyrockostations(phases)
+        if len(Meta) == 0:
+            Meta = C.readpyrockostations('P')
     elif cfg.colesseo_input() is True:
         scenario = guts.load(filename=cfg.colosseo_scenario_yml())
         scenario_path = cfg.colosseo_scenario_yml()[:-12]
@@ -423,6 +425,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                     arrayfolder = os.path.join(Folder['semb'], arrayname)
 
                     network = Config[i].split('|')
+
                     Logfile.add('network: ' + str(network))
 
                     FilterMeta = ttt.filterStations(Meta, Config, Origin,
@@ -589,7 +592,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             if cfg.quantity() == 'displacement':
                                 Wd_emp = waveform.readWaveformsPyrocko_restituted(
                                     FilterMeta, tw, evpath, ev_emp, desired)
-                            elif cfg.Bool('synthetic_test') is True:
+                            elif cfg.Bool('correct_shifts_empirical_synthetic') is True:
                                 Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                         tw_emp,
                                                                         evpath_emp,
@@ -608,7 +611,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                         else:
                             Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
                                                             evpath_emp, ev_emp)
-                        if cfg.Bool('synthetic_test') is True\
+                        if cfg.Bool('correct_shifts_empirical_synthetic') is True\
                            or cfg.Bool('dynamic_filter') is True:
                             Wdf_emp = waveform.processdummyWaveforms(Wd_emp, Config,
                                                                  Folder, arrayname,
@@ -851,7 +854,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                                 print('loaded wdf')
-                                print(ps_wdf)
                             except:
                                 Wdf = waveform.processWaveforms(Wd, Config,
                                                                 Folder,
