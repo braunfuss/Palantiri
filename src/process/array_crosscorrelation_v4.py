@@ -205,43 +205,42 @@ class Xcorr(object):
 
         print('cant find')
         found = False
-        while found is False:
-            for tr in traces:
-                tr_name = str(tr.network+'.'+tr.station+'.'+tr.location +
-                              '.'+tr.channel[:3])
-                if tr_name == str(station)[:-2] or tr_name == str(station)[:]:
-                    traces_station = tr
-                    es = obspy_compat.to_obspy_trace(traces_station)
-                    streamData = station.net + '.' + station.sta + '.'\
-                                             + station.loc + '.'\
-                                             + station.comp\
-                                             + '.D.'\
-                                             + str(t2.year) + '.'\
-                                             + str("%03d" % t2.julday)
 
-                    st = obspy.Stream()
-                    st.extend([es])
-                    stream = ''
-                    snr = ''
-                    if station.loc == '--':
-                        station.loc = ''
+        for tr in traces:
+            tr_name = str(tr.network+'.'+tr.station+'.'+tr.location +
+                          '.'+tr.channel[:3])
+            if tr_name == str(station)[:-2] or tr_name == str(station)[:]:
+                traces_station = tr
+                es = obspy_compat.to_obspy_trace(traces_station)
+                streamData = station.net + '.' + station.sta + '.'\
+                                         + station.loc + '.'\
+                                         + station.comp\
+                                         + '.D.'\
+                                         + str(t2.year) + '.'\
+                                         + str("%03d" % t2.julday)
 
-                    if len(st.get_gaps()) > 0:
-                        st.merge(method=0, fill_value='interpolate',
-                                 interpolation_samples=0)
-                    snr_trace = traces_station.chop(tmin=traces_station.tmin,
-                                                    tmax=traces_station.tmin
-                                                    + ttime-20.,
-                                                    inplace=False)
-                    snr = num.var(snr_trace.ydata)
-                    stream = self.filterWaveform(st)
+                st = obspy.Stream()
+                st.extend([es])
+                stream = ''
+                snr = ''
+                if station.loc == '--':
+                    station.loc = ''
 
-                    xname = os.path.join(self.AF, (streamData+'_all.mseed'))
-                    stream.write(xname, format='MSEED')
-                    stream.trim(tw['xcorrstart'], tw['xcorrend'])
-                    found = True
-                    return stream, snr
-        print('found')
+                if len(st.get_gaps()) > 0:
+                    st.merge(method=0, fill_value='interpolate',
+                             interpolation_samples=0)
+                snr_trace = traces_station.chop(tmin=traces_station.tmin,
+                                                tmax=traces_station.tmin
+                                                + ttime-20.,
+                                                inplace=False)
+                snr = num.var(snr_trace.ydata)
+                stream = self.filterWaveform(st)
+
+                xname = os.path.join(self.AF, (streamData+'_all.mseed'))
+                stream.write(xname, format='MSEED')
+                stream.trim(tw['xcorrstart'], tw['xcorrend'])
+                found = True
+                return stream, snr, found
         if found is False:
                     print('Waveform missing!', tr_name, str(station))
 
@@ -335,7 +334,7 @@ class Xcorr(object):
             else:
                 tw = self.calculateTimeWindows(ptime)
                 if cfg.pyrocko_download() is True:
-                    w, snr = self.readWaveformsCross_pyrocko(i, tw, ptime,
+                    w, snr, found = self.readWaveformsCross_pyrocko(i, tw, ptime,
                                                              traces)
                 elif cfg.colesseo_input() is True:
                     w, snr = self.readWaveformsCross_colesseo(i, tw, ptime)

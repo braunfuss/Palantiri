@@ -23,6 +23,8 @@ from palantiri.process.semp import semblance
 from palantiri.process.beam_stack import BeamForming
 from pyrocko.gf import STF
 from palantiri.process.stacking import PWS_stack
+from palantiri.process.noise_addition import add_noise
+
 import copy
 import scipy
 
@@ -494,17 +496,18 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     usedarrays = arrays
     for boot in range(0, nboot):
         c = 0
-        print('booting', boot, 'of', nboot)
+        print('booting and strapping', boot, 'of', nboot)
         tmp = 1
-
+        tmp_boot = 1
         for a in SembList:
             if num.max(a) != 0:
                 if cfg.Bool('weight_by_azimuth') is True:
+                    tmp_boot *= a*aziweights[c]
                     tmp *= a*aziweights[c]
                 elif cfg.Bool('bootstrap_array_weights') is True:
-                    tmp *= a*bs_weights[boot, c]
-                else:
-                    tmp *= a
+                    tmp_boot *= a*bs_weights[boot, c]
+
+                tmp *= a
                 tmp_general *= tmp
                 deltas = []
                 x = array_centers[c][0]
@@ -531,7 +534,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
         fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
                                         % (switch, boot, phase)), 'w')
-        norm = num.max(num.max(tmp, axis=1))
+
+
+        norm = num.max(num.max(tmp_boot, axis=1))
         max_p = 0.
         sum_i = 0.
 
@@ -547,8 +552,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     #                latv[j] = latv[j]#+diff_center_lat
     #                lonv[j] = lonv[j]#+diff_center_lon
 
-        for a, i in enumerate(tmp):
-            if num.max(a) != 0:
+        for a, i in enumerate(tmp_boot):
                 logger.info('timestep %d' % a)
                 fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d_%s.ASC'
                                          % (switch, Origin['depth'], boot, a,
@@ -636,10 +640,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         for x, y, timexy in zip(latv, lonv, times_min):
             fobj_timemin.write('%.2f %.2f %.20f\n' % (x, y, timexy))
         fobj_timemin.close()
-    if cboot is None:
-        fobjsembmax = open(os.path.join(folder, 'sembmax_%s_%s.txt'
-                                        % (switch, phase)), 'w')
-    else:
+
         fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
                                         % (switch, cboot, phase)), 'w')
     if temp_comb is not None:
@@ -651,8 +652,10 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         times_min = num.zeros(num.shape(ishape))
         times_max = num.zeros(num.shape(ishape))
         semb_prior = num.zeros(num.shape(ishape))
-    norm = num.max(num.max(tmp_general, axis=1))
-    for a, i in enumerate(tmp_general):
+
+
+    norm = num.max(num.max(tmp, axis=1))
+    for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
         if cboot is None:
             fobj = open(os.path.join(folder, '%s-%s_%03d_%s.ASC'
@@ -962,59 +965,35 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     lats = []
     lons = []
     if cfg.Bool('synthetic_test') is False:
-        if sys.version_info.major >= 3:
-            for trace in sorted(calcStreamMap.keys()):
-                py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-                py_trs.append(py_tr)
-                for il in FilterMetaData:
-                    if str(il) == str(trace):
-                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
-                                                station=il.sta, network=il.net,
-                                                channels=py_tr.channel,
-                                                elevation=il.ele, location=il.loc)
-                            stations.append(szo)
-                            lats.append(float(il.lat))
-                            lons.append(float(il.lon))
-        else:
-            for trace in sorted(calcStreamMap.keys()):
-                py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
-                py_trs.append(py_tr)
-                for il in FilterMetaData:
-                    if str(il) == str(trace):
-                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
-                                                station=il.sta, network=il.net,
-                                                channels=py_tr.channel,
-                                                elevation=il.ele, location=il.loc)
-                            stations.append(szo)
-                            lats.append(float(il.lat))
-                            lons.append(float(il.lon))
+        for trace in sorted(calcStreamMap.keys()):
+            py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+            py_trs.append(py_tr)
+            for il in FilterMetaData:
+                if str(il) == str(trace):
+                        szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                            station=il.sta, network=il.net,
+                                            channels=py_tr.channel,
+                                            elevation=il.ele, location=il.loc)
+                        stations.append(szo)
+                        lats.append(float(il.lat))
+                        lons.append(float(il.lon))
+
         array_center = [num.mean(lats), num.mean(lons)]
 
 # ==================================synthetic BeamForming======================
 
     if cfg.Bool('synthetic_test') is True:
-        if sys.version_info.major >= 3:
-            for trace in sorted(calcStreamMap.keys()):
-                for il in FilterMetaData:
-                    if str(il) == str(trace):
-                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
-                                                station=il.sta, network=il.net,
-                                                channels='BHZ',
-                                                elevation=il.ele, location=il.loc)
-                            stations.append(szo)
-                            lats.append(float(il.lat))
-                            lons.append(float(il.lon))
-        else:
-            for trace in sorted(calcStreamMap.keys()):
-                for il in FilterMetaData:
-                    if str(il) == str(trace):
-                            szo = model.Station(lat=float(il.lat), lon=float(il.lon),
-                                                station=il.sta, network=il.net,
-                                                channels='BHZ',
-                                                elevation=il.ele, location=il.loc)
-                            stations.append(szo)
-                            lats.append(float(il.lat))
-                            lons.append(float(il.lon))
+        for trace in sorted(calcStreamMap.keys()):
+            for il in FilterMetaData:
+                if str(il) == str(trace):
+                        szo = model.Station(lat=float(il.lat), lon=float(il.lon),
+                                            station=il.sta, network=il.net,
+                                            channels='BHZ',
+                                            elevation=il.ele, location=il.loc)
+                        stations.append(szo)
+                        lats.append(float(il.lat))
+                        lons.append(float(il.lon))
+
         array_center = [num.mean(lats), num.mean(lons)]
         store_id = syn_in.store()
         engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
@@ -1116,7 +1095,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 if syn_in.use_specific_stf() is True:
                     stf = syn_in.stf()
                     stf = exec(stf)
-
                 else:
                     stf = STF()
                 if syn_in.source() == 'RectangularSource':
@@ -1173,21 +1151,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         #trld.snuffle(synthetic_traces)
 
         timeev = util.str_to_time(syn_in.time_0())
-        if cfg.Bool('synthetic_test_add_noise') is True:
-            from noise_addition import add_noise
-            trs_orgs = []
-            calcStreamMapsyn = calcStreamMap.copy()
-            for tracex in calcStreamMapsyn.keys():
-                    for trl in synthetic_traces:
-                        if str(trl.name()[4:12])== str(tracex[4:]) or str(trl.name()[3:13])== str(tracex[3:]) or str(trl.name()[3:11])== str(tracex[3:]) or str(trl.name()[3:14])== str(tracex[3:]):
-                            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapsyn[tracex])
-                            tr_org.downsample_to(2.0)
-                            trs_orgs.append(tr_org)
-            store_id = syn_in.store()
-            engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
-            synthetic_traces = add_noise(trs_orgs, engine, source.pyrocko_event(),
-                                         stations,
-                                         store_id, phase_def=phase)
+
         trs_org = []
         trs_orgs = []
         from pyrocko import trace
@@ -1199,25 +1163,25 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 shift = num.random.uniform(-shift_max,shift_max)
                 trl.shift(shift)
 
-        if sys.version_info.major >= 3:
-            for tracex, trl in zip(sorted(calcStreamMap.keys()), synthetic_traces):
-                        if cfg.Bool('dynamic_filter') is False:
-                            if switch == 0:
-                                trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
-                            elif switch == 1:
-                                trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
+        if cfg.Bool('synthetic_test_add_noise') is True:
 
-                        synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
-                        calcStreamMap[tracex] = synthetic_obs_tr
-        else:
-            for tracex, trl in zip(calcStreamMap.keys(), synthetic_traces):
-                            if cfg.Bool('dynamic_filter') is False:
-                                if switch == 0:
-                                    trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
-                                elif switch == 1:
-                                    trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
-                            synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
-                            calcStreamMap[tracex] = synthetic_obs_tr
+            store_id = syn_in.store()
+            engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
+            synthetic_traces = add_noise(synthetic_traces, engine,
+                                         sources[0].pyrocko_event(),
+                                         stations,
+                                         store_id, phase_def=phase)
+
+        for tracex, trl in zip(sorted(calcStreamMap.keys()), synthetic_traces):
+                    if cfg.Bool('dynamic_filter') is False:
+                        if switch == 0:
+                            trl.bandpass(4,cfg_f.flo(), cfg_f.fhi())
+                        elif switch == 1:
+                            trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
+
+                    synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
+                    calcStreamMap[tracex] = synthetic_obs_tr
+
     do_pws=False
     if cfg.Bool('shift_by_phase_pws') is True and do_pws is True:
         calcStreamMapshifted= calcStreamMap.copy()
@@ -1228,12 +1192,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         pws_stack = PWS_stack([stream], weight=2, normalize=True)
         for tr in pws_stack:
             for trace in calcStreamMapshifted.keys():
-                    calcStreamMapshifted[trace]=tr
+                    calcStreamMapshifted[trace] = tr
         calcStreamMap = calcStreamMapshifted
 
     if cfg.Bool('shift_by_phase_cc') is True:
         from stacking import align_traces
-        calcStreamMapshifted= calcStreamMap.copy()
+        calcStreamMapshifted = calcStreamMap.copy()
         list_tr = []
         for trace in calcStreamMapshifted.keys():
             tr_org = calcStreamMapshifted[trace]
@@ -1413,7 +1377,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         timestemp = results[0]
         relative_relpow = results[1]
         absolute_relpow = results[2]
-        out =  results
+        out = results
         import numpy as np
         import matplotlib.pyplot as plt
         from matplotlib.colorbar import ColorbarBase
