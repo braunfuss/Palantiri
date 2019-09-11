@@ -507,6 +507,8 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                     tmp *= a*aziweights[c]
                 elif cfg.Bool('bootstrap_array_weights') is True:
                     tmp_boot *= a*bs_weights[boot, c]
+                else:
+                    tmp_boot *= a
 
                 tmp *= a
                 tmp_general *= tmp
@@ -537,7 +539,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                                         % (switch, boot, phase)), 'w')
 
 
-        norm = num.max(num.max(tmp_boot, axis=1))
+        norm = num.max(num.max(tmp_boot))
         max_p = 0.
         sum_i = 0.
 
