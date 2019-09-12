@@ -238,9 +238,14 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
                                             oLator, oLonor, GridArray)
     k = MinTMaxT(mint, maxt)
 
-    Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
-    Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
-    Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
+    if flag_rpe is True:
+        Basic.dumpToFile(str(flag)  + '-ttt_emp.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-emp'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile('station-emp' + str(flag) + '.pkl', station)
+    else:
+        Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
 
 
 def calcTTTAdv_cube(Config, station, Origin, flag, arrayname, Xcorrshift,

@@ -7,12 +7,17 @@ modul for deserializing pickle data from different processes
 '''
 
 
-def deserializeTTT(numproc):
+def deserializeTTT(numproc, flag_rpe=False):
 
         L = []
 
         for i in range(numproc):
-            data = Basic.loadDump(str(i)+'-ttt.pkl')
+            if flag_rpe is True:
+                data = Basic.loadDump(str(i)+'-ttt_emp.pkl')
+
+            else:
+
+                data = Basic.loadDump(str(i)+'-ttt.pkl')
 
             if data is not None:
                 L.append(data)
@@ -53,13 +58,15 @@ def deserializeTTT_cube(numproc):
         return TTTGridMap
 
 
-def deserializeMinTMaxT(numproc):
+def deserializeMinTMaxT(numproc, flag_rpe=False):
 
         L = []
 
         for i in range(numproc):
-            data = Basic.loadDump('minmax-'+str(i)+'.pkl')
-
+            if flag_rpe is True:
+                data = Basic.loadDump('minmax-emp'+str(i)+'.pkl')
+            else:
+                data = Basic.loadDump('minmax-'+str(i)+'.pkl')
             if data is not None:
                 L.append(data)
 
@@ -69,13 +76,15 @@ def deserializeMinTMaxT(numproc):
         return mint, maxt
 
 
-def deserializeSembDict(numproc):
+def deserializeSembDict(numproc, flag_rpe=False):
 
         L = []
 
         for i in range(numproc):
-            data = Basic.loadDump('sembDict-'+str(i)+'.pkl')
-
+            if flag_rpe is True:
+                data = Basic.loadDump('sembDict-emp'+str(i)+'.pkl')
+            else:
+                data = Basic.loadDump('sembDict-'+str(i)+'.pkl')
             if data is not None:
                 L.append(data)
 
@@ -92,13 +101,15 @@ def deserializeSembDict(numproc):
         return sembDict
 
 
-def deserializeSembMaxFile(numproc):
+def deserializeSembMaxFile(numproc, flag_rpe=False):
 
     L = []
 
     for i in range(numproc):
-        data = Basic.loadDump('sembMAX-'+str(i)+'.pkl')
-
+        if flag_rpe is True:
+            data = Basic.loadDump('sembMAX-emp'+str(i)+'.pkl')
+        else:
+            data = Basic.loadDump('sembMAX-'+str(i)+'.pkl')
         if data is not None:
             L.append(data)
 

@@ -2216,6 +2216,58 @@ def plot_scatter():
 
             plt.show()
 
+
+def empiricial_timeshifts():
+        import _pickle as pickle
+
+        evpath = 'events/'+ str(sys.argv[1])
+        C = config.Config (evpath)
+        Config = C.parseConfig ('config')
+        cfg = ConfigObj(dict=Config)
+        sembpath = evpath + '/work/semblance'
+        stations = []
+        refs = []
+        if cfg.Bool('synthetic_test') is True:
+            lat_ev=float(syn_in.lat_0())
+            lon_ev=float(syn_in.lon_0())
+        else:
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            desired=[3,4]
+            with open(event, 'r') as fin:
+                reader=csv.reader(fin)
+                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+                lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+
+
+        pathlist = Path(rel).glob('*.shift*')
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                if path_in_str[-1] != "s":
+                    f = open(path_in_str, 'rb')
+                    refshifts = pickle.load(f)
+                    f.close()
+                    for s in refshifts.values():
+                        refs.append(s)
+
+                else:
+                    f = open(path_in_str, 'rb')
+                    refshifts_stations = pickle.load(f)
+                    f.close()
+                    for s in refshifts_stations.values():
+                        stations.append(s)
+        bazis = []
+        for s in stations:
+            b = orthodrome.azimuth(s[1], s[0], lat_ev, lon_ev)
+            if b>=0.:
+                bazi = b
+            elif b<0.:
+                bazi = 360.+b
+            bazis.append(bazi)
+        plt.figure()
+        plt.plot(refs,bazis)
+        plt.show()
+
 def main():
     if len(sys.argv)<3:
         print("input: eventname plot_name,\
@@ -2256,3 +2308,5 @@ def main():
             distance_time()
         elif sys.argv[2] == 'integrated_movie':
             plot_integrated_movie()
+        elif sys.argv[2] == 'timeshifts':
+            empiricial_timeshifts()

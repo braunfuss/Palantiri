@@ -74,7 +74,8 @@ def processLoop(traces=None, stations=None, cluster=None):
         Syn_in_emp = C.parseConfig('syn_emp')
         syn_in_emp = SynthCfg(Syn_in_emp)
     except IndexError:
-        pass
+        Syn_in_emp = C.parseConfig('syn')
+        syn_in_emp = SynthCfg(Syn_in)
     Config = C.parseConfig('config')
 
     cfg = ConfigObj(dict=Config)
@@ -159,7 +160,7 @@ def processLoop(traces=None, stations=None, cluster=None):
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
         fobjreferenceshiftnameemp = newFreq + '_' + filtername + 'emp' + '.refpkl'
-        rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp)
+        rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp) + '.shift'
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
         if cfg.Bool('synthetic_test') is False:
@@ -566,11 +567,10 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                    phase, flag_rpe=True)
 
                                     assert len(FilterMeta) > 0
-                                    TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta))
-                                    mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta))
+                                    TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta), flag_rpe=True)
+                                    mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta), flag_rpe=True)
                                     f = open(os.path.abspath(os.path.join(os.getcwd(),
-                                             os.pardir))+'/tttgrid/tttgrid%s_\
-                                             %s_%s_%s_%s_emp.pkl'
+                                             os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                              % (phase, ttt_model, ev_emp.time,
                                                 arrayname, workdepth), 'wb')
                                     print("dumping the traveltime grid for this array")
@@ -746,20 +746,26 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         ntimes_emp = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
                                     else:
                                         ntimes_emp = int((cfg.UInt('duration_emp')) / step_emp)
-                                        f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                    f = open(os.path.abspath(os.path.join(os.getcwd(),
+                                                             os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                              % (phase, ttt_model, ev_emp.time,
-                                                arrayname,
-                                                workdepth), 'rb')
+                                                arrayname, workdepth), 'rb')
+                                    print("loading travel time grid%s_%s_%s_%s_%s_emp.pkl"
+                                          % (phase, ttt_model, ev_emp.time, arrayname,
+                                             workdepth))
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                                     f.close()
                                     flag_rpe = True
+                                    nstats = stations_per_array
+
                                     arraySemb, weight, array_center = sembCalc.doCalc(
                                         counter, Config, Wdf_emp, FilterMeta,
                                         mint_emp, maxt_emp,
                                         TTTGridMap_emp, Folder, Origin_emp,
                                         ntimes_emp, switch, ev_emp,
                                         arrayfolder, syn_in_emp, refshifts,
-                                        phase, rpe+str(arrayname), flag_rpe)
+                                        phase, rpe+str(arrayname), flag_rpe,
+                                        nstats)
                                     if sys.version_info.major >= 3:
                                         f = open(rpe+str(arrayname), 'rb')
                                     else:

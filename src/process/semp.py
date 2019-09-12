@@ -359,12 +359,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 tmin = time+relstart-mint
                 tmax = time+relstart-mint+nsamp
 
-
-                m = PhaseMarker(tmin=tmin,
-                                tmax=tmax,
-                                phasename='P',
-                                nslc_ids=(tr.nslc_id,))
-                markers.append(m)
+        #    m = PhaseMarker(tmin=tmin,
+    #                        tmax=tmax,
+    #                        phasename='P',
+    #                        nslc_ids=(tr.nslc_id,))
+#            markers.append(m)
 
             ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
             index_begins[str(j)+str(k)]= [ibeg, tmin]
@@ -446,11 +445,15 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                     else:
                         sums = sums+data
                 except ValueError:
-                        if num.shape(data) < num.shape(sums):
-                            data = tr.ydata[ibeg:iend+1]
-                        else:
-                            data = tr.ydata[ibeg:iend-1]
-                        sums = sums+data
+                        try:
+                            if num.shape(data) < num.shape(sums):
+                                data = tr.ydata[ibeg:iend+1]
+                            else:
+                                data = tr.ydata[ibeg:iend-1]
+                            sums = sums+data
+                        except:
+                            sums = sums
+
 
                 relstarts -= relstart
             sums_schimmel = abs(sums_schimmel)**2.

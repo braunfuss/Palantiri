@@ -1193,7 +1193,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         trs_org = []
         trs_orgs = []
         from pyrocko import trace
-        fobj = os.path.join(arrayfolder, 'shift.dat')
         calcStreamMapsyn = {}
         if cfg.Bool('synthetic_test_pertub_arrivals') is True:
             shift_max = cfg.Float('shift_max')
@@ -1317,15 +1316,20 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                          100., store_id, nwindows=1,
                          check_events=True, phase_def=phase)
 
+
+    ################ Futtermann Attenuation for S-wave ########
+
+
     if cfg.Bool('futterman_attenuation') is True and phase is 'S':
         trs_orgs = []
-        for trace in calcStreamMap.keys():
+        for ids,trace in enumerate(calcStreamMap.keys()):
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
                 mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
                 timing = CakeTiming(
                    phase_selection='first(S)',
                    fallback_time=100.)
-                dist = ortho.distance_accurate50m(ev, event1)
+                s = stations[ids]
+                dist = orthodrome.distance_accurate50m(float(s.lat), float(s.lon), float(ev.lat), float(ev.lon))
                 ray = timing.t(mod,(ev.depth, dist), get_ray=True)
                 zx, xx, tx = ray.zxt_path_subdivided()
                 qs_int = 0.
@@ -1350,12 +1354,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
                 ff, IDAT = spectrum(tr_org.ydata, tr_org.deltat)
 
-                w = 2*num.pi*ff
+                w = 2.*num.pi*ff
                 wabs = abs(w)
 
-                w0 = 2*num.pi
+                w0 = 2.*num.pi
                 Aw = num.exp(-0.5*wabs*dtstar)
-                phiw = (1/num.pi)*dtstar*num.log(2*num.pi*num.exp(num.pi)/wabs)
+                phiw = (1./num.pi)*dtstar*num.log(2.*num.pi*num.exp(num.pi)/wabs)
                 # phiw = 0.5 * (wabs/w0)**(-1) * dtstar * 1./num.tan(1*num.pi/2)
                 phiw = num.nan_to_num(phiw)
                 Dwt = Aw * num.exp(-1j*w*phiw)
@@ -1366,6 +1370,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 for trl in trs_orgs:
                     obs_tr = obspy_compat.to_obspy_trace(trl)
                     calcStreamMap[tracex] = obs_tr
+
+    ################ Array Response calcualtion and visualization ########
 
     if cfg.Bool('array_response') is True:
         from obspy.signal import array_analysis
@@ -1752,9 +1758,11 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         nstep = float(step_emp)
         Gmint = cfg.Int('forerun_emp')
 
-        shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
-                      new_frequence, minSampleCount, latv, lonv, traveltimes,
-                      traces, calcStreamMap, timeev, Config, Origin, refshifts, cfg)
+        shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX,
+                                  dimY, Gmint, new_frequence, minSampleCount,
+                                  latv, lonv, traveltimes, traces,
+                                  calcStreamMap, timeev, Config, Origin,
+                                  refshifts, cfg)
 
         RefDict = OrderedDict()
         for j in range(0,len(trs_orgs)):
@@ -1768,8 +1776,21 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if TTTGrid:
         if cfg.Bool('correct_shifts_empirical_run') is True and cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
             start_time = time.time()
+
+            RefDict_stations = OrderedDict()
+
+
             for s in range(0, nostat):
                 refshifts[s] = refshifts[s]*0.
+                RefDict_stations[s] = [stations[s].lat, stations[s].lon]
+
+            if sys.version_info.major >= 3:
+                fobjrefshift_stations = open(rp+'_stations', 'wb')
+            else:
+                fobjrefshift_stations = open(rp+'_stations', 'w')
+            pickle.dump(RefDict_stations, fobjrefshift_stations)
+            fobjrefshift_stations.close()
+
             step_emp = cfg.Float('step_emp')
             if cfg.UInt('forerun_emp') > 0:
                 ntimes = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
@@ -1790,7 +1811,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                       traces, calcStreamMap, timeev, Config, Origin, refshifts,
                                       nstats,
                                       bs_weights=bs_weights, flag_rpe=True)
-                        partSembsemblance = k
+                        partSemb = k
                         partSemb = partSemb.reshape(ntimes, 1)
                         for a in range(0, ntimes):
                             semb_max = max(partSemb[a])
@@ -1826,6 +1847,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 RefDict = OrderedDict()
                 for j in range(0, nostat):
                     RefDict[j] = shft
+
                 if sys.version_info.major >= 3:
                     fobjrefshift = open(rp, 'wb')
                 else:
