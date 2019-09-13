@@ -143,6 +143,13 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights)
 
+            if flag_rpe is True:
+               return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+                                   mint, new_frequence, minSampleCount, latv_1,
+                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
+                                   time, cfg, refshifts, nstats, bs_weights=bs_weights,
+                                   flag_rpe=flag_rpe)
+
             else:
                return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
@@ -346,8 +353,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             tr = trs_orgs[k]
 
             try:
-                tmin = time+relstart-mint
-                tmax = time+relstart-mint+nsamp
+                tmin = time+relstart-mint+refshifts[k]
+                tmax = time+relstart-mint+nsamp+refshifts[k]
             except IndexError:
                 tmin = time+relstart-mint
                 tmax = time+relstart-mint+nsamp
@@ -424,7 +431,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
-                tr_org.shift(refshifts[k])
 
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
@@ -1050,8 +1056,8 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
 def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
-                 trace_1, calcStreamMap, time, cfg, refshifts,
-                 bs_weights=None):
+                 trace_1, calcStreamMap, time, cfg, refshifts,nstats,
+                 bs_weights=None, flag_rpe=True):
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
@@ -1152,7 +1158,7 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                      str(sembmaxX)+','+ str(sembmaxY))
 
-    return abs(backSemb)
+    return abs(sembmax)
 
 
 def execsemblance(nostat, nsamp, i, nstep, dimX,dimY, mint, new_freq, minSampleCount) :

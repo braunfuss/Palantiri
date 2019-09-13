@@ -78,20 +78,8 @@ def optimization_timeshifts(*params, **args):
                   traces, calcStreamMap, timeev, Config, Origin, refshifts,
                   len(refshifts), flag_rpe=True)
 
-    partSemb = k
-    migpoints = dimX * dimY
-    partSemb = partSemb.reshape(ntimes, migpoints)
 
-    misfit_list = []  # init a list for a all the singular misfits
-    norm_list = []  # init a list for a all the singular normalizations
-    semblance_max = 0.
-    for a in range(0, ntimes):
-        semb_max = max(partSemb[a])
-        if semb_max > semblance_max:
-            semblance_max = semb_max
-    semblance_max = 1./(semblance_max)
-    print(refshifts)
-    print(semblance_max)
+    semblance_max = 1./(k)
     return semblance_max
 
 
@@ -111,6 +99,7 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
             bounds.append((low, high))
     bounds = num.asarray(bounds)
     result = scipy.optimize.differential_evolution(optimization_timeshifts,
+                                                    mutation=1.9,
                                                    bounds=bounds,
                                                    args=(maxp, nostat,
                                                          nsamp, ntimes, nstep,
