@@ -336,7 +336,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     lonv = lonv_1.tolist()
     from collections import OrderedDict
     index_begins = OrderedDict()
-
     index_steps = []
     index_window = []
     for j in range(dimX * dimY):
@@ -347,8 +346,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             tr = trs_orgs[k]
 
             try:
-                tmin = time+relstart-mint-refshifts[k]
-                tmax = time+relstart-mint+nsamp-refshifts[k]
+                tmin = time+relstart-mint
+                tmax = time+relstart-mint+nsamp
             except IndexError:
                 tmin = time+relstart-mint
                 tmax = time+relstart-mint+nsamp
@@ -425,6 +424,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             for k in range(nostat):
                 relstart = traveltime[k][j]
                 tr = trs_orgs[k]
+                tr_org.shift(refshifts[k])
+
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]

@@ -88,12 +88,12 @@ def load(filter, step=None):
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
                             except:
-                                pathlist = Path(rel).glob('%s-*boot**.ASC' % filter)
+                                pathlist = Path(rel).glob('%s-*boot*.ASC' % filter)
                         else:
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                             except:
-                                pathlist = Path(rel).glob('%s-*boot*00%s_*.ASC' % (filter, step))
+                                pathlist = Path(rel).glob('%s-*boot00%s_*.ASC' % (filter, step))
                         data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
@@ -102,7 +102,7 @@ def load(filter, step=None):
                                 for k in np.nan_to_num(data[:,2]):
                                     if k>data_int_boot[i]:
                                         data_int_boot[i]= k
-                                    if datamax == 0:
+                                    if num.max(datamax) == 0:
                                         data_int[i]= 0
                                     i = i+1
                 except IndexError:

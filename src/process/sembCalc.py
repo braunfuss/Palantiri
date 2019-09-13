@@ -90,6 +90,8 @@ def optimization_timeshifts(*params, **args):
         if semb_max > semblance_max:
             semblance_max = semb_max
     semblance_max = 1./(semblance_max)
+    print(refshifts)
+    print(semblance_max)
     return semblance_max
 
 
@@ -109,7 +111,7 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
             bounds.append((low, high))
     bounds = num.asarray(bounds)
     result = scipy.optimize.differential_evolution(optimization_timeshifts,
-                                                   bounds=bounds, maxiter=3000,
+                                                   bounds=bounds,
                                                    args=(maxp, nostat,
                                                          nsamp, ntimes, nstep,
                                                          dimX, dimY,
@@ -119,6 +121,8 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                                                          traces, calcStreamMap,
                                                          timeev, Config, Origin,
                                                          refshifts))
+
+
     elapsed = time.time() - t  # get the processing time
     print("shifts:", result.x)
     return result.x
