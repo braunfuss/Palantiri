@@ -525,19 +525,24 @@ def processLoop(traces=None, stations=None, cluster=None):
                     Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
                     if cfg.Bool('correct_shifts_empirical') is True:
-
+                        TTTGridMap_emp = []
+                        FilterMeta = ttt.filterStations(Meta, Config, Origin,
+                                                        network)
                         Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
                                     %s \n' % (Config['dimx_emp'],
                                               Config['dimy_emp'],
                                               Config['gridspacing']))
-
                         try:
-                            f = open(os.path.abspath(os.path.join(os.getcwd(),
-                                                     os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                     % (phase, ttt_model, ev_emp.time,
-                                        arrayname, workdepth), 'rb')
-                            print("loading travel time grid%s_%s_%s_%s_%s_emp.pkl"
-                                  % (phase, ttt_model, ev_emp.time, arrayname,
+                            px = os.path.abspath(os.path.join(os.getcwd(),
+                                                 os.pardir))
+                            pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                      % (phase, ttt_model, ev_emp.time, arrayname,
+                                         workdepth))
+                            px_path = px+pdx
+                            f = open(px_path, 'rb')
+
+                            print("loading travel time tttgrid%s_%s_%s_%s_%s_emp.pkl"
+                                  % (phase, ttt_model, ev.time, arrayname,
                                      workdepth))
                             TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                             f.close()
@@ -552,31 +557,53 @@ def processLoop(traces=None, stations=None, cluster=None):
 
                                 for i in xrange(len(FilterMeta)):
                                     po.apply_async(ttt.calcTTTAdv,
-                                                   (Config, FilterMeta[i],
-                                                    Origin, i, arrayname,
-                                                    W, refshift))
+                                                   (Config, FilterMeta[i], Origin,
+                                                    i, arrayname, W, refshift))
 
                                     po.close()
                                     po.join()
                             else:
                                 for i in xrange(len(FilterMeta)):
-                                    t1 = time.time()
-                                    ttt.calcTTTAdv(Config, FilterMeta[i],
-                                                   Origin_emp,
-                                                   i, arrayname, W, refshift,
-                                                   phase, flag_rpe=True)
+                                    if cfg.Int('dimz') != 0:
+                                        t1 = time.time()
+                                        ttt.calcTTTAdv_cube(Config,
+                                                            FilterMeta[i],
+                                                            Origin_emp, i,
+                                                            arrayname,
+                                                            W, refshift, phase,
+                                                            flag_rpe=True)
 
-                                    assert len(FilterMeta) > 0
-                                    TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta), flag_rpe=True)
-                                    mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta), flag_rpe=True)
-                                    f = open(os.path.abspath(os.path.join(os.getcwd(),
-                                             os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                             % (phase, ttt_model, ev_emp.time,
-                                                arrayname, workdepth), 'wb')
-                                    print("dumping the traveltime grid for this array")
-                                    pickle.dump([TTTGridMap_emp, mint_emp,
-                                                 maxt_emp], f)
-                                    f.close()
+                                        Logfile.add('ttt.calcTTTAdv : '
+                                                    + str(time.time() - t1)
+                                                    + ' sec.')
+                                    else:
+                                        t1 = time.time()
+                                        ttt.calcTTTAdv(Config, FilterMeta[i],
+                                                       Origin_emp,
+                                                       i, arrayname, W,
+                                                       refshift,
+                                                       phase, flag_rpe=True)
+
+                                        Logfile.add('ttt.calcTTTAdv : '
+                                                    + str(time.time() - t1)
+                                                    + ' sec.')
+                            assert len(FilterMeta) > 0
+                            if cfg.Int('dimz') != 0:
+                                TTTGridMap_emp = deserializer.deserializeTTT_cube(len(FilterMeta), flag_rpe=True)
+                                mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta), flag_rpe=True)
+                            else:
+                                TTTGridMap_emp = deserializer.deserializeTTT(len(FilterMeta), flag_rpe=True)
+                                mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta), flag_rpe=True)
+
+                            px = os.path.abspath(os.path.join(os.getcwd(),
+                                                 os.pardir))
+                            pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
+                                     % (phase, ttt_model, ev_emp.time, arrayname,
+                                        workdepth))
+                            px_path = px+pdx
+                            f = open(px_path, 'wb')
+                            pickle.dump([TTTGridMap_emp, mint_emp, maxt_emp], f)
+                            f.close()
                         t2 = time.time()
                         Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
@@ -589,14 +616,15 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                             switch)
 
                         if cfg.pyrocko_download() is True:
-                            if cfg.quantity() == 'displacement':
+
+                            if cfg.Bool('correct_shifts_empirical_synthetic') is True:
+                                Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                        tw,
+                                                                        evpath,
+                                                                        ev)
+                            elif cfg.quantity() == 'displacement':
                                 Wd_emp = waveform.readWaveformsPyrocko_restituted(
                                     FilterMeta, tw, evpath, ev_emp, desired)
-                            elif cfg.Bool('correct_shifts_empirical_synthetic') is True:
-                                Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
-                                                                        tw_emp,
-                                                                        evpath_emp,
-                                                                        ev_emp)
                             else:
                                 Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
                                                                        tw_emp,
@@ -684,9 +712,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if switch == 0:
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
+                            switchs = "l0"
                         if switch == 1:
                             ff1 = filter.flo2()
                             ff2 = filter.fhi2()
+                            switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" % (arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
                             try:
@@ -736,7 +766,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         mint, maxt, TTTGridMap, Folder,
                                         Origin, ntimes, switch, ev,
                                         arrayfolder, syn_in, refshifts, phase,
-                                        rpe+str(arrayname), flag_rpe)
+                                        rpe+str(arrayname)+switchs, flag_rpe)
                         else:
                             if cfg.Bool('correct_shifts_empirical') is True:
                                 if cfg.Bool('correct_shifts_empirical_run') is True:
@@ -757,19 +787,22 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f.close()
                                     flag_rpe = True
                                     nstats = stations_per_array
-
+                                    if switch == 0:
+                                        switchs = "l0"
+                                    if switch == 1:
+                                        switchs = "h1"
                                     arraySemb, weight, array_center = sembCalc.doCalc(
                                         counter, Config, Wdf_emp, FilterMeta,
                                         mint_emp, maxt_emp,
                                         TTTGridMap_emp, Folder, Origin_emp,
                                         ntimes_emp, switch, ev_emp,
                                         arrayfolder, syn_in_emp, refshifts,
-                                        phase, rpe+str(arrayname), flag_rpe,
+                                        phase, rpe+str(arrayname)+switchs, flag_rpe,
                                         nstats)
                                     if sys.version_info.major >= 3:
-                                        f = open(rpe+str(arrayname), 'rb')
+                                        f = open(rpe+str(arrayname)+switchs, 'rb')
                                     else:
-                                        f = open(rpe+str(arrayname))
+                                        f = open(rpe+str(arrayname)+switchs)
                                     RefDict_empirical = pickle.load(f)
                                     refshifts = RefDict_empirical
                                     for j in range(0, len(FilterMeta)):
@@ -785,12 +818,15 @@ def processLoop(traces=None, stations=None, cluster=None):
                                       workdepth))
                             TTTGridMap_mew, mintt, maxtt = pickle.load(f)
                             f.close()
-
+                            if switch == 0:
+                                switchs = "l0"
+                            if switch == 1:
+                                switchs = "h1"
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMeta, mintt, maxtt,
                                 TTTGridMap_mew, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts, phase,
-                                rpe+str(arrayname), flag_rpe, len(FilterMeta))
+                                rpe+str(arrayname)+switchs, flag_rpe, len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -885,7 +921,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             counter, Config, Wdf, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
                             ev, arrayfolder, syn_in, refshifts_global, phase,
-                            rpe+str(arrayname), flag_rpe, nstats)
+                            rpe+str(arrayname)+switchs, flag_rpe, nstats)
                         ASL.append(arraySemb)
                         weights.append(weight)
                         array_centers.append(array_center)
@@ -913,7 +949,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
-                                phase, rpe+str(arrayname), flag_rpe, nstats,
+                                phase, rpe+str(arrayname)+switchs, flag_rpe, nstats,
                                 bs_weights=ws)
 
                             ASL.append(arraySemb)

@@ -77,7 +77,6 @@ def xcorr(tr1, tr2, shift_len, full_xcorr=False):
         return shift.value, coe_p.value
 
 
-
 class MyThread(Thread):
 
     def __init__(self, nostat, nsamp, i, nstep, dimX,
@@ -97,8 +96,8 @@ class MyThread(Thread):
 
 def toMatrix(npVector, nColumns):
 
-    t   = npVector.tolist()[0]
-    n   = nColumns
+    t  = npVector.tolist()[0]
+    n  = nColumns
     mat = []
 
     for i in range(int(len(t) / n)):
@@ -144,16 +143,12 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights)
 
-            elif cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
-               return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
-                                   mint, new_frequence, minSampleCount, latv_1,
-                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
-                                   time, cfg, refshifts, bs_weights=bs_weights)
             else:
                return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
-                                   time, cfg, refshifts, nstats, bs_weights=bs_weights)
+                                   time, cfg, refshifts, nstats, bs_weights=bs_weights,
+                                   flag_rpe=flag_rpe)
         else:
            return semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep,
                                           dimX, dimY, mint, new_frequence,
@@ -292,7 +287,7 @@ def music_doa(Y,n,d):
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
-                 bs_weights=None):
+                 bs_weights=None, flag_rpe=False):
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
@@ -304,7 +299,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         do_bs_weights = True
     else:
         do_bs_weights = False
-
     do_weight_by_array = False
     if do_weight_by_array:
         k = 0
@@ -490,9 +484,13 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 sembmaxX = latv[j]
                 sembmaxY = lonv[j]
             #backSemb[i][:] = backSemb[i][:]/num.max(backSemb[i][:])
-        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
-                    str(sembmaxX) + ',' + str(sembmaxY))
-    backSemb = backSemb/num.max(num.max(backSemb))
+        output = False
+        if output is True:
+            Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
+                        str(sembmaxX) + ',' + str(sembmaxY))
+    if flag_rpe is False:
+        backSemb = backSemb/num.max(num.max(backSemb))
+
     return backSemb
 
 

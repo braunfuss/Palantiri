@@ -66,12 +66,17 @@ def optimization_timeshifts(*params, **args):
     refshifts = params[19]
     params = num.asarray(params)
     parameter = num.ndarray.tolist(params)
-    for j in range(0, len(refshifts)):
-        refshifts[j] = parameter[0][j]
+    if len(parameter[0])==1:
+        for j in range(0, len(refshifts)):
+            refshifts[j] = parameter[0]
+    else:
+        for j in range(0, len(refshifts)):
+            refshifts[j] = parameter[0][j]
 
     k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                   new_frequence, minSampleCount, latv, lonv, traveltimes,
-                  traces, calcStreamMap, timeev, Config, Origin, refshifts)
+                  traces, calcStreamMap, timeev, Config, Origin, refshifts,
+                  len(refshifts), flag_rpe=True)
 
     partSemb = k
     migpoints = dimX * dimY
@@ -84,8 +89,7 @@ def optimization_timeshifts(*params, **args):
         semb_max = max(partSemb[a])
         if semb_max > semblance_max:
             semblance_max = semb_max
-    semblance_max = 1./semblance_max
-
+    semblance_max = 1./(semblance_max)
     return semblance_max
 
 
@@ -97,12 +101,15 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
     bounds = []
     low = -1.*cfg.Float('shift_max')
     high = cfg.Float('shift_max')
-    for ref in refshifts:
-        bounds.append((low, high))
+
+    if cfg.Bool('correct_shifts_empirical_manual_station_wise') is False:
+        bounds = [(low, high)]
+    else:
+        for ref in refshifts:
+            bounds.append((low, high))
     bounds = num.asarray(bounds)
     result = scipy.optimize.differential_evolution(optimization_timeshifts,
-                                                   maxiter=3, popsize=3,
-                                                   bounds=bounds,
+                                                   bounds=bounds, maxiter=3000,
                                                    args=(maxp, nostat,
                                                          nsamp, ntimes, nstep,
                                                          dimX, dimY,
@@ -1757,7 +1764,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         nsamp = int(winlen_emp)
         nstep = float(step_emp)
         Gmint = cfg.Int('forerun_emp')
-
         shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX,
                                   dimY, Gmint, new_frequence, minSampleCount,
                                   latv, lonv, traveltimes, traces,
@@ -1765,8 +1771,11 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                   refshifts, cfg)
 
         RefDict = OrderedDict()
-        for j in range(0,len(trs_orgs)):
-            RefDict[j] = shifts[j]
+        for j in range(0, len(trs_orgs)):
+            if len(shifts) == 1:
+                RefDict[j] = shifts[0]
+            else:
+                RefDict[j] = shifts[j]
         if sys.version_info.major >= 3:
             fobjrefshift = open(rp, 'wb')
         else:
@@ -1802,7 +1811,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             max_shifts = cfg.Float('shift_max')
             semblance_max = 0. #TODO auf station basis
             if cfg.Bool('correct_shifts_empirical_manual_station_wise') is True:
-                for niter in range(0,10000):
+                for niter in range(0,1000):
                     for s in range(0, nostat):
                         refshifts[s] = num.random.uniform(-max_shifts,max_shifts)
 

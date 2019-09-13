@@ -55,9 +55,9 @@ def load(filter, step=None):
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    max = np.max(data[:, 2])
-                    if maxs < max:
-                        maxs = max
+                    maxd = np.max(data[:, 2])
+                    if maxs < maxd:
+                        maxs = maxd
                         datamax = data[:, 2]
             if sys.argv[3] == 'max':
                 if step is None:
@@ -78,7 +78,7 @@ def load(filter, step=None):
                         for k in np.nan_to_num(data[:,2]):
                             if k>data_int[i]:
                                 data_int[i]= k
-                            if datamax == 0:
+                            if num.max(datamax) == 0:
                                 data_int[i]= 0
                             i = i+1
                 try:
@@ -2227,11 +2227,14 @@ def empiricial_timeshifts():
         sembpath = evpath + '/work/semblance'
         stations = []
         refs = []
+        rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+
         if cfg.Bool('synthetic_test') is True:
+            Syn_in = C.parseConfig('syn')
+            syn_in = SynthCfg(Syn_in)
             lat_ev=float(syn_in.lat_0())
             lon_ev=float(syn_in.lon_0())
         else:
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
             desired=[3,4]
             with open(event, 'r') as fin:
@@ -2243,7 +2246,8 @@ def empiricial_timeshifts():
         pathlist = Path(rel).glob('*.shift*')
         for path in sorted(pathlist):
                 path_in_str = str(path)
-                if path_in_str[-1] != "s":
+                print(path_in_str)
+                if path_in_str[-3] != "s":
                     f = open(path_in_str, 'rb')
                     refshifts = pickle.load(f)
                     f.close()
@@ -2257,6 +2261,7 @@ def empiricial_timeshifts():
                     for s in refshifts_stations.values():
                         stations.append(s)
         bazis = []
+        print(len(stations), len(refs))
         for s in stations:
             b = orthodrome.azimuth(s[1], s[0], lat_ev, lon_ev)
             if b>=0.:

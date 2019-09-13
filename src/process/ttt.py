@@ -137,8 +137,8 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
     else:
         dimX = cfg.Int('dimx')
         dimY = cfg.Int('dimy')
-    gridspacing = cfg.Float('gridspacing')
 
+    gridspacing = cfg.Float('gridspacing')
     o_lat = float(Origin['lat'])
     o_lon = float(Origin['lon'])
     o_depth = float(Origin['depth'])
@@ -333,9 +333,14 @@ def calcTTTAdv_cube(Config, station, Origin, flag, arrayname, Xcorrshift,
     TTTGridMap[station.getName()] = TTTGrid(o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)
     k = MinTMaxT(mint, maxt)
 
-    Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
-    Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
-    Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
+    if flag_rpe is True:
+        Basic.dumpToFile(str(flag)  + '-ttt_emp.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-emp'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile('station-emp' + str(flag) + '.pkl', station)
+    else:
+        Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
 
 
 
@@ -350,7 +355,7 @@ def calcTTTAdvTauP(Config, station, Origin, flag, Xcorrshift=None,
         dimX = cfg.Int('dimx_emp')
         dimY = cfg.Int('dimy_emp')
     gridspacing = cfg.Float('gridspacing')
-
+    print('done this')
     o_lat = float(Origin['lat'])
     o_lon = float(Origin['lon'])
     o_depth = float(Origin['depth'])
@@ -436,10 +441,17 @@ def calcTTTAdvTauP(Config, station, Origin, flag, Xcorrshift=None,
 
     TTTGridMap[station.getName()] = TTTGrid(o_depth,mint,maxt,Latul,Lonul,oLator,oLonor,GridArray)
 
-    tttname = str(flag)+'-ttt.pkl'
-    Basic.dumpToFile(tttname, TTTGridMap)
-    Basic.dumpToFile('minmax-'+str(flag)+'.pkl', k)
-
+    #tttname = str(flag)+'-ttt.pkl'
+    #Basic.dumpToFile(tttname, TTTGridMap)
+    #Basic.dumpToFile('minmax-'+str(flag)+'.pkl', k)
+    if flag_rpe is True:
+        Basic.dumpToFile(str(flag)  + '-ttt_emp.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-emp'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile('station-emp' + str(flag) + '.pkl', station)
+    else:
+        Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
     try:
         os.remove(inputpath)
         os.remove(outputpath)
