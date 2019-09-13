@@ -1155,8 +1155,6 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                  # grid for given time step
                 sembmaxX = latv[j]
                 sembmaxY = lonv[j]
-        Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
-                     str(sembmaxX)+','+ str(sembmaxY))
 
     return abs(sembmax)
 
