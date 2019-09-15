@@ -1775,6 +1775,20 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             fobjrefshift = open(rp, 'w')
         pickle.dump(RefDict, fobjrefshift)
         fobjrefshift.close()
+
+        RefDict_stations = OrderedDict()
+
+        for s in range(0, nostat):
+            RefDict_stations[s] = [stations[s].lat, stations[s].lon]
+
+        if sys.version_info.major >= 3:
+            fobjrefshift_stations = open(rp+'_stations', 'wb')
+        else:
+            fobjrefshift_stations = open(rp+'_stations', 'w')
+        pickle.dump(RefDict_stations, fobjrefshift_stations)
+        fobjrefshift_stations.close()
+
+
     if TTTGrid:
         if cfg.Bool('correct_shifts_empirical_run') is True and cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
             start_time = time.time()
