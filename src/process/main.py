@@ -220,19 +220,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                 for j in range(0, len(FilterMeta)):
                     refshifts_global.append(triggerobject.tdiff)
 
-            if sys.version_info.major >= 3:
-                fobjrefshift = open(rp, 'wb')
-            else:
-                fobjrefshift = open(rp, 'w')
-            pickle.dump(RefDict, fobjrefshift)
-            fobjrefshift.close()
-
-            if sys.version_info.major >= 3:
-                output = open(ps, 'wb')
-            else:
-                output = open(ps, 'w')
-            pickle.dump(XDict, output)
-            output.close()
 
     else:
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
@@ -242,72 +229,18 @@ def processLoop(traces=None, stations=None, cluster=None):
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
         refshift = 0
-        if(os.path.isfile(rp) and os.path.getsize(rp) != 0
-           and os.path.isfile(ps) and os.path.getsize(ps) != 0):
-            Logfile.add('Temporay Memory file exits : ' + rp)
-            if sys.version_info.major >= 3:
-                f = open(rp, 'rb')
-            else:
-                f = open(rp)
 
-            RefDict = pickle.load(f)
-            if sys.version_info.major >= 3:
-                x = open(ps, 'rb')
-            else:
-                x = open(ps)
-            XDict = pickle.load(x)
-
-            for i in xcorrnetworks:
-                SL[i] = len(Config[j].split('|'))
-                network = cfg.String(i).split('|')
-                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
-                RefDict[i] = refshift
-
-                for j in range(0, len(FilterMeta)):
-                    refshifts_global.append(refshift)
-        else:
-            SL = {}
-            for i in xcorrnetworks:
-                W = {}
-                refshift = 0
-                network = cfg.String(i).split('|')
-                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
-                arrayfolder = os.path.join(Folder['semb'], i)
-
-                if os.access(arrayfolder, os.F_OK) is False:
-                    os.makedirs(arrayfolder)
-                if cfg.pyrocko_download() is True:
-                    # TODO check seperate xcoor nescessity
-                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
-                              arrayfolder)
-                else:
-                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
-                              arrayfolder)
-
-                print("run Xcorr")
-                phase = phases[0]
-                W, triggerobject = A.runXcorr_dummy(phase)
-
-                XDict[j] = W
-                RefDict[j] = refshift
-                SL[j] = len(network)
-                for j in range(0, len(FilterMeta)):
-                    refshifts_global.append(refshift)
-
-            if sys.version_info.major >= 3:
-                fobjrefshift = open(rp, 'wb')
-            else:
-                fobjrefshift = open(rp, 'w')
-            pickle.dump(RefDict, fobjrefshift)
-            fobjrefshift.close()
-
-            if sys.version_info.major >= 3:
-                output = open(ps, 'wb')
-            else:
-                output = open(ps, 'w')
-            pickle.dump(XDict, output)
-            output.close()
-
+        SL = {}
+        for i in xcorrnetworks:
+            W = {}
+            network = cfg.String(i).split('|')
+            FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+            arrayfolder = os.path.join(Folder['semb'], i)
+            XDict[i] = FilterMeta
+            RefDict[i] = refshift
+            SL[i] = len(network)
+            for j in range(0, len(FilterMeta)):
+                refshifts_global.append(refshift)
     if sys.version_info.major >= 3:
         for j in sorted(XDict.keys()):
             Logfile.red('Array %s has %3d of %3d Stations left' %
@@ -428,7 +361,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                     network = Config[i].split('|')
 
                     Logfile.add('network: ' + str(network))
-
                     FilterMeta = ttt.filterStations(Meta, Config, Origin,
                                                     network)
 
@@ -438,8 +370,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if cfg.correct_shifts() is False:
                             refshift = refshift*0.
                         refshifts.append(refshift)
-
-                    FilterMeta = cmpFilterMetavsXCORR(W, FilterMeta)
 
                     Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
                                 %s \n' % (Config['dimx'], Config['dimy'],

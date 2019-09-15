@@ -2246,8 +2246,7 @@ def empiricial_timeshifts():
         pathlist = Path(rel).glob('*.shift*')
         for path in sorted(pathlist):
                 path_in_str = str(path)
-                print(path_in_str)
-                if path_in_str[-3] != "s":
+                if path_in_str[-1] != "s":
                     f = open(path_in_str, 'rb')
                     refshifts = pickle.load(f)
                     f.close()

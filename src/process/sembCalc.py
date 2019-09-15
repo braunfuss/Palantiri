@@ -869,7 +869,6 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
         sembmax = 0
         sembmaxX = 0
         sembmaxY = 0
-
         origin = DataTypes.dictToLocation(Origin)
         uncert = num.std(i) #maybe not std?
         for j in range(migpoints):
@@ -925,7 +924,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     '''
     Logfile.add('PROCESS %d %s' % (flag, 'Enters Semblance Calculation'))
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' % (Gmint, Gmaxt))
-
     cfg = ConfigObj(dict=Config)
     cfg_f = FilterCfg(Config)
 
@@ -959,17 +957,15 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     nsamp = float(winlen * new_frequence)
     nstep = float(step * new_frequence)
 
-    obspy_compat.plant()
 
     calcStreamMap = WaveformDict
-
     stations = []
     py_trs = []
     lats = []
     lons = []
     if cfg.Bool('synthetic_test') is False:
         for trace in sorted(calcStreamMap.keys()):
-            py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+            py_tr = calcStreamMap[trace][0]
             py_trs.append(py_tr)
             for il in FilterMetaData:
                 if str(il) == str(trace):
@@ -1216,8 +1212,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         elif switch == 1:
                             trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
 
-                    synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
-                    calcStreamMap[tracex] = synthetic_obs_tr
+                    calcStreamMap[tracex] = trl
 
     do_pws=False
     if cfg.Bool('shift_by_phase_pws') is True and do_pws is True:
@@ -1479,25 +1474,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
         plt.show()
 
-    if sys.version_info.major >= 3:
-        for trace in sorted(calcStreamMap.keys()):
-            recordstarttime = calcStreamMap[trace].stats.starttime
-            d = calcStreamMap[trace].stats.starttime
-            d = d.timestamp
-
-            if calcStreamMap[trace].stats.npts < minSampleCount:
-                minSampleCount = calcStreamMap[trace].stats.npts
-    else:
-        for trace in calcStreamMap.keys():
-            recordstarttime = calcStreamMap[trace].stats.starttime
-            d = calcStreamMap[trace].stats.starttime
-            d = d.timestamp
-
-            if calcStreamMap[trace].stats.npts < minSampleCount:
-                minSampleCount = calcStreamMap[trace].stats.npts
-
-    traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount),
-                         dtype=float)
+    traces = calcStreamMap
 
     if cfg.Int('dimz') != 0:
         traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.Int('dimz')),
@@ -1512,21 +1489,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     c = 0
     streamCounter = 0
-    if sys.version_info.major >= 3:
-        for key in sorted(calcStreamMap.keys()):
-
-            streamID = key
-            c2 = 0
-            for o in calcStreamMap[key]:
-                if c2 < minSampleCount:
-                    traces[c][c2] = o
-
-                    c2 += 1
-            for key in sorted(TTTGridMap.keys()):
-                if streamID == key:
-                    traveltimes[streamCounter] = TTTGridMap[key]
-                else:
-                    "NEIN", streamID, key
+    for streamID in sorted(calcStreamMap):
+        for key in sorted(TTTGridMap.keys()):
+            if streamID == key:
+                traveltimes[streamCounter] = TTTGridMap[key]
 
             if streamCounter not in traveltimes:
                 continue
@@ -1562,43 +1528,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             c += 1
             streamCounter += 1
 
-    else:
-        for key in calcStreamMap.keys():
-            streamID = key
-            c2 = 0
-
-            for o in calcStreamMap[key]:
-                if c2 < minSampleCount:
-                    traces[c][c2] = o
-
-                    c2 += 1
-
-
-            for key in TTTGridMap.keys():
-
-                if streamID == key:
-                    traveltimes[streamCounter] = TTTGridMap[key]
-                else:
-                    "NEIN", streamID, key
-
-            if not streamCounter in traveltimes :
-               continue
-
-            g = traveltimes[streamCounter]
-            dimZ = g.dimZ
-            mint = g.mint
-            gridElem = g.GridArray
-
-            for x in range(dimX):
-                for y in range(dimY):
-                    elem = gridElem[x, y]
-
-                    traveltime [c][x * dimY + y] = elem.tt
-                    latv [x * dimY + y] = elem.lat
-                    lonv [x * dimY + y] = elem.lon
-
-            c += 1
-            streamCounter += 1
 
 
     ################ CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ########
@@ -1691,7 +1620,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 # ==================================semblance calculation=======
 
     t1 = time.time()
-    traces = traces.reshape(1, nostat*minSampleCount)
     if cfg.Int('dimz') != 0:
         traveltimes = traveltime.reshape(1, nostat*dimX*dimY*cfg.Int('dimz'))
     else:
@@ -1775,6 +1703,20 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             fobjrefshift = open(rp, 'w')
         pickle.dump(RefDict, fobjrefshift)
         fobjrefshift.close()
+
+        RefDict_stations = OrderedDict()
+
+        for s in range(0, nostat):
+            RefDict_stations[s] = [stations[s].lat, stations[s].lon]
+
+        if sys.version_info.major >= 3:
+            fobjrefshift_stations = open(rp+'_stations', 'wb')
+        else:
+            fobjrefshift_stations = open(rp+'_stations', 'w')
+        pickle.dump(RefDict_stations, fobjrefshift_stations)
+        fobjrefshift_stations.close()
+
+
     if TTTGrid:
         if cfg.Bool('correct_shifts_empirical_run') is True and cfg.Bool('correct_shifts_empirical_manual') is True and flag_rpe is True:
             start_time = time.time()

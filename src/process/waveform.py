@@ -82,11 +82,8 @@ def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location
                               + '.')
                 if (tr_name == str(il) and tr.channel[-1] == desired) or (tr_name == str(il)[:-3] and tr.channel[-1] == desired):
-                    st = obspy.Stream()
-                    es = obspy_compat.to_obspy_trace(tr)
-                    st.extend([es])
-                    traces_dict.append(tr)
-                    Wdict[il.getName()] = st
+
+                    Wdict[il.getName()] = tr
 
     return Wdict
 
@@ -116,11 +113,8 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
                 tr_name = str(tr.network+'.'+tr.station+'.'+tr.location
                               + '.')
                 if (tr_name == str(il) and tr.channel[-1] == desired) or (tr_name == str(il)[:-3] and tr.channel[-1] == desired):
-                    st = obspy.Stream()
-                    es = obspy_compat.to_obspy_trace(tr)
-                    st.extend([es])
-                    traces_dict.append(tr)
-                    Wdict[il.getName()] = st
+
+                    Wdict[il.getName()] = tr
 
     return Wdict
 
