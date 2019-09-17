@@ -555,6 +555,25 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     #                latv[j] = latv[j]#+diff_center_lat
     #                lonv[j] = lonv[j]#+diff_center_lon
 
+        if cfg.Bool('futterman_attenuation') is True:
+            s_futterman_shifts = []
+            sembmax = 0
+            for a, i in enumerate(tmp_boot):
+
+                for j in range(num.shape(latv)[0]):
+                    x = latv[j]
+                    y = lonv[j]
+                    semb = i[j]
+
+                    if semb > sembmax:
+                        sembmax = semb
+                        sembmaxX = x
+                        sembmaxY = y
+
+                        dist_x = origin.lat-x
+                        dist_y = origin.lon-y
+
+
         for a, i in enumerate(tmp_boot):
                 logger.info('timestep %d' % a)
                 fobj = open(os.path.join(folder, '%s-%s_boot%s_%03d_%s.ASC'
@@ -580,7 +599,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]
-
+                    if cfg.Bool('futterman_attenuation') is True:
+                        x = x+dist_x
+                        y = y+dist_y
                     if cfg.Bool('norm_all') is True:
                         semb = i[j]/norm
                     else:
@@ -605,6 +626,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 sembmaxvaluev[a] = sembmax
                 sembmaxlatv[a] = sembmaxX
                 sembmaxlonv[a] = sembmaxY
+
                 fobjsembmax.write('%d %.3f %.3f %.30f %.30f %d %03f %f %03f\n'
                                   % (a*step, sembmaxX, sembmaxY, sembmax,
                                      uncert, usedarrays, delta, float(azi),
@@ -688,7 +710,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         for j in range(num.shape(latv)[0]):
             x = latv[j]
             y = lonv[j]
-
+            if cfg.Bool('futterman_attenuation') is True:
+                x = x+dist_x
+                y = y+dist_y
             if cfg.Bool('norm_all') is True:
                 semb = i[j]/norm
             else:
@@ -869,7 +893,6 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
         sembmax = 0
         sembmaxX = 0
         sembmaxY = 0
-
         origin = DataTypes.dictToLocation(Origin)
         uncert = num.std(i) #maybe not std?
         for j in range(migpoints):
@@ -925,7 +948,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     '''
     Logfile.add('PROCESS %d %s' % (flag, 'Enters Semblance Calculation'))
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' % (Gmint, Gmaxt))
-
     cfg = ConfigObj(dict=Config)
     cfg_f = FilterCfg(Config)
 
@@ -959,17 +981,14 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     nsamp = float(winlen * new_frequence)
     nstep = float(step * new_frequence)
 
-    obspy_compat.plant()
-
     calcStreamMap = WaveformDict
-
     stations = []
     py_trs = []
     lats = []
     lons = []
     if cfg.Bool('synthetic_test') is False:
         for trace in sorted(calcStreamMap.keys()):
-            py_tr = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+            py_tr = calcStreamMap[trace]
             py_trs.append(py_tr)
             for il in FilterMetaData:
                 if str(il) == str(trace):
@@ -1216,8 +1235,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         elif switch == 1:
                             trl.bandpass(4,cfg_f.flo2(), cfg_f.fhi2())
 
-                    synthetic_obs_tr = obspy_compat.to_obspy_trace(trl)
-                    calcStreamMap[tracex] = synthetic_obs_tr
+                    calcStreamMap[tracex] = trl
 
     do_pws=False
     if cfg.Bool('shift_by_phase_pws') is True and do_pws is True:
@@ -1319,8 +1337,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     ################ Futtermann Attenuation for S-wave ########
 
-
-    if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+    apply_fut = False
+    if cfg.Bool('futterman_attenuation') is True and phase is 'S' and apply_fut is True:
         trs_orgs = []
         for ids,trace in enumerate(calcStreamMap.keys()):
                 tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
@@ -1366,10 +1384,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 qdat = num.real(num.fft.ifft((IDAT*Dwt)))
                 tr_org.ydata = qdat
                 trs_orgs.append(tr_org)
+
         for tracex in calcStreamMap.keys():
                 for trl in trs_orgs:
-                    obs_tr = obspy_compat.to_obspy_trace(trl)
-                    calcStreamMap[tracex] = obs_tr
+                    calcStreamMap[tracex] = trl
 
     ################ Array Response calcualtion and visualization ########
 
@@ -1479,25 +1497,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
         plt.show()
 
-    if sys.version_info.major >= 3:
-        for trace in sorted(calcStreamMap.keys()):
-            recordstarttime = calcStreamMap[trace].stats.starttime
-            d = calcStreamMap[trace].stats.starttime
-            d = d.timestamp
-
-            if calcStreamMap[trace].stats.npts < minSampleCount:
-                minSampleCount = calcStreamMap[trace].stats.npts
-    else:
-        for trace in calcStreamMap.keys():
-            recordstarttime = calcStreamMap[trace].stats.starttime
-            d = calcStreamMap[trace].stats.starttime
-            d = d.timestamp
-
-            if calcStreamMap[trace].stats.npts < minSampleCount:
-                minSampleCount = calcStreamMap[trace].stats.npts
-
-    traces = num.ndarray(shape=(len(calcStreamMap), minSampleCount),
-                         dtype=float)
+    traces = calcStreamMap
 
     if cfg.Int('dimz') != 0:
         traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.Int('dimz')),
@@ -1512,21 +1512,10 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     c = 0
     streamCounter = 0
-    if sys.version_info.major >= 3:
-        for key in sorted(calcStreamMap.keys()):
-
-            streamID = key
-            c2 = 0
-            for o in calcStreamMap[key]:
-                if c2 < minSampleCount:
-                    traces[c][c2] = o
-
-                    c2 += 1
-            for key in sorted(TTTGridMap.keys()):
-                if streamID == key:
-                    traveltimes[streamCounter] = TTTGridMap[key]
-                else:
-                    "NEIN", streamID, key
+    for streamID in sorted(calcStreamMap):
+        for key in sorted(TTTGridMap.keys()):
+            if streamID == key:
+                traveltimes[streamCounter] = TTTGridMap[key]
 
             if streamCounter not in traveltimes:
                 continue
@@ -1562,43 +1551,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             c += 1
             streamCounter += 1
 
-    else:
-        for key in calcStreamMap.keys():
-            streamID = key
-            c2 = 0
-
-            for o in calcStreamMap[key]:
-                if c2 < minSampleCount:
-                    traces[c][c2] = o
-
-                    c2 += 1
-
-
-            for key in TTTGridMap.keys():
-
-                if streamID == key:
-                    traveltimes[streamCounter] = TTTGridMap[key]
-                else:
-                    "NEIN", streamID, key
-
-            if not streamCounter in traveltimes :
-               continue
-
-            g = traveltimes[streamCounter]
-            dimZ = g.dimZ
-            mint = g.mint
-            gridElem = g.GridArray
-
-            for x in range(dimX):
-                for y in range(dimY):
-                    elem = gridElem[x, y]
-
-                    traveltime [c][x * dimY + y] = elem.tt
-                    latv [x * dimY + y] = elem.lat
-                    lonv [x * dimY + y] = elem.lon
-
-            c += 1
-            streamCounter += 1
 
 
     ################ CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ########
@@ -1691,7 +1643,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 # ==================================semblance calculation=======
 
     t1 = time.time()
-    traces = traces.reshape(1, nostat*minSampleCount)
     if cfg.Int('dimz') != 0:
         traveltimes = traveltime.reshape(1, nostat*dimX*dimY*cfg.Int('dimz'))
     else:
@@ -1746,7 +1697,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.keys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                tr_org = calcStreamMapshifted[trace]
                 trs_orgs.append(tr_org)
         winlen_emp = cfg.winlen_emp()
         step_emp = cfg.step_emp()

@@ -14,6 +14,7 @@ from pyrocko.marker import PhaseMarker
 from pyrocko import obspy_compat
 import math
 from scipy.signal import coherence
+from collections import OrderedDict
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -96,8 +97,8 @@ class MyThread(Thread):
 
 def toMatrix(npVector, nColumns):
 
-    t  = npVector.tolist()[0]
-    n  = nColumns
+    t = npVector.tolist()[0]
+    n = nColumns
     mat = []
 
     for i in range(int(len(t) / n)):
@@ -295,7 +296,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
                  bs_weights=None, flag_rpe=False):
-    obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
     if cfg.Bool('combine_all') is True:
@@ -318,11 +318,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         k = 0
         s_index = 0
         for tr in calcStreamMap:
-            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+            tr_org = calcStreamMap[tr][0]
             trs_orgs.append(tr_org)
 
         for tr in calcStreamMap:
-            tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+            tr_org = calcStreamMap[tr][0]
             datas = trs_orgs[0:s_index].ydata
             if k <= nstats[s_index]:
                 k = k+1
@@ -335,13 +335,12 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             stats_done = stats_done + nstats[k]
     trs_orgs = []
     for tr in sorted(calcStreamMap):
-        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        tr_org = calcStreamMap[tr]
         trs_orgs.append(tr_org)
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
     lonv = lonv_1.tolist()
-    from collections import OrderedDict
     index_begins = OrderedDict()
     index_steps = []
     index_window = []
@@ -389,8 +388,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     '''
     trs_orgs = []
     k = 0
+
     for tr in sorted(calcStreamMap):
-        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+
+        tr_org = calcStreamMap[tr]
         if combine is True:
             # some trickery to make all waveforms have same polarity, while still
             # considering constructive/destructive interferences. This is needed
@@ -491,7 +492,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 sembmaxX = latv[j]
                 sembmaxY = lonv[j]
             #backSemb[i][:] = backSemb[i][:]/num.max(backSemb[i][:])
-        output = False
+        output = True
         if output is True:
             Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                         str(sembmaxX) + ',' + str(sembmaxY))
@@ -1058,7 +1059,6 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts,nstats,
                  bs_weights=None, flag_rpe=True):
-    obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
     if cfg.Bool('combine_all') is True:
@@ -1074,7 +1074,7 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     index_mean_y = dimY/2
     j_mean = int((dimX * dimY)/2)
     for tr in sorted(calcStreamMap):
-        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
+        tr_org = calcStreamMap[tr]
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
         if combine is True:
             # some trickery to make all waveforms have same polarity, while still
