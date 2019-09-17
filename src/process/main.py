@@ -715,6 +715,30 @@ def processLoop(traces=None, stations=None, cluster=None):
                                              workdepth))
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                                     f.close()
+                                    if cfg.pyrocko_download() is True:
+
+                                        if cfg.Bool('correct_shifts_empirical_synthetic') is True:
+                                            Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                                    tw,
+                                                                                    evpath,
+                                                                                    ev)
+                                        elif cfg.quantity() == 'displacement':
+                                            Wd_emp = waveform.readWaveformsPyrocko_restituted(
+                                                FilterMeta, tw, evpath, ev_emp, desired)
+                                        else:
+                                            Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
+                                                                                   tw_emp,
+                                                                                   evpath_emp,
+                                                                                   ev_emp,
+                                                                                   desired)
+                                    elif cfg.colesseo_input() is True:
+                                        Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
+                                                                                 tw_emp,
+                                                                                 evpath_emp,
+                                                                                 ev_emp, C)
+                                    else:
+                                        Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
+                                                                        evpath_emp, ev_emp)
                                     flag_rpe = True
                                     nstats = stations_per_array
                                     if switch == 0:
@@ -722,7 +746,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     if switch == 1:
                                         switchs = "h1"
                                     arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wdf_emp, FilterMeta,
+                                        counter, Config, Wd_emp, FilterMeta,
                                         mint_emp, maxt_emp,
                                         TTTGridMap_emp, Folder, Origin_emp,
                                         ntimes_emp, switch, ev_emp,
