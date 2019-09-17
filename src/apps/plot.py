@@ -40,17 +40,27 @@ def load(filter, step=None):
             data_boot = None
             data_int_boot = None
             datamax = 0
+            phase = "P"
+            for argv in sys.argv:
+                if argv == "--phases:S":
+                    phase = "S"
+                if argv == "--phases:all":
+                    phase = ""
+                if argv == "--phases:P,S":
+                    phase = ""
+                if argv == "--phases:P":
+                    phase = "P"
 
             if step is None:
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                 except:
-                    pathlist = Path(rel).glob('%s-*.ASC' % filter)
+                    pathlist = Path(rel).glob('%s-*%s.ASC' % (filter,phase))
             else:
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                 except:
-                    pathlist = Path(rel).glob('%s-*00%s_*.ASC' % (filter, step))
+                    pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
@@ -64,12 +74,12 @@ def load(filter, step=None):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                     except:
-                        pathlist = Path(rel).glob('%s-*.ASC' % filter)
+                        pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
                 else:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
-                        pathlist = Path(rel).glob('%s-*00%s_*.ASC' % (filter, step))
+                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
                 data_int = num.zeros(num.shape(data[:, 2]))
                 for path in sorted(pathlist):
                         path_in_str = str(path)
@@ -88,12 +98,12 @@ def load(filter, step=None):
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
                             except:
-                                pathlist = Path(rel).glob('%s-*boot*.ASC' % filter)
+                                pathlist = Path(rel).glob('%s-*boot*%s.ASC' % (filter, phase))
                         else:
                             try:
                                 pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                             except:
-                                pathlist = Path(rel).glob('%s-*boot00%s_*.ASC' % (filter, step))
+                                pathlist = Path(rel).glob('%s-*boot00%s_*%s.ASC' % (filter, step, phase))
                         data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
@@ -859,7 +869,6 @@ def plot_integrated_movie():
                                 time=util.str_to_time(syn_in.time_0()),
                                 magnitude=syn_in.magnitude_0()))
                     for source in sources:
-                        print(source)
                         n, e = source.outline(cs='latlon').T
                         e, n = map(e,n)
 

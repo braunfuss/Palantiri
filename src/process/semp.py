@@ -14,6 +14,7 @@ from pyrocko.marker import PhaseMarker
 from pyrocko import obspy_compat
 import math
 from scipy.signal import coherence
+from collections import OrderedDict
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -96,8 +97,8 @@ class MyThread(Thread):
 
 def toMatrix(npVector, nColumns):
 
-    t  = npVector.tolist()[0]
-    n  = nColumns
+    t = npVector.tolist()[0]
+    n = nColumns
     mat = []
 
     for i in range(int(len(t) / n)):
@@ -340,7 +341,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
     lonv = lonv_1.tolist()
-    from collections import OrderedDict
     index_begins = OrderedDict()
     index_steps = []
     index_window = []
@@ -388,7 +388,9 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     '''
     trs_orgs = []
     k = 0
+
     for tr in sorted(calcStreamMap):
+
         tr_org = calcStreamMap[tr]
         if combine is True:
             # some trickery to make all waveforms have same polarity, while still
