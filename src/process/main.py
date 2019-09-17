@@ -229,7 +229,6 @@ def processLoop(traces=None, stations=None, cluster=None):
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
         refshift = 0
-
         SL = {}
         for i in xcorrnetworks:
             W = {}
@@ -592,7 +591,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                                 except Exception:
-                                    Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                    Wdf_emp = waveform.processdummyWaveforms(Wd_emp,
                                                                         Config,
                                                                         Folder,
                                                                         arrayname,
@@ -606,7 +605,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                             else:
-                                Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                Wdf_emp = waveform.processdummyWaveforms(Wd_emp,
                                                                     Config,
                                                                     Folder,
                                                                     arrayname,
@@ -615,6 +614,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                     switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                     if cfg.pyrocko_download() is True:
+
                         if cfg.quantity() == 'displacement':
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
@@ -631,6 +631,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                              evpath, ev, C)
                     else:
                         Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
+
                     if cfg.Bool('synthetic_test') is True\
                        or cfg.Bool('dynamic_filter') is True:
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
@@ -653,7 +654,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config,
+                                Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                                 Folder,
                                                                 arrayname,
                                                                 FilterMeta,
@@ -664,12 +665,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                         else:
-                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                            Wdf = waveform.processdummyWaveforms(Wd, Config, Folder,
                                                             arrayname,
                                                             FilterMeta,
                                                             ev, switch, W)
                         Wdfs.extend(Wdf)
-
                     C.writeStationFile(FilterMeta, Folder, counter)
                     Logfile.red('%d Streams added for Processing' % (len(Wd)))
 
@@ -752,11 +752,31 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 switchs = "l0"
                             if switch == 1:
                                 switchs = "h1"
+
+                            if cfg.pyrocko_download() is True:
+
+                                if cfg.quantity() == 'displacement':
+                                    Wd = waveform.readWaveformsPyrocko_restituted(
+                                        FilterMeta, tw, evpath, ev, desired)
+                                elif cfg.Bool('synthetic_test') is True:
+                                    Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                            tw, evpath,
+                                                                            ev)
+                                else:
+                                    Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
+                                                                       evpath, ev,
+                                                                       desired)
+                            elif cfg.colesseo_input() is True:
+                                Wd = waveform.readWaveforms_colesseo(FilterMeta, tw,
+                                                                     evpath, ev, C)
+                            else:
+                                Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
                             arraySemb, weight, array_center = sembCalc.doCalc(
-                                counter, Config, Wdf, FilterMeta, mintt, maxtt,
+                                counter, Config, Wd, FilterMeta, mintt, maxtt,
                                 TTTGridMap_mew, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts, phase,
-                                rpe+str(arrayname)+switchs, flag_rpe, len(FilterMeta))
+                                rpe+str(arrayname)+switchs, flag_rpe,
+                                len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -815,9 +835,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if switch == 0:
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
+                            switchs = "l0"
                         if switch == 1:
                             ff1 = filter.flo2()
                             ff2 = filter.fhi2()
+                            switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'],
                                               "fobjpickle_process_%s_%s%s_\
                                               combined" % (arrayname, ff1, ff2))
@@ -827,7 +849,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 Wdf = pickle.load(f)
                                 print('loaded wdf')
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config,
+                                Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                                 Folder,
                                                                 arrayname,
                                                                 FilterMetas,
@@ -837,7 +859,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 pickle.dump(Wdf, fobj_proc)
                                 print('dumped wdf')
                         else:
-                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                            Wdf = waveform.processdummyWaveforms(Wd, Config, Folder,
                                                             arrayname,
                                                             FilterMetas,
                                                             ev, switch, W)
@@ -846,6 +868,14 @@ def processLoop(traces=None, stations=None, cluster=None):
                     maxt = num.max(maxts)
                     nstats = stations_per_array
                     flag_rpe = False
+                    if switch == 0:
+                        ff1 = filter.flo()
+                        ff2 = filter.fhi()
+                        switchs = "l0"
+                    if switch == 1:
+                        ff1 = filter.flo2()
+                        ff2 = filter.fhi2()
+                        switchs = "h1"
                     if cfg.Bool('bootstrap_array_weights') is False:
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
