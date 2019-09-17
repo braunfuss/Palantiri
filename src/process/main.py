@@ -220,19 +220,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                 for j in range(0, len(FilterMeta)):
                     refshifts_global.append(triggerobject.tdiff)
 
-            if sys.version_info.major >= 3:
-                fobjrefshift = open(rp, 'wb')
-            else:
-                fobjrefshift = open(rp, 'w')
-            pickle.dump(RefDict, fobjrefshift)
-            fobjrefshift.close()
-
-            if sys.version_info.major >= 3:
-                output = open(ps, 'wb')
-            else:
-                output = open(ps, 'w')
-            pickle.dump(XDict, output)
-            output.close()
 
     else:
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
@@ -242,72 +229,17 @@ def processLoop(traces=None, stations=None, cluster=None):
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
         refshift = 0
-        if(os.path.isfile(rp) and os.path.getsize(rp) != 0
-           and os.path.isfile(ps) and os.path.getsize(ps) != 0):
-            Logfile.add('Temporay Memory file exits : ' + rp)
-            if sys.version_info.major >= 3:
-                f = open(rp, 'rb')
-            else:
-                f = open(rp)
-
-            RefDict = pickle.load(f)
-            if sys.version_info.major >= 3:
-                x = open(ps, 'rb')
-            else:
-                x = open(ps)
-            XDict = pickle.load(x)
-
-            for i in xcorrnetworks:
-                SL[i] = len(Config[j].split('|'))
-                network = cfg.String(i).split('|')
-                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
-                RefDict[i] = refshift
-
-                for j in range(0, len(FilterMeta)):
-                    refshifts_global.append(refshift)
-        else:
-            SL = {}
-            for i in xcorrnetworks:
-                W = {}
-                refshift = 0
-                network = cfg.String(i).split('|')
-                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
-                arrayfolder = os.path.join(Folder['semb'], i)
-
-                if os.access(arrayfolder, os.F_OK) is False:
-                    os.makedirs(arrayfolder)
-                if cfg.pyrocko_download() is True:
-                    # TODO check seperate xcoor nescessity
-                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
-                              arrayfolder)
-                else:
-                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
-                              arrayfolder)
-
-                print("run Xcorr")
-                phase = phases[0]
-                W, triggerobject = A.runXcorr_dummy(phase)
-
-                XDict[j] = W
-                RefDict[j] = refshift
-                SL[j] = len(network)
-                for j in range(0, len(FilterMeta)):
-                    refshifts_global.append(refshift)
-
-            if sys.version_info.major >= 3:
-                fobjrefshift = open(rp, 'wb')
-            else:
-                fobjrefshift = open(rp, 'w')
-            pickle.dump(RefDict, fobjrefshift)
-            fobjrefshift.close()
-
-            if sys.version_info.major >= 3:
-                output = open(ps, 'wb')
-            else:
-                output = open(ps, 'w')
-            pickle.dump(XDict, output)
-            output.close()
-
+        SL = {}
+        for i in xcorrnetworks:
+            W = {}
+            network = cfg.String(i).split('|')
+            FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+            arrayfolder = os.path.join(Folder['semb'], i)
+            XDict[i] = FilterMeta
+            RefDict[i] = refshift
+            SL[i] = len(network)
+            for j in range(0, len(FilterMeta)):
+                refshifts_global.append(refshift)
     if sys.version_info.major >= 3:
         for j in sorted(XDict.keys()):
             Logfile.red('Array %s has %3d of %3d Stations left' %
@@ -428,7 +360,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                     network = Config[i].split('|')
 
                     Logfile.add('network: ' + str(network))
-
                     FilterMeta = ttt.filterStations(Meta, Config, Origin,
                                                     network)
 
@@ -438,8 +369,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if cfg.correct_shifts() is False:
                             refshift = refshift*0.
                         refshifts.append(refshift)
-
-                    FilterMeta = cmpFilterMetavsXCORR(W, FilterMeta)
 
                     Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
                                 %s \n' % (Config['dimx'], Config['dimy'],
@@ -662,7 +591,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                                 except Exception:
-                                    Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                    Wdf_emp = waveform.processdummyWaveforms(Wd_emp,
                                                                         Config,
                                                                         Folder,
                                                                         arrayname,
@@ -676,7 +605,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                             else:
-                                Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                Wdf_emp = waveform.processdummyWaveforms(Wd_emp,
                                                                     Config,
                                                                     Folder,
                                                                     arrayname,
@@ -685,6 +614,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                     switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                     if cfg.pyrocko_download() is True:
+
                         if cfg.quantity() == 'displacement':
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
@@ -701,6 +631,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                              evpath, ev, C)
                     else:
                         Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
+
                     if cfg.Bool('synthetic_test') is True\
                        or cfg.Bool('dynamic_filter') is True:
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
@@ -723,7 +654,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config,
+                                Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                                 Folder,
                                                                 arrayname,
                                                                 FilterMeta,
@@ -734,12 +665,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                         else:
-                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                            Wdf = waveform.processdummyWaveforms(Wd, Config, Folder,
                                                             arrayname,
                                                             FilterMeta,
                                                             ev, switch, W)
                         Wdfs.extend(Wdf)
-
                     C.writeStationFile(FilterMeta, Folder, counter)
                     Logfile.red('%d Streams added for Processing' % (len(Wd)))
 
@@ -785,6 +715,30 @@ def processLoop(traces=None, stations=None, cluster=None):
                                              workdepth))
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                                     f.close()
+                                    if cfg.pyrocko_download() is True:
+
+                                        if cfg.Bool('correct_shifts_empirical_synthetic') is True:
+                                            Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                                    tw,
+                                                                                    evpath,
+                                                                                    ev)
+                                        elif cfg.quantity() == 'displacement':
+                                            Wd_emp = waveform.readWaveformsPyrocko_restituted(
+                                                FilterMeta, tw, evpath, ev_emp, desired)
+                                        else:
+                                            Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
+                                                                                   tw_emp,
+                                                                                   evpath_emp,
+                                                                                   ev_emp,
+                                                                                   desired)
+                                    elif cfg.colesseo_input() is True:
+                                        Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
+                                                                                 tw_emp,
+                                                                                 evpath_emp,
+                                                                                 ev_emp, C)
+                                    else:
+                                        Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
+                                                                        evpath_emp, ev_emp)
                                     flag_rpe = True
                                     nstats = stations_per_array
                                     if switch == 0:
@@ -792,7 +746,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     if switch == 1:
                                         switchs = "h1"
                                     arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wdf_emp, FilterMeta,
+                                        counter, Config, Wd_emp, FilterMeta,
                                         mint_emp, maxt_emp,
                                         TTTGridMap_emp, Folder, Origin_emp,
                                         ntimes_emp, switch, ev_emp,
@@ -822,11 +776,31 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 switchs = "l0"
                             if switch == 1:
                                 switchs = "h1"
+
+                            if cfg.pyrocko_download() is True:
+
+                                if cfg.quantity() == 'displacement':
+                                    Wd = waveform.readWaveformsPyrocko_restituted(
+                                        FilterMeta, tw, evpath, ev, desired)
+                                elif cfg.Bool('synthetic_test') is True:
+                                    Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                            tw, evpath,
+                                                                            ev)
+                                else:
+                                    Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
+                                                                       evpath, ev,
+                                                                       desired)
+                            elif cfg.colesseo_input() is True:
+                                Wd = waveform.readWaveforms_colesseo(FilterMeta, tw,
+                                                                     evpath, ev, C)
+                            else:
+                                Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
                             arraySemb, weight, array_center = sembCalc.doCalc(
-                                counter, Config, Wdf, FilterMeta, mintt, maxtt,
+                                counter, Config, Wd, FilterMeta, mintt, maxtt,
                                 TTTGridMap_mew, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts, phase,
-                                rpe+str(arrayname)+switchs, flag_rpe, len(FilterMeta))
+                                rpe+str(arrayname)+switchs, flag_rpe,
+                                len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -885,9 +859,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if switch == 0:
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
+                            switchs = "l0"
                         if switch == 1:
                             ff1 = filter.flo2()
                             ff2 = filter.fhi2()
+                            switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'],
                                               "fobjpickle_process_%s_%s%s_\
                                               combined" % (arrayname, ff1, ff2))
@@ -897,7 +873,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 Wdf = pickle.load(f)
                                 print('loaded wdf')
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config,
+                                Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                                 Folder,
                                                                 arrayname,
                                                                 FilterMetas,
@@ -907,7 +883,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 pickle.dump(Wdf, fobj_proc)
                                 print('dumped wdf')
                         else:
-                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                            Wdf = waveform.processdummyWaveforms(Wd, Config, Folder,
                                                             arrayname,
                                                             FilterMetas,
                                                             ev, switch, W)
@@ -916,6 +892,14 @@ def processLoop(traces=None, stations=None, cluster=None):
                     maxt = num.max(maxts)
                     nstats = stations_per_array
                     flag_rpe = False
+                    if switch == 0:
+                        ff1 = filter.flo()
+                        ff2 = filter.fhi()
+                        switchs = "l0"
+                    if switch == 1:
+                        ff1 = filter.flo2()
+                        ff2 = filter.fhi2()
+                        switchs = "h1"
                     if cfg.Bool('bootstrap_array_weights') is False:
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
