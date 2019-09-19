@@ -555,7 +555,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     #                latv[j] = latv[j]#+diff_center_lat
     #                lonv[j] = lonv[j]#+diff_center_lon
 
-        if cfg.Bool('futterman_attenuation') is True:
+        if cfg.Bool('futterman_attenuation') is True and phase is 'S':
             s_futterman_shifts = []
             sembmax = 0
             for a, i in enumerate(tmp_boot):
@@ -599,24 +599,48 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]
-                    if cfg.Bool('futterman_attenuation') is True:
+                    if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+                        fobj.write('%.2f %.2f %.20f\n' % (x, y, 0))
+
                         x = x+dist_x
                         y = y+dist_y
+
                     if cfg.Bool('norm_all') is True:
                         semb = i[j]/norm
                     else:
                         semb = i[j]
-                    fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
                     if semb_prior[j] <= semb:
                         semb_prior[j] = i[j]
                         times_cum[j] = a
                         times_max[j] = a*i[j]
+
+
                     if semb > sembmax:
                         sembmax = semb
+
+                            # delta_min = None
+                            # for js in range(num.shape(latv)[0]):
+                            #     xs = latv[js]
+                            #     ys = lonv[js]
+                            #     delta = orthodrome.distance_accurate50m_numpy(xs, ys, x_shift,
+                            #                                               y_shift)
+                            #
+                            #     if delta_min is None:
+                            #         delta_min = delta
+                            #         x_use = xs
+                            #         y_use = ys
+                            #     if delta < delta_min:
+                            #         delta_min = delta
+                            #         x_use = xs
+                            #         y_use = ys
+                            # x = x_use
+                            # y = y_use
                         sembmaxX = x
                         sembmaxY = y
+
                         if times_min[j] == 0:
                             times_min[j] = a
+                    fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
 
                 delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
                                                               origin.lon)
@@ -710,24 +734,49 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         for j in range(num.shape(latv)[0]):
             x = latv[j]
             y = lonv[j]
-            if cfg.Bool('futterman_attenuation') is True:
+
+            if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+                fobj.write('%.2f %.2f %.20f\n' % (x, y, 0))
                 x = x+dist_x
                 y = y+dist_y
             if cfg.Bool('norm_all') is True:
                 semb = i[j]/norm
             else:
                 semb = i[j]
-            fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
             if semb_prior[j] <= semb:
                 semb_prior[j] = i[j]
                 times_cum[j] = a
                 times_max[j] = a*i[j]
+
+
             if semb > sembmax:
                 sembmax = semb
+
+
+                    # delta_min = None
+                    # for js in range(num.shape(latv)[0]):
+                    #     xs = latv[js]
+                    #     ys = lonv[js]
+                    #     delta = orthodrome.distance_accurate50m_numpy(xs, ys, x_shift,
+                    #                                               y_shift)
+                    #
+                    #     if delta_min is None:
+                    #         delta_min = delta
+                    #         x_use = xs
+                    #         y_use = ys
+                    #     if delta < delta_min:
+                    #         delta_min = delta
+                    #         x_use = xs
+                    #         y_use = ys
+                    # x = x_use
+                    # y = y_use
+
                 sembmaxX = x
                 sembmaxY = y
+
                 if times_min[j] == 0:
                     times_min[j] = a
+            fobj.write('%.2f %.2f %.20f\n' % (x, y, semb))
 
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
                                                       origin.lon)
@@ -1183,9 +1232,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 nsl = s.nsl()
                 nsl_to_station[nsl] = s
             for nsl, s in nsl_to_station.items():
-                io.save(synthetic_traces, '/tmp/synthetic_traces.mseed')
+                io.save(synthetic_traces, '/tmp/synthetic_traces_%s.mseed' % str(nsl)[3])
 
-                p = pile.make_pile('/tmp/synthetic_traces.mseed', show_progress=False)
+                p = pile.make_pile('/tmp/synthetic_traces_%s.mseed' % str(nsl)[3], show_progress=False)
                 trss = []
                 for [nsl, s] in nsl_to_station.items():
                     s.channels = []

@@ -383,21 +383,37 @@ def processLoop(traces=None, stations=None, cluster=None):
                     maxt = []
                     ttt_model = cfg.Str('traveltime_model')
                     try:
-                        px = os.path.abspath(os.path.join(os.getcwd(),
-                                             os.pardir))
-                        pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                        try:
+                            px = os.path.abspath(os.path.join(os.getcwd(),
+                                                 os.pardir))
+                            pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                      % (phase, ttt_model, ev.time, arrayname,
+                                         workdepth))
+                            px_path = px+pdx
+                            f = open(px_path, 'rb')
+
+                            print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
                                   % (phase, ttt_model, ev.time, arrayname,
                                      workdepth))
-                        px_path = px+pdx
-                        f = open(px_path, 'rb')
+                            TTTGridMap, mint, maxt = pickle.load(f)
+                            f.close()
+                            print("loading of travel time grid sucessful")
 
-                        print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
-                              % (phase, ttt_model, ev.time, arrayname,
-                                 workdepth))
-                        TTTGridMap, mint, maxt = pickle.load(f)
-                        f.close()
+                        except:
+                            px = os.path.abspath(os.path.join(os.getcwd(),
+                                                 os.pardir))
+                            pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                      % (phase, ttt_model, ev.time, arrayname,
+                                         workdepth))
+                            px_path = px+pdx
+                            f = open(px_path, 'rb')
 
-                        print("loading of travel time grid sucessful")
+                            print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
+                                  % (phase, ttt_model, ev.time, arrayname,
+                                     workdepth))
+                            TTTGridMap, mint, maxt = pickle.load(f)
+                            f.close()
+                            print("loading of travel time grid sucessful")
                     except Exception:
                         print("loading of travel time grid unsucessful,\n \
                               will now calculate the grid:")
@@ -795,12 +811,31 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                      evpath, ev, C)
                             else:
                                 Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
-                            arraySemb, weight, array_center = sembCalc.doCalc(
-                                counter, Config, Wd, FilterMeta, mintt, maxtt,
-                                TTTGridMap_mew, Folder, Origin, ntimes, switch,
-                                ev, arrayfolder, syn_in, refshifts, phase,
-                                rpe+str(arrayname)+switchs, flag_rpe,
-                                len(FilterMeta))
+
+                            try:
+                                f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                         % (phase, ttt_model, ev.time, arrayname,
+                                            workdepth), 'rb')
+                                TTTGridMap, mint, maxt = pickle.load(f)
+                                f.close()
+                                arraySemb, weight, array_center = sembCalc.doCalc(
+                                    counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                    TTTGridMap, Folder, Origin, ntimes, switch,
+                                    ev, arrayfolder, syn_in, refshifts, phase,
+                                    rpe+str(arrayname)+switchs, flag_rpe,
+                                    len(FilterMeta))
+                            except:
+                                f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                         % (phase, ttt_model, ev.time, arrayname,
+                                            workdepth), 'rb')
+                                TTTGridMap, mint, maxt = pickle.load(f)
+                                f.close()
+                                arraySemb, weight, array_center = sembCalc.doCalc(
+                                    counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                    TTTGridMap, Folder, Origin, ntimes, switch,
+                                    ev, arrayfolder, syn_in, refshifts, phase,
+                                    rpe+str(arrayname)+switchs, flag_rpe,
+                                    len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)

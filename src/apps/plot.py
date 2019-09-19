@@ -50,7 +50,6 @@ def load(filter, step=None):
                     phase = ""
                 if argv == "--phases:P":
                     phase = "P"
-
             if step is None:
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
@@ -123,12 +122,12 @@ def load(filter, step=None):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                     except:
-                        pathlist = Path(rel).glob('%s-*.ASC' % filter)
+                        pathlist = Path(rel).glob('%s*-%s*.ASC' % (filter,phase))
                 else:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
-                        pathlist = Path(rel).glob('%s-*00%s_*.ASC' % (filter, step))
+                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
                 data_int = num.zeros(num.shape(data[:, 2]))
                 for path in sorted(pathlist):
                         path_in_str = str(path)
@@ -388,6 +387,101 @@ def distance_time():
         plt.show()
 
 
+def distance_time_bootstrap():
+
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    evpath = 'events/'+ str(sys.argv[1])
+
+    C  = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    step = cfg.UInt('step')
+    step2 = cfg.UInt('step_f2')
+    winlen = cfg.UInt('winlen')
+    winlen2= cfg.UInt('winlen_f2')
+
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+    pathlist = Path(rel).glob('0-*.ASC')
+    maxs = 0.
+    if sys.argv[3] == 'combined':
+
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                max = np.max(data[:, 2])
+                if maxs < max:
+                    maxs = max
+                    datamax = np.max(data[:, 2])
+
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                for i in range(0, len(data[:, 2])):
+                    if data[i, 2] > datamax*0.9:
+                        lats = data[i, 1]
+                        lons = data[i, 0]
+                        datas.append(data[i, 2])
+                        dist = orthodrome.distance_accurate50m(lats, lons,
+                                                               lat_ev,
+                                                               lon_ev)
+                        azis.append(toAzimuth(lat_ev, lon_ev,
+                                              lats, lons))
+                        distances.append(dist)
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+    if sys.argv[3] == 'stepwise':
+        datamax = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                max = np.max(data[:, 2])
+                datamax.append(np.max(data[:, 2]))
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        k = 0
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                for i in range(0, len(data[:, 2])):
+                    if data[i, 2] == datamax[k]:
+                        lats = data[i, 1]
+                        lons = data[i, 0]
+                        datas.append(data[i, 2])
+                        dist = orthodrome.distance_accurate50m(lats, lons,
+                                                               lat_ev,
+                                                               lon_ev)
+                        azis.append(toAzimuth(lat_ev, lon_ev,
+                                              lats, lons))
+                        distances.append(dist)
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+                k = k+1
+        plt.figure()
+        plt.scatter(distances, times, s=datas*10)
+        plt.show()
+
+
 def plot_cluster():
 
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
@@ -433,6 +527,90 @@ def plot_cluster():
         x, y = map(lons,lats)
 
         map.scatter(x,y,30,marker='o',c=next(colors))
+        try:
+            plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
+        except:
+            plt.text(x,y,'r'+str(data[0])[0:2], fontsize=12)
+            pass
+        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
+        x,y=map(lon_0,lat_0)
+        degree_sign= u'\N{DEGREE SIGN}'
+        x2,y2 = map(lon_0,lat_0-20)
+        plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
+        circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+        ax.add_patch(circle1)
+        x,y=map(lon_0,lat_0)
+        x2,y2 = map(lon_0,lat_0-60)
+        plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
+        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+        ax.add_patch(circle2)
+        x,y=map(lon_0,lat_0)
+        x2,y2 = map(lon_0,lat_0-90)
+        plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
+        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+        ax.add_patch(circle2)
+        x,y=map(lon_0,lat_0)
+        x2,y2 = map(lon_0,lat_0-94)
+        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+        ax.add_patch(circle2)
+        x,y=map(lon_0,lat_0)
+        x2,y2 = map(lon_0,lat_0-22)
+        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+        ax.add_patch(circle2)
+    plt.show()
+
+
+
+def plot_timeshift_map():
+
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+
+    stations = []
+    refs = []
+    pathlist = Path(rel).glob('*.shift*')
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+            if path_in_str[-1] != "s":
+                f = open(path_in_str, 'rb')
+                refshifts = pickle.load(f)
+                f.close()
+                for s in refshifts.values():
+                    refs.append(s)
+            else:
+                f = open(path_in_str, 'rb')
+                refshifts_stations = pickle.load(f)
+                f.close()
+                for s in refshifts_stations.values():
+                    stations.append(s)
+    map = Basemap(width=21000000,height=21000000,
+                resolution='l',projection='aeqd',\
+                lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
+    map.fillcontinents(zorder=-1)
+    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
+    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=900030)
+    ax.add_collection(beach1)
+    pathlist = Path(rel).glob('*.dat')
+    i=0
+
+    for st, ref in zip(stations, refs):
+
+
+        x, y = map(st.lon,st.lat)
+
+        map.scatter(x,y,30,marker='o',c=ref)
         try:
             plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
         except:
@@ -979,12 +1157,9 @@ def plot_integrated():
     else:
             data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-            try:
-                if sys.argv[4] == 'boot':
-                    boot = True
-            except:
-                boot = False
-
+            boot = False
+            if sys.argv[4] == 'boot':
+                boot = True
             evpath = 'events/'+ str(sys.argv[1])
             C  = config.Config(evpath)
             Config = C.parseConfig('config')
@@ -2323,3 +2498,5 @@ def main():
             plot_integrated_movie()
         elif sys.argv[2] == 'timeshifts':
             empiricial_timeshifts()
+        elif sys.argv[2] == 'distance_time_bootstrap':
+            distance_time_bootstrap()
