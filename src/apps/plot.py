@@ -1158,8 +1158,11 @@ def plot_integrated():
             data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             boot = False
-            if sys.argv[4] == 'boot':
-                boot = True
+            try:
+                if sys.argv[4] == 'boot':
+                    boot = True
+            except:
+                pass
             evpath = 'events/'+ str(sys.argv[1])
             C  = config.Config(evpath)
             Config = C.parseConfig('config')
