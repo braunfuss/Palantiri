@@ -376,7 +376,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             index_steps.append(iend_step-iend)
 
             index_window.append(iend-ibeg)
-        trld.snuffle(trs_orgs, markers=markers)
+    #    trld.snuffle(trs_orgs, markers=markers)
 
 
     '''
