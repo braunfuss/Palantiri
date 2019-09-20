@@ -471,8 +471,8 @@ def processLoop(traces=None, stations=None, cluster=None):
 
                     if cfg.Bool('correct_shifts_empirical') is True:
                         TTTGridMap_emp = []
-                        FilterMeta = ttt.filterStations(Meta, Config, Origin,
-                                                        network)
+                    #    FilterMeta = ttt.filterStations(Meta, Config, Origin,
+                    #                                    network)
                         Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
                                     %s \n' % (Config['dimx_emp'],
                                               Config['dimy_emp'],
@@ -761,6 +761,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         switchs = "l0"
                                     if switch == 1:
                                         switchs = "h1"
+
                                     arraySemb, weight, array_center = sembCalc.doCalc(
                                         counter, Config, Wd_emp, FilterMeta,
                                         mint_emp, maxt_emp,
@@ -775,7 +776,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         f = open(rpe+str(arrayname)+switchs)
                                     RefDict_empirical = pickle.load(f)
                                     refshifts = RefDict_empirical
-                                    for j in range(0, len(FilterMeta)):
+
+                                    for j in range(0, len(Wd_emp)):
                                         if cfg.correct_shifts() is False:
                                             refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
@@ -859,7 +861,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                     t2 = time.time()
                     Logfile.add('CALC took %0.3f sec' % (t2-t1))
                     counter += 1
-                    stations_per_array.append(len(FilterMeta))
+                    stations_per_array.append(len(Wd))
                     TTTgrids.update(TTTGridMap)
                     mints.append(mint)
                     maxts.append(maxt)

@@ -344,18 +344,16 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     index_begins = OrderedDict()
     index_steps = []
     index_window = []
-    print(num.shape(traveltime), nostat)
     for j in range(dimX * dimY):
         markers = []
 
         for k in range(nostat):
             relstart = traveltime[k][j]
             tr = trs_orgs[k]
-
             try:
                 tmin = time+relstart-mint+refshifts[k]
                 tmax = time+relstart-mint+nsamp+refshifts[k]
-            except IndexError:
+            except:
                 tmin = time+relstart-mint
                 tmax = time+relstart-mint+nsamp
 
@@ -364,6 +362,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     #                        phasename='P',
     #                        nslc_ids=(tr.nslc_id,))
 #            markers.append(m)
+
             ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
             index_begins[str(j)+str(k)]= [ibeg, tmin]
 
@@ -377,7 +376,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             index_steps.append(iend_step-iend)
 
             index_window.append(iend-ibeg)
-            #trld.snuffle(trs_orgs, markers=markers)
+        trld.snuffle(trs_orgs, markers=markers)
 
 
     '''

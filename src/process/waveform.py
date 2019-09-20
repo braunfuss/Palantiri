@@ -82,7 +82,6 @@ def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
                 if (tr_name == str(il) and tr.channel[-1] == desired) or (tr_name == str(il)[:-3] and tr.channel[-1] == desired):
 
                     Wdict[il.getName()] = tr
-
     return Wdict
 
 

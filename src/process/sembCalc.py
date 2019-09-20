@@ -1757,6 +1757,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         nsamp = int(winlen_emp)
         nstep = float(step_emp)
         Gmint = cfg.Int('forerun_emp')
+        nostat = len(trs_orgs)
+
         shifts = solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX,
                                   dimY, Gmint, new_frequence, minSampleCount,
                                   latv, lonv, traveltimes, traces,
@@ -1764,7 +1766,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                   refshifts, cfg)
 
         RefDict = OrderedDict()
-        for j in range(0, len(trs_orgs)):
+        for j in range(0, nostat):
             if len(shifts) == 1:
                 RefDict[j] = shifts[0]
             else:
