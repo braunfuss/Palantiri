@@ -46,6 +46,7 @@ setup(
             'palantiri_cluster = palantiri.cluster.callcluster:main',
             'palantiri_create = palantiri.tools.create:main',
             'palantiri_process = palantiri.process.main:main',
+            'palantiri_init = palantiri.tools.palantiri_init:main',
 
         ]
     },
@@ -54,6 +55,7 @@ setup(
     package_data={
         'palantiri': [
             'data/*nd',
+            'skeleton/global.conf',
             'skeleton/example.config']},
     data_files=[],
 
