@@ -1324,9 +1324,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         shifts, ccs = align_traces(list_tr, 10, master=False)
         for shift in shifts:
             for trace in calcStreamMapshifted.keys():
-                    tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                    tr_org = calcStreamMapshifted[trace]
                     tr_org.shift(shift)
-                    shifted = obspy_compat.to_obspy_trace(tr_org)
+                    shifted = tr_org
                     calcStreamMapshifted[trace] = shifted
         calcStreamMap = calcStreamMapshifted
 
@@ -1338,7 +1338,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.keys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                tr_org = calcStreamMapshifted[trace]
                 trs_orgs.append(tr_org)
 
         timing = CakeTiming(
@@ -1361,10 +1361,9 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                         mod = trl
                         recordstarttime = calcStreamMapshifted[tracex].stats.starttime.timestamp
                         recordendtime = calcStreamMapshifted[tracex].stats.endtime.timestamp
-                        tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[tracex])
+                        tr_org = calcStreamMapshifted[tracex]
                         tr_org_add = mod.chop(recordstarttime, recordendtime, inplace=False)
-                        shifted_obs_tr = obspy_compat.to_obspy_trace(tr_org_add)
-                        calcStreamMapshifted[tracex] = shifted_obs_tr
+                        calcStreamMapshifted[tracex] = tr_org_add
         calcStreamMap = calcStreamMapshifted
 
     weight = 1.
@@ -1375,7 +1374,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.keys():
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMapshifted[trace])
+                tr_org = calcStreamMapshifted[trace]
                 trs_orgs.append(tr_org)
 
         timing = CakeTiming(
@@ -1405,7 +1404,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     if cfg.Bool('futterman_attenuation') is True and phase is 'S' and apply_fut is True:
         trs_orgs = []
         for ids,trace in enumerate(calcStreamMap.keys()):
-                tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[trace])
+                tr_org = calcStreamMap[trace]
                 mod = cake.load_model(crust2_profile=(ev.lat, ev.lon))
                 timing = CakeTiming(
                    phase_selection='first(S)',
@@ -1453,6 +1452,61 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                 for trl in trs_orgs:
                     calcStreamMap[tracex] = trl
 
+    traces = calcStreamMap
+
+    if cfg.Int('dimz') != 0:
+        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.Int('dimz')),
+                                 dtype=float)
+    else:
+
+        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY),
+                                 dtype=float)
+
+    latv = num.ndarray(dimX*dimY, dtype=float)
+    lonv = num.ndarray(dimX*dimY, dtype=float)
+
+    c = 0
+    streamCounter = 0
+    for streamID in sorted(calcStreamMap):
+        for key in sorted(TTTGridMap.keys()):
+            if streamID == key:
+                traveltimes[streamCounter] = TTTGridMap[key]
+
+            if streamCounter not in traveltimes:
+                continue
+
+            g = traveltimes[streamCounter]
+            dimZ = g.dimZ
+            mint = g.mint
+            gridElem = g.GridArray
+
+            if cfg.Int('dimz') != 0:
+                orig_depth = float(Origin['depth'])
+                start, stop, step_depth = cfg.String('depths').split(',')
+                start = orig_depth+float(start)
+                stop = orig_depth+float(stop)
+                depths = num.linspace(start, stop, num=cfg.Int('dimz'))
+                for x in range(dimX):
+                    for y in range(dimY):
+                        depth_counter = 0
+                        for z in depths:
+                            elem = gridElem[x, y, z]
+                            #z here false index, must be integer
+                            traveltime[c][x * dimY + y + depth_counter] = elem.tt
+                            latv[x * dimY + y] = elem.lat
+                            lonv[x * dimY + y] = elem.lon
+                            depth_counter =+ 1
+            else:
+                for x in range(dimX):
+                    for y in range(dimY):
+                        elem = gridElem[x, y]
+                        traveltime[c][x * dimY + y] = elem.tt
+                        latv[x * dimY + y] = elem.lat
+                        lonv[x * dimY + y] = elem.lon
+            c += 1
+            streamCounter += 1
+
+
     ################ Array Response calcualtion and visualization ########
 
     if cfg.Bool('array_response') is True:
@@ -1483,20 +1537,22 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         coords = []
         for trs in calcStreamMap.keys():
             tr = calcStreamMap[trs]
-            tmins.append(tr.tmin)
             if switch == 0:
                 frqlow = cfg_f.flo()
                 frqhigh = cfg_f.fhi()
             else:
-                f1 = str('cfg_f.flo%s()'%switch+1)
+                f1 = str('cfg_f.flo%s()'% str(switch+1))
                 frqlow = eval(f1)
-                f2 = str('cfg_f.fhi%s()'%switch+1)
+                f2 = str('cfg_f.fhi%s()'% str(switch+1))
                 frqhigh = eval(f2)
 
             tr.bandpass(4, frqlow, frqhigh)
             trace = obspy_compat.to_obspy_trace(tr)
             center_lats = []
             center_lons = []
+            traveltimes_arr = traveltime.reshape(1,nostat*dimX*dimY)
+            tmin = num.min(traveltimes_arr)
+
             for il in FilterMetaData:
                 center_lats.append(float(il.lat))
                 center_lons.append(float(il.lon))
@@ -1512,9 +1568,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     coords.append([float(il.lon), float(il.lat), float(il.ele)])
 
                     stream_arr.append(trace)
-        tmin = num.max(tmins)
-        forerun_r = util.time_to_str(tmin)
-        duration_r = util.time_to_str(tmin+150)
+        forerun_r = util.time_to_str(util.str_to_time(Origin['time'])+tmin+5)
+        duration_r = util.time_to_str(util.str_to_time(Origin['time'])+tmin+duration+forerun+5)
 
         stime = UTCDateTime(forerun_r)
         etime = UTCDateTime(duration_r)
@@ -1586,17 +1641,16 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         from obspy.signal.array_analysis import array_transff_wavenumber
 
         # set limits for wavenumber differences to analyze
-        klim = 40.
+        klim = 0.4
         kxmin = -klim
         kxmax = klim
         kymin = -klim
         kymax = klim
-        kstep = klim / 100.
+        kstep = klim / 10.
 
         # compute transfer function as a function of wavenumber difference
         transff = array_transff_wavenumber(stream_arr, klim, kstep, coordsys='lonlat')
 
-        # plot
         plt.pcolor(num.arange(kxmin, kxmax + kstep * 1.1, kstep) - kstep / 2.,
                    num.arange(kymin, kymax + kstep * 1.1, kstep) - kstep / 2.,
                    transff.T, cmap=obspy_sequential)
@@ -1606,62 +1660,6 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         plt.xlim(kxmin, kxmax)
         plt.ylim(kymin, kymax)
         plt.show()
-
-    traces = calcStreamMap
-
-    if cfg.Int('dimz') != 0:
-        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.Int('dimz')),
-                                 dtype=float)
-    else:
-
-        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY),
-                                 dtype=float)
-
-    latv = num.ndarray(dimX*dimY, dtype=float)
-    lonv = num.ndarray(dimX*dimY, dtype=float)
-
-    c = 0
-    streamCounter = 0
-    for streamID in sorted(calcStreamMap):
-        for key in sorted(TTTGridMap.keys()):
-            if streamID == key:
-                traveltimes[streamCounter] = TTTGridMap[key]
-
-            if streamCounter not in traveltimes:
-                continue
-
-            g = traveltimes[streamCounter]
-            dimZ = g.dimZ
-            mint = g.mint
-            gridElem = g.GridArray
-
-            if cfg.Int('dimz') != 0:
-                orig_depth = float(Origin['depth'])
-                start, stop, step_depth = cfg.String('depths').split(',')
-                start = orig_depth+float(start)
-                stop = orig_depth+float(stop)
-                depths = num.linspace(start, stop, num=cfg.Int('dimz'))
-                for x in range(dimX):
-                    for y in range(dimY):
-                        depth_counter = 0
-                        for z in depths:
-                            elem = gridElem[x, y, z]
-                            #z here false index, must be integer
-                            traveltime[c][x * dimY + y + depth_counter] = elem.tt
-                            latv[x * dimY + y] = elem.lat
-                            lonv[x * dimY + y] = elem.lon
-                            depth_counter =+ 1
-            else:
-                for x in range(dimX):
-                    for y in range(dimY):
-                        elem = gridElem[x, y]
-                        traveltime[c][x * dimY + y] = elem.tt
-                        latv[x * dimY + y] = elem.lat
-                        lonv[x * dimY + y] = elem.lon
-            c += 1
-            streamCounter += 1
-
-
 
     ################ CALCULATE PARAMETER FOR SEMBLANCE CALCULATION ########
     nsamp = winlen * new_frequence
