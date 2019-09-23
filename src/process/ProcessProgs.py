@@ -16,7 +16,7 @@ class Intern(object):
     def error(self, text):
         print('\nError: ' + text + '\n')
         print('Usage: ' + Usage())
-        sys.exit('\n*** Program aborted ***')
+        sys.exit('\n*** Gandalf made Pippin drop the Palantiri by ***')
 
     def checkProgramParameter(self, nMinParams, nMaxParams):
 

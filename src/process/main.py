@@ -16,7 +16,7 @@ from palantiri.tools.config import Event
 from palantiri.process import ttt, sembCalc, waveform, times, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
 from pyrocko import util, io
-
+import subprocess
 import numpy as num
 if sys.version_info.major >= 3:
     import _pickle as pickle
@@ -34,7 +34,6 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 evpath = None
-
 
 def initModule():
 
@@ -595,9 +594,13 @@ def processLoop(traces=None, stations=None, cluster=None):
                             if switch == 0:
                                 ff1 = filter.flo()
                                 ff2 = filter.fhi()
-                            if switch == 1:
-                                ff1 = filter.flo2()
-                                ff2 = filter.fhi2()
+                                switchs = "l0"
+                            else:
+                                f1 = str('ff1 = filter.flo%s()'%filterindex+1)
+                                ff1 = eval(f1)
+                                f2 = str('ff2 = filter.fhi%s()'%filterindex+1)
+                                ff2 = eval(f2)
+                                switchs = "h1"
                             ps_wdf_emp = os.path.join(Folder['semb'],
                                                       "fobjpickle_process_emp\
                                                       _%s_%s%s"
@@ -660,9 +663,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
                             switchs = "l0"
-                        if switch == 1:
-                            ff1 = filter.flo2()
-                            ff2 = filter.fhi2()
+                        else:
+                            f1 = str('filter.flo%s()'% str(filterindex+1))
+                            ff1 = eval(f1)
+                            f2 = str('filter.fhi%s()'% str(filterindex+1))
+                            ff2 = eval(f2)
                             switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" % (arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
@@ -696,10 +701,13 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 workdepth), 'rb')
                     TTTGridMap, mint, maxt = pickle.load(f)
                     f.close()
+
                     if switch == 0:
                         step = cfg.step()
-                    if switch == 1:
-                        step = cfg.step_f2()
+                    else:
+                        s1 = str('cfg.step_f%s()')% str(filterindex+1)
+                        step = eval(s1)
+
                     if cfg.UInt('forerun') > 0:
                         ntimes = int((cfg.UInt('forerun') +
                                       cfg.UInt('duration')) / step)
@@ -759,7 +767,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     nstats = stations_per_array
                                     if switch == 0:
                                         switchs = "l0"
-                                    if switch == 1:
+                                    else:
                                         switchs = "h1"
 
                                     arraySemb, weight, array_center = sembCalc.doCalc(
@@ -792,7 +800,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             f.close()
                             if switch == 0:
                                 switchs = "l0"
-                            if switch == 1:
+                            else:
                                 switchs = "h1"
 
                             if cfg.pyrocko_download() is True:
@@ -897,9 +905,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
                             switchs = "l0"
-                        if switch == 1:
-                            ff1 = filter.flo2()
-                            ff2 = filter.fhi2()
+                        else:
+                            f1 = str('filter.flo%s()'%filterindex+1)
+                            ff1 = eval(f1)
+                            f2 = str('filter.fhi%s()'%filterindex+1)
+                            ff2 = eval(f2)
                             switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'],
                                               "fobjpickle_process_%s_%s%s_\
@@ -933,9 +943,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                         ff1 = filter.flo()
                         ff2 = filter.fhi()
                         switchs = "l0"
-                    if switch == 1:
-                        ff1 = filter.flo2()
-                        ff2 = filter.fhi2()
+                    else:
+                        f1 = str('filter.flo%s()'%filterindex+1)
+                        ff1 = eval(f1)
+                        f2 = str('ff2 = filter.fhi%s()'%filterindex+1)
+                        ff2 = eval(f2)
                         switchs = "h1"
                     if cfg.Bool('bootstrap_array_weights') is False:
                         arraySemb, weight, array_center = sembCalc.doCalc(

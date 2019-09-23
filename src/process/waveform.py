@@ -167,8 +167,8 @@ def resampledummy(Waveform, end_frequence):
     return Waveform
 
 
-def processWaveforms(WaveformDict, Config, Folder, network, MetaDict, Event,
-                     switch, Xcorr):
+def processWaveforms_obspy(WaveformDict, Config, Folder, network, MetaDict,
+                           Event, switch, Xcorr):
 
     Logfile.red('Start Processing')
 

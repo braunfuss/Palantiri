@@ -203,7 +203,6 @@ class Xcorr(object):
 
         t2 = UTCDateTime(self.Origin.time)
 
-        print('cant find')
         found = False
 
         for tr in traces:
@@ -528,8 +527,6 @@ class Xcorr(object):
         reftriggeronset = refp+onset-self.mintforerun
 
         if int(self.Config['autoxcorrcorrectur']) == 1:
-            try:
-
                 refmarkername = os.path.join(self.EventPath,
                                              ('%s-marker') % (os.path.basename(
                                               self.AF)))
@@ -552,21 +549,13 @@ class Xcorr(object):
                 thrOff = float(self.Config['refsta'])
                 plotTrigger(trP, cft, thrOn, thrOff)
 
-                selection = float(raw_input('Enter self picked\
-                                            phase in seconds: '))
+                selection = float(input('Enter self picked phase in seconds: '))
                 tdiff = selection-self.mintforerun
-
                 refname = os.path.basename(self.AF)+'-shift.mseed'
                 trP.stats.starttime = trP.stats.starttime - selection
                 trP.write(os.path.join(self.EventPath, refname),
                                        format='MSEED')
 
-            except Exception:
-                selection = 0.
-                refname = os.path.basename(self.AF)+'-shift.mseed'
-                trP.stats.starttime = trP.stats.starttime - selection - self.mintforerun
-                trP.write(os.path.join(self.EventPath, refname),
-                                       format='MSEED')
         '''
         tdiff = 0
         trigger = trP.stats.starttime
