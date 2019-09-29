@@ -1,5 +1,0 @@
-utm
-mpld3
-numpy
-scipy
-pyrocko
