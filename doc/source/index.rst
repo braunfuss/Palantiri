@@ -1,6 +1,6 @@
 
 Palantiri Manual
-==============
+================
 
 Palantiri (Backprojection array tool) is an open source toolbox for seismological backprojection to investigate source properties
 based on teleseismic data and clustering stations into synthetics arrays. A number of synthetic test are possible using Greensfunctions
@@ -21,14 +21,9 @@ Features
 .. raw:: html
 
    <div class="keywords">
-    <span>automatic download of data for given event</span>
-    <span>automatic clustering of stations into synthetic arrays</span>
-    <span>waveform selection by cross-correlation</span>
-    <span>manual qc shift for each array </span>
-    <span>synthetic backprojections for different sources</span>
-    <span>pyrocko scenario generator (colosseo) input possible </span>
-    <span>calculate seperate and total semblance for each time step</span>
-    <span>noise weights for each arrays semblance</span>
+   <span>time domain backprojection</span>
+   <span>array forming by clustering</span>
+    <span>automatic download of data </span>
    </div>
 
 Contents
@@ -38,8 +33,9 @@ Contents
    :maxdepth: 2
 
    overview
-   install/index
-
+   setup
+   configuration/index
+   processing
 
 Indices and tables
 ------------------
