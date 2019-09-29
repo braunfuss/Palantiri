@@ -16,7 +16,7 @@ from palantiri.tools.config import Event
 from palantiri.process import ttt, sembCalc, waveform, times, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
 from pyrocko import util, io
-
+import subprocess
 import numpy as num
 if sys.version_info.major >= 3:
     import _pickle as pickle
@@ -34,7 +34,6 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 evpath = None
-
 
 def initModule():
 
@@ -229,7 +228,6 @@ def processLoop(traces=None, stations=None, cluster=None):
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
         refshift = 0
-
         SL = {}
         for i in xcorrnetworks:
             W = {}
@@ -384,21 +382,37 @@ def processLoop(traces=None, stations=None, cluster=None):
                     maxt = []
                     ttt_model = cfg.Str('traveltime_model')
                     try:
-                        px = os.path.abspath(os.path.join(os.getcwd(),
-                                             os.pardir))
-                        pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                        try:
+                            px = os.path.abspath(os.path.join(os.getcwd(),
+                                                 os.pardir))
+                            pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                      % (phase, ttt_model, ev.time, arrayname,
+                                         workdepth))
+                            px_path = px+pdx
+                            f = open(px_path, 'rb')
+
+                            print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
                                   % (phase, ttt_model, ev.time, arrayname,
                                      workdepth))
-                        px_path = px+pdx
-                        f = open(px_path, 'rb')
+                            TTTGridMap, mint, maxt = pickle.load(f)
+                            f.close()
+                            print("loading of travel time grid sucessful")
 
-                        print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
-                              % (phase, ttt_model, ev.time, arrayname,
-                                 workdepth))
-                        TTTGridMap, mint, maxt = pickle.load(f)
-                        f.close()
+                        except:
+                            px = os.path.abspath(os.path.join(os.getcwd(),
+                                                 os.pardir))
+                            pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                      % (phase, ttt_model, ev.time, arrayname,
+                                         workdepth))
+                            px_path = px+pdx
+                            f = open(px_path, 'rb')
 
-                        print("loading of travel time grid sucessful")
+                            print("loading travel time tttgrid%s_%s_%s_%s_%s.pkl"
+                                  % (phase, ttt_model, ev.time, arrayname,
+                                     workdepth))
+                            TTTGridMap, mint, maxt = pickle.load(f)
+                            f.close()
+                            print("loading of travel time grid sucessful")
                     except Exception:
                         print("loading of travel time grid unsucessful,\n \
                               will now calculate the grid:")
@@ -456,8 +470,8 @@ def processLoop(traces=None, stations=None, cluster=None):
 
                     if cfg.Bool('correct_shifts_empirical') is True:
                         TTTGridMap_emp = []
-                        FilterMeta = ttt.filterStations(Meta, Config, Origin,
-                                                        network)
+                    #    FilterMeta = ttt.filterStations(Meta, Config, Origin,
+                    #                                    network)
                         Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
                                     %s \n' % (Config['dimx_emp'],
                                               Config['dimy_emp'],
@@ -580,9 +594,13 @@ def processLoop(traces=None, stations=None, cluster=None):
                             if switch == 0:
                                 ff1 = filter.flo()
                                 ff2 = filter.fhi()
-                            if switch == 1:
-                                ff1 = filter.flo2()
-                                ff2 = filter.fhi2()
+                                switchs = "l0"
+                            else:
+                                f1 = str('ff1 = filter.flo%s()'%filterindex+1)
+                                ff1 = eval(f1)
+                                f2 = str('ff2 = filter.fhi%s()'%filterindex+1)
+                                ff2 = eval(f2)
+                                switchs = "h1"
                             ps_wdf_emp = os.path.join(Folder['semb'],
                                                       "fobjpickle_process_emp\
                                                       _%s_%s%s"
@@ -592,7 +610,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                                 except Exception:
-                                    Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                    Wdf_emp = waveform.processdummyWaveforms(Wd_emp,
                                                                         Config,
                                                                         Folder,
                                                                         arrayname,
@@ -606,7 +624,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
                             else:
-                                Wdf_emp = waveform.processWaveforms(Wd_emp,
+                                Wdf_emp = waveform.processdummyWaveforms(Wd_emp,
                                                                     Config,
                                                                     Folder,
                                                                     arrayname,
@@ -615,6 +633,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                     switch, W)
                             Wdfs_emp.extend(Wdf_emp)
                     if cfg.pyrocko_download() is True:
+
                         if cfg.quantity() == 'displacement':
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
@@ -631,6 +650,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                              evpath, ev, C)
                     else:
                         Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
+
                     if cfg.Bool('synthetic_test') is True\
                        or cfg.Bool('dynamic_filter') is True:
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
@@ -643,9 +663,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
                             switchs = "l0"
-                        if switch == 1:
-                            ff1 = filter.flo2()
-                            ff2 = filter.fhi2()
+                        else:
+                            f1 = str('filter.flo%s()'% str(filterindex+1))
+                            ff1 = eval(f1)
+                            f2 = str('filter.fhi%s()'% str(filterindex+1))
+                            ff2 = eval(f2)
                             switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" % (arrayname, ff1, ff2))
                         if cfg.Bool('load_wdf') is True:
@@ -653,7 +675,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config,
+                                Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                                 Folder,
                                                                 arrayname,
                                                                 FilterMeta,
@@ -664,12 +686,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
                         else:
-                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                            Wdf = waveform.processdummyWaveforms(Wd, Config, Folder,
                                                             arrayname,
                                                             FilterMeta,
                                                             ev, switch, W)
                         Wdfs.extend(Wdf)
-
                     C.writeStationFile(FilterMeta, Folder, counter)
                     Logfile.red('%d Streams added for Processing' % (len(Wd)))
 
@@ -680,10 +701,13 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 workdepth), 'rb')
                     TTTGridMap, mint, maxt = pickle.load(f)
                     f.close()
+
                     if switch == 0:
                         step = cfg.step()
-                    if switch == 1:
-                        step = cfg.step_f2()
+                    else:
+                        s1 = str('cfg.step_f%s()')% str(filterindex+1)
+                        step = eval(s1)
+
                     if cfg.UInt('forerun') > 0:
                         ntimes = int((cfg.UInt('forerun') +
                                       cfg.UInt('duration')) / step)
@@ -715,14 +739,39 @@ def processLoop(traces=None, stations=None, cluster=None):
                                              workdepth))
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                                     f.close()
+                                    if cfg.pyrocko_download() is True:
+
+                                        if cfg.Bool('correct_shifts_empirical_synthetic') is True:
+                                            Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                                    tw,
+                                                                                    evpath,
+                                                                                    ev)
+                                        elif cfg.quantity() == 'displacement':
+                                            Wd_emp = waveform.readWaveformsPyrocko_restituted(
+                                                FilterMeta, tw, evpath, ev_emp, desired)
+                                        else:
+                                            Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
+                                                                                   tw_emp,
+                                                                                   evpath_emp,
+                                                                                   ev_emp,
+                                                                                   desired)
+                                    elif cfg.colesseo_input() is True:
+                                        Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
+                                                                                 tw_emp,
+                                                                                 evpath_emp,
+                                                                                 ev_emp, C)
+                                    else:
+                                        Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
+                                                                        evpath_emp, ev_emp)
                                     flag_rpe = True
                                     nstats = stations_per_array
                                     if switch == 0:
                                         switchs = "l0"
-                                    if switch == 1:
+                                    else:
                                         switchs = "h1"
+
                                     arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wdf_emp, FilterMeta,
+                                        counter, Config, Wd_emp, FilterMeta,
                                         mint_emp, maxt_emp,
                                         TTTGridMap_emp, Folder, Origin_emp,
                                         ntimes_emp, switch, ev_emp,
@@ -735,7 +784,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         f = open(rpe+str(arrayname)+switchs)
                                     RefDict_empirical = pickle.load(f)
                                     refshifts = RefDict_empirical
-                                    for j in range(0, len(FilterMeta)):
+
+                                    for j in range(0, len(Wd_emp)):
                                         if cfg.correct_shifts() is False:
                                             refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
@@ -750,13 +800,52 @@ def processLoop(traces=None, stations=None, cluster=None):
                             f.close()
                             if switch == 0:
                                 switchs = "l0"
-                            if switch == 1:
+                            else:
                                 switchs = "h1"
-                            arraySemb, weight, array_center = sembCalc.doCalc(
-                                counter, Config, Wdf, FilterMeta, mintt, maxtt,
-                                TTTGridMap_mew, Folder, Origin, ntimes, switch,
-                                ev, arrayfolder, syn_in, refshifts, phase,
-                                rpe+str(arrayname)+switchs, flag_rpe, len(FilterMeta))
+
+                            if cfg.pyrocko_download() is True:
+
+                                if cfg.quantity() == 'displacement':
+                                    Wd = waveform.readWaveformsPyrocko_restituted(
+                                        FilterMeta, tw, evpath, ev, desired)
+                                elif cfg.Bool('synthetic_test') is True:
+                                    Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
+                                                                            tw, evpath,
+                                                                            ev)
+                                else:
+                                    Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
+                                                                       evpath, ev,
+                                                                       desired)
+                            elif cfg.colesseo_input() is True:
+                                Wd = waveform.readWaveforms_colesseo(FilterMeta, tw,
+                                                                     evpath, ev, C)
+                            else:
+                                Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
+
+                            try:
+                                f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                         % (phase, ttt_model, ev.time, arrayname,
+                                            workdepth), 'rb')
+                                TTTGridMap, mint, maxt = pickle.load(f)
+                                f.close()
+                                arraySemb, weight, array_center = sembCalc.doCalc(
+                                    counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                    TTTGridMap, Folder, Origin, ntimes, switch,
+                                    ev, arrayfolder, syn_in, refshifts, phase,
+                                    rpe+str(arrayname)+switchs, flag_rpe,
+                                    len(FilterMeta))
+                            except:
+                                f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                         % (phase, ttt_model, ev.time, arrayname,
+                                            workdepth), 'rb')
+                                TTTGridMap, mint, maxt = pickle.load(f)
+                                f.close()
+                                arraySemb, weight, array_center = sembCalc.doCalc(
+                                    counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                    TTTGridMap, Folder, Origin, ntimes, switch,
+                                    ev, arrayfolder, syn_in, refshifts, phase,
+                                    rpe+str(arrayname)+switchs, flag_rpe,
+                                    len(FilterMeta))
                             weights.append(weight)
                             array_centers.append(array_center)
                             ASL.append(arraySemb)
@@ -780,7 +869,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                     t2 = time.time()
                     Logfile.add('CALC took %0.3f sec' % (t2-t1))
                     counter += 1
-                    stations_per_array.append(len(FilterMeta))
+                    stations_per_array.append(len(Wd))
                     TTTgrids.update(TTTGridMap)
                     mints.append(mint)
                     maxts.append(maxt)
@@ -815,9 +904,13 @@ def processLoop(traces=None, stations=None, cluster=None):
                         if switch == 0:
                             ff1 = filter.flo()
                             ff2 = filter.fhi()
-                        if switch == 1:
-                            ff1 = filter.flo2()
-                            ff2 = filter.fhi2()
+                            switchs = "l0"
+                        else:
+                            f1 = str('filter.flo%s()'%filterindex+1)
+                            ff1 = eval(f1)
+                            f2 = str('filter.fhi%s()'%filterindex+1)
+                            ff2 = eval(f2)
+                            switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'],
                                               "fobjpickle_process_%s_%s%s_\
                                               combined" % (arrayname, ff1, ff2))
@@ -827,7 +920,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 Wdf = pickle.load(f)
                                 print('loaded wdf')
                             except:
-                                Wdf = waveform.processWaveforms(Wd, Config,
+                                Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                                 Folder,
                                                                 arrayname,
                                                                 FilterMetas,
@@ -837,7 +930,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 pickle.dump(Wdf, fobj_proc)
                                 print('dumped wdf')
                         else:
-                            Wdf = waveform.processWaveforms(Wd, Config, Folder,
+                            Wdf = waveform.processdummyWaveforms(Wd, Config, Folder,
                                                             arrayname,
                                                             FilterMetas,
                                                             ev, switch, W)
@@ -846,6 +939,16 @@ def processLoop(traces=None, stations=None, cluster=None):
                     maxt = num.max(maxts)
                     nstats = stations_per_array
                     flag_rpe = False
+                    if switch == 0:
+                        ff1 = filter.flo()
+                        ff2 = filter.fhi()
+                        switchs = "l0"
+                    else:
+                        f1 = str('filter.flo%s()'%filterindex+1)
+                        ff1 = eval(f1)
+                        f2 = str('ff2 = filter.fhi%s()'%filterindex+1)
+                        ff2 = eval(f2)
+                        switchs = "h1"
                     if cfg.Bool('bootstrap_array_weights') is False:
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,

@@ -10,6 +10,26 @@ from scipy import misc
 from scipy import pi
 
 
+
+def _spectrum(
+    metric,
+    antennas,
+    out,
+    thlo,thstep,thsz,
+    phlo,phstep,phsz
+):
+    # Lower-level spectrum calculator with preprocessed arguments and
+    # pass-by-reference output array, for easier implementation with
+    # cython and being farmed out to multiple processes. (The problem is
+    # embarassingly parallel.
+    assert out.shape == (thsz,phsz)
+    for i in range(thsz):
+        th = thlo + i*thstep
+        for j in range(phsz):
+            ph = phlo + j*phstep
+            out[i,j] = _pmusic(metric,antennas,th,ph)
+
+
 def sph2cart(sph):
     """
     Convert one or more spherical coordinates to cartesian.
@@ -275,21 +295,3 @@ def covar(samples):
 def _pmusic(metric,antennas,theta,phi):
     steer = sp.exp( 1j*antennas.dot(-aoa2prop_scalar(theta,phi)) )
     return 1.0 / steer.conj().dot(metric).dot(steer).real
-
-def _spectrum(
-    metric,
-    antennas,
-    out,
-    thlo,thstep,thsz,
-    phlo,phstep,phsz
-):
-    # Lower-level spectrum calculator with preprocessed arguments and
-    # pass-by-reference output array, for easier implementation with
-    # cython and being farmed out to multiple processes. (The problem is
-    # embarassingly parallel.
-    assert out.shape == (thsz,phsz)
-    for i in range(thsz):
-        th = thlo + i*thstep
-        for j in range(phsz):
-            ph = phlo + j*phstep
-            out[i,j] = _pmusic(metric,antennas,th,ph)

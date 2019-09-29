@@ -1,102 +1,37 @@
-import os, sys
+import os
+import sys
 from palantiri.common import Basic, Globals, Logfile
 
-class MainObj (object):
 
-   def __init__ (self, externClass, version, runTimeLog=None, errorLog=None) :
+class MainObj(object):
 
-       self.version    = version
-       self.runTimeLog = runTimeLog
-       self.errorLog   = errorLog
-       self.extern     = externClass
+    def __init__(self, externClass, version, runTimeLog=None, errorLog=None):
 
-   def run (self) :
+        self.version = version
+        self.runTimeLog = runTimeLog
+        self.errorLog = errorLog
+        self.extern = externClass
 
-       Logfile.init (self.runTimeLog, self.errorLog)
-       Logfile.setStartMsg (self.version)
+    def run(self):
 
-       if not self.extern.init() : Logfile.abort ()
+        Logfile.init(self.runTimeLog, self.errorLog)
+        Logfile.setStartMsg(self.version)
 
-       try :
-          ret = self.extern.process ()
+        if not self.extern.init():
+            Logfile.abort()
 
-          if ret : msg = 'Program finished'
-          else :   msg = 'Program finished with error'
+        try:
+            ret = self.extern.process()
 
-       except KeyboardInterrupt :
-          msg = 'Program aborted by Control C'; ret = False
+            if ret:
+                msg = 'Palantiri finished'
+            else:
+                msg = 'Palantiri finished with error - maybe Sauron looked back?'
 
-       self.extern.finish ()
-       Logfile.showLabel (msg)
-       return ret
+        except KeyboardInterrupt:
+            msg = 'Gandalf made Pippin drop the Palantiri by Control C'
+            ret = False
 
-class ExternMainObj (MainObj) :
-
-    def __init__ (self) :
-
-        MainObj.__init__ (self, self, version=xx, runTimeLog=None, errorLog=None)
-        # own init operations
-
-    def init (self) :
-        # own operations
-        return True
-
-    def process (self) :
-        #own operations
-        return True
-
-    def finish (self) :
-        #own operations
-        pass
-
-def startTest (action, workingDir) :
-
-    events   = 'NEAR-COAST-OF-NORTHERN-CHILE_2014-04-03T02-43-14'
-    dir      = os.getcwd()
-    dir      = Globals.setEventDir (os.path.join (dir,Globals.EVENTS, events))
-
-    args = [sys.argv[0], action, '-f', dir]
-
-    dir = Basic.changeDirectory (workingDir)      # create and/or change working director
-    return args
-
-from time import sleep
-
-VERSION_STRING = '<Version String>'
-
-class TestObj (MainObj) :
-
-    def __init__ (self, processFkt) :
-
-        MainObj.__init__ (self, self, VERSION_STRING, 'TestProgram_run.log', 'TestProgram.log')
-        self.processFkt = processFkt
-
-    def init (self) :
-        Logfile.add ('Init reached'); return True
-
-    def process (self) :
-        Logfile.add ('Process reached'); return self.processFkt()
-
-    def finish (self) :
-        Logfile.add ('Finish reached')
-
-# -------------------------------------------------------------------------------------------------
-
-def process1 () :
-    return True
-
-def process2 () :
-
-    Logfile.add ('Press Ctrl C')
-    sleep (1000)
-    return True
-
-def testAll () :
-
-    test1 = TestObj (process1)
-    test1.run ()
-
-    test2 = TestObj (process2)
-    test2.run ()
-
-    return True
+        self.extern.finish()
+        Logfile.showLabel(msg)
+        return ret

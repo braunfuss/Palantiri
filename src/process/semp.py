@@ -14,6 +14,8 @@ from pyrocko.marker import PhaseMarker
 from pyrocko import obspy_compat
 import math
 from scipy.signal import coherence
+from collections import OrderedDict
+from palantiri.process import music
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -96,8 +98,8 @@ class MyThread(Thread):
 
 def toMatrix(npVector, nColumns):
 
-    t  = npVector.tolist()[0]
-    n  = nColumns
+    t = npVector.tolist()[0]
+    n = nColumns
     mat = []
 
     for i in range(int(len(t) / n)):
@@ -132,16 +134,20 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights)
 
             if cfg.Int('dimz') != 0:
-               return semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
-                                   mint, new_frequence, minSampleCount, latv_1,
-                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
-                                   time, cfg, refshifts, bs_weights=bs_weights)
+                return semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep,
+                                         dimX, dimY, mint, new_frequence,
+                                         minSampleCount, latv_1, lonv_1,
+                                         traveltime_1, trace_1, calcStreamMap,
+                                         time, cfg, refshifts,
+                                         bs_weights=bs_weights)
 
             if cfg.Bool('bp_music') is True:
-               return music(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
-                                   mint, new_frequence, minSampleCount, latv_1,
-                                   lonv_1, traveltime_1, trace_1, calcStreamMap,
-                                   time, cfg, refshifts, nstats, bs_weights=bs_weights)
+                return music_wrapper(ncpus, nostat, nsamp, ntimes, nstep, dimX,
+                                     dimY, mint, new_frequence, minSampleCount,
+                                     latv_1, lonv_1, traveltime_1, trace_1,
+                                     calcStreamMap, time, cfg, refshifts,
+                                     nstats,
+                                     bs_weights=bs_weights)
 
             if flag_rpe is True:
                return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
@@ -250,47 +256,6 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
     return abs(backSemb)
 
 
-def music_doa(Y,n,d):
-
-    #      Y    <- the ULA data
-    #      n    <- the number of sources
-    #      d    <- sensor spacing in wavelengths
-    #      doa  -> the vector of DOA estimates
-
-
-    [m,N]= size(data)
-
-    # compute the sample covariance matrix
-    R=Y*Y.T/N
-
-    # do the eigendecomposition; use svd because it sorts eigenvalues
-    [U,D,V]=num.linalg.svd(R)
-
-    G=U[:,n+1:m]
-
-    C=G*G.T
-    a =[]
-    # find the coefficients of the polynomial in (4.5.16)
-    for kk in range(0,2*m-1):
-        a[kk]=sum(num.diag(C,kk-m))
-    ra=num.roots(a)
-
-    # find the n roots of the a polynomial that are nearest and inside the unit circle,
-
-    [dum,ind]=sort(abs(ra))
-    rb=ra(ind[1:m-1])
-
-    # pick the n roots that are closest to the unit circle
-    [dumm,I]=sort(abs(abs(rb)-1))
-    w=num.angle(rb(I[1:n]))
-
-
-    # compute the doas
-    doa= math.asin(w/d/math.pi/2.)*180/math.pi
-
-    return doa
-
-
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
@@ -340,7 +305,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     traveltime = toMatrix(traveltime_1, dimX * dimY)
     latv = latv_1.tolist()
     lonv = lonv_1.tolist()
-    from collections import OrderedDict
     index_begins = OrderedDict()
     index_steps = []
     index_window = []
@@ -350,11 +314,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         for k in range(nostat):
             relstart = traveltime[k][j]
             tr = trs_orgs[k]
-
             try:
                 tmin = time+relstart-mint+refshifts[k]
                 tmax = time+relstart-mint+nsamp+refshifts[k]
-            except IndexError:
+            except:
                 tmin = time+relstart-mint
                 tmax = time+relstart-mint+nsamp
 
@@ -365,7 +328,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 #            markers.append(m)
 
             ibeg = max(0, t2ind_fast(tmin-tr.tmin, tr.deltat, snap[0]))
-            index_begins[str(j)+str(k)]= [ibeg, tmin]
+            index_begins[str(j)+str(k)] = [ibeg, tmin]
 
             iend = min(
                 tr.data_len(),
@@ -377,8 +340,8 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             index_steps.append(iend_step-iend)
 
             index_window.append(iend-ibeg)
+            # for debug:
     #    trld.snuffle(trs_orgs, markers=markers)
-
 
     '''
     Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
@@ -388,7 +351,9 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     '''
     trs_orgs = []
     k = 0
+
     for tr in sorted(calcStreamMap):
+
         tr_org = calcStreamMap[tr]
         if combine is True:
             # some trickery to make all waveforms have same polarity, while still
@@ -501,7 +466,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
 
 
-def music(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
+def music_wrapper(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
                  bs_weights=None):

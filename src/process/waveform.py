@@ -74,8 +74,6 @@ def readWaveforms(stationList, tw, EventPath, Origin):
 def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
     Wdict = OrderedDict()
     traces = io.load(EventPath+'/data/traces_velocity.mseed')
-
-    obspy_compat.plant()
     traces_dict = []
     for tr in traces:
         for il in stationlist:
@@ -84,7 +82,6 @@ def readWaveformsPyrocko(stationlist, w, EventPath, Origin, desired):
                 if (tr_name == str(il) and tr.channel[-1] == desired) or (tr_name == str(il)[:-3] and tr.channel[-1] == desired):
 
                     Wdict[il.getName()] = tr
-
     return Wdict
 
 
@@ -106,7 +103,6 @@ def readWaveformsPyrocko_restituted(stationlist, w, EventPath, Origin, desired):
     else:
         traces = io.load(EventPath+'/data/traces_rotated.mseed')
 
-    obspy_compat.plant()
     traces_dict = []
     for tr in traces:
         for il in stationlist:
@@ -171,8 +167,8 @@ def resampledummy(Waveform, end_frequence):
     return Waveform
 
 
-def processWaveforms(WaveformDict, Config, Folder, network, MetaDict, Event,
-                     switch, Xcorr):
+def processWaveforms_obspy(WaveformDict, Config, Folder, network, MetaDict,
+                           Event, switch, Xcorr):
 
     Logfile.red('Start Processing')
 
@@ -238,6 +234,7 @@ def processWaveforms(WaveformDict, Config, Folder, network, MetaDict, Event,
 
 def processdummyWaveforms(WaveformDict, Config, Folder, network, MetaDict,
                           Event, switch, Xcorr):
+
     for index, i in enumerate(WaveformDict):
 
         WaveformDict[i] = i
