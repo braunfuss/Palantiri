@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>global.conf &#8212; Palantiri v0.4 Manual</title>
+    <link rel="stylesheet" href="../_static/pydoctheme.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../_static/sidebar.js"></script>
+    
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="event.conf" href="event.html" />
+    <link rel="prev" title="Configuration" href="index.html" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <link rel="shortcut icon" type="image/png" href="../_static/favicon.png" />
+    <meta name="viewport" content="width=device-width,initial-scale=0.8">
+    
+    
+    
+    <script type="text/javascript" src="../_static/jquery.gifplayer.js"></script>
+    <link rel="stylesheet" type="text/css" href="../_static/gifplayer.css">
+    <!-- Piwik -->
+    <script type="text/javascript">
+      var _paq = _paq || [];
+      /* tracker methods like "setCustomDimension" should be called before "trackPageView" */
+      _paq.push(['trackPageView']);
+      _paq.push(['enableLinkTracking']);
+      (function() {
+        var u="//pyrocko.org/pwk/";
+        _paq.push(['setTrackerUrl', u+'piwik.php']);
+        _paq.push(['setSiteId', '1']);
+        var d=document, g=d.createElement('script'), s=d.getElementsByTagName('script')[0];
+        g.type='text/javascript'; g.async=true; g.defer=true; g.src=u+'piwik.js'; s.parentNode.insertBefore(g,s);
+      })();
+    </script>
+    <noscript>
+    <img src="https://pyrocko.org/pwk/piwik.php?idsite=1&rec=1" style="border:0" alt="" />
+    </noscript>
+
+  </head><body>
+
+    <div class="related">
+      <h3>Navigation</h3>
+        <ul>
+          <li class="responsive-menu"><a href="#sidebar-anchor" title="Navigation">&#9776;</a></li>
+          <li>
+            <img src='https://git.pyrocko.org/repo-avatars/13' class='pyrocko-button' onclick="window.location = https://git.pyrocko.org/asteinbe/Palantiri';">
+          </li>
+           &#187;
+          <li>
+              <a href="../index.html">Palantiri v0.4 Manual</a> &#187;
+          </li>
+            <li><a href="index.html" accesskey="U">Configuration</a> &#187;</li> 
+        </ul>
+    </div>
+    
+
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="global-conf">
+<h1>global.conf<a class="headerlink" href="#global-conf" title="Permalink to this headline">¶</a></h1>
+<p>First the file global.conf, which is located in the palantiri main workdir gives options for general download options, regarding data and event selection.
+An example file will be created when using the palantiri_init command. The user can give a date_min, date_max and a minimum magnitude to specify for which events should be searched.
+All FDSN catalogs are supported.</p>
+<p>An example configuration file:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">eventsearchparameter</span><span class="p">]</span>
+
+<span class="n">date_min</span> <span class="o">=</span> <span class="mi">1995</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">22</span><span class="n">T20</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mf">00.0</span>
+<span class="n">date_max</span> <span class="o">=</span> <span class="mi">1995</span><span class="o">-</span><span class="mi">11</span><span class="o">-</span><span class="mi">22</span><span class="n">T24</span><span class="p">:</span><span class="mi">00</span><span class="p">:</span><span class="mf">00.0</span>
+<span class="n">magmin</span> <span class="o">=</span> <span class="mf">2.5</span>
+<span class="n">catalog</span> <span class="o">=</span>  <span class="n">GCMT</span>
+<span class="n">resultlimit</span> <span class="o">=</span> <span class="mi">10</span>
+
+<span class="p">[</span><span class="n">stationsearchparameter</span><span class="p">]</span>
+
+<span class="n">blacklist</span> <span class="o">=</span> <span class="n">SY</span>
+</pre></div>
+</div>
+<p>In this example we select [eventsearchparameter] for an earthquake above magnitude 2.5, occuring between 1995-11-22T20:00:00.0 and 1995-11-22T24:00:00.0 in the GCMT catalog.
+We display only the first 10 results.</p>
+<p>The event search is carried out by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">palantiri_eventsearch</span>
+</pre></div>
+</div>
+<p>A list is returned in the terminal with the ISC event ids of the found earthquakes. We can now use the id to create an event folder for the selected earthquake by:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">palantiri_create</span> <span class="n">eventid</span>
+</pre></div>
+</div>
+<p>An eventfolder is created in the palantiri main workdir under the events folder with the event name and date as folder name.</p>
+<p>The stationsearchparameter ‘blacklist’ is used in the clustering to ignore stations in all processing.
+A commata separated list is expected.</p>
+</div>
+
+
+          </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+    &nbsp;
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="event.html" title="event.conf"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Configuration"
+             accesskey="P">previous</a> |</li>
+      </ul>
+    </div>
+
+    <div class="footer" role="contentinfo">
+        &#169; Copyright 2019, The Palantiri Developers.
+    </div>
+  </body>
+</html>
