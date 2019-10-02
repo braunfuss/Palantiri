@@ -26,19 +26,20 @@ from pyrocko import util
 w=25480390.0
 
 
-def load(filter, step=None):
+def load(filter, step=None, booting_load=False):
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             boot = False
             evpath = 'events/'+ str(sys.argv[1])
             C  = config.Config (evpath)
             Config = C.parseConfig ('config')
             cfg = ConfigObj (dict=Config)
+            n_bootstrap = cfg.UInt('n_bootstrap')
             dimx = int(Config['dimx'])
             dimy = int(Config['dimy'])
             data_int = None
             data = None
             data_boot = None
-            data_int_boot = None
+            data_int_boot = []
             datamax = 0
             phase = "P"
             for argv in sys.argv:
@@ -56,10 +57,13 @@ def load(filter, step=None):
                 except:
                     pathlist = Path(rel).glob('%s-*%s.ASC' % (filter,phase))
             else:
+
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                 except:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
+            if booting_load is True:
+                    pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, 0, phase))
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
@@ -100,9 +104,9 @@ def load(filter, step=None):
                                 pathlist = Path(rel).glob('%s-*boot*%s.ASC' % (filter, phase))
                         else:
                             try:
-                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
+                                pathlist = Path(rel).glob(('%s-*boot%s*'+'%s.ASC') % (filter, step, phase))
                             except:
-                                pathlist = Path(rel).glob('%s-*boot00%s_*%s.ASC' % (filter, step, phase))
+                                pathlist = Path(rel).glob(('%s-*boot*'+'0%s_*.ASC') % (filter, step))
                         data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
@@ -1307,7 +1311,7 @@ def plot_integrated():
             map, x, y = make_map(data)
             mins = np.max(data[:,2])
             triang = tri.Triangulation(x, y)
-            isbad = np.less(data_int, datamax*0.05)
+            isbad = np.less(data_int, num.max(data_int)*0.01)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='cool')
@@ -1315,11 +1319,52 @@ def plot_integrated():
             plt.title(path_in_str)
 
             if boot is True:
-                data_int_boot = num.reshape(data_int_boot, (dimx,
-                                                            dimy))
-                xc = num.reshape(x, (dimx, dimy))
-                yc = num.reshape(y, (dimx, dimy))
-                plt.contour(xc,yc, data_int_boot)
+                n_bootstrap = cfg.UInt('n_bootstrap')
+                colors = iter(cm.rainbow(np.linspace(0, 1, n_bootstrap)))
+                for iboot in range(0, n_bootstrap):
+                    datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(0, step=iboot, booting_load=True)
+                    where_are_NaNs = num.isnan(data_int_boot)
+                    data_int_boot[where_are_NaNs] = 0
+                    data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                dimy))
+                    xc = num.reshape(x, (dimx, dimy))
+                    yc = num.reshape(y, (dimx, dimy))
+                    ax = plt.gca()
+                    plot_comb_bs = True
+                    plot_ind_bs = False
+                    if plot_ind_bs is True:
+                        try:
+                            cp= plt.contour(xc, yc, data_int_boot)
+                            #print(cp)
+                            #cpf = plt.contourf(xc,yc, data_int_boot, cmap=cm.Greys_r)
+                            #colours = ['w' if level<0 else 'k' for level in cpf.levels]
+                            #cp = plt.contour(xc, yc, data_int_boot, colors=colours)
+
+                        except ValueError:
+                            pass
+
+                if plot_comb_bs is True:
+                    datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(0)
+
+                #    plt.clabel(cp, fontsize=12)
+                    offset = [num.mean(x), num.mean(y)]
+                    import matplotlib.transforms as transforms
+                    from matplotlib.patches import Ellipse
+                    data_int_boot[data_int_boot >= num.max(data_intb)*0.95] = 1
+                    data_int_boot[data_int_boot != 1] = 0
+
+                    data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                dimy))
+                    xc = num.reshape(x, (dimx, dimy))
+                    yc = num.reshape(y, (dimx, dimy))
+                    cp= plt.contour(xc, yc, data_int_boot)
+                    ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
+                #    ellipse = Ellipse((offset[0], offset[1]),
+                #        width=ell_radius_x * 200,
+                #        height=ell_radius_y * 200,
+                #        facecolor='r', lw=20
+                #        )
+                #    ax.add_patch(ellipse)
 
             event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
             desired=[3,4]
@@ -1330,10 +1375,10 @@ def plot_integrated():
             with open(event, 'r') as fin:
                 reader=csv.reader(fin)
                 event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
+            x, y = map(event_cor[1][0], event_cor[0][0])
             ax = plt.gca()
             np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-            beach1 = beach(np1, xy=(x, y), width=0.09)
+            beach1 = beach(np1, xy=(x, y), width=950.)
             ax.add_collection(beach1)
             for argv in sys.argv:
                 if argv == "--topography":
@@ -1354,7 +1399,7 @@ def plot_integrated():
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, datamax*0.05)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
-            #triang.set_mask(mask)
+            triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='cool')
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
