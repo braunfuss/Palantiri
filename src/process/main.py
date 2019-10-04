@@ -219,7 +219,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                 for j in range(0, len(FilterMeta)):
                     refshifts_global.append(triggerobject.tdiff)
 
-
     else:
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp = os.path.join(Folder['semb'], fobjreferenceshiftname)

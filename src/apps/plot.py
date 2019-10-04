@@ -26,12 +26,75 @@ from pyrocko import util
 w=25480390.0
 
 
-def load(filter, step=None, booting_load=False):
+def draw_beach(ax, scale, map, event):
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=0.09)
+    ax.add_collection(beach1)
+
+def draw_sources(ax, syn_in, map, scale):
+    from pyrocko.gf import DCSource, RectangularSource, MTSource
+
+    sources = []
+
+    if syn_in.source() == 'RectangularSource':
+        sources.append(RectangularSource(
+            lat=float(syn_in.lat_0()),
+            lon=float(syn_in.lon_0()),
+            east_shift=float(syn_in.east_shift_0())*1000.,
+            north_shift=float(syn_in.north_shift_0())*1000.,
+            depth=syn_in.depth_syn_0()*1000.,
+            strike=syn_in.strike_0(),
+            dip=syn_in.dip_0(),
+            rake=syn_in.rake_0(),
+            width=syn_in.width_0()*1000.,
+            length=syn_in.length_0()*1000.,
+            nucleation_x=syn_in.nucleation_x_0(),
+            slip=syn_in.slip_0(),
+            nucleation_y=syn_in.nucleation_y_0(),
+            velocity=syn_in.velocity_0(),
+            anchor=syn_in.anchor(),
+            time=util.str_to_time(syn_in.time_0())))
+        for source in sources:
+            n, e = source.outline(cs='latlon').T
+            e, n = map(e,n)
+            ax.fill(e, n, color=(0.5, 0.5, 0.5), lw=2)
+            #add drawing of absolute nucleation point
+
+    if syn_in.source() == 'DCSource':
+            sources.append(DCSource(
+                lat=float(syn_in.lat_0()),
+                lon=float(syn_in.lon_0()),
+                east_shift=float(syn_in.east_shift_0())*1000.,
+                north_shift=float(syn_in.north_shift_0())*1000.,
+                depth=syn_in.depth_syn_0()*1000.,
+                strike=syn_in.strike_0(),
+                dip=syn_in.dip_0(),
+                rake=syn_in.rake_0(),
+                time=util.str_to_time(syn_in.time_0()),
+                magnitude=syn_in.magnitude_0()))
+            for source in sources:
+                ev = source.pyrocko_event()
+                e, n = map(ev.lon,ev.lat)
+                map.scatter(e, n, s=scale/200)
+
+
+def load(filter, step=None, step_boot=None, booting_load=False):
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             boot = False
             evpath = 'events/'+ str(sys.argv[1])
             C  = config.Config (evpath)
-            Config = C.parseConfig ('config')
+            Config = C.parseConfig('config')
             cfg = ConfigObj (dict=Config)
             n_bootstrap = cfg.UInt('n_bootstrap')
             dimx = int(Config['dimx'])
@@ -95,18 +158,14 @@ def load(filter, step=None, booting_load=False):
                                 data_int[i]= 0
                             i = i+1
                 try:
-                    if sys.argv[4] == 'boot':
+                    if booting_load is True:
                         boot = True
-                        if step is None:
-                            try:
-                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
-                            except:
-                                pathlist = Path(rel).glob('%s-*boot*%s.ASC' % (filter, phase))
+                        if step is None and step_boot is None:
+                            pathlist = Path(rel).glob(('%s-*boot*'+'%s.ASC') % (filter, phase))
+                        elif step is None:
+                            pathlist = Path(rel).glob(('%s-*boot%s_*'+'%s.ASC') % (filter, step_boot, phase))
                         else:
-                            try:
-                                pathlist = Path(rel).glob(('%s-*boot%s*'+'%s.ASC') % (filter, step, phase))
-                            except:
-                                pathlist = Path(rel).glob(('%s-*boot*'+'0%s_*.ASC') % (filter, step))
+                            pathlist = Path(rel).glob(('%s-*boot%s_*%s_'+'*%s.ASC') % (filter, step_boot, step, phase))
                         data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
@@ -116,7 +175,7 @@ def load(filter, step=None, booting_load=False):
                                     if k>data_int_boot[i]:
                                         data_int_boot[i]= k
                                     if num.max(datamax) == 0:
-                                        data_int[i]= 0
+                                        data_int_boot[i]= 0
                                     i = i+1
                 except IndexError:
                     pass
@@ -140,19 +199,13 @@ def load(filter, step=None, booting_load=False):
                             data_int += np.nan_to_num(data[:,2])
 
                 try:
-                    if sys.argv[4] == 'boot':
-                        boot = True
-
-                        if step is None:
-                            try:
-                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
-                            except:
-                                pathlist = Path(rel).glob('%s-*boot*.ASC' % filter)
+                    if booting_load is True:
+                        if step is None and step_boot is None:
+                            pathlist = Path(rel).glob(('%s-*boot*'+'%s.ASC') % (filter, phase))
+                        elif step is None:
+                            pathlist = Path(rel).glob(('%s-*boot%s_*'+'%s.ASC') % (filter, step_boot, phase))
                         else:
-                            try:
-                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
-                            except:
-                                pathlist = Path(rel).glob('%s-*boot*00%s_*.ASC' % (filter, step))
+                            pathlist = Path(rel).glob(('%s-*boot%s_*%s_'+'%s.ASC') % (filter, step_boot, step, phase))
                         data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
@@ -1084,156 +1137,221 @@ def inspect_spectrum():
 
 
 def plot_integrated_movie():
-    evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config(evpath)
+    evpath = 'events/' + str(sys.argv[1])
+    C = config.Config(evpath)
     Config = C.parseConfig('config')
     cfg = ConfigObj(dict=Config)
     step = cfg.UInt('step')
     step2 = cfg.UInt('step_f2')
     duration = cfg.UInt('duration')
     forerun = cfg.UInt('forerun')
-
+    plt_time = False
+    boot = False
     ntimes = int((forerun+duration)/step)
 
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    dimx = int(Config['dimx'])
+    dimy = int(Config['dimy'])
+    filters = cfg.String('filters')
+    filters = int(filters)
+    try:
+        for argv in sys.argv:
+            if argv == 'boot':
+                boot = True
+            if argv == '--time':
+                plt_time = True
+    except:
+        pass
+    if plt_time is True:
+        fig = plt.figure()
 
-    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
+    for filterindex in range(0, filters):
+        data_all, data_int_all, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
+        cmaps = ['Blues', 'Greens', 'Reds', 'Purples', 'Greys', 'Wistia', 'bone', 'copper', 'dusk']
 
+        levels = np.linspace(num.min(data_int_all), maxs, 20)
+        for i in range(0, ntimes):
+            if len(sys.argv) < 4:
+                print("missing input arrayname")
+            else:
+                    data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
+                    if plt_time is False:
+                        fig = plt.figure()
+                    ax = fig.axes
+                    map, x, y = make_map(data)
+                    xmax = num.max(x)
+                    xmin = num.min(x[num.nonzero(x)])
+                    ymax = num.max(y)
+                    ymin = num.min(y[num.nonzero(y)])
+                    scale = (xmax/xmin)*(ymax/ymin)*10
+                    triang = tri.Triangulation(x, y)
+                    isbad = np.less(data_int, 0.001)
+                    mask = np.all(np.where(isbad[triang.triangles],
+                                           True, False), axis=1)
+                    triang.set_mask(mask)
+                    if plt_time is False:
+                        plt.tricontourf(triang, data_int, vmax=maxs, vmin=0,
+                                        cmap=cm.coolwarm)
+                        m = plt.cm.ScalarMappable(cmap=cm.coolwarm)
+                        m.set_array(data_int)
+                        m.set_clim(0., maxs)
+                        plt.colorbar(m, orientation="horizontal",
+                                     boundaries=np.linspace(0, maxs, 10))
+                        plt.title(path_in_str)
 
-    for i in range(0, ntimes):
-        if len(sys.argv)<4:
-            print("missing input arrayname")
-        else:
-                data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(0, step=i)
+                    else:
+                        colors = []
+                        #color = colors_list[i]
+                        #min = num.min(color[num.nonzero(color)])
 
-                fig = plt.figure()
-                ax = fig.axes
-                map, x, y = make_map(data)
-                mins = np.max(data[:,2])
-                triang = tri.Triangulation(x, y)
-                isbad = np.less(data_int, 0.001)
-                mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
-                triang.set_mask(mask)
-                plt.tricontourf(triang, data_int, vmax=maxs, vmin=0, cmap=cm.coolwarm)
-                #plt.tricontourf(triang, data_int, cmap=cm.coolwarm)
-                m = plt.cm.ScalarMappable(cmap=cm.coolwarm)
-                m.set_array(data_int)
-                m.set_clim(0., maxs)
-                plt.colorbar(m, orientation="horizontal", boundaries=np.linspace(0, maxs, 10))
-                plt.title(path_in_str)
+                    #    for k, le in enumerate(levels):
+                    #        colord = colors_list[i]
+#
+#                            color = [1-(0.01+(0.05*k)) if x==min else x for x in colord]
 
-                event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-                desired=[3,4]
-                with open(event, 'r') as fin:
-                    reader=csv.reader(fin)
-                    event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-                desired=[7,8,9]
-                with open(event, 'r') as fin:
-                    reader=csv.reader(fin)
-                    event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-                x, y = map(event_cor[1][0],event_cor[0][0])
-                ax = plt.gca()
+#                            colors.append(color)
+#                        plt.tricontourf(triang, data_int,
+#                                        colors=colors, levels=levels, alpha=num.max(data_int)/maxs
+                        plt.tricontourf(triang, data_int,
+                                        cmap=cmaps[i], levels=levels)
 
-                np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-                beach1 = beach(np1, xy=(x, y), width=0.09)
-                ax.add_collection(beach1)
+                    event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+                    draw_beach(ax, scale, map, event)
+
+                    if boot is True:
+                        n_bootstrap = cfg.UInt('n_bootstrap')
+                        for iboot in range(0, n_bootstrap):
+                            datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step=i, step_boot=iboot, booting_load=True)
+                            where_are_NaNs = num.isnan(data_int_boot)
+                            data_int_boot[where_are_NaNs] = 0
+                            data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                        dimy))
+                            xc = num.reshape(x, (dimx, dimy))
+                            yc = num.reshape(y, (dimx, dimy))
+                            ax = plt.gca()
+                            plot_comb_bs = False
+                            plot_ind_bs = True
+                            if plot_ind_bs is True:
+                                try:
+                                    if plt_time is False:
+                                        cp= plt.contour(xc, yc, data_int_boot, levels=[num.std(data_int_boot)*2])
+                                    else:
+                                        cmap = cm.get_cmap(cmaps[i])
+                                        cp= plt.contour(xc, yc, data_int_boot, levels=[num.std(data_int_boot)*2], colors=[cmap(1.0)])
+
+                                except ValueError:
+                                    pass
+
+                        if plot_comb_bs is True:
+                            datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex)
+
+                            offset = [num.mean(x), num.mean(y)]
+                            data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                        dimy))
+                            xc = num.reshape(x, (dimx, dimy))
+                            yc = num.reshape(y, (dimx, dimy))
+                            cp= plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
+                            ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
+
+                    for argv in sys.argv:
+                        if argv == "--topography":
+                            try:
+                                xpixels = 1000
+                                map.arcgisimage(service='World_Shaded_Relief',
+                                                xpixels = xpixels,
+                                                verbose= False)
+                            except:
+                                pass
+
+                    if plt_time is False:
+                        if cfg.Bool('synthetic_test') is True:
+                            Syn_in = C.parseConfig('syn')
+                            syn_in = SynthCfg(Syn_in)
+                            draw_sources(ax, syn_in, map, scale)
+                        plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
+                        plt.show()
+
+        if plt_time is True:
+            if cfg.Bool('synthetic_test') is True:
+                Syn_in = C.parseConfig('syn')
+                syn_in = SynthCfg(Syn_in)
+                draw_sources(ax, syn_in, map, scale)
+            plt.show()
+
+def plot_integrated():
+    if len(sys.argv)<4:
+        print("missing input arrayname")
+    else:
+            evpath = 'events/' + str(sys.argv[1])
+            C = config.Config(evpath)
+            Config = C.parseConfig('config')
+            cfg = ConfigObj(dict=Config)
+            filters = cfg.String('filters')
+            filters = int(filters)
+            boot = False
+            try:
                 for argv in sys.argv:
-                    if argv == "--topography":
-                        try:
-                            xpixels = 1000
-                            map.arcgisimage(service='World_Shaded_Relief',
-                                            xpixels = xpixels,
-                                            verbose= False)
-                        except:
-                            pass
+                    if argv == 'boot':
+                        boot = True
+            except:
+                pass
 
-                if cfg.Bool('synthetic_test') is True:
-                    from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
-                    Syn_in = C.parseConfig('syn')
-                    syn_in = SynthCfg(Syn_in)
-                    sources = []
+            for filterindex in range(0, filters):
+                data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
+                rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
 
-                    if syn_in.source() == 'RectangularSource':
-                        sources.append(RectangularSource(
-                            lat=float(syn_in.lat_0()),
-                            lon=float(syn_in.lon_0()),
-                            east_shift=float(syn_in.east_shift_0())*1000.,
-                            north_shift=float(syn_in.north_shift_0())*1000.,
-                            depth=syn_in.depth_syn_0()*1000.,
-                            strike=syn_in.strike_0(),
-                            dip=syn_in.dip_0(),
-                            rake=syn_in.rake_0(),
-                            width=syn_in.width_0()*1000.,
-                            length=syn_in.length_0()*1000.,
-                            nucleation_x=syn_in.nucleation_x_0(),
-                            slip=syn_in.slip_0(),
-                            nucleation_y=syn_in.nucleation_y_0(),
-                            velocity=syn_in.velocity_0(),
-                            anchor=syn_in.anchor(),
-                            time=util.str_to_time(syn_in.time_0())))
-                    if syn_in.source() == 'DCSource':
-                            sources.append(DCSource(
-                                lat=float(syn_in.lat_0()),
-                                lon=float(syn_in.lon_0()),
-                                east_shift=float(syn_in.east_shift_0())*1000.,
-                                north_shift=float(syn_in.north_shift_0())*1000.,
-                                depth=syn_in.depth_syn_0()*1000.,
-                                strike=syn_in.strike_0(),
-                                dip=syn_in.dip_0(),
-                                rake=syn_in.rake_0(),
-                                time=util.str_to_time(syn_in.time_0()),
-                                magnitude=syn_in.magnitude_0()))
-                    for source in sources:
-                        n, e = source.outline(cs='latlon').T
-                        e, n = map(e,n)
+                dimx = int(Config['dimx'])
+                dimy = int(Config['dimy'])
 
-                        ax.fill(e, n, color=(0.5, 0.5, 0.5), lw = 2)
-                plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
-                plt.show()
+                plt.figure()
+                ax = plt.gca()
 
-    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(1)
-
-
-    for i in range(0,ntimes):
-        if len(sys.argv)<4:
-            print("missing input arrayname")
-        else:
-                data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(1, step=i)
-
-                fig = plt.figure()
-                ax = fig.axes
                 map, x, y = make_map(data)
+                xmax = num.max(x)
+                xmin = num.min(x[num.nonzero(x)])
+                ymax = num.max(y)
+                ymin = num.min(y[num.nonzero(y)])
+                scale = (xmax/xmin)*(ymax/ymin)*10
 
-                mins = np.max(data[:,2])
                 triang = tri.Triangulation(x, y)
-                isbad = np.less(data_int, 0.001)
+                isbad = np.less(data_int, num.max(data_int)*0.01)
                 mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
                 triang.set_mask(mask)
-                plt.tricontourf(triang, data_int, vmax=maxs, vmin=0, cmap=cm.coolwarm)
-                #plt.tricontourf(triang, data_int, cmap=cm.coolwarm)
-
-                m = plt.cm.ScalarMappable(cmap=cm.coolwarm)
-                m.set_array(data_int)
-                m.set_clim(0., maxs)
-                plt.colorbar(m, orientation="horizontal", boundaries=np.linspace(0, maxs, 10))
-            #    plt.colorbar(orientation="horizontal")
-
+                plt.tricontourf(triang, data_int, cmap='cool')
+                plt.colorbar(orientation="horizontal")
                 plt.title(path_in_str)
 
+                if boot is True:
+                    n_bootstrap = cfg.UInt('n_bootstrap')
+                    for iboot in range(0, n_bootstrap):
+                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
+                        where_are_NaNs = num.isnan(data_int_boot)
+                        data_int_boot[where_are_NaNs] = 0
+                        data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                    dimy))
+                        xc = num.reshape(x, (dimx, dimy))
+                        yc = num.reshape(y, (dimx, dimy))
+                        plot_comb_bs = True
+                        plot_ind_bs = False
+                        if plot_ind_bs is True:
+                            try:
+                                cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
+                            except ValueError:
+                                pass
+
+                    if plot_comb_bs is True:
+                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, booting_load=True)
+
+                        offset = [num.mean(x), num.mean(y)]
+                        data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                    dimy))
+                        xc = num.reshape(x, (dimx, dimy))
+                        yc = num.reshape(y, (dimx, dimy))
+                        cp= plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
+                        ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
+
                 event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-                desired=[3,4]
-                with open(event, 'r') as fin:
-                    reader=csv.reader(fin)
-                    event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-                desired=[7,8,9]
-                with open(event, 'r') as fin:
-                    reader=csv.reader(fin)
-                    event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-                x, y = map(event_cor[1][0],event_cor[0][0])
-                ax = plt.gca()
-                np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-                beach1 = beach(np1, xy=(x, y), width=0.09)
-                ax.add_collection(beach1)
+                draw_beach(ax, scale, map, event)
+
                 for argv in sys.argv:
                     if argv == "--topography":
                         try:
@@ -1241,191 +1359,13 @@ def plot_integrated_movie():
                             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
                         except:
                             pass
-                plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
 
                 if cfg.Bool('synthetic_test') is True:
-                    from pyrocko.gf import ws, LocalEngine, Target, DCSource, RectangularSource, MTSource
                     Syn_in = C.parseConfig('syn')
                     syn_in = SynthCfg(Syn_in)
-                    sources = []
-
-                    if syn_in.source() == 'RectangularSource':
-                        sources.append(RectangularSource(
-                            lat=float(syn_in.lat_0()),
-                            lon=float(syn_in.lon_0()),
-                            east_shift=float(syn_in.east_shift_0())*1000.,
-                            north_shift=float(syn_in.north_shift_0())*1000.,
-                            depth=syn_in.depth_syn_0()*1000.,
-                            strike=syn_in.strike_0(),
-                            dip=syn_in.dip_0(),
-                            rake=syn_in.rake_0(),
-                            width=syn_in.width_0()*1000.,
-                            length=syn_in.length_0()*1000.,
-                            nucleation_x=syn_in.nucleation_x_0(),
-                            slip=syn_in.slip_0(),
-                            nucleation_y=syn_in.nucleation_y_0(),
-                            velocity=syn_in.velocity_0(),
-                            anchor=syn_in.anchor(),
-                            time=util.str_to_time(syn_in.time_0())))
-                    if syn_in.source() == 'DCSource':
-                            sources.append(DCSource(
-                                lat=float(syn_in.lat_0()),
-                                lon=float(syn_in.lon_0()),
-                                east_shift=float(syn_in.east_shift_0())*1000.,
-                                north_shift=float(syn_in.north_shift_0())*1000.,
-                                depth=syn_in.depth_syn_0()*1000.,
-                                strike=syn_in.strike_0(),
-                                dip=syn_in.dip_0(),
-                                rake=syn_in.rake_0(),
-                                time=util.str_to_time(syn_in.time_0()),
-                                magnitude=syn_in.magnitude_0()))
-                    for source in sources:
-                        n, e = source.outline(cs='latlon').T
-                        e, n = map(e,n)
-
-                        ax.fill(e, n, color=(0.5, 0.5, 0.5), lw = 2)
+                    draw_sources(ax, syn_in, map, scale)
                 plt.show()
 
-
-def plot_integrated():
-    if len(sys.argv)<4:
-        print("missing input arrayname")
-    else:
-            data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-            boot = False
-            try:
-                if sys.argv[4] == 'boot':
-                    boot = True
-            except:
-                pass
-            evpath = 'events/'+ str(sys.argv[1])
-            C  = config.Config(evpath)
-            Config = C.parseConfig('config')
-            cfg = ConfigObj(dict=Config)
-            dimx = int(Config['dimx'])
-            dimy = int(Config['dimy'])
-
-            plt.figure()
-
-            map, x, y = make_map(data)
-            mins = np.max(data[:,2])
-            triang = tri.Triangulation(x, y)
-            isbad = np.less(data_int, num.max(data_int)*0.01)
-            mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
-            triang.set_mask(mask)
-            plt.tricontourf(triang, data_int, cmap='cool')
-            plt.colorbar(orientation="horizontal")
-            plt.title(path_in_str)
-
-            if boot is True:
-                n_bootstrap = cfg.UInt('n_bootstrap')
-                colors = iter(cm.rainbow(np.linspace(0, 1, n_bootstrap)))
-                for iboot in range(0, n_bootstrap):
-                    datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(0, step=iboot, booting_load=True)
-                    where_are_NaNs = num.isnan(data_int_boot)
-                    data_int_boot[where_are_NaNs] = 0
-                    data_int_boot = num.reshape(data_int_boot, (dimx,
-                                                                dimy))
-                    xc = num.reshape(x, (dimx, dimy))
-                    yc = num.reshape(y, (dimx, dimy))
-                    ax = plt.gca()
-                    plot_comb_bs = True
-                    plot_ind_bs = False
-                    if plot_ind_bs is True:
-                        try:
-                            cp= plt.contour(xc, yc, data_int_boot)
-                            #print(cp)
-                            #cpf = plt.contourf(xc,yc, data_int_boot, cmap=cm.Greys_r)
-                            #colours = ['w' if level<0 else 'k' for level in cpf.levels]
-                            #cp = plt.contour(xc, yc, data_int_boot, colors=colours)
-
-                        except ValueError:
-                            pass
-
-                if plot_comb_bs is True:
-                    datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(0)
-
-                #    plt.clabel(cp, fontsize=12)
-                    offset = [num.mean(x), num.mean(y)]
-                    import matplotlib.transforms as transforms
-                    from matplotlib.patches import Ellipse
-                    data_int_boot[data_int_boot >= num.max(data_intb)*0.95] = 1
-                    data_int_boot[data_int_boot != 1] = 0
-
-                    data_int_boot = num.reshape(data_int_boot, (dimx,
-                                                                dimy))
-                    xc = num.reshape(x, (dimx, dimy))
-                    yc = num.reshape(y, (dimx, dimy))
-                    cp= plt.contour(xc, yc, data_int_boot)
-                    ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
-                #    ellipse = Ellipse((offset[0], offset[1]),
-                #        width=ell_radius_x * 200,
-                #        height=ell_radius_y * 200,
-                #        facecolor='r', lw=20
-                #        )
-                #    ax.add_patch(ellipse)
-
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0], event_cor[0][0])
-            ax = plt.gca()
-            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-            beach1 = beach(np1, xy=(x, y), width=950.)
-            ax.add_collection(beach1)
-            for argv in sys.argv:
-                if argv == "--topography":
-                    try:
-                        xpixels = 1000
-                        map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-                    except:
-                        pass
-            plt.show()
-
-            data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(1)
-
-
-            plt.figure()
-            map, x, y = make_map(data)
-
-            mins = np.max(data[:,2])
-            triang = tri.Triangulation(x, y)
-            isbad = np.less(data_int, datamax*0.05)
-            mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
-            triang.set_mask(mask)
-            plt.tricontourf(triang, data_int, cmap='cool')
-            plt.colorbar(orientation="horizontal")
-            plt.title(path_in_str)
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
-            with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
-            ax = plt.gca()
-            np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-            beach1 = beach(np1, xy=(x, y), width=0.09)
-            ax.add_collection(beach1)
-            xpixels = 1000
-            for argv in sys.argv:
-                if argv == "--topography":
-                    try:
-                        map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-                    except:
-                        pass
-
-            plt.show()
 
 
 
