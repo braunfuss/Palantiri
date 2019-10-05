@@ -8,6 +8,7 @@ As researchers, we are obligated to retain open access to all. To achieve this, 
 
 To ensure a smooth transition, we will keep a version of the code repository at GitHub until 2020-01-01.
 
+WIP Documentation: https://braunfuss.github.io/Palantiri/
 
 ## Installation
 
