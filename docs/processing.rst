@@ -68,6 +68,8 @@ Note that the option for several filters are build in. With this option the proc
 and according outputs are generated. An arbitrary number of filter can used. The filter parameters names are assumed to be consecutively numbered.   This processing of different filter settings is useful for exploring e.g. high- and low-frequency content.
 Also note that several depths can be selected to iterate over. Else only one planar equi-depth grid is considered for the semblance and traveltime
 calculation. If several depths are chosen the processing will be repeated for each depth and the semblance will be output for each depth.
+Arrays can be weighted by pre-event noise variance and azimuthal coverage.
+
 
 The semblance output is located in the eventfolder/work/semblance as txt files with the ending ".asc". They are
 
