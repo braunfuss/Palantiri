@@ -5,11 +5,7 @@ Palantiri Manual
 Palantiri (Backprojection array tool) is an open source toolbox for seismological backprojection to investigate source properties
 based on teleseismic data and clustering stations into synthetics arrays. A number of synthetic test are possible using Greensfunctions
 
-based on:
 
-    KRÜGER, Frank; OHRNBERGER, Matthias.
-    Tracking the rupture of the M w= 9.3 Sumatra earthquake over 1,150 km at teleseismic distance.
-    Nature, 2005, 435. Jg., Nr. 7044, S. 937.
 
 .. raw:: html
 
@@ -43,3 +39,9 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+Literature
+------------------
+  KRÜGER, Frank; OHRNBERGER, Matthias.
+  Tracking the rupture of the M w= 9.3 Sumatra earthquake over 1,150 km at teleseismic distance.
+  Nature, 2005, 435. Jg., Nr. 7044, S. 937.
