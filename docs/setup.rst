@@ -19,7 +19,7 @@ A python2 branch is available as backup but not maintained.
 Prerequisites
 ^^^^^^^^^^^^^
 
-It is necessary to install the pyrocko software package, which is used to handle
+It is necessary to install the pyrocko <https://github.com/pyrocko/pyrocko>`_. software package, which is used to handle
 the basic waveform handling and manipulation. Please see that packages installation guide on:
 pyrocko: https://git.pyrocko.org/pyrocko/
 All prerequisites listed for the pyrocko software are assumed to be installed for the usage of this software package.

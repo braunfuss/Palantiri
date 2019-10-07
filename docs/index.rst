@@ -5,11 +5,9 @@ Palantiri Manual
 Palantiri is an console command based open source toolbox for seismological backprojection to investigate source properties
 based on teleseismic data. Palantiri allows for downloading data and clustering stations into synthetics arrays.
 Bootstrapping of the weight of this arrays allow to investigate the uncertainty of the backprojection results.
-For beamforming several methods are incorporated, including linear, phase-weighted and coherence based stacking.
 The tool allows for a number of fast synthetic tests, which are made possible using Greensfunctions stores from the Pyrocko package.
 For fast processing traveltime grids are pre-calculated. Arbitrary number of processes for different filter settings can be run.
 Backprojections can be further carried out on a single planar grid or in 3-D.
-The MUSIC algorithm is at this stage partly supported but will be fully implemented in later versions.
 
 
 
@@ -55,3 +53,9 @@ Literature
   Rössler, D., Krueger, F., Ohrnberger, M., & Ehlert, L. (2010).
   Rapid characterisation of large earthquakes by multiple seismic broadband arrays.
   Natural Hazards and Earth System Sciences, 10(4), 923-932.
+
+
+More resources:
+---------------
+
+  * `Green's Mill - Online resource for pre-calculated Green's functions <https://greens-mill.pyrocko.org>`_
