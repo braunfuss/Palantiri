@@ -57,9 +57,41 @@ def initModule():
     Globals.setEventDir_emp(evpath_emp)
     return True
 
+def check_is_empty(evpath, move=False):
+    from pathlib import Path
+    folder_used = False
+    path = Path(evpath+'/work/semblance/').glob('*.ASC')
+    for p in path:
+        folder_used = True
+    if folder_used is True:
+        if move is False:
+            print('Workdir is not empty, too overwrite use --force')
+            quit()
+        else:
+            for kiter in range(0, 100):
+                new_folder_used = False
+                print('copying backup of work -might take some time')
+                path = Path(evpath+'/work_%s/semblance/' %kiter).glob('*.ASC')
+                for p in path:
+                    new_folder_used = True
+                if new_folder_used is False:
+                    os.system('cp -r %s %s_%s' % (evpath+'/work/semblance', evpath+'/work/semblance', kiter))
+                    print(evpath, evpath+'/work/semblance_%s/' %kiter)
+                    os.system('cp -r %s %s_%s/' % (evpath+'/*.config*', evpath+'/work/semblance', kiter))
+                    os.system('cp -r %s %s_%s/' % (evpath+'/*.origin*', evpath+'/work/semblance', kiter))
+                    os.system('cp -r %s %s_%s/' % (evpath+'/*.syn*', evpath+'/work/semblance', kiter))
 
 def processLoop(traces=None, stations=None, cluster=None):
-
+    force = False
+    move = False
+    for argv in sys.argv:
+        if argv[-7:] == '--force':
+            force = True
+        if argv[-12:] == '--force-move':
+            force = False
+            move = True
+    if force is False:
+        check_is_empty(evpath, move=move)
     C = config.Config(evpath, eventpath_emp=evpath_emp)
     Origin = C.parseConfig('origin')
     flag_rpe = False
@@ -1069,7 +1101,6 @@ class ProcessMain(MainObj):
 
 
 def MainProc():
-
     mainObj = ProcessMain()
 
     mainObj.run()
@@ -1079,6 +1110,5 @@ isClient = False
 
 
 def main():
-
     if not isClient:
         MainProc()

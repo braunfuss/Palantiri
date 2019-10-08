@@ -18,6 +18,7 @@ from palantiri.common.ConfigFile import ConfigObj, FilterCfg
 from palantiri.tools.config import Trigger
 from palantiri.process.waveform import resampleWaveform_2
 from collections import OrderedDict
+import palantiri
 
 logger = logging.getLogger(sys.argv[0])
 
@@ -305,7 +306,6 @@ class Xcorr(object):
             de = loc2degrees(self.Origin, i)
             Phase = cake.PhaseDef(phase)
             traveltime_model = cfg.Str('traveltime_model')
-            import palantiri
             path = palantiri.__path__
             model = cake.load_model(path[0]+'/data/'+traveltime_model)
             if cfg.colesseo_input() is True:

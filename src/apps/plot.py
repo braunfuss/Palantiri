@@ -42,6 +42,7 @@ def draw_beach(ax, scale, map, event):
     beach1 = beach(np1, xy=(x, y), width=0.09)
     ax.add_collection(beach1)
 
+
 def draw_sources(ax, syn_in, map, scale):
     from pyrocko.gf import DCSource, RectangularSource, MTSource
 
@@ -1321,6 +1322,14 @@ def plot_integrated():
                 plt.title(path_in_str)
 
                 if boot is True:
+                    plot_comb_bs = False
+                    plot_ind_bs = False
+
+                    for argv in sys.argv:
+                        if argv == "--induvidual":
+                            plot_ind_bs = True
+                        else:
+                            plot_comb_bs = True
                     n_bootstrap = cfg.UInt('n_bootstrap')
                     for iboot in range(0, n_bootstrap):
                         datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
@@ -1330,8 +1339,7 @@ def plot_integrated():
                                                                     dimy))
                         xc = num.reshape(x, (dimx, dimy))
                         yc = num.reshape(y, (dimx, dimy))
-                        plot_comb_bs = True
-                        plot_ind_bs = False
+
                         if plot_ind_bs is True:
                             try:
                                 cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
@@ -1346,7 +1354,7 @@ def plot_integrated():
                                                                     dimy))
                         xc = num.reshape(x, (dimx, dimy))
                         yc = num.reshape(y, (dimx, dimy))
-                        cp= plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
+                        cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
                         ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
 
                 event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'

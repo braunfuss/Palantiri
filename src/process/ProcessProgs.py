@@ -20,15 +20,11 @@ class Intern(object):
 
     def checkProgramParameter(self, nMinParams, nMaxParams):
 
-        eventName = sys.argv[2]
 
+        eventName = sys.argv[2]
         if len(sys.argv) < nMinParams:
             self.error('event name missing')
-        if len(sys.argv) > nMaxParams:
-            self.error('Too many parameters')
-
         if not Globals.checkEventDirParameter(eventName):
-
             s = 'Invalid parameter - <' + eventName + '>'
             s += '\n        '
             s += 'Cannot find directory ' + Globals.EventDir()
@@ -36,10 +32,13 @@ class Intern(object):
 
 
 def start(config):
-
     intern = Intern()
-
     if sys.argv[1] == 'process':
+        force = False
+        for argv in sys.argv[1:]:
+            if argv == '--force':
+                force = True
+
         intern.checkProgramParameter(3, 4)
 
         path = Globals.EventDir()
@@ -49,12 +48,20 @@ def start(config):
             at = os.path.join(os.getcwd(), 'Process', 'main.py')
             workDir = [path, 'tmp2', 'process']
             workDir = ['tmpProcess']
-            cmd = "palantiri_process" + '  -f ' + path + ' -e ' + path_emp
+            if force is False:
+                cmd = "palantiri_process" + '  -f ' + path + ' -e ' + path_emp
+            else:
+                cmd = "palantiri_process" + '  -f ' + path + ' -e ' + path_emp + '--force'
+
         except Exception:
             at = os.path.join(os.getcwd(), 'Process', 'main.py')
             workDir = [path, 'tmp2', 'process']
             workDir = ['tmpProcess']
-            cmd = "palantiri_process" + ' -f ' + path
+            if force is False:
+                cmd = "palantiri_process" + ' -f ' + path
+            else:
+                cmd = "palantiri_process" + ' -f ' + path + '--force'
+
     else:
         return False
 
