@@ -72,23 +72,26 @@
 <h1>Setup<a class="headerlink" href="#setup" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="installation-from-source">
 <h2>Installation from source<a class="headerlink" href="#installation-from-source" title="Permalink to this headline">¶</a></h2>
-<p>git clone <a class="reference external" href="https://git.pyrocko.org/Palantiri">https://git.pyrocko.org/Palantiri</a>
-and than in the cloned directory:
-sudo python3 setup.py install</p>
-<p>Note: This tool is written python3.
+<p>‘git clone <a class="reference external" href="https://git.pyrocko.org/Palantiri">https://git.pyrocko.org/Palantiri</a>’
+and than in the cloned directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">python3</span> <span class="n">setup</span><span class="o">.</span><span class="n">py</span> <span class="n">install</span>
+</pre></div>
+</div>
+<p>Note: This tool is written in python3.
 A python2 branch is available as backup but not maintained.</p>
 </div>
 <div class="section" id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this headline">¶</a></h2>
-<p>It is necessary to install the pyrocko software package, which is used to handle
-the basic waveform handling and manipulation. Please see that packages installation guide on:
-pyrocko: <a class="reference external" href="https://git.pyrocko.org/pyrocko/">https://git.pyrocko.org/pyrocko/</a>
-All prerequisites listed for the pyrocko software are assumed to be installed for the usage of this software package.</p>
+<p>It is necessary to install the pyrocko &lt;<a class="reference external" href="https://github.com/pyrocko/pyrocko">https://github.com/pyrocko/pyrocko</a>&gt;`_. software package, which is used to handle
+the basic waveform handling and manipulation. Please follow the pyrocko packages installation guide, before installing this software.</p>
+<p>All prerequisites listed for the pyrocko software are assumed to be installed for the usage of this software package.</p>
 <p>For some advanced functionality (e.g. array response analysis) it is also necessary to install the obspy package:
-obspy: <a class="reference external" href="https://github.com/obspy/obspy">https://github.com/obspy/obspy</a></p>
-<p>Some further basic installations which are needed are:
-sudo pip3 install pyproj basemap affine</p>
-<p>basemap is only necessary for plotting and can be omitted.</p>
+obspy: &lt;<a class="reference external" href="https://github.com/obspy/obspy">https://github.com/obspy/obspy</a>&gt;`_
+Some further basic requirements for plotting can be installed with:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">sudo</span> <span class="n">pip3</span> <span class="n">install</span> <span class="n">pyproj</span> <span class="n">basemap</span> <span class="n">affine</span>
+</pre></div>
+</div>
+<p>These are only necessary for plotting and can be omitted.</p>
 </div>
 </div>
 

@@ -88,19 +88,10 @@ All FDSN catalogs are supported.</p>
 <span class="n">blacklist</span> <span class="o">=</span> <span class="n">SY</span>
 </pre></div>
 </div>
-<p>In this example we select [eventsearchparameter] for an earthquake above magnitude 2.5, occuring between 1995-11-22T20:00:00.0 and 1995-11-22T24:00:00.0 in the GCMT catalog.
+<p>In this example we select [eventsearchparameter] for an earthquake above magnitude 2.5, occurring between 1995-11-22T20:00:00.0 and 1995-11-22T24:00:00.0 in the GCMT catalog.
 We display only the first 10 results.</p>
-<p>The event search is carried out by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">palantiri_eventsearch</span>
-</pre></div>
-</div>
-<p>A list is returned in the terminal with the ISC event ids of the found earthquakes. We can now use the id to create an event folder for the selected earthquake by:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">palantiri_create</span> <span class="n">eventid</span>
-</pre></div>
-</div>
-<p>An eventfolder is created in the palantiri main workdir under the events folder with the event name and date as folder name.</p>
 <p>The stationsearchparameter ‘blacklist’ is used in the clustering to ignore stations in all processing.
-A commata separated list is expected.</p>
+A comma separated list is expected.</p>
 </div>
 
 

@@ -69,14 +69,12 @@
             
   <div class="section" id="palantiri-manual">
 <h1>Palantiri Manual<a class="headerlink" href="#palantiri-manual" title="Permalink to this headline">¶</a></h1>
-<p>Palantiri (Backprojection array tool) is an open source toolbox for seismological backprojection to investigate source properties
-based on teleseismic data and clustering stations into synthetics arrays. A number of synthetic test are possible using Greensfunctions</p>
-<p>based on:</p>
-<blockquote>
-<div><p>KRÜGER, Frank; OHRNBERGER, Matthias.
-Tracking the rupture of the M w= 9.3 Sumatra earthquake over 1,150 km at teleseismic distance.
-Nature, 2005, 435. Jg., Nr. 7044, S. 937.</p>
-</div></blockquote>
+<p>Palantiri is an console command based open source toolbox for seismological backprojection to investigate source properties
+based on teleseismic data. Palantiri allows for downloading data and clustering stations into synthetics arrays.
+Bootstrapping of the weight of this arrays allow to investigate the uncertainty of the backprojection results.
+The tool allows for a number of fast synthetic tests, which are made possible using Greensfunctions stores from the Pyrocko package.
+For fast processing traveltime grids are pre-calculated. Arbitrary number of processes for different filter settings can be run.
+Backprojections can be further carried out on a single planar grid or in 3-D.</p>
 <div style="clear:both"></div><div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <div class="keywords">
@@ -100,7 +98,15 @@ Nature, 2005, 435. Jg., Nr. 7044, S. 937.</p>
 <li class="toctree-l2"><a class="reference internal" href="configuration/synthetic.html">syn.conf</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="processing.html">Processing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html">Pre-processing</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="processing.html#event-search">1. Event search</a></li>
+<li class="toctree-l2"><a class="reference internal" href="processing.html#event-folder-creation">2. Event folder creation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="processing.html#a-data-download">2 a) Data download</a></li>
+<li class="toctree-l2"><a class="reference internal" href="processing.html#b-synthetic-data-generation">2 b) Synthetic data generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="processing.html#array-clustering">3. Array clustering</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="processing.html#processing">Processing</a></li>
 </ul>
 </div>
 </div>
@@ -111,6 +117,25 @@ Nature, 2005, 435. Jg., Nr. 7044, S. 937.</p>
 <li><p><a class="reference internal" href="py-modindex.html"><span class="std std-ref">Module Index</span></a></p></li>
 <li><p><a class="reference internal" href="search.html"><span class="std std-ref">Search Page</span></a></p></li>
 </ul>
+</div>
+<div class="section" id="literature">
+<h2>Literature<a class="headerlink" href="#literature" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>KRÜGER, Frank; OHRNBERGER, Matthias.
+Tracking the rupture of the M w= 9.3 Sumatra earthquake over 1,150 km at teleseismic distance.
+Nature, 2005, 435. Jg., Nr. 7044, S. 937.</p>
+<p>Rössler, D., Krueger, F., Ohrnberger, M., &amp; Ehlert, L. (2010).
+Rapid characterisation of large earthquakes by multiple seismic broadband arrays.
+Natural Hazards and Earth System Sciences, 10(4), 923-932.</p>
+</div></blockquote>
+</div>
+<div class="section" id="more-resources">
+<h2>More resources:<a class="headerlink" href="#more-resources" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li><p><a class="reference external" href="https://greens-mill.pyrocko.org">Green’s Mill - Online resource for pre-calculated Green’s functions</a></p></li>
+</ul>
+</div></blockquote>
 </div>
 </div>
 
