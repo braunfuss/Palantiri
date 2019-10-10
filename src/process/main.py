@@ -65,7 +65,7 @@ def check_is_empty(evpath, move=False):
         folder_used = True
     if folder_used is True:
         if move is False:
-            print('Workdir is not empty, too overwrite use --force')
+            print('Workdir is not empty, to overwrite use --force')
             quit()
         else:
             for kiter in range(0, 100):
