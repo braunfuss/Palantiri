@@ -105,8 +105,21 @@ and a basic folder structure:</p>
 <div class="section" id="a-data-download">
 <h2>2 a) Data download<a class="headerlink" href="#a-data-download" title="Permalink to this headline">¶</a></h2>
 <p>Download real data with the download tool:</p>
-<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">$</span> palantiri_down
-<span class="go">Usage: palantiri_down</span>
+<div class="highlight-console notranslate"><div class="highlight"><pre><span></span><span class="gp">            $</span> palantiri_down
+<span class="go">usage: palantiri_down [options] &lt;eventname_date&gt;  &quot;&lt;YYYY-MM-DD HH:MM:SS&gt;&quot; &lt;lat&gt; &lt;lon&gt; \\</span>
+<span class="go">                               &lt;depth_km&gt; &lt;radius_km&gt; &lt;fmin_hz&gt; \\</span>
+<span class="go">                               &lt;sampling_rate_hz&gt; \\</span>
+<span class="go">                               &lt;eventname&gt; [--]</span>
+
+<span class="go">       palantiri_down [options] &lt;eventname_date&gt; &quot;&lt;YYYY-MM-DD HH:MM:SS&gt;&quot; &lt;radius_km&gt; &lt;fmin_hz&gt; \\</span>
+<span class="go">                               &lt;sampling_rate_hz&gt; &lt;eventname&gt; [--]</span>
+
+<span class="go">       palantiri_down [options] &lt;eventname_date&gt;  &lt;catalog-eventname&gt; &lt;radius_km&gt; &lt;fmin_hz&gt; \\</span>
+<span class="go">                               &lt;sampling_rate_hz&gt; &lt;eventname&gt; [--]</span>
+
+<span class="go">       palantiri_down [options] --window=&quot;&lt;YYYY-MM-DD HH:MM:SS, YYYY-MM-DD HH:MM:SS&gt;&quot; \\</span>
+<span class="go">                               &lt;eventname_date&gt;  &lt;lat&gt; &lt;lon&gt; &lt;radius_km&gt; &lt;fmin_hz&gt; \\</span>
+<span class="go">                               &lt;sampling_rate_hz&gt; &lt;eventname&gt; [--]</span>
 </pre></div>
 </div>
 </div>
