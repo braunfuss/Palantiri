@@ -178,6 +178,7 @@ def main():
     if len(sys.argv) == 2:
         absf, evid = createWorkingDirectory(sys.argv)
         writeSynFile(absf, sys.argv)
+        writeOriginFile(absf, sys.argv)
         copyConfigSkeleton(absf)
     else:
         logger.info('\033[31m Nothing to do %s \033[0m \n')
