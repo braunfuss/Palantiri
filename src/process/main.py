@@ -1031,6 +1031,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             if ASL:
                                 Logfile.red('collect semblance matrices from\
                                             all arrays')
+                                # Todo: Add optim for combined semblance
                                 sembmax, tmp = sembCalc.collectSemb(ASL,
                                                                     Config,
                                                                     Origin,

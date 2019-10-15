@@ -89,32 +89,36 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
     t = time.time()  # start timing
     # bounds given as (min,max)
     bounds = []
+    max_semb = 0.
     low = -1.*cfg.Float('shift_max')
     high = cfg.Float('shift_max')
+    for i in range(low, high):
+        if cfg.Bool('correct_shifts_empirical_station_wise') is False:
+            bounds = [(i-1., i+1.)]
+        else:
+            for ref in refshifts:
+                bounds.append((i-1., i+1.))
+        bounds = num.asarray(bounds)
+        result = scipy.optimize.differential_evolution(optimization_timeshifts,
+                                                        mutation=1.9,
+                                                       bounds=bounds,
+                                                       args=(maxp, nostat,
+                                                             nsamp, ntimes, nstep,
+                                                             dimX, dimY,
+                                                             Gmint, new_frequence,
+                                                             minSampleCount, latv,
+                                                             lonv, traveltimes,
+                                                             traces, calcStreamMap,
+                                                             timeev, Config, Origin,
+                                                             refshifts))
 
-    if cfg.Bool('correct_shifts_empirical_station_wise') is False:
-        bounds = [(low, high)]
-    else:
-        for ref in refshifts:
-            bounds.append((low, high))
-    bounds = num.asarray(bounds)
-    result = scipy.optimize.differential_evolution(optimization_timeshifts,
-                                                    mutation=1.9,
-                                                   bounds=bounds,
-                                                   args=(maxp, nostat,
-                                                         nsamp, ntimes, nstep,
-                                                         dimX, dimY,
-                                                         Gmint, new_frequence,
-                                                         minSampleCount, latv,
-                                                         lonv, traveltimes,
-                                                         traces, calcStreamMap,
-                                                         timeev, Config, Origin,
-                                                         refshifts))
 
-
-    elapsed = time.time() - t  # get the processing time
-    print("shifts:", result.x)
-    return result.x
+        elapsed = time.time() - t  # get the processing time
+        print("shifts:", result.x)
+        if result.func > max_semb:
+            max_semb = result.func
+            add_factor = i
+    return result.x+add_factor
 
 def make_bayesian_weights(narrays, nbootstrap=100,
                           type='bayesian', rstate=None):

@@ -197,21 +197,21 @@ Download waveforms from FDSN web services and prepare for palantiri
 logger = logging.getLogger('')
 
 usage = '''
-usage: palantiriown [options] [--] <YYYY-MM-DD> <HH:MM:SS> <lat> <lon> \\
+usage: palantiri_down [options] <eventname_date>  <YYYY-MM-DD> <HH:MM:SS> <lat> <lon> \\
                                <depth_km> <radius_km> <fmin_hz> \\
                                <sampling_rate_hz> \\
-                               <eventname>
+                               <eventname> [--]
 
-       palantiriown [options] [--] <YYYY-MM-DD> <HH:MM:SS> <radius_km> <fmin_hz> \\
-                               <sampling_rate_hz> <eventname>
+       palantiri_down [options] <eventname_date> <YYYY-MM-DD> <HH:MM:SS> <radius_km> <fmin_hz> \\
+                               <sampling_rate_hz> <eventname> [--]
 
-       palantiriown [options] [--] <catalog-eventname> <radius_km> <fmin_hz> \\
-                               <sampling_rate_hz> <eventname>
+       palantiri_down [options] <eventname_date>  <catalog-eventname> <radius_km> <fmin_hz> \\
+                               <sampling_rate_hz> <eventname> [--]
 
-       palantiriown [options] --window="<YYYY-MM-DD HH:MM:SS, YYYY-MM-DD HH:MM:\
+       palantiri_down [options] --window="<YYYY-MM-DD HH:MM:SS, YYYY-MM-DD HH:MM:\
 SS>" \\
-                               [--] <lat> <lon> <radius_km> <fmin_hz> \\
-                               <sampling_rate_hz> <eventname>
+                               <eventname_date>  <lat> <lon> <radius_km> <fmin_hz> \\
+                               <sampling_rate_hz> <eventname> [--]
 '''.strip()
 
 

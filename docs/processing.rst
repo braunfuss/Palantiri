@@ -56,9 +56,20 @@ Download real data with the download tool:
 ::
 
 		$ palantiri_down
-		Usage: palantiri_down
+    usage: palantiri_down [options] <eventname_date>  "<YYYY-MM-DD HH:MM:SS>" <lat> <lon> \\
+                                   <depth_km> <radius_km> <fmin_hz> \\
+                                   <sampling_rate_hz> \\
+                                   <eventname> [--]
 
+           palantiri_down [options] <eventname_date> "<YYYY-MM-DD HH:MM:SS>" <radius_km> <fmin_hz> \\
+                                   <sampling_rate_hz> <eventname> [--]
 
+           palantiri_down [options] <eventname_date>  <catalog-eventname> <radius_km> <fmin_hz> \\
+                                   <sampling_rate_hz> <eventname> [--]
+
+           palantiri_down [options] --window="<YYYY-MM-DD HH:MM:SS, YYYY-MM-DD HH:MM:SS>" \\
+                                   <eventname_date>  <lat> <lon> <radius_km> <fmin_hz> \\
+                                   <sampling_rate_hz> <eventname> [--]
 
 2 b) Synthetic data generation
 -------------------------------
