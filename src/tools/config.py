@@ -99,11 +99,18 @@ class Config(object):
         '''
         cDict = {}
         if suffix == "origin_emp":
-            files = glob.glob(os.path.join(self.eventpath_emp, '*.'+'origin'))
+            try:
+                files = glob.glob(os.path.join(self.eventpath_emp, '*.'+'origin'))
+                parser = SafeConfigParser()
+                parser.read(files[0])
+            except:
+                files = glob.glob(os.path.join(self.eventpath_emp, '*.'+'origin_emp'))
+                parser = SafeConfigParser()
+                parser.read(files[0])
         else:
             files = glob.glob(os.path.join(self.eventpath, '*.'+suffix))
-        parser = SafeConfigParser()
-        parser.read(files[0])
+            parser = SafeConfigParser()
+            parser.read(files[0])
 
         for section_name in parser.sections():
             for name, value in parser.items(section_name):

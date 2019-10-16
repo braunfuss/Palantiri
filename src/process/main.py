@@ -87,12 +87,18 @@ def processLoop(traces=None, stations=None, cluster=None):
     for argv in sys.argv:
         if argv[-7:] == '--force':
             force = True
-        if argv[-12:] == '--force-move':
+            evpath_emps = evpath_emp[:-7]
+        elif argv[-12:] == '--force-move':
             force = False
             move = True
+            evpath_emps = evpath_emp[:-12]
+        else:
+            evpath_emps = evpath_emp
+
     if force is False:
         check_is_empty(evpath, move=move)
-    C = config.Config(evpath, eventpath_emp=evpath_emp)
+
+    C = config.Config(evpath, eventpath_emp=evpath_emps)
     Origin = C.parseConfig('origin')
     flag_rpe = False
 
@@ -255,9 +261,10 @@ def processLoop(traces=None, stations=None, cluster=None):
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
         fobjreferenceshiftnameemp = newFreq + '_' + filtername + 'emp' + '.refpkl'
-        rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp)
+        rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp) + '.shift'
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
+
         refshift = 0
         SL = {}
         for i in xcorrnetworks:
@@ -603,17 +610,17 @@ def processLoop(traces=None, stations=None, cluster=None):
                             else:
                                 Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
                                                                        tw_emp,
-                                                                       evpath_emp,
+                                                                       evpath_emps,
                                                                        ev_emp,
                                                                        desired)
                         elif cfg.colesseo_input() is True:
                             Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
                                                                      tw_emp,
-                                                                     evpath_emp,
+                                                                     evpath_emps,
                                                                      ev_emp, C)
                         else:
                             Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
-                                                            evpath_emp, ev_emp)
+                                                            evpath_emps, ev_emp)
                         if cfg.Bool('correct_shifts_empirical_synthetic') is True\
                            or cfg.Bool('dynamic_filter') is True:
                             Wdf_emp = waveform.processdummyWaveforms(Wd_emp, Config,
@@ -627,9 +634,9 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 ff2 = filter.fhi()
                                 switchs = "l0"
                             else:
-                                f1 = str('ff1 = filter.flo%s()'%filterindex+1)
+                                f1 = str('filter.flo%s()'% str(filterindex+1))
                                 ff1 = eval(f1)
-                                f2 = str('ff2 = filter.fhi%s()'%filterindex+1)
+                                f2 = str('filter.fhi%s()'% str(filterindex+1))
                                 ff2 = eval(f2)
                                 switchs = "h1"
                             ps_wdf_emp = os.path.join(Folder['semb'],
@@ -783,17 +790,17 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         else:
                                             Wd_emp = waveform.readWaveformsPyrocko(FilterMeta,
                                                                                    tw_emp,
-                                                                                   evpath_emp,
+                                                                                   evpath_emps,
                                                                                    ev_emp,
                                                                                    desired)
                                     elif cfg.colesseo_input() is True:
                                         Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
                                                                                  tw_emp,
-                                                                                 evpath_emp,
+                                                                                 evpath_emps,
                                                                                  ev_emp, C)
                                     else:
                                         Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
-                                                                        evpath_emp, ev_emp)
+                                                                        evpath_emps, ev_emp)
                                     flag_rpe = True
                                     nstats = stations_per_array
                                     if switch == 0:
@@ -937,9 +944,9 @@ def processLoop(traces=None, stations=None, cluster=None):
                             ff2 = filter.fhi()
                             switchs = "l0"
                         else:
-                            f1 = str('filter.flo%s()'%filterindex+1)
+                            f1 = str('filter.flo%s()'% str(filterindex+1))
                             ff1 = eval(f1)
-                            f2 = str('filter.fhi%s()'%filterindex+1)
+                            f2 = str('filter.fhi%s()'% str(filterindex+1))
                             ff2 = eval(f2)
                             switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'],
@@ -975,9 +982,9 @@ def processLoop(traces=None, stations=None, cluster=None):
                         ff2 = filter.fhi()
                         switchs = "l0"
                     else:
-                        f1 = str('filter.flo%s()'%filterindex+1)
+                        f1 = str('filter.flo%s()'% str(filterindex+1))
                         ff1 = eval(f1)
-                        f2 = str('ff2 = filter.fhi%s()'%filterindex+1)
+                        f2 = str('ff2 = filter.fhi%s()'% str(filterindex+1))
                         ff2 = eval(f2)
                         switchs = "h1"
                     if cfg.Bool('bootstrap_array_weights') is False:
