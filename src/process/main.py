@@ -894,7 +894,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     print("loading travel time grid%s_%s_%s_%s_%s.pkl"
                                           % (phase, ttt_model, ev.time, arrayname,
                                               workdepth))
-                                    TTTGridMap_mew, mintt, maxtt = pickle.load(f)
+                                    TTTGridMap, mintt, maxtt = pickle.load(f)
                                     f.close()
                                     arraySemb, weight, array_center = sembCalc.doCalc(
                                         counter, Config, Wd, FilterMeta, mintt, maxtt,
@@ -910,7 +910,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         print("loading travel time grid%s_%s_%s_%s_%s.pkl"
                                               % (phase, ttt_model, ev.time, arrayname,
                                                   workdepth))
-                                        TTTGridMap_mew, mintt, maxtt = pickle.load(f)
+                                        TTTGridMap, mintt, maxtt = pickle.load(f)
                                         f.close()
                                         arraySemb, weight, array_center = sembCalc.doCalc(
                                             counter, Config, Wd, FilterMeta, mintt, maxtt,
@@ -926,7 +926,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         print("loading travel time grid%s_%s_%s_%s_%s.pkl"
                                               % (phase, ttt_model, ev.time, arrayname,
                                                   workdepth))
-                                        TTTGridMap_mew, mintt, maxtt = pickle.load(f)
+                                        TTTGridMap, mintt, maxtt = pickle.load(f)
                                         f.close()
                                         arraySemb, weight, array_center = sembCalc.doCalc(
                                             counter, Config, Wd, FilterMeta, mintt, maxtt,
