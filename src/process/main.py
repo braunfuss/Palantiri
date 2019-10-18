@@ -816,16 +816,16 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         arrayfolder, syn_in_emp, refshifts,
                                         phase, rpe+str(arrayname)+switchs, flag_rpe,
                                         nstats)
-                                    if sys.version_info.major >= 3:
-                                        f = open(rpe+str(arrayname)+switchs, 'rb')
-                                    else:
-                                        f = open(rpe+str(arrayname)+switchs)
-                                    RefDict_empirical = pickle.load(f)
-                                    refshifts = RefDict_empirical
+                            if sys.version_info.major >= 3:
+                                f = open(rpe+str(arrayname)+switchs, 'rb')
+                            else:
+                                f = open(rpe+str(arrayname)+switchs)
+                            RefDict_empirical = pickle.load(f)
+                            refshifts = RefDict_empirical
 
-                                    for j in range(0, len(Wd_emp)):
-                                        if cfg.correct_shifts() is False:
-                                            refshifts[j] = refshifts[j]*0.
+                            for j in range(0, len(Wd_emp)):
+                                if cfg.correct_shifts() is False:
+                                    refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
                             f = open(os.path.abspath(os.path.join(os.getcwd(),
                                      os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
