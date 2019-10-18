@@ -703,7 +703,6 @@ def plot_cluster():
         i = i+1
     colors = iter(cm.rainbow(np.linspace(0, 1, i)))
     pathlist = Path(rel).glob('*.dat')
-
     for path in sorted(pathlist):
         path_in_str = str(path)
         data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,3,4))
@@ -716,7 +715,6 @@ def plot_cluster():
             lats = data[1]
 
         x, y = map(lons,lats)
-
         map.scatter(x,y,30,marker='o',c=next(colors))
         try:
             plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
@@ -751,8 +749,49 @@ def plot_cluster():
     plt.show()
 
 
-
 def plot_timeshift_map():
+
+    import _pickle as pickle
+
+    evpath = 'events/'+ str(sys.argv[1])
+    C = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    sembpath = evpath + '/work/semblance'
+    stations = []
+    refs = []
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+
+    if cfg.Bool('synthetic_test') is True:
+        Syn_in = C.parseConfig('syn')
+        syn_in = SynthCfg(Syn_in)
+        lat_ev = float(syn_in.lat_0())
+        lon_ev = float(syn_in.lon_0())
+    else:
+        event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+        desired=[3,4]
+        with open(event, 'r') as fin:
+            reader = csv.reader(fin)
+            event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+
+
+    pathlist = Path(rel).glob('*.shift*')
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+            if path_in_str[-1] != "s":
+                f = open(path_in_str, 'rb')
+                refshifts = pickle.load(f)
+                f.close()
+                for s in refshifts.values():
+                    refs.append(s)
+
+            else:
+                f = open(path_in_str, 'rb')
+                refshifts_stations = pickle.load(f)
+                f.close()
+                for s in refshifts_stations.values():
+                    stations.append(s)
 
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
@@ -764,24 +803,6 @@ def plot_timeshift_map():
     with open(event, 'r') as fin:
         reader=csv.reader(fin)
         event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-
-    stations = []
-    refs = []
-    pathlist = Path(rel).glob('*.shift*')
-    for path in sorted(pathlist):
-            path_in_str = str(path)
-            if path_in_str[-1] != "s":
-                f = open(path_in_str, 'rb')
-                refshifts = pickle.load(f)
-                f.close()
-                for s in refshifts.values():
-                    refs.append(s)
-            else:
-                f = open(path_in_str, 'rb')
-                refshifts_stations = pickle.load(f)
-                f.close()
-                for s in refshifts_stations.values():
-                    stations.append(s)
     map = Basemap(width=21000000,height=21000000,
                 resolution='l',projection='aeqd',\
                 lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
@@ -795,43 +816,44 @@ def plot_timeshift_map():
     ax.add_collection(beach1)
     pathlist = Path(rel).glob('*.dat')
     i=0
+    minima = min(refs)
+    maxima = max(refs)
+    import matplotlib
 
+    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
     for st, ref in zip(stations, refs):
 
 
-        x, y = map(st.lon,st.lat)
+        x, y = map(st[1],st[0])
 
-        map.scatter(x,y,30,marker='o',c=ref)
-        try:
-            plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
-        except:
-            plt.text(x,y,'r'+str(data[0])[0:2], fontsize=12)
-            pass
-        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
-        x,y=map(lon_0,lat_0)
-        degree_sign= u'\N{DEGREE SIGN}'
-        x2,y2 = map(lon_0,lat_0-20)
-        plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
-        circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle1)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-60)
-        plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-90)
-        plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-94)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-22)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
+        map.scatter(x,y,30,marker='o',c=mapper.to_rgba(ref))
+
+    lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
+    x,y=map(lon_0,lat_0)
+    degree_sign= u'\N{DEGREE SIGN}'
+    x2,y2 = map(lon_0,lat_0-20)
+    plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
+    circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle1)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-60)
+    plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-90)
+    plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-94)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-22)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
     plt.show()
 
 
@@ -1630,11 +1652,9 @@ def plot_semb_equal():
             plt.show()
 
 
-
-
 def plot_integrated_timestep():
 
-    evpath = 'events/'+ str(sys.argv[1])
+    evpath = 'events/' + str(sys.argv[1])
     C  = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
@@ -2533,8 +2553,8 @@ def empiricial_timeshifts():
         import _pickle as pickle
 
         evpath = 'events/'+ str(sys.argv[1])
-        C = config.Config (evpath)
-        Config = C.parseConfig ('config')
+        C = config.Config(evpath)
+        Config = C.parseConfig('config')
         cfg = ConfigObj(dict=Config)
         sembpath = evpath + '/work/semblance'
         stations = []
@@ -2544,13 +2564,13 @@ def empiricial_timeshifts():
         if cfg.Bool('synthetic_test') is True:
             Syn_in = C.parseConfig('syn')
             syn_in = SynthCfg(Syn_in)
-            lat_ev=float(syn_in.lat_0())
-            lon_ev=float(syn_in.lon_0())
+            lat_ev = float(syn_in.lat_0())
+            lon_ev = float(syn_in.lon_0())
         else:
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
             desired=[3,4]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
+                reader = csv.reader(fin)
                 event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
                 lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
 
@@ -2572,15 +2592,22 @@ def empiricial_timeshifts():
                     for s in refshifts_stations.values():
                         stations.append(s)
         bazis = []
+        dists = []
         for s in stations:
-            b = orthodrome.azimuth(s[1], s[0], lat_ev, lon_ev)
+            print(s)
+            b = orthodrome.azimuth(s[0], s[1], lat_ev, lon_ev)
+            dists.append(orthodrome.distance_accurate50m(s[0], s[1], lat_ev, lon_ev))
+
             if b>=0.:
                 bazi = b
             elif b<0.:
                 bazi = 360.+b
             bazis.append(bazi)
         plt.figure()
-        plt.plot(refs,bazis)
+        plt.scatter(refs, bazis)
+        plt.show()
+        plt.figure()
+        plt.scatter(refs, dists)
         plt.show()
 
 def main():
@@ -2627,3 +2654,5 @@ def main():
             empiricial_timeshifts()
         elif sys.argv[2] == 'distance_time_bootstrap':
             distance_time_bootstrap()
+        elif sys.argv[2] == 'timeshifts_map':
+            plot_timeshift_map()
