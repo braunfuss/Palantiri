@@ -481,6 +481,41 @@ def distance_time():
                         times.append(time)
 
                 k = k+1
+
+    if sys.argv[3] == 'stepwise_max':
+        datamax = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                max = np.max(data[:, 2])
+                datamax.append(np.max(data[:, 2]))
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        k = 0
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                for i in range(0, len(data[:, 2])):
+                    if data[i, 2] > datamax*0.01:
+                        lats = data[i, 1]
+                        lons = data[i, 0]
+                        datas.append(data[i, 2])
+                        dist = orthodrome.distance_accurate50m(lats, lons,
+                                                               lat_ev,
+                                                               lon_ev)
+                        azis.append(toAzimuth(lat_ev, lon_ev,
+                                              lats, lons))
+                        distances.append(dist)
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+
+                k = k+1
+
     plt.figure()
     plt.scatter(distances, times, s=100)
     plt.show()
@@ -1332,7 +1367,6 @@ def plot_integrated_movie():
                                                                         dimy))
                             xc = num.reshape(x, (dimx, dimy))
                             yc = num.reshape(y, (dimx, dimy))
-                            ax = plt.gca()
                             plot_comb_bs = False
                             plot_ind_bs = True
                             if plot_ind_bs is True:
@@ -1371,6 +1405,8 @@ def plot_integrated_movie():
                         if cfg.Bool('synthetic_test') is True:
                             Syn_in = C.parseConfig('syn')
                             syn_in = SynthCfg(Syn_in)
+                            ax = plt.gca()
+
                             draw_sources(ax, syn_in, map, scale)
                         plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
                         plt.show()
@@ -2301,44 +2337,125 @@ def plot_movingsembmax():
     except:
         pass
 
+def sta_lta(data, dt, min_period):
+
+    from scipy.signal import lfilter
+    """
+    The same STA/LTA as used in Flexwin.
+
+    :copyright:
+        Lion Krischer (krischer@geophysik.uni-muenchen.de), 2014
+    :license:
+        GNU General Public License, Version 3
+        (http://www.gnu.org/copyleft/gpl.html)
+
+    STA/LTA as used in FLEXWIN.
+
+    :param data: The data array.
+    :param dt: The sample interval of the data.
+    :param min_period: The minimum period of the data.
+    """
+    Cs = 10 ** (-dt / min_period)
+    Cl = 10 ** (-dt / (12 * min_period))
+    TOL = 1e-9
+
+    noise = data.max() / 1E5
+
+    # 1000 samples should be more then enough to "warm up" the STA/LTA.
+    extended_syn = np.zeros(len(data) + 1000, dtype=np.float64)
+    # copy the original synthetic into the extended array, right justified
+    # and add the noise level.
+    extended_syn += noise
+    extended_syn[-len(data):] += data
+
+    # This piece of codes "abuses" SciPy a bit by "constructing" an IIR
+    # filter that does the same as the decaying sum and thus avoids the need to
+    # write the loop in Python. The result is a speedup of up to 2 orders of
+    # magnitude in common cases without needing to write the loop in C which
+    # would have a big impact in the ease of installation of this package.
+    # Other than that its quite a cool little trick.
+    a = [1.0, -Cs]
+    b = [1.0]
+    sta = lfilter(b, a, extended_syn)
+
+    a = [1.0, -Cl]
+    b = [1.0]
+    lta = lfilter(b, a, extended_syn)
+
+    # STA is now STA_LTA
+    sta /= lta
+
+    # Apply threshold to avoid division by very small values.
+    sta[lta < TOL] = noise
+    return sta[-len(data):]
+
 
 def plot_semb():
     import matplotlib
     evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
+    C = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    step = cfg.UInt('step')
+    winlen = cfg.UInt('winlen')
+    step2 = cfg.UInt('step_f2')
+    winlen2 = cfg.UInt('winlen_f2')
     matplotlib.rcParams.update({'font.size': 22})
     rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-    astf = num.loadtxt(rel+'sembmax_0_P.txt', delimiter=' ')
+    astf = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
     astf_data = astf[:, 3]
+    trigger = sta_lta(astf_data, step, winlen)
+    from scipy.signal import argrelextrema
+
+    trigger[trigger<num.max(trigger*0.1)] =0
+    extremas = argrelextrema(trigger, num.greater, order=4)
+    minimas = argrelextrema(trigger, num.less, order=2)
+    absmax = num.where(trigger>num.max(trigger)*0.2)
+    print('duration from lf:', absmax[0][-1]*step-absmax[0][0]*step)
+
     fig = plt.figure()
     l = num.linspace(0,len(astf_data)*step,len(astf_data))
     plt.plot(l, astf_data ,'k')
     plt.ylabel('Semblance', fontsize=22)
     plt.xlabel('Time [s]', fontsize=22)
+
+    plt.axvline(x=absmax[0][-1]*step, lw=4, c='r')
+    plt.axvline(x=absmax[0][0]*step, lw=4, c='r')
+    for ex in extremas[0]:
+        plt.axvline(x=ex*step, lw=4, c='b')
+    for ex in minimas[0]:
+        plt.axvline(x=ex*step, lw=4, c='k')
+
     plt.savefig(rel+'semblance_0.pdf', bbox_inches='tight')
     plt.show()
-    try:
-        l = num.linspace(0,len(astf_data)*step2,len(astf_data))
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-        astf = num.loadtxt(rel+'sembmax_1_P.txt', delimiter=' ')
-        fig = plt.figure()
-        astf_data = astf[:, 3]
 
-        plt.plot(l, astf_data, 'k')
-        plt.ylabel('Beampower', fontsize=22)
-        if sys.argv[2]:
-            scardec = num.loadtxt(sys.argv[1], skiprows=2)
-            plt.plot(scardec[:,0], scardec[:,1])
-        plt.xlabel('Time [s]', fontsize=22)
+    rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+    astf = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
+    astf_data = astf[:, 3]
+    trigger = sta_lta(astf_data, step2, winlen2)
+    trigger[trigger<num.max(trigger*0.1)] =0
+    extremas = argrelextrema(trigger, num.greater, order=4)
+    minimas = argrelextrema(trigger, num.less, order=2)
+    absmax = num.where(trigger>num.max(trigger)*0.2)
+    print('duration from hf:',absmax[0][-1]*step2-absmax[0][0]*step2)
 
-        plt.savefig(rel+'semblance_1.pdf', bbox_inches='tight')
-        plt.show()
-    except:
-        pass
+    fig = plt.figure()
+    l = num.linspace(0,len(astf_data)*step2,len(astf_data))
+    plt.plot(l, astf_data ,'k')
+    plt.ylabel('Semblance', fontsize=22)
+    plt.xlabel('Time [s]', fontsize=22)
+
+    plt.axvline(x=absmax[0][-1]*step2, lw=4, c='r')
+    plt.axvline(x=absmax[0][0]*step2, lw=4, c='r')
+    for ex in extremas[0]:
+        plt.axvline(x=ex*step2, lw=4, c='b')
+    for ex in minimas[0]:
+        plt.axvline(x=ex*step2, lw=4, c='k')
+
+
+    plt.savefig(rel+'semblance_1.pdf', bbox_inches='tight')
+    plt.show()
+
 
 def blobify():
     if len(sys.argv)<3:
