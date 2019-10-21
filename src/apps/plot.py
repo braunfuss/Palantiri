@@ -776,7 +776,7 @@ def plot_timeshift_map():
             lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
 
 
-    pathlist = Path(rel).glob('*.shift*')
+    pathlist = Path(rel).glob('*.shift*l0*')
     for path in sorted(pathlist):
             path_in_str = str(path)
             if path_in_str[-1] != "s":
@@ -856,6 +856,88 @@ def plot_timeshift_map():
     ax.add_patch(circle2)
     plt.show()
 
+
+
+
+    pathlist = Path(rel).glob('*.shift*h1*')
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+            if path_in_str[-1] != "s":
+                f = open(path_in_str, 'rb')
+                refshifts = pickle.load(f)
+                f.close()
+                for s in refshifts.values():
+                    refs.append(s)
+
+            else:
+                f = open(path_in_str, 'rb')
+                refshifts_stations = pickle.load(f)
+                f.close()
+                for s in refshifts_stations.values():
+                    stations.append(s)
+
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    map = Basemap(width=21000000,height=21000000,
+                resolution='l',projection='aeqd',\
+                lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
+    map.fillcontinents(zorder=-1)
+    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
+    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=900030)
+    ax.add_collection(beach1)
+    pathlist = Path(rel).glob('*.dat')
+    i=0
+    minima = min(refs)
+    maxima = max(refs)
+    import matplotlib
+
+    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
+    for st, ref in zip(stations, refs):
+
+
+        x, y = map(st[1],st[0])
+
+        map.scatter(x,y,30,marker='o',c=mapper.to_rgba(ref))
+
+    lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
+    x,y=map(lon_0,lat_0)
+    degree_sign= u'\N{DEGREE SIGN}'
+    x2,y2 = map(lon_0,lat_0-20)
+    plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
+    circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle1)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-60)
+    plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-90)
+    plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-94)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-22)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    plt.show()
 
 def plot_movie():
 
