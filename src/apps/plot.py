@@ -479,8 +479,8 @@ def distance_time():
                         distances.append(dist)
                         time = float(path_in_str[-8:-6]) * step
                         times.append(time)
-
                 k = k+1
+        print(((distances[0]+distances[2])/2)/num.mean(time))
 
     if sys.argv[3] == 'stepwise_max':
         datamax = []
@@ -498,26 +498,50 @@ def distance_time():
         times = []
         k = 0
         for path in sorted(pathlist):
+                counter = 0
                 path_in_str = str(path)
                 data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                 for i in range(0, len(data[:, 2])):
-                    if data[i, 2] > datamax*0.01:
-                        lats = data[i, 1]
-                        lons = data[i, 0]
-                        datas.append(data[i, 2])
-                        dist = orthodrome.distance_accurate50m(lats, lons,
-                                                               lat_ev,
-                                                               lon_ev)
-                        azis.append(toAzimuth(lat_ev, lon_ev,
-                                              lats, lons))
-                        distances.append(dist)
-                        time = float(path_in_str[-8:-6]) * step
-                        times.append(time)
+                    for kl in data[:, 2]:
+                        if kl == datamax[k]:
+                            counter = counter+1
+                    if data[i, 2] == datamax[k]:
+                        lats_list = []
+                        lons_list = []
+                        times_list = []
+                        if counter == 0:
+                            lats = data[i, 1]
+                            lons = data[i, 0]
+                            datas.append(data[i, 2])
+                            dist = orthodrome.distance_accurate50m(lats, lons,
+                                                                   lat_ev,
+                                                                   lon_ev)
+                            azis.append(toAzimuth(lat_ev, lon_ev,
+                                                  lats, lons))
+                            distances.append(dist)
+                            time = float(path_in_str[-8:-6]) * step
+                            times.append(time)
+                        else:
+                            lats_list.append(data[i, 1])
+                            lons_list.append(data[i, 0])
 
+                if counter != 0:
+                    dist = orthodrome.distance_accurate50m(num.mean(lats_list), num.mean(lons_list),
+                                                           lat_ev,
+                                                           lon_ev)
+                    distances.append(dist)
+
+                    time = float(path_in_str[-8:-6]) * step
+                    times.append(time)
                 k = k+1
+        print(num.mean(distances)/num.mean(time))
 
     plt.figure()
     plt.scatter(distances, times, s=100)
+    plt.show()
+
+    plt.figure()
+    plt.scatter(azis, times, s=100)
     plt.show()
 
 
