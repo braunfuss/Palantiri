@@ -260,6 +260,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
                  bs_weights=None, flag_rpe=False):
+
     trs_orgs = []
     snap = (round, round)
     if cfg.Bool('combine_all') is True:

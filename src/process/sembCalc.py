@@ -582,6 +582,13 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                         dist_x = origin.lat-x
                         dist_y = origin.lon-y
 
+        semb_sums = 0
+        count_is = 0
+        for a, i in enumerate(tmp_boot):
+                semb_cum =+ i
+                semb_sums = semb_sums + num.sum(i)
+                count_is = count_is + 1
+        semb_sums = semb_sums/count_is
 
         for a, i in enumerate(tmp_boot):
                 logger.info('timestep %d' % a)
@@ -604,7 +611,11 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 sembmaxY = 0
                 counter_time = 0
                 uncert = num.std(i)
-                semb_cum =+ i
+                if cfg.Bool('norm_all') is True:
+                    i = i / num.sqrt(num.sum(semb_sums**2))
+                else:
+                    i = i / num.sqrt(num.sum(i**2))
+
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]
@@ -614,10 +625,8 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                         x = x+dist_x
                         y = y+dist_y
 
-                    if cfg.Bool('norm_all') is True:
-                        semb = i[j]/norm
-                    else:
-                        semb = i[j]
+
+                    semb = i[j]
                     if semb_prior[j] <= semb:
                         semb_prior[j] = i[j]
                         times_cum[j] = a
@@ -627,23 +636,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                     if semb > sembmax:
                         sembmax = semb
 
-                            # delta_min = None
-                            # for js in range(num.shape(latv)[0]):
-                            #     xs = latv[js]
-                            #     ys = lonv[js]
-                            #     delta = orthodrome.distance_accurate50m_numpy(xs, ys, x_shift,
-                            #                                               y_shift)
-                            #
-                            #     if delta_min is None:
-                            #         delta_min = delta
-                            #         x_use = xs
-                            #         y_use = ys
-                            #     if delta < delta_min:
-                            #         delta_min = delta
-                            #         x_use = xs
-                            #         y_use = ys
-                            # x = x_use
-                            # y = y_use
                         sembmaxX = x
                         sembmaxY = y
 
@@ -710,7 +702,13 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         times_min = num.zeros(num.shape(ishape))
         times_max = num.zeros(num.shape(ishape))
         semb_prior = num.zeros(num.shape(ishape))
-
+    semb_sums = 0
+    count_is = 0
+    for a, i in enumerate(tmp_boot):
+            semb_cum =+ i
+            semb_sums = semb_sums + num.sum(i)
+            count_is = count_is + 1
+    semb_sums = semb_sums/count_is
 
     norm = num.max(num.max(tmp, axis=1))
     for a, i in enumerate(tmp):
@@ -739,7 +737,11 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         sembmaxY = 0
         counter_time = 0
         uncert = num.std(i)
-        semb_cum =+ i
+        if cfg.Bool('norm_all') is True:
+            i = i / num.sqrt(num.sum(semb_sums**2))
+        else:
+            i = i / num.sqrt(num.sum(i**2))
+
         for j in range(num.shape(latv)[0]):
             x = latv[j]
             y = lonv[j]
@@ -748,10 +750,8 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 fobj.write('%.2f %.2f %.20f\n' % (x, y, 0))
                 x = x+dist_x
                 y = y+dist_y
-            if cfg.Bool('norm_all') is True:
-                semb = i[j]/norm
-            else:
-                semb = i[j]
+
+            semb = i[j]
             if semb_prior[j] <= semb:
                 semb_prior[j] = i[j]
                 times_cum[j] = a

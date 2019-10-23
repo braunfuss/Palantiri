@@ -172,11 +172,11 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                                 path_in_str = str(path)
                                 data_boot = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                                 i = 0
-                                for k in np.nan_to_num(data[:,2]):
+                                for k in np.nan_to_num(data_boot[:,2]):
                                     if k>data_int_boot[i]:
                                         data_int_boot[i]= k
-                                    if num.max(datamax) == 0:
-                                        data_int_boot[i]= 0
+                                #    if num.max(datamax) == 0:
+                                #        data_int_boot[i]= 0
                                     i = i+1
                 except IndexError:
                     pass
@@ -479,10 +479,69 @@ def distance_time():
                         distances.append(dist)
                         time = float(path_in_str[-8:-6]) * step
                         times.append(time)
-
                 k = k+1
+        print(((distances[0]+distances[2])/2)/num.mean(time))
+
+    if sys.argv[3] == 'stepwise_max':
+        datamax = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                max = np.max(data[:, 2])
+                datamax.append(np.max(data[:, 2]))
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        k = 0
+        for path in sorted(pathlist):
+                counter = 0
+                path_in_str = str(path)
+                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                for i in range(0, len(data[:, 2])):
+                    for kl in data[:, 2]:
+                        if kl == datamax[k]:
+                            counter = counter+1
+                    if data[i, 2] == datamax[k]:
+                        lats_list = []
+                        lons_list = []
+                        times_list = []
+                        if counter == 0:
+                            lats = data[i, 1]
+                            lons = data[i, 0]
+                            datas.append(data[i, 2])
+                            dist = orthodrome.distance_accurate50m(lats, lons,
+                                                                   lat_ev,
+                                                                   lon_ev)
+                            azis.append(toAzimuth(lat_ev, lon_ev,
+                                                  lats, lons))
+                            distances.append(dist)
+                            time = float(path_in_str[-8:-6]) * step
+                            times.append(time)
+                        else:
+                            lats_list.append(data[i, 1])
+                            lons_list.append(data[i, 0])
+
+                if counter != 0:
+                    dist = orthodrome.distance_accurate50m(num.mean(lats_list), num.mean(lons_list),
+                                                           lat_ev,
+                                                           lon_ev)
+                    distances.append(dist)
+
+                    time = float(path_in_str[-8:-6]) * step
+                    times.append(time)
+                k = k+1
+        print(num.mean(distances)/num.mean(time))
+
     plt.figure()
     plt.scatter(distances, times, s=100)
+    plt.show()
+
+    plt.figure()
+    plt.scatter(azis, times, s=100)
     plt.show()
 
 
@@ -703,7 +762,6 @@ def plot_cluster():
         i = i+1
     colors = iter(cm.rainbow(np.linspace(0, 1, i)))
     pathlist = Path(rel).glob('*.dat')
-
     for path in sorted(pathlist):
         path_in_str = str(path)
         data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,3,4))
@@ -716,7 +774,6 @@ def plot_cluster():
             lats = data[1]
 
         x, y = map(lons,lats)
-
         map.scatter(x,y,30,marker='o',c=next(colors))
         try:
             plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
@@ -751,8 +808,49 @@ def plot_cluster():
     plt.show()
 
 
-
 def plot_timeshift_map():
+
+    import _pickle as pickle
+
+    evpath = 'events/'+ str(sys.argv[1])
+    C = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    sembpath = evpath + '/work/semblance'
+    stations = []
+    refs = []
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+
+    if cfg.Bool('synthetic_test') is True:
+        Syn_in = C.parseConfig('syn')
+        syn_in = SynthCfg(Syn_in)
+        lat_ev = float(syn_in.lat_0())
+        lon_ev = float(syn_in.lon_0())
+    else:
+        event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+        desired=[3,4]
+        with open(event, 'r') as fin:
+            reader = csv.reader(fin)
+            event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+            lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+
+
+    pathlist = Path(rel).glob('*.shift*l0*')
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+            if path_in_str[-1] != "s":
+                f = open(path_in_str, 'rb')
+                refshifts = pickle.load(f)
+                f.close()
+                for s in refshifts.values():
+                    refs.append(s)
+
+            else:
+                f = open(path_in_str, 'rb')
+                refshifts_stations = pickle.load(f)
+                f.close()
+                for s in refshifts_stations.values():
+                    stations.append(s)
 
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
     event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
@@ -764,24 +862,6 @@ def plot_timeshift_map():
     with open(event, 'r') as fin:
         reader=csv.reader(fin)
         event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-
-    stations = []
-    refs = []
-    pathlist = Path(rel).glob('*.shift*')
-    for path in sorted(pathlist):
-            path_in_str = str(path)
-            if path_in_str[-1] != "s":
-                f = open(path_in_str, 'rb')
-                refshifts = pickle.load(f)
-                f.close()
-                for s in refshifts.values():
-                    refs.append(s)
-            else:
-                f = open(path_in_str, 'rb')
-                refshifts_stations = pickle.load(f)
-                f.close()
-                for s in refshifts_stations.values():
-                    stations.append(s)
     map = Basemap(width=21000000,height=21000000,
                 resolution='l',projection='aeqd',\
                 lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
@@ -795,45 +875,128 @@ def plot_timeshift_map():
     ax.add_collection(beach1)
     pathlist = Path(rel).glob('*.dat')
     i=0
+    minima = min(refs)
+    maxima = max(refs)
+    import matplotlib
 
+    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
     for st, ref in zip(stations, refs):
 
 
-        x, y = map(st.lon,st.lat)
+        x, y = map(st[1],st[0])
 
-        map.scatter(x,y,30,marker='o',c=ref)
-        try:
-            plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
-        except:
-            plt.text(x,y,'r'+str(data[0])[0:2], fontsize=12)
-            pass
-        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
-        x,y=map(lon_0,lat_0)
-        degree_sign= u'\N{DEGREE SIGN}'
-        x2,y2 = map(lon_0,lat_0-20)
-        plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
-        circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle1)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-60)
-        plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-90)
-        plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-94)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-22)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
+        map.scatter(x,y,30,marker='o',c=mapper.to_rgba(ref))
+
+    lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
+    x,y=map(lon_0,lat_0)
+    degree_sign= u'\N{DEGREE SIGN}'
+    x2,y2 = map(lon_0,lat_0-20)
+    plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
+    circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle1)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-60)
+    plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-90)
+    plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-94)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-22)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
     plt.show()
 
+
+
+
+    pathlist = Path(rel).glob('*.shift*h1*')
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+            if path_in_str[-1] != "s":
+                f = open(path_in_str, 'rb')
+                refshifts = pickle.load(f)
+                f.close()
+                for s in refshifts.values():
+                    refs.append(s)
+
+            else:
+                f = open(path_in_str, 'rb')
+                refshifts_stations = pickle.load(f)
+                f.close()
+                for s in refshifts_stations.values():
+                    stations.append(s)
+
+    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    desired=[3,4]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired=[7,8,9]
+    with open(event, 'r') as fin:
+        reader=csv.reader(fin)
+        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    map = Basemap(width=21000000,height=21000000,
+                resolution='l',projection='aeqd',\
+                lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
+    map.fillcontinents(zorder=-1)
+    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
+    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
+    x, y = map(event_cor[1][0],event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=900030)
+    ax.add_collection(beach1)
+    pathlist = Path(rel).glob('*.dat')
+    i=0
+    minima = min(refs)
+    maxima = max(refs)
+    import matplotlib
+
+    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+    mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
+    for st, ref in zip(stations, refs):
+
+
+        x, y = map(st[1],st[0])
+
+        map.scatter(x,y,30,marker='o',c=mapper.to_rgba(ref))
+
+    lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
+    x,y=map(lon_0,lat_0)
+    degree_sign= u'\N{DEGREE SIGN}'
+    x2,y2 = map(lon_0,lat_0-20)
+    plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
+    circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle1)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-60)
+    plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-90)
+    plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-94)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    x,y=map(lon_0,lat_0)
+    x2,y2 = map(lon_0,lat_0-22)
+    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+    ax.add_patch(circle2)
+    plt.show()
 
 def plot_movie():
 
@@ -1228,7 +1391,6 @@ def plot_integrated_movie():
                                                                         dimy))
                             xc = num.reshape(x, (dimx, dimy))
                             yc = num.reshape(y, (dimx, dimy))
-                            ax = plt.gca()
                             plot_comb_bs = False
                             plot_ind_bs = True
                             if plot_ind_bs is True:
@@ -1267,6 +1429,8 @@ def plot_integrated_movie():
                         if cfg.Bool('synthetic_test') is True:
                             Syn_in = C.parseConfig('syn')
                             syn_in = SynthCfg(Syn_in)
+                            ax = plt.gca()
+
                             draw_sources(ax, syn_in, map, scale)
                         plt.savefig('time:'+str(i)+'_f1'+'.png', bbox_inches='tight')
                         plt.show()
@@ -1324,7 +1488,7 @@ def plot_integrated():
                 if boot is True:
                     plot_comb_bs = False
                     plot_ind_bs = False
-
+                    print('plotting boot')
                     for argv in sys.argv:
                         if argv == "--induvidual":
                             plot_ind_bs = True
@@ -1333,6 +1497,7 @@ def plot_integrated():
                     n_bootstrap = cfg.UInt('n_bootstrap')
                     for iboot in range(0, n_bootstrap):
                         datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
+
                         where_are_NaNs = num.isnan(data_int_boot)
                         data_int_boot[where_are_NaNs] = 0
                         data_int_boot = num.reshape(data_int_boot, (dimx,
@@ -1341,8 +1506,9 @@ def plot_integrated():
                         yc = num.reshape(y, (dimx, dimy))
 
                         if plot_ind_bs is True:
+
                             try:
-                                cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
+                                cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*4])
                             except ValueError:
                                 pass
 
@@ -1630,11 +1796,9 @@ def plot_semb_equal():
             plt.show()
 
 
-
-
 def plot_integrated_timestep():
 
-    evpath = 'events/'+ str(sys.argv[1])
+    evpath = 'events/' + str(sys.argv[1])
     C  = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
@@ -1927,19 +2091,20 @@ def plot_sembmax():
     C  = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
+    filters = cfg.String('filters')
+    filters = int(filters)
     step = cfg.UInt ('step')
     step2 = cfg.UInt ('step_f2')
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data = num.loadtxt(rel+'sembmax_0_P.txt', delimiter=' ')
+    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
+    map, x, y = make_map(data)
+    data = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
 
+    xpixels = 1000
 
-    map = Basemap(projection='merc', llcrnrlon=num.min(eastings)-0.4,
-                  llcrnrlat=num.min(northings)-0.4,
-                  urcrnrlon=num.max(eastings)+0.4,
-                  urcrnrlat=num.max(northings)+0.4,
-                  resolution='h', epsg=3395)
+
     try:
         if sys.argv[3] is not None:
             with open(sys.argv[3], 'r') as fin:
@@ -1982,26 +2147,25 @@ def plot_sembmax():
     X,Y = np.meshgrid(eastings, northings)
 
     eastings, northings = map(X, Y)
-    map.drawcoastlines(color='b',linewidth=1)
     x, y = map(data[:,2], data[:,1])
     size =(data[:,3]/np.max(data[:,3]))*3000
     l = num.linspace(0,len(data[:,2])*step,len(data[:,2]))
 
-    ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
+    ps = map.scatter(x,y,marker='o',c=l, s=300, cmap='seismic')
     for i in range(0,len(x)):
-        if data[i,3]> np.max(data[:,3])*0.05:
+        #if data[i,3]> np.max(data[:,3])*0.05:
             plt.text(x[i],y[i],'%s' %i)
     xpixels = 1000
 #    map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
-    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
+#    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
+#    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
     #map.drawmeridians(meridians,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
     #map.drawparallels(parallels,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
     cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
     plt.show()
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1_P.txt', delimiter=' ')
+        data = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
         eastings = data[:,2]
         northings =  data[:,1]
 
@@ -2077,7 +2241,7 @@ def plot_sembmax():
 
 def plot_movingsembmax():
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
+    data = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
     xpixels = 1000
@@ -2138,7 +2302,7 @@ def plot_movingsembmax():
     show(scat)
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
+        data = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
         eastings = data[:,2]
         northings =  data[:,1]
         xpixels = 1000
@@ -2199,44 +2363,125 @@ def plot_movingsembmax():
     except:
         pass
 
+def sta_lta(data, dt, min_period):
+
+    from scipy.signal import lfilter
+    """
+    The same STA/LTA as used in Flexwin.
+
+    :copyright:
+        Lion Krischer (krischer@geophysik.uni-muenchen.de), 2014
+    :license:
+        GNU General Public License, Version 3
+        (http://www.gnu.org/copyleft/gpl.html)
+
+    STA/LTA as used in FLEXWIN.
+
+    :param data: The data array.
+    :param dt: The sample interval of the data.
+    :param min_period: The minimum period of the data.
+    """
+    Cs = 10 ** (-dt / min_period)
+    Cl = 10 ** (-dt / (12 * min_period))
+    TOL = 1e-9
+
+    noise = data.max() / 1E5
+
+    # 1000 samples should be more then enough to "warm up" the STA/LTA.
+    extended_syn = np.zeros(len(data) + 1000, dtype=np.float64)
+    # copy the original synthetic into the extended array, right justified
+    # and add the noise level.
+    extended_syn += noise
+    extended_syn[-len(data):] += data
+
+    # This piece of codes "abuses" SciPy a bit by "constructing" an IIR
+    # filter that does the same as the decaying sum and thus avoids the need to
+    # write the loop in Python. The result is a speedup of up to 2 orders of
+    # magnitude in common cases without needing to write the loop in C which
+    # would have a big impact in the ease of installation of this package.
+    # Other than that its quite a cool little trick.
+    a = [1.0, -Cs]
+    b = [1.0]
+    sta = lfilter(b, a, extended_syn)
+
+    a = [1.0, -Cl]
+    b = [1.0]
+    lta = lfilter(b, a, extended_syn)
+
+    # STA is now STA_LTA
+    sta /= lta
+
+    # Apply threshold to avoid division by very small values.
+    sta[lta < TOL] = noise
+    return sta[-len(data):]
+
 
 def plot_semb():
     import matplotlib
     evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
+    C = config.Config(evpath)
+    Config = C.parseConfig('config')
+    cfg = ConfigObj(dict=Config)
+    step = cfg.UInt('step')
+    winlen = cfg.UInt('winlen')
+    step2 = cfg.UInt('step_f2')
+    winlen2 = cfg.UInt('winlen_f2')
     matplotlib.rcParams.update({'font.size': 22})
     rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-    astf = num.loadtxt(rel+'sembmax_0_P.txt', delimiter=' ')
+    astf = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
     astf_data = astf[:, 3]
+    trigger = sta_lta(astf_data, step, winlen)
+    from scipy.signal import argrelextrema
+
+    trigger[trigger<num.max(trigger*0.1)] =0
+    extremas = argrelextrema(trigger, num.greater, order=4)
+    minimas = argrelextrema(trigger, num.less, order=2)
+    absmax = num.where(trigger>num.max(trigger)*0.2)
+    print('duration from lf:', absmax[0][-1]*step-absmax[0][0]*step)
+
     fig = plt.figure()
     l = num.linspace(0,len(astf_data)*step,len(astf_data))
     plt.plot(l, astf_data ,'k')
     plt.ylabel('Semblance', fontsize=22)
     plt.xlabel('Time [s]', fontsize=22)
+
+    plt.axvline(x=absmax[0][-1]*step, lw=4, c='r')
+    plt.axvline(x=absmax[0][0]*step, lw=4, c='r')
+    for ex in extremas[0]:
+        plt.axvline(x=ex*step, lw=4, c='b')
+    for ex in minimas[0]:
+        plt.axvline(x=ex*step, lw=4, c='k')
+
     plt.savefig(rel+'semblance_0.pdf', bbox_inches='tight')
     plt.show()
-    try:
-        l = num.linspace(0,len(astf_data)*step2,len(astf_data))
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-        astf = num.loadtxt(rel+'sembmax_1_P.txt', delimiter=' ')
-        fig = plt.figure()
-        astf_data = astf[:, 3]
 
-        plt.plot(l, astf_data, 'k')
-        plt.ylabel('Beampower', fontsize=22)
-        if sys.argv[2]:
-            scardec = num.loadtxt(sys.argv[1], skiprows=2)
-            plt.plot(scardec[:,0], scardec[:,1])
-        plt.xlabel('Time [s]', fontsize=22)
+    rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+    astf = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
+    astf_data = astf[:, 3]
+    trigger = sta_lta(astf_data, step2, winlen2)
+    trigger[trigger<num.max(trigger*0.1)] =0
+    extremas = argrelextrema(trigger, num.greater, order=4)
+    minimas = argrelextrema(trigger, num.less, order=2)
+    absmax = num.where(trigger>num.max(trigger)*0.2)
+    print('duration from hf:',absmax[0][-1]*step2-absmax[0][0]*step2)
 
-        plt.savefig(rel+'semblance_1.pdf', bbox_inches='tight')
-        plt.show()
-    except:
-        pass
+    fig = plt.figure()
+    l = num.linspace(0,len(astf_data)*step2,len(astf_data))
+    plt.plot(l, astf_data ,'k')
+    plt.ylabel('Semblance', fontsize=22)
+    plt.xlabel('Time [s]', fontsize=22)
+
+    plt.axvline(x=absmax[0][-1]*step2, lw=4, c='r')
+    plt.axvline(x=absmax[0][0]*step2, lw=4, c='r')
+    for ex in extremas[0]:
+        plt.axvline(x=ex*step2, lw=4, c='b')
+    for ex in minimas[0]:
+        plt.axvline(x=ex*step2, lw=4, c='k')
+
+
+    plt.savefig(rel+'semblance_1.pdf', bbox_inches='tight')
+    plt.show()
+
 
 def blobify():
     if len(sys.argv)<3:
@@ -2544,13 +2789,13 @@ def empiricial_timeshifts():
         if cfg.Bool('synthetic_test') is True:
             Syn_in = C.parseConfig('syn')
             syn_in = SynthCfg(Syn_in)
-            lat_ev=float(syn_in.lat_0())
-            lon_ev=float(syn_in.lon_0())
+            lat_ev = float(syn_in.lat_0())
+            lon_ev = float(syn_in.lon_0())
         else:
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+            event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
             desired=[3,4]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
+                reader = csv.reader(fin)
                 event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
                 lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
 
@@ -2572,15 +2817,22 @@ def empiricial_timeshifts():
                     for s in refshifts_stations.values():
                         stations.append(s)
         bazis = []
+        dists = []
         for s in stations:
-            b = orthodrome.azimuth(s[1], s[0], lat_ev, lon_ev)
+            print(s)
+            b = orthodrome.azimuth(s[0], s[1], lat_ev, lon_ev)
+            dists.append(orthodrome.distance_accurate50m(s[0], s[1], lat_ev, lon_ev))
+
             if b>=0.:
                 bazi = b
             elif b<0.:
                 bazi = 360.+b
             bazis.append(bazi)
         plt.figure()
-        plt.plot(refs,bazis)
+        plt.scatter(refs, bazis)
+        plt.show()
+        plt.figure()
+        plt.scatter(refs, dists)
         plt.show()
 
 def main():
@@ -2627,3 +2879,5 @@ def main():
             empiricial_timeshifts()
         elif sys.argv[2] == 'distance_time_bootstrap':
             distance_time_bootstrap()
+        elif sys.argv[2] == 'timeshifts_map':
+            plot_timeshift_map()
