@@ -2533,8 +2533,8 @@ def empiricial_timeshifts():
         import _pickle as pickle
 
         evpath = 'events/'+ str(sys.argv[1])
-        C = config.Config (evpath)
-        Config = C.parseConfig ('config')
+        C = config.Config(evpath)
+        Config = C.parseConfig('config')
         cfg = ConfigObj(dict=Config)
         sembpath = evpath + '/work/semblance'
         stations = []

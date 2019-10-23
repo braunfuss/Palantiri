@@ -887,30 +887,11 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         rpe+str(arrayname)+switchs, flag_rpe,
                                         len(FilterMeta))
                                 except:
-                                    f = open(os.path.abspath(os.path.join(os.getcwd(),
-                                             os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
-                                             % (phase, ttt_model, ev.time, arrayname,
-                                                workdepth), 'rb')
-                                    print("loading travel time grid%s_%s_%s_%s_%s.pkl"
-                                          % (phase, ttt_model, ev.time, arrayname,
-                                              workdepth))
-                                    TTTGridMap, mintt, maxtt = pickle.load(f)
-                                    f.close()
-                                    arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wd, FilterMeta, mintt, maxtt,
-                                        TTTGridMap, Folder, Origin, ntimes, switch,
-                                        ev, arrayfolder, syn_in, refshifts, phase,
-                                        rpe+str(arrayname)+switchs, flag_rpe,
-                                        len(FilterMeta))
                                     try:
-                                        f = open(os.path.abspath(os.path.join(os.getcwd(),
-                                                 os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                        f = open(os.path.abspath(os.path.join(os.getcwd(), os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
                                                  % (phase, ttt_model, ev.time, arrayname,
                                                     workdepth), 'rb')
-                                        print("loading travel time grid%s_%s_%s_%s_%s.pkl"
-                                              % (phase, ttt_model, ev.time, arrayname,
-                                                  workdepth))
-                                        TTTGridMap, mintt, maxtt = pickle.load(f)
+                                        TTTGridMap, mint, maxt = pickle.load(f)
                                         f.close()
                                         arraySemb, weight, array_center = sembCalc.doCalc(
                                             counter, Config, Wd, FilterMeta, mintt, maxtt,
@@ -919,15 +900,33 @@ def processLoop(traces=None, stations=None, cluster=None):
                                             rpe+str(arrayname)+switchs, flag_rpe,
                                             len(FilterMeta))
                                     except:
-                                        f = open(os.path.abspath(os.path.join(os.getcwd(),
-                                                 os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
-                                                 % (phase, ttt_model, ev.time, arrayname,
-                                                    workdepth), 'rb')
-                                        print("loading travel time grid%s_%s_%s_%s_%s.pkl"
-                                              % (phase, ttt_model, ev.time, arrayname,
-                                                  workdepth))
-                                        TTTGridMap, mintt, maxtt = pickle.load(f)
-                                        f.close()
+                                        try:
+                                            TTTGridMap = []
+                                            f = open(os.path.abspath(os.path.join(os.getcwd(),
+                                                     os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                                     % (phase, ttt_model, ev.time, arrayname,
+                                                        workdepth), 'rb')
+                                            print("loading travel time grid%s_%s_%s_%s_%s.pkl"
+                                                  % (phase, ttt_model, ev.time, arrayname,
+                                                      workdepth))
+                                            TTTGridMap, mintt, maxtt = pickle.load(f)
+                                            f.close()
+                                            arraySemb, weight, array_center = sembCalc.doCalc(
+                                                counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                                TTTGridMap, Folder, Origin, ntimes, switch,
+                                                ev, arrayfolder, syn_in, refshifts, phase,
+                                                rpe+str(arrayname)+switchs, flag_rpe,
+                                                len(FilterMeta))
+                                        except:
+                                            f = open(os.path.abspath(os.path.join(os.getcwd(),
+                                                     os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
+                                                     % (phase, ttt_model, ev.time, arrayname,
+                                                        workdepth), 'rb')
+                                            print("loading travel time grid%s_%s_%s_%s_%s.pkl"
+                                                  % (phase, ttt_model, ev.time, arrayname,
+                                                      workdepth))
+                                            TTTGridMap, mintt, maxtt = pickle.load(f)
+                                            f.close()
                                         arraySemb, weight, array_center = sembCalc.doCalc(
                                             counter, Config, Wd, FilterMeta, mintt, maxtt,
                                             TTTGridMap, Folder, Origin, ntimes, switch,
