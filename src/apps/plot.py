@@ -172,11 +172,11 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                                 path_in_str = str(path)
                                 data_boot = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                                 i = 0
-                                for k in np.nan_to_num(data[:,2]):
+                                for k in np.nan_to_num(data_boot[:,2]):
                                     if k>data_int_boot[i]:
                                         data_int_boot[i]= k
-                                    if num.max(datamax) == 0:
-                                        data_int_boot[i]= 0
+                                #    if num.max(datamax) == 0:
+                                #        data_int_boot[i]= 0
                                     i = i+1
                 except IndexError:
                     pass
@@ -1488,7 +1488,7 @@ def plot_integrated():
                 if boot is True:
                     plot_comb_bs = False
                     plot_ind_bs = False
-
+                    print('plotting boot')
                     for argv in sys.argv:
                         if argv == "--induvidual":
                             plot_ind_bs = True
@@ -1497,6 +1497,7 @@ def plot_integrated():
                     n_bootstrap = cfg.UInt('n_bootstrap')
                     for iboot in range(0, n_bootstrap):
                         datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
+
                         where_are_NaNs = num.isnan(data_int_boot)
                         data_int_boot[where_are_NaNs] = 0
                         data_int_boot = num.reshape(data_int_boot, (dimx,
@@ -1505,8 +1506,9 @@ def plot_integrated():
                         yc = num.reshape(y, (dimx, dimy))
 
                         if plot_ind_bs is True:
+
                             try:
-                                cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
+                                cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*4])
                             except ValueError:
                                 pass
 
@@ -2089,19 +2091,20 @@ def plot_sembmax():
     C  = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
+    filters = cfg.String('filters')
+    filters = int(filters)
     step = cfg.UInt ('step')
     step2 = cfg.UInt ('step_f2')
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data = num.loadtxt(rel+'sembmax_0_P.txt', delimiter=' ')
+    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
+    map, x, y = make_map(data)
+    data = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
 
+    xpixels = 1000
 
-    map = Basemap(projection='merc', llcrnrlon=num.min(eastings)-0.4,
-                  llcrnrlat=num.min(northings)-0.4,
-                  urcrnrlon=num.max(eastings)+0.4,
-                  urcrnrlat=num.max(northings)+0.4,
-                  resolution='h', epsg=3395)
+
     try:
         if sys.argv[3] is not None:
             with open(sys.argv[3], 'r') as fin:
@@ -2144,26 +2147,25 @@ def plot_sembmax():
     X,Y = np.meshgrid(eastings, northings)
 
     eastings, northings = map(X, Y)
-    map.drawcoastlines(color='b',linewidth=1)
     x, y = map(data[:,2], data[:,1])
     size =(data[:,3]/np.max(data[:,3]))*3000
     l = num.linspace(0,len(data[:,2])*step,len(data[:,2]))
 
-    ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
+    ps = map.scatter(x,y,marker='o',c=l, s=300, cmap='seismic')
     for i in range(0,len(x)):
-        if data[i,3]> np.max(data[:,3])*0.05:
+        #if data[i,3]> np.max(data[:,3])*0.05:
             plt.text(x[i],y[i],'%s' %i)
     xpixels = 1000
 #    map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
-    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
+#    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
+#    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
     #map.drawmeridians(meridians,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
     #map.drawparallels(parallels,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
     cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
     plt.show()
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1_P.txt', delimiter=' ')
+        data = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
         eastings = data[:,2]
         northings =  data[:,1]
 
@@ -2239,7 +2241,7 @@ def plot_sembmax():
 
 def plot_movingsembmax():
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data = num.loadtxt(rel+'sembmax_0.txt', delimiter=' ')
+    data = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
     eastings = data[:,2]
     northings =  data[:,1]
     xpixels = 1000
@@ -2300,7 +2302,7 @@ def plot_movingsembmax():
     show(scat)
     try:
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1.txt', delimiter=' ')
+        data = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
         eastings = data[:,2]
         northings =  data[:,1]
         xpixels = 1000
