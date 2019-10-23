@@ -45,7 +45,7 @@ def getStatistics(clusterresults):
             if i == 'event.statistic':
                 fname = os.path.join(root,i)
                 bspath = os.path.join('/',*fname.split('/')[:-1])
-                fobj   = open(fname,'r')
+                fobj = open(fname,'r')
 
                 for line in fobj:
                     line = line.split()
