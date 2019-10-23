@@ -186,19 +186,24 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                     except:
-                        pathlist = Path(rel).glob('%s*-%s*.ASC' % (filter,phase))
+                        pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
                 else:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
                         pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
                 data_int = num.zeros(num.shape(data[:, 2]))
+                data_int_boot = num.ones(num.shape(data[:, 2]))
+
                 for path in sorted(pathlist):
                         path_in_str = str(path)
+
                         if path_in_str[-14] is not "o":
                             data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                            data_int += np.nan_to_num(data[:,2])
-
+                            i = 0
+                            for k in np.nan_to_num(data[:,2]):
+                                data_int_boot[i] = k+data_int_boot[i]
+                                i = i+1
                 try:
                     if booting_load is True:
                         if step is None and step_boot is None:
@@ -207,11 +212,15 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                             pathlist = Path(rel).glob(('%s-*boot%s_*'+'%s.ASC') % (filter, step_boot, phase))
                         else:
                             pathlist = Path(rel).glob(('%s-*boot%s_*%s_'+'%s.ASC') % (filter, step_boot, step, phase))
-                        data_int_boot = num.zeros(num.shape(data[:, 2]))
+                        data_int_boot = num.ones(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
-                                data_boot = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                                data_int_boot += np.nan_to_num(data_boot[:,2])
+                                i = 0
+                                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                                for k in np.nan_to_num(data[:,2]):
+                                    data_int_boot[i] = k+data_int_boot[i]
+                                    i = i+1
+                    data_int = data_int_boot
                 except IndexError:
                     pass
 
@@ -1317,12 +1326,15 @@ def plot_integrated_movie():
     dimy = int(Config['dimy'])
     filters = cfg.String('filters')
     filters = int(filters)
+    max_rel = False
     try:
         for argv in sys.argv:
             if argv == 'boot':
                 boot = True
             if argv == '--time':
                 plt_time = True
+            if argv == "--max_rel":
+                max_rel = True
     except:
         pass
     if plt_time is True:
@@ -1340,7 +1352,10 @@ def plot_integrated_movie():
                     data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
                     if plt_time is False:
                         fig = plt.figure()
-                    ax = fig.axes
+                    try:
+                        ax = fig.axes[0]
+                    except:
+                        ax = fig.axes
                     map, x, y = make_map(data)
                     xmax = num.max(x)
                     xmin = num.min(x[num.nonzero(x)])
@@ -1348,7 +1363,7 @@ def plot_integrated_movie():
                     ymin = num.min(y[num.nonzero(y)])
                     scale = (xmax/xmin)*(ymax/ymin)*10
                     triang = tri.Triangulation(x, y)
-                    isbad = np.less(data_int, 0.001)
+                    isbad = np.less(data_int, num.min(data_int))
                     mask = np.all(np.where(isbad[triang.triangles],
                                            True, False), axis=1)
                     triang.set_mask(mask)
@@ -1364,17 +1379,7 @@ def plot_integrated_movie():
 
                     else:
                         colors = []
-                        #color = colors_list[i]
-                        #min = num.min(color[num.nonzero(color)])
 
-                    #    for k, le in enumerate(levels):
-                    #        colord = colors_list[i]
-#
-#                            color = [1-(0.01+(0.05*k)) if x==min else x for x in colord]
-
-#                            colors.append(color)
-#                        plt.tricontourf(triang, data_int,
-#                                        colors=colors, levels=levels, alpha=num.max(data_int)/maxs
                         plt.tricontourf(triang, data_int,
                                         cmap=cmaps[i], levels=levels)
 
@@ -1442,6 +1447,7 @@ def plot_integrated_movie():
                 draw_sources(ax, syn_in, map, scale)
             plt.show()
 
+
 def plot_integrated():
     if len(sys.argv)<4:
         print("missing input arrayname")
@@ -1478,7 +1484,7 @@ def plot_integrated():
                 scale = (xmax/xmin)*(ymax/ymin)*10
 
                 triang = tri.Triangulation(x, y)
-                isbad = np.less(data_int, num.max(data_int)*0.01)
+                isbad = np.less(data_int, num.max(data_int)*0.001)
                 mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
                 triang.set_mask(mask)
                 plt.tricontourf(triang, data_int, cmap='cool')
@@ -1539,8 +1545,6 @@ def plot_integrated():
                     syn_in = SynthCfg(Syn_in)
                     draw_sources(ax, syn_in, map, scale)
                 plt.show()
-
-
 
 
 def plot_time():

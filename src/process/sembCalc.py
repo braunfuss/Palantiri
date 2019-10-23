@@ -612,7 +612,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 counter_time = 0
                 uncert = num.std(i)
                 if cfg.Bool('norm_all') is True:
-                    i = i / num.sqrt(num.sum(semb_sums**2))
+                    i = i / num.sqrt(num.sum(semb_sums))
                 else:
                     i = i / num.sqrt(num.sum(i**2))
 
@@ -625,13 +625,11 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                         x = x+dist_x
                         y = y+dist_y
 
-
                     semb = i[j]
                     if semb_prior[j] <= semb:
                         semb_prior[j] = i[j]
                         times_cum[j] = a
                         times_max[j] = a*i[j]
-
 
                     if semb > sembmax:
                         sembmax = semb

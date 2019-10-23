@@ -95,7 +95,7 @@ def readMetaInfoFile(EventPath):
             azi = line[8]
             gain = line[9]
 
-            if fnmatch.fnmatch(comp, '**Z'):
+            if fnmatch.fnmatch(comp, 'Z'):
                 MetaL.append(Station(net, sta, loc, comp, lat, lon, ele, dip,
                                      azi, gain))
 
@@ -122,7 +122,7 @@ def readpyrockostations(path, disp, cfg):
             desired = 'T'
     for sl in stations:
             for channel in sl.channels:
-                if channel.name[-1] == desired:
+                if channel.name == desired:
                     MetaL.append(Station(str(sl.network), str(sl.station),
                                          str(sl.location), str(channel.name),
                                          str(sl.lat), str(sl.lon),
@@ -130,6 +130,7 @@ def readpyrockostations(path, disp, cfg):
                                          str(channel.azimuth),
                                          str(channel.gain)))
     return MetaL
+
 
 def readcolosseostations(scenario_path):
     stations = model.load_stations(scenario_path+'/meta/stations.txt')
