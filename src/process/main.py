@@ -241,7 +241,6 @@ def processLoop(traces=None, stations=None, cluster=None):
                 network = cfg.String(i).split('|')
                 FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
                 arrayfolder = os.path.join(Folder['semb'], i)
-
                 if os.access(arrayfolder, os.F_OK) is False:
                     os.makedirs(arrayfolder)
                 if cfg.pyrocko_download() is True:
@@ -272,6 +271,8 @@ def processLoop(traces=None, stations=None, cluster=None):
             network = cfg.String(i).split('|')
             FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
             arrayfolder = os.path.join(Folder['semb'], i)
+            if os.access(arrayfolder, os.F_OK) is False:
+                os.makedirs(arrayfolder)
             XDict[i] = FilterMeta
             RefDict[i] = refshift
             SL[i] = len(network)
@@ -327,7 +328,6 @@ def processLoop(traces=None, stations=None, cluster=None):
 
             for array in names:
                 arrayfolder = os.path.join(Folder['semb'], array)
-
                 if not os.path.isdir(arrayfolder):
                     Logfile.error('Illegal network name ' + str(array))
                     isOk = False
