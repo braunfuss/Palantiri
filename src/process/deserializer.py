@@ -61,7 +61,6 @@ def deserializeTTT_cube(numproc):
 def deserializeMinTMaxT(numproc, flag_rpe=False):
 
         L = []
-        print('here')
         for i in range(numproc):
             if flag_rpe is True:
                 data = Basic.loadDump('minmax-emp'+str(i)+'.pkl')

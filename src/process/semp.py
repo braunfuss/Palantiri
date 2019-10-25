@@ -150,7 +150,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                      bs_weights=bs_weights)
 
             if flag_rpe is True:
-               return semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
+               return semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights,

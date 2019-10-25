@@ -241,13 +241,13 @@ def make_map(data):
                          num.min(northings)+ratio_lat*0.25,
                          num.mean(eastings), num.mean(northings), 50)
 
-        parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
-        meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
+        #parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
+        #meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
 
 
         eastings, northings = map(eastings, northings)
-        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
+        #map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        #map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
         x, y = map(data[:,1], data[:,0])
         return map, x, y
 
@@ -1350,6 +1350,7 @@ def plot_integrated_movie():
                 print("missing input arrayname")
             else:
                     data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
+                    data_int = data_int / num.sqrt(num.sum(data_int**2))
                     if plt_time is False:
                         fig = plt.figure()
                     try:
