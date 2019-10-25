@@ -259,7 +259,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
-                 bs_weights=None, flag_rpe=False):
+                 bs_weights=None, flag_rpe=False, output=False):
 
     trs_orgs = []
     snap = (round, round)
@@ -456,7 +456,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 sembmaxX = latv[j]
                 sembmaxY = lonv[j]
             #backSemb[i][:] = backSemb[i][:]/num.max(backSemb[i][:])
-        output = True
+
         if output is True:
             Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                         str(sembmaxX) + ',' + str(sembmaxY))
