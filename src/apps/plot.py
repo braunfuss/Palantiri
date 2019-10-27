@@ -940,12 +940,13 @@ def plot_movie():
             #    try:
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    eastings = data[:,1]
-                    northings =  data[:,0]
+                    eastings = data[:, 1]
+                    northings = data[:, 0]
                     plt.figure()
-                    time = float(path_in_str[-8:-6])* step
+                    time = float(path_in_str[-8:-6]) * step
 
-                    map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
+                    map = Basemap(projection='merc',
+                                  llcrnrlon=num.min(eastings),
                                   llcrnrlat=num.min(northings),
                                   urcrnrlon=num.max(eastings),
                                   urcrnrlat=num.max(northings),
@@ -1042,7 +1043,7 @@ def plot_movie():
                     pass
 
 
-def integrated_scatter():
+def semblance_scatter():
 
     evpath = 'events/' + str(sys.argv[1])
     step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
@@ -1090,19 +1091,19 @@ def integrated_scatter():
             plt.figure()
 
             map, x, y = make_map(data)
-            mins = np.max(data[:,2])
+            mins = np.max(data[:, 2])
             size =(data_int/np.max(data_int))*300
             times_idx = np.where(time_grid==0)
             time_grid[times_idx] = 'NaN'
-            ps = map.scatter(x,y,marker='o',c=time_grid, s=size, cmap='jet')
+            ps = map.scatter(x, y, marker='o', c=time_grid, s=size, cmap='jet')
             cb = plt.colorbar(orientation="horizontal")
             cb.outline.set_visible(False)
-            cb.set_label('Time ->',fontsize=22)
+            cb.set_label('Time ->', fontsize=22)
             plt.title(path_in_str)
 
             xpixels = 6000
-            eastings = data[:,1]
-            northings = data[:,0]
+            eastings = data[:, 1]
+            northings = data[:, 0]
             map.arcgisimage(service='World_Shaded_Relief',
                             xpixels=xpixels, verbose=False)
             plt.show()
@@ -1210,7 +1211,7 @@ def inspect_spectrum():
         trace.snuffle(traces)
 
 
-def plot_integrated_movie():
+def plot_semblance_movie():
     evpath = 'events/' + str(sys.argv[1])
     C = config.Config(evpath)
     Config = C.parseConfig('config')
@@ -1350,7 +1351,7 @@ def plot_integrated_movie():
             plt.show()
 
 
-def plot_integrated():
+def plot_semblance():
     if len(sys.argv)<4:
         print("missing input arrayname")
     else:
@@ -1548,15 +1549,15 @@ def plot_time():
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='YlOrRd')
             event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
+            desired = [3, 4]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
+                reader = csv.reader(fin)
+                event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
+            desired = [7 , 8, 9]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
+                reader = csv.reader(fin)
+                event_mech=[[float(s[-3:]) for s in row] for i, row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0], event_cor[0][0])
             ax = plt.gca()
             np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
             beach1 = beach(np1, xy=(x, y), width=0.09)
@@ -1568,8 +1569,8 @@ def plot_time():
                     try:
                         xpixels = 1000
                         map.arcgisimage(service='World_Shaded_Relief',
-                                        xpixels = xpixels,
-                                        verbose= False)
+                                        xpixels=xpixels,
+                                        verbose=False)
                     except:
                         pass
 
@@ -1703,7 +1704,7 @@ def plot_semb_equal():
             plt.show()
 
 
-def plot_integrated_timestep():
+def plot_semblance_timestep():
 
     evpath = 'events/' + str(sys.argv[1])
     C  = config.Config (evpath)
@@ -1808,7 +1809,7 @@ def plot_integrated_timestep():
 
             plt.show()
 
-def plot_integrated_kite():
+def plot_semblance_kite():
     if len(sys.argv)<4:
         print("missing input arrayname")
     else:
@@ -1995,7 +1996,7 @@ def plot_moving():
 
 def plot_sembmax():
     evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
+    C = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
     filters = cfg.String('filters')
@@ -2658,25 +2659,26 @@ def plot_scatter():
             cb = plt.colorbar(sm, orientation="horizontal")
             cb.outline.set_visible(False)
             cb.set_ticks([])
-            cb.set_label('Time ->',fontsize=22)
+            cb.set_label('Time ->', fontsize=22)
             plt.title(path_in_str)
             ax = plt.gca()
             event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
+            desired = [3, 4]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
+                reader = csv.reader(fin)
+                event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
+            desired = [7, 8, 9]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
+                reader = csv.reader(fin)
+                event_mech = [[float(s[-3:]) for s in row] for i, row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0], event_cor[0][0])
             ax = plt.gca()
             np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
             beach1 = beach(np1, xy=(x, y), width=0.03, alpha=0.4)
             ax.add_collection(beach1)
             xpixels = 1000
-            map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+            map.arcgisimage(service='World_Shaded_Relief',
+                            xpixels=xpixels, verbose=False)
 
             plt.show()
 
@@ -2684,14 +2686,14 @@ def plot_scatter():
 def empiricial_timeshifts():
         import _pickle as pickle
 
-        evpath = 'events/'+ str(sys.argv[1])
+        evpath = 'events/' + str(sys.argv[1])
         C = config.Config(evpath)
         Config = C.parseConfig('config')
         cfg = ConfigObj(dict=Config)
         sembpath = evpath + '/work/semblance'
         stations = []
         refs = []
-        rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
 
         if cfg.Bool('synthetic_test') is True:
             Syn_in = C.parseConfig('syn')
@@ -2699,13 +2701,8 @@ def empiricial_timeshifts():
             lat_ev = float(syn_in.lat_0())
             lon_ev = float(syn_in.lon_0())
         else:
-            event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
-            with open(event, 'r') as fin:
-                reader = csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-                lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
-
+                event, lat_ev, lon_ev, event_mech, rel = get_event()
+                lat_ev, lon_ev = lat_ev, lon_ev,
 
         pathlist = Path(rel).glob('*.shift*')
         for path in sorted(pathlist):
@@ -2742,17 +2739,20 @@ def empiricial_timeshifts():
         plt.scatter(refs, dists)
         plt.show()
 
+
 def main():
     if len(sys.argv)<3:
-        print("input: eventname plot_name,\
-         available plot_name: movie, sembmax, nce, interactive_max, cluster")
+        print("input: eventname plot options,\
+         available plots are: cluster, sembmax, timeshifts, timeshifts_map,\
+         semblance_map, semblance_map_movie, semblance_map_scatter, distance,\
+         semblance_function, distance_time, distance_time_bootstrap")
     else:
         event = sys.argv[1]
         if sys.argv[2] == 'movie':
             plot_movie()
         elif sys.argv[2] == 'sembmax':
             plot_sembmax()
-        elif sys.argv[2] == 'semblance':
+        elif sys.argv[2] == 'semblance_function':
             plot_semb()
         elif sys.argv[2] == 'interactive_max':
             plot_movingsembmax()
@@ -2760,12 +2760,12 @@ def main():
             plot_cluster()
         elif sys.argv[2] == 'moving':
             plot_moving()
-        elif sys.argv[2] == 'integrated':
-            plot_integrated()
-        elif sys.argv[2] == 'integrated_kite':
-            plot_integrated_kite()
-        elif sys.argv[2] == 'integrated_scatter':
-            integrated_scatter()
+        elif sys.argv[2] == 'semblance_map':
+            plot_semblance()
+        elif sys.argv[2] == 'semblance_map_kite':
+            plot_semblance_kite()
+        elif sys.argv[2] == 'semblance_map_scatter':
+            semblance_scatter()
         elif sys.argv[2] == 'scatter':
             plot_scatter()
         elif sys.argv[2] == 'beampower':
@@ -2776,12 +2776,12 @@ def main():
             inspect_spectrum()
         elif sys.argv[2] == 'semb_equal':
             plot_semb_equal()
-        elif sys.argv[2] == 'integrated_timestep':
-            plot_integrated_timestep()
+        elif sys.argv[2] == 'semblance_timestep':
+            plot_semblance_timestep()
         elif sys.argv[2] == 'distance_time':
             distance_time()
-        elif sys.argv[2] == 'integrated_movie':
-            plot_integrated_movie()
+        elif sys.argv[2] == 'semblance_movie':
+            plot_semblance_movie()
         elif sys.argv[2] == 'timeshifts':
             empiricial_timeshifts()
         elif sys.argv[2] == 'distance_time_bootstrap':
