@@ -614,7 +614,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 if cfg.Bool('norm_all') is True:
                     i = i / num.sqrt(num.sum(semb_sums))
                 else:
-                    i = i / num.sqrt(num.sum(i**2))
+                    i = (i / num.sqrt(num.sum(i**2)))/norm
 
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
@@ -738,7 +738,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         if cfg.Bool('norm_all') is True:
             i = i / num.sqrt(num.sum(semb_sums**2))
         else:
-            i = i / num.sqrt(num.sum(i**2))
+            i = (i / num.sqrt(num.sum(i**2)))
 
         for j in range(num.shape(latv)[0]):
             x = latv[j]

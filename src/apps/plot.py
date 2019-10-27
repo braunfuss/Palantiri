@@ -1,5 +1,4 @@
-from affine import Affine
-from pyproj import Proj, transform
+from pyproj import transform
 from mpl_toolkits.basemap import Basemap
 import numpy as num
 import numpy as np
@@ -8,34 +7,34 @@ from pathlib import Path
 import sys
 from matplotlib.pyplot import cm
 from matplotlib.widgets import Slider
-from pylab import plot, show, figure, scatter, axes, draw
+from pylab import plot, show, scatter, axes, draw
 import csv
 from obspy.imaging.beachball import beach
-import matplotlib.colors as colors
 import matplotlib.tri as tri
 from pyrocko import trace, io, model, orthodrome
 from matplotlib.colors import LinearSegmentedColormap
-from palantiri.common import ConfigFile
-from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
-from palantiri.common import Globals
+from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg
 from palantiri.tools import config
 from palantiri.process.sembCalc import toAzimuth
-global evpath
 from pyrocko import util
+import matplotlib
+import _pickle as pickle
+global evpath
 
-w=25480390.0
+
+w = 25480390.0
 
 
 def draw_beach(ax, scale, map, event):
-    desired=[3,4]
+    desired = [3, 4]
     with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
+        reader = csv.reader(fin)
+        event_cor = [[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    desired = [7, 8, 9]
     with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    x, y = map(event_cor[1][0],event_cor[0][0])
+        reader = csv.reader(fin)
+        event_mech = [[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+    x, y = map(event_cor[1][0], event_cor[0][0])
     ax = plt.gca()
 
     np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
@@ -68,7 +67,7 @@ def draw_sources(ax, syn_in, map, scale):
             time=util.str_to_time(syn_in.time_0())))
         for source in sources:
             n, e = source.outline(cs='latlon').T
-            e, n = map(e,n)
+            e, n = map(e, n)
             ax.fill(e, n, color=(0.5, 0.5, 0.5), lw=2)
             #add drawing of absolute nucleation point
 
@@ -86,17 +85,17 @@ def draw_sources(ax, syn_in, map, scale):
                 magnitude=syn_in.magnitude_0()))
             for source in sources:
                 ev = source.pyrocko_event()
-                e, n = map(ev.lon,ev.lat)
+                e, n = map(ev.lon, ev.lat)
                 map.scatter(e, n, s=scale/200)
 
 
 def load(filter, step=None, step_boot=None, booting_load=False):
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
             boot = False
-            evpath = 'events/'+ str(sys.argv[1])
-            C  = config.Config (evpath)
+            evpath = 'events/' + str(sys.argv[1])
+            C = config.Config(evpath)
             Config = C.parseConfig('config')
-            cfg = ConfigObj (dict=Config)
+            cfg = ConfigObj(dict=Config)
             n_bootstrap = cfg.UInt('n_bootstrap')
             dimx = int(Config['dimx'])
             dimy = int(Config['dimy'])
@@ -119,7 +118,7 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                 try:
                     pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                 except:
-                    pathlist = Path(rel).glob('%s-*%s.ASC' % (filter,phase))
+                    pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
             else:
 
                 try:
@@ -146,11 +145,14 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
-                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
+                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter,
+                                                                        step,
+                                                                        phase))
                 data_int = num.zeros(num.shape(data[:, 2]))
                 for path in sorted(pathlist):
                         path_in_str = str(path)
-                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        data = num.loadtxt(path_in_str, delimiter=' ',
+                                           skiprows=5)
                         i = 0
                         for k in np.nan_to_num(data[:,2]):
                             if k>data_int[i]:
@@ -226,6 +228,7 @@ def load(filter, step=None, step_boot=None, booting_load=False):
 
             return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
+
 def make_map(data):
         eastings = data[:, 1]
         northings = data[:, 0]
@@ -262,12 +265,12 @@ def shoot(lon, lat, azimuth, maxdist=None):
     s = maxdist / 1.852
     faz = azimuth * np.pi / 180.
 
-    EPS= 0.00000000005
-    if ((np.abs(np.cos(glat1))<EPS) and not (np.abs(np.sin(faz))<EPS)):
+    EPS = 0.00000000005
+    if ((np.abs(np.cos(glat1)) < EPS) and not (np.abs(np.sin(faz))<EPS)):
         alert("Only N-S courses are meaningful, starting at a pole!")
 
-    a=6378.13/1.852
-    f=1/298.257223563
+    a = 6378.13/1.852
+    f = 1/298.257223563
     r = 1 - f
     tu = r * np.tan(glat1)
     sf = np.sin(faz)
@@ -275,7 +278,7 @@ def shoot(lon, lat, azimuth, maxdist=None):
     if (cf==0):
         b=0.
     else:
-        b=2. * np.arctan2 (tu, cf)
+        b=2. * np.arctan2(tu, cf)
 
     cu = 1. / np.sqrt(1 + tu * tu)
     su = tu * cu
@@ -289,7 +292,7 @@ def shoot(lon, lat, azimuth, maxdist=None):
     tu = s / (r * a * c)
     y = tu
     c = y + 1
-    while (np.abs (y - c) > EPS):
+    while (np.abs(y - c) > EPS):
 
         sy = np.sin(y)
         cy = np.cos(y)
@@ -299,7 +302,7 @@ def shoot(lon, lat, azimuth, maxdist=None):
         x = e * cy
         y = e + e - 1.
         y = (((sy * sy * 4. - 3.) * y * cz * d / 6. + x) *
-              d / 4. - cz) * sy * d + tu
+             d / 4. - cz) * sy * d + tu
 
     b = cu * cy * cf - su * sy
     c = r * np.sqrt(sa * sa + b * b)
@@ -319,7 +322,8 @@ def shoot(lon, lat, azimuth, maxdist=None):
 
     return (glon2, glat2, baz)
 
-def great(m, startlon, startlat, azimuth,*args, **kwargs):
+
+def great(m, startlon, startlat, azimuth, *args, **kwargs):
     glon1 = startlon
     glat1 = startlat
     glon2 = glon1
@@ -330,18 +334,19 @@ def great(m, startlon, startlat, azimuth,*args, **kwargs):
     glon2, glat2, baz = shoot(glon1, glat1, azimuth, step)
     if azimuth-180 >= 0:
         while glon2 <= startlon:
-            m.drawgreatcircle(glon1, glat1, glon2, glat2,del_s=50,**kwargs)
+            m.drawgreatcircle(glon1, glat1, glon2, glat2, del_s=50, **kwargs)
             azimuth = baz + 180.
             glat1, glon1 = (glat2, glon2)
 
             glon2, glat2, baz = shoot(glon1, glat1, azimuth, step)
     elif azimuth-180 < 0:
         while glon2 >= startlon:
-            m.drawgreatcircle(glon1, glat1, glon2, glat2,del_s=50,**kwargs)
+            m.drawgreatcircle(glon1, glat1, glon2, glat2, del_s=50, **kwargs)
             azimuth = baz + 180.
             glat1, glon1 = (glat2, glon2)
 
             glon2, glat2, baz = shoot(glon1, glat1, azimuth, step)
+
 
 def equi(m, centerlon, centerlat, radius, *args, **kwargs):
     glon1 = centerlon
@@ -355,33 +360,71 @@ def equi(m, centerlon, centerlat, radius, *args, **kwargs):
     X.append(X[0])
     Y.append(Y[0])
 
-    X,Y = m(X,Y)
-    plt.plot(X,Y,color='gray',**kwargs)
+    X, Y = m(X, Y)
+    plt.plot(X, Y, color='gray', **kwargs)
 
 
-def distance_time():
+def get_params():
+    evpath = 'events/' + str(sys.argv[1])
 
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-    evpath = 'events/'+ str(sys.argv[1])
-
-    C  = config.Config(evpath)
+    C = config.Config(evpath)
     Config = C.parseConfig('config')
     cfg = ConfigObj(dict=Config)
     step = cfg.UInt('step')
     step2 = cfg.UInt('step_f2')
     winlen = cfg.UInt('winlen')
-    winlen2= cfg.UInt('winlen_f2')
+    winlen2 = cfg.UInt('winlen_f2')
+    n_bootstrap = cfg.UInt('n_bootstrap')
 
-    desired=[3,4]
+    return step, winlen, step2, winlen2, n_bootstrap, cfg
+
+
+def get_event():
+    event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+    rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+
+    desired = [3, 4]
     with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
+        reader = csv.reader(fin)
+        event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
+    desired = [7, 8, 9]
     with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        reader = csv.reader(fin)
+        event_mech = [[float(s[-3:]) for s in row] for i, row in enumerate(reader) if i in desired]
     lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+
+    return event, lat_ev, lon_ev, event_mech, rel
+
+
+
+def make_world_map(event, event_mech):
+
+    desired = [3, 4]
+    with open(event, 'r') as fin:
+        reader = csv.reader(fin)
+        event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
+
+    map = Basemap(width=21000000, height=21000000,
+                  resolution='l', projection='aeqd',
+                  lat_ts=event_cor[0][0], lat_0=event_cor[0][0],
+                  lon_0=event_cor[1][0])
+    map.fillcontinents(zorder=-1)
+    map.drawparallels(np.arange(-90, 90, 30), labels=[1, 0, 0, 0])
+    map.drawmeridians(np.arange(map.lonmin, map.lonmax+30, 60),
+                      labels=[0, 0, 0, 1])
+    x, y = map(event_cor[1][0], event_cor[0][0])
+    ax = plt.gca()
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=900030)
+    ax.add_collection(beach1)
+
+    return map, ax
+
+
+def distance_time():
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
+
     pathlist = Path(rel).glob('0-*.ASC')
     maxs = 0.
     if sys.argv[3] == 'combined':
@@ -394,7 +437,6 @@ def distance_time():
                     maxs = max
                     datamax = np.max(data[:, 2])
 
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('0-*.ASC')
         maxs = 0.
         data_int = num.zeros(num.shape(data[:, 2]))
@@ -433,7 +475,6 @@ def distance_time():
                     maxs = max
                     datamax = np.max(data[:, 2])
 
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('0-*.ASC')
         maxs = 0.
         datas = []
@@ -535,7 +576,8 @@ def distance_time():
                             lons_list.append(data[i, 0])
 
                 if counter != 0:
-                    dist = orthodrome.distance_accurate50m(num.mean(lats_list), num.mean(lons_list),
+                    dist = orthodrome.distance_accurate50m(num.mean(lats_list),
+                                                           num.mean(lons_list),
                                                            lat_ev,
                                                            lon_ev)
                     distances.append(dist)
@@ -556,27 +598,9 @@ def distance_time():
 
 def distance_time_bootstrap():
 
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-    evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config(evpath)
-    Config = C.parseConfig('config')
-    cfg = ConfigObj(dict=Config)
-    step = cfg.UInt('step')
-    step2 = cfg.UInt('step_f2')
-    winlen = cfg.UInt('winlen')
-    winlen2= cfg.UInt('winlen_f2')
-    n_bootstrap = cfg.UInt('n_bootstrap')
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
 
-    desired=[3,4]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
     pathlist_main = Path(rel).glob('0-*.ASC')
 
     maxs = 0.
@@ -606,7 +630,7 @@ def distance_time_bootstrap():
                 path_in_str = str(path)
                 if path_in_str[-14] is not "o":
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    data_int += np.nan_to_num(data[:,2])
+                    data_int += np.nan_to_num(data[:, 2])
 
         azis = []
         distances = []
@@ -620,14 +644,14 @@ def distance_time_bootstrap():
                 data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
 
                 if path_in_str[-14] is not "o":
-                    data_int = data_int + data[:,2]
+                    data_int = data_int + data[:, 2]
                     for i in range(0, len(data[:, 2])):
                         if data_int[i] > datamax*0.1:
                             time_grid[i] = float(path_in_str[-8:-6]) * step
 
                 else:
                     bnr = int(path_in_str[-11])
-                    data_int_boot[bnr] = data_int_boot[bnr] + data[:,2]
+                    data_int_boot[bnr] = data_int_boot[bnr] + data[:, 2]
                     for i in range(0, len(data[:, 2])):
                         if data_int_boot[bnr][i] > datamax*0.1:
                             time_grid_boot[bnr][i] = float(path_in_str[-8:-6]) * step
@@ -667,7 +691,7 @@ def distance_time_bootstrap():
             distances_boot.append(dist_boot)
     if sys.argv[3] == 'max':
 
-        for path in sorted(pathlist):
+        for path in sorted(pathlist_main):
                 path_in_str = str(path)
                 data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                 max = np.max(data[:, 2])
@@ -675,7 +699,6 @@ def distance_time_bootstrap():
                     maxs = max
                     datamax = np.max(data[:, 2])
 
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('0-*.ASC')
         maxs = 0.
         datas = []
@@ -706,7 +729,6 @@ def distance_time_bootstrap():
                 data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                 max = np.max(data[:, 2])
                 datamax.append(np.max(data[:, 2]))
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('0-*.ASC')
         maxs = 0.
         datas = []
@@ -741,31 +763,16 @@ def distance_time_bootstrap():
 
     plt.show()
 
+
 def plot_cluster():
 
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-    desired=[3,4]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    map = Basemap(width=21000000,height=21000000,
-                resolution='l',projection='aeqd',\
-                lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
-    map.fillcontinents(zorder=-1)
-    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
-    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
-    x, y = map(event_cor[1][0],event_cor[0][0])
-    ax = plt.gca()
-    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-    beach1 = beach(np1, xy=(x, y), width=900030)
-    ax.add_collection(beach1)
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
+
+    map, ax = make_world_map(event, event_mech)
+
     pathlist = Path(rel).glob('*.dat')
-    i=0
+    i = 0
     for path in sorted(pathlist):
         path_in_str = str(path)
         i = i+1
@@ -773,250 +780,147 @@ def plot_cluster():
     pathlist = Path(rel).glob('*.dat')
     for path in sorted(pathlist):
         path_in_str = str(path)
-        data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,3,4))
+        data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0, 3, 4))
         try:
-            lons = data[:,2]
-            lats = data[:,1]
+            lons = data[:, 2]
+            lats = data[:, 1]
 
         except:
             lons = data[2]
             lats = data[1]
 
-        x, y = map(lons,lats)
-        map.scatter(x,y,30,marker='o',c=next(colors))
+        x, y = map(lons, lats)
+        map.scatter(x, y, 30, marker='o', c=next(colors))
         try:
-            plt.text(x[0],y[0],'r'+str(data[0,0])[:], fontsize=12)
+            plt.text(x[0], y[0], 'r'+str(data[0, 0])[:], fontsize=12)
         except:
-            plt.text(x,y,'r'+str(data[0])[0:2], fontsize=12)
+            plt.text(x, y, 'r'+str(data[0])[0:2], fontsize=12)
             pass
-        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
-        x,y=map(lon_0,lat_0)
-        degree_sign= u'\N{DEGREE SIGN}'
-        x2,y2 = map(lon_0,lat_0-20)
-        plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
-        circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+        lon_0, lat_0 = lat_ev, lon_ev,
+        x, y = map(lon_0, lat_0)
+        degree_sign = u'\N{DEGREE SIGN}'
+        x2, y2 = map(lon_0, lat_0-20)
+        plt.text(x2, y2, '20'+degree_sign, fontsize=22, color='blue')
+        circle1 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                             linestyle='dashed')
         ax.add_patch(circle1)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-60)
-        plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-60)
+        plt.text(x2, y2, '60'+degree_sign, fontsize=22, color='blue')
+        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                             linestyle='dashed')
         ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-90)
-        plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-90)
+        plt.text(x2, y2, '90'+degree_sign, fontsize=22, color='blue')
+        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                             linestyle='dashed')
         ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-94)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-94)
+        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                             linestyle='dashed')
         ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-22)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-22)
+        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                             linestyle='dashed')
         ax.add_patch(circle2)
     plt.show()
 
 
 def plot_timeshift_map():
 
-    import _pickle as pickle
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
 
-    evpath = 'events/'+ str(sys.argv[1])
-    C = config.Config(evpath)
-    Config = C.parseConfig('config')
-    cfg = ConfigObj(dict=Config)
-    sembpath = evpath + '/work/semblance'
+    evpath = 'events/' + str(sys.argv[1])
     stations = []
     refs = []
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
+    filters = cfg.String('filters')
+    filters = int(filters)
 
-    if cfg.Bool('synthetic_test') is True:
-        Syn_in = C.parseConfig('syn')
-        syn_in = SynthCfg(Syn_in)
-        lat_ev = float(syn_in.lat_0())
-        lon_ev = float(syn_in.lon_0())
-    else:
-        event = 'events/' + str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-        desired=[3,4]
-        with open(event, 'r') as fin:
-            reader = csv.reader(fin)
-            event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            lat_ev, lon_ev = event_cor[1][0], event_cor[0][0]
+    for filterindex in range(0, filters):
+        if cfg.Bool('synthetic_test') is True:
+            evpath = 'events/' + str(sys.argv[1])
+            C = config.Config(evpath)
+            Syn_in = C.parseConfig('syn')
+            syn_in = SynthCfg(Syn_in)
+            lat_ev = float(syn_in.lat_0())
+            lon_ev = float(syn_in.lon_0())
+        else:
+            event, lat_ev, lon_ev, event_mech, rel = get_event()
 
+        pathlist = Path(rel).glob('*.shift*l%s*' % filterindex)
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+                if path_in_str[-1] != "s":
+                    f = open(path_in_str, 'rb')
+                    refshifts = pickle.load(f)
+                    f.close()
+                    for s in refshifts.values():
+                        refs.append(s)
 
-    pathlist = Path(rel).glob('*.shift*l0*')
-    for path in sorted(pathlist):
-            path_in_str = str(path)
-            if path_in_str[-1] != "s":
-                f = open(path_in_str, 'rb')
-                refshifts = pickle.load(f)
-                f.close()
-                for s in refshifts.values():
-                    refs.append(s)
+                else:
+                    f = open(path_in_str, 'rb')
+                    refshifts_stations = pickle.load(f)
+                    f.close()
+                    for s in refshifts_stations.values():
+                        stations.append(s)
 
-            else:
-                f = open(path_in_str, 'rb')
-                refshifts_stations = pickle.load(f)
-                f.close()
-                for s in refshifts_stations.values():
-                    stations.append(s)
+        map, ax = make_world_map(event, event_mech)
 
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-    desired=[3,4]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    map = Basemap(width=21000000,height=21000000,
-                resolution='l',projection='aeqd',\
-                lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
-    map.fillcontinents(zorder=-1)
-    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
-    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
-    x, y = map(event_cor[1][0],event_cor[0][0])
-    ax = plt.gca()
-    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-    beach1 = beach(np1, xy=(x, y), width=900030)
-    ax.add_collection(beach1)
-    pathlist = Path(rel).glob('*.dat')
-    i=0
-    minima = min(refs)
-    maxima = max(refs)
-    import matplotlib
+        pathlist = Path(rel).glob('*.dat')
+        i = 0
+        minima = min(refs)
+        maxima = max(refs)
 
-    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
-    mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
-    for st, ref in zip(stations, refs):
+        norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+        mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
+        for st, ref in zip(stations, refs):
 
+            x, y = map(st[1], st[0])
 
-        x, y = map(st[1],st[0])
+            map.scatter(x, y, 30, marker='o', c=mapper.to_rgba(ref))
 
-        map.scatter(x,y,30,marker='o',c=mapper.to_rgba(ref))
+        lon_0, lat_0 = lat_ev, lon_ev
+        x, y = map(lon_0, lat_0)
+        degree_sign = u'\N{DEGREE SIGN}'
+        x2, y2 = map(lon_0, lat_0-20)
+        plt.text(x2, y2, '20'+degree_sign, fontsize=22, color='blue')
+        circle1 = plt.Circle((x, y), y2-y, color='blue',
+                             fill=False, linestyle='dashed')
+        ax.add_patch(circle1)
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-60)
+        plt.text(x2, y2, '60' + degree_sign, fontsize=22, color='blue')
+        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                             linestyle='dashed')
+        ax.add_patch(circle2)
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-90)
+        plt.text(x2, y2, '90'+degree_sign, fontsize=22, color='blue')
+        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                             linestyle='dashed')
+        ax.add_patch(circle2)
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-94)
+        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                             linestyle='dashed')
+        ax.add_patch(circle2)
+        x, y = map(lon_0, lat_0)
+        x2, y2 = map(lon_0, lat_0-22)
+        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                             linestyle='dashed')
+        ax.add_patch(circle2)
+        plt.show()
 
-    lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
-    x,y=map(lon_0,lat_0)
-    degree_sign= u'\N{DEGREE SIGN}'
-    x2,y2 = map(lon_0,lat_0-20)
-    plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
-    circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-    ax.add_patch(circle1)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-60)
-    plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
-    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-90)
-    plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
-    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-94)
-    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-22)
-    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    plt.show()
-
-
-
-
-    pathlist = Path(rel).glob('*.shift*h1*')
-    for path in sorted(pathlist):
-            path_in_str = str(path)
-            if path_in_str[-1] != "s":
-                f = open(path_in_str, 'rb')
-                refshifts = pickle.load(f)
-                f.close()
-                for s in refshifts.values():
-                    refs.append(s)
-
-            else:
-                f = open(path_in_str, 'rb')
-                refshifts_stations = pickle.load(f)
-                f.close()
-                for s in refshifts_stations.values():
-                    stations.append(s)
-
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-    desired=[3,4]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    map = Basemap(width=21000000,height=21000000,
-                resolution='l',projection='aeqd',\
-                lat_ts=event_cor[0][0],lat_0=event_cor[0][0],lon_0=event_cor[1][0])
-    map.fillcontinents(zorder=-1)
-    map.drawparallels(np.arange(-90,90,30),labels=[1,0,0,0])
-    map.drawmeridians(np.arange(map.lonmin,map.lonmax+30,60),labels=[0,0,0,1])
-    x, y = map(event_cor[1][0],event_cor[0][0])
-    ax = plt.gca()
-    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-    beach1 = beach(np1, xy=(x, y), width=900030)
-    ax.add_collection(beach1)
-    pathlist = Path(rel).glob('*.dat')
-    i=0
-    minima = min(refs)
-    maxima = max(refs)
-    import matplotlib
-
-    norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
-    mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
-    for st, ref in zip(stations, refs):
-
-
-        x, y = map(st[1],st[0])
-
-        map.scatter(x,y,30,marker='o',c=mapper.to_rgba(ref))
-
-    lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
-    x,y=map(lon_0,lat_0)
-    degree_sign= u'\N{DEGREE SIGN}'
-    x2,y2 = map(lon_0,lat_0-20)
-    plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
-    circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-    ax.add_patch(circle1)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-60)
-    plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
-    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-90)
-    plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
-    circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-94)
-    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    x,y=map(lon_0,lat_0)
-    x2,y2 = map(lon_0,lat_0-22)
-    circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-    ax.add_patch(circle2)
-    plt.show()
 
 def plot_movie():
 
     evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
-    winlen = cfg.UInt ('winlen')
-    winlen2= cfg.UInt ('winlen_f2')
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+
     if len(sys.argv)<4:
         print("missing input arrayname")
     else:
@@ -1109,7 +1013,7 @@ def plot_movie():
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     eastings = data[:,1]
-                    northings =  data[:,0]
+                    northings = data[:,0]
                     plt.figure()
                     map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
                                   llcrnrlat=num.min(northings),
@@ -1140,20 +1044,15 @@ def plot_movie():
 
 def integrated_scatter():
 
+    evpath = 'events/' + str(sys.argv[1])
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
 
-    evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
-    step = cfg.Float ('step')
-    step2 = cfg.Float ('step_f2')
 
-    if len(sys.argv)<5:
+    if len(sys.argv) < 5:
         print("missing input arrayname and or depth")
     else:
         if sys.argv[3] == 'combined':
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-            import matplotlib
+            rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
             matplotlib.rcParams.update({'font.size': 32})
             pathlist = Path(rel).glob('0-'+'*boot*.ASC')
             maxs = 0.
@@ -1176,16 +1075,16 @@ def integrated_scatter():
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    data_int += np.nan_to_num(data[:,2])
-                    time = float(path_in_str[-8:-6])* step
+                    data_int += np.nan_to_num(data[:, 2])
+                    time = float(path_in_str[-8:-6]) * step
                     times.append(time)
                     for i in range(0, num.shape(data[:, 2])[0]):
-                        if data[i,2] > data_old[i] and time_grid[i] == 0:
+                        if data[i, 2] > data_old[i] and time_grid[i] == 0:
                             time_grid[i] = time
-                            data_old[i] = data[i,2]
+                            data_old[i] = data[i, 2]
 
-            eastings = data[:,1]
-            northings = data[:,0]
+            eastings = data[:, 1]
+            northings = data[:, 0]
             xpixels = 1000
 
             plt.figure()
@@ -1260,6 +1159,7 @@ def integrated_scatter():
                             xpixels=xpixels, verbose=False)
             plt.show()
 
+
 def beampower():
         rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('r*/beam.mseed')
@@ -1276,11 +1176,13 @@ def beampower():
         trace.snuffle(tr_bp)
         bp_diff_tr = tr_bp.copy()
         bp_diff_tr.ydata = num.diff(tr_bp.ydata)
-        trace.snuffle(tr_bp_diff)
+        trace.snuffle(bp_diff_tr)
+
 
 def spec(tr):
         f, a = tr.spectrum(pad_to_pow2=True)
         return (f, a)
+
 
 def inspect_spectrum():
         from pyrocko import cake
@@ -1308,14 +1210,13 @@ def inspect_spectrum():
         trace.snuffle(traces)
 
 
-
 def plot_integrated_movie():
     evpath = 'events/' + str(sys.argv[1])
     C = config.Config(evpath)
     Config = C.parseConfig('config')
     cfg = ConfigObj(dict=Config)
-    step = cfg.UInt('step')
-    step2 = cfg.UInt('step_f2')
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+
     duration = cfg.UInt('duration')
     forerun = cfg.UInt('forerun')
     plt_time = False
@@ -1582,30 +1483,31 @@ def plot_time():
                             data_int[i]= k
                         i = i+1
 
-            eastings = data[:,1]
-            northings =  data[:,0]
+            eastings = data[:, 1]
+            northings = data[:, 0]
             plt.figure()
             map, x, y = make_map(data)
 
-            mins = np.max(data[:,2])
+            mins = np.max(data[:, 2])
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, 0.085)
-            mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
+            mask = np.all(np.where(isbad[triang.triangles], True, False),
+                          axis=1)
             levels = np.arange(0., 1.05, 0.025)
             triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='cool')
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
-            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-            desired=[3,4]
+            event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1]) +'.origin'
+            desired = [3, 4]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            desired=[7,8,9]
+                reader = csv.reader(fin)
+                event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
+            desired = [7, 8, 9]
             with open(event, 'r') as fin:
-                reader=csv.reader(fin)
-                event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-            x, y = map(event_cor[1][0],event_cor[0][0])
+                reader = csv.reader(fin)
+                event_mech = [[float(s[-3:]) for s in row] for i, row in enumerate(reader) if i in desired]
+            x, y = map(event_cor[1][0], event_cor[0][0])
             ax = plt.gca()
             np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
             beach1 = beach(np1, xy=(x, y), width=0.09)
