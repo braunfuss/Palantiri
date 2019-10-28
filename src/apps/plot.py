@@ -410,7 +410,7 @@ def make_world_map(event, event_mech):
                   lon_0=event_cor[1][0])
     map.fillcontinents(zorder=-1)
     map.drawparallels(np.arange(-90, 90, 30), labels=[1, 0, 0, 0])
-    map.drawmeridians(np.arange(map.lonmin, map.lonmax+30, 60),
+    map.drawmeridians(np.arange(0, map.lonmax+30, 60),
                       labels=[0, 0, 0, 1])
     x, y = map(event_cor[1][0], event_cor[0][0])
     ax = plt.gca()
@@ -803,7 +803,6 @@ def plot_cluster():
     event, lat_ev, lon_ev, event_mech, rel = get_event()
 
     map, ax = make_world_map(event, event_mech)
-
     pathlist = Path(rel).glob('*.dat')
     i = 0
     for path in sorted(pathlist):
@@ -865,14 +864,13 @@ def plot_cluster():
 def plot_timeshift_map():
 
     step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
-
     evpath = 'events/' + str(sys.argv[1])
     stations = []
     refs = []
     event, lat_ev, lon_ev, event_mech, rel = get_event()
     filters = cfg.String('filters')
     filters = int(filters)
-
+    fig = plt.figure()
     for filterindex in range(0, filters):
         if cfg.Bool('synthetic_test') is True:
             evpath = 'events/' + str(sys.argv[1])
@@ -907,9 +905,9 @@ def plot_timeshift_map():
         i = 0
         minima = min(refs)
         maxima = max(refs)
-
+        cmap = cm.jet
         norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
-        mapper = cm.ScalarMappable(norm=norm, cmap=cm.jet)
+        mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
         for st, ref in zip(stations, refs):
 
             x, y = map(st[1], st[0])
@@ -946,6 +944,15 @@ def plot_timeshift_map():
         circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
                              linestyle='dashed')
         ax.add_patch(circle2)
+        plt.show()
+
+        fig, ax = plt.subplots(figsize=(6, 1))
+        fig.subplots_adjust(bottom=0.5)
+
+        cb1 = matplotlib.colorbar.ColorbarBase(ax, cmap=cmap,
+                                        norm=norm,
+                                        orientation='horizontal')
+        cb1.set_label('[s]')
         plt.show()
 
 
