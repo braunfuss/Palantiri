@@ -36,6 +36,7 @@ Contents
    setup
    configuration/index
    processing
+   errors
 
 Indices and tables
 ------------------

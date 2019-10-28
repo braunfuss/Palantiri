@@ -364,6 +364,7 @@ def processLoop(traces=None, stations=None, cluster=None):
             desired = 'Z'
         if phase is 'S':
             desired = 'T'
+            rpe = rpe +'_S'
         # ==================================loop over filter setups=====
         for filterindex in xrange(0, filters):
             # ==================================loop over depth=======

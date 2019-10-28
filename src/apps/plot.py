@@ -431,11 +431,12 @@ def distance_time():
 
         for path in sorted(pathlist):
                 path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                max = np.max(data[:, 2])
-                if maxs < max:
-                    maxs = max
-                    datamax = np.max(data[:, 2])
+                if path_in_str[-14] is not "o":
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    max = np.max(data[:, 2])
+                    if maxs < max:
+                        maxs = max
+                        datamax = np.max(data[:, 2])
 
         pathlist = Path(rel).glob('0-*.ASC')
         maxs = 0.
@@ -446,12 +447,13 @@ def distance_time():
         distances = []
         times = []
         for path in sorted(pathlist):
-                path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                data_int = data_int + data[:,2]
-                for i in range(0, len(data[:, 2])):
-                    if data_int[i] > datamax*0.1:
-                        time_grid[i] = float(path_in_str[-8:-6]) * step
+                if path_in_str[-14] is not "o":
+                    path_in_str = str(path)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    data_int = data_int + data[:,2]
+                    for i in range(0, len(data[:, 2])):
+                        if data_int[i] > datamax*0.1:
+                            time_grid[i] = float(path_in_str[-8:-6]) * step
         for i in range(0, len(data[:, 2])):
             if data_int[i] > datamax*0.1:
                 lats = data[i, 1]
@@ -502,43 +504,12 @@ def distance_time():
         datamax = []
         for path in sorted(pathlist):
                 path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                max = np.max(data[:, 2])
-                datamax.append(np.max(data[:, 2]))
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-        pathlist = Path(rel).glob('0-*.ASC')
-        maxs = 0.
-        datas = []
-        azis = []
-        distances = []
-        times = []
-        k = 0
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                for i in range(0, len(data[:, 2])):
-                    if data[i, 2] == datamax[k]:
-                        lats = data[i, 1]
-                        lons = data[i, 0]
-                        datas.append(data[i, 2])
-                        dist = orthodrome.distance_accurate50m(lats, lons,
-                                                               lat_ev,
-                                                               lon_ev)
-                        azis.append(toAzimuth(lat_ev, lon_ev,
-                                              lats, lons))
-                        distances.append(dist)
-                        time = float(path_in_str[-8:-6]) * step
-                        times.append(time)
-                k = k+1
-        print(((distances[0]+distances[2])/2)/num.mean(time))
 
-    if sys.argv[3] == 'stepwise_max':
-        datamax = []
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                max = np.max(data[:, 2])
-                datamax.append(np.max(data[:, 2]))
+                if path_in_str[-14] is not "o":
+
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    max = np.max(data[:, 2])
+                    datamax.append(np.max(data[:, 2]))
         rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         pathlist = Path(rel).glob('0-*.ASC')
         maxs = 0.
@@ -550,41 +521,103 @@ def distance_time():
         for path in sorted(pathlist):
                 counter = 0
                 path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                for i in range(0, len(data[:, 2])):
-                    for kl in data[:, 2]:
-                        if kl == datamax[k]:
-                            counter = counter+1
-                    if data[i, 2] == datamax[k]:
-                        lats_list = []
-                        lons_list = []
-                        times_list = []
-                        if counter == 0:
-                            lats = data[i, 1]
-                            lons = data[i, 0]
-                            datas.append(data[i, 2])
-                            dist = orthodrome.distance_accurate50m(lats, lons,
-                                                                   lat_ev,
-                                                                   lon_ev)
-                            azis.append(toAzimuth(lat_ev, lon_ev,
-                                                  lats, lons))
-                            distances.append(dist)
-                            time = float(path_in_str[-8:-6]) * step
-                            times.append(time)
-                        else:
-                            lats_list.append(data[i, 1])
-                            lons_list.append(data[i, 0])
+                if path_in_str[-14] is not "o":
 
-                if counter != 0:
-                    dist = orthodrome.distance_accurate50m(num.mean(lats_list),
-                                                           num.mean(lons_list),
-                                                           lat_ev,
-                                                           lon_ev)
-                    distances.append(dist)
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    for i in range(0, len(data[:, 2])):
+                        for kl in data[:, 2]:
+                            if kl == datamax[k]:
+                                counter = counter+1
+                        if data[i, 2] > datamax[k]*0.6:
+                            lats_list = []
+                            lons_list = []
+                            times_list = []
+                            if counter == 0:
+                                lats = data[i, 1]
+                                lons = data[i, 0]
+                                datas.append(data[i, 2])
+                                dist = orthodrome.distance_accurate50m(lats, lons,
+                                                                       lat_ev,
+                                                                       lon_ev)
+                                azis.append(toAzimuth(lat_ev, lon_ev,
+                                                      lats, lons))
+                                distances.append(dist)
+                                time = float(path_in_str[-8:-6]) * step
+                                times.append(time)
+                            else:
+                                lats_list.append(data[i, 1])
+                                lons_list.append(data[i, 0])
 
-                    time = float(path_in_str[-8:-6]) * step
-                    times.append(time)
-                k = k+1
+                    if counter != 0:
+                        dist = orthodrome.distance_accurate50m(num.mean(lats_list),
+                                                               num.mean(lons_list),
+                                                               lat_ev,
+                                                               lon_ev)
+                        distances.append(dist)
+
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+                    k = k+1
+        print(num.mean(distances)/num.mean(time))
+
+    if sys.argv[3] == 'stepwise_max':
+        datamax = []
+        for path in sorted(pathlist):
+                path_in_str = str(path)
+
+                if path_in_str[-14] is not "o":
+
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    max = np.max(data[:, 2])
+                    datamax.append(np.max(data[:, 2]))
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        pathlist = Path(rel).glob('0-*.ASC')
+        maxs = 0.
+        datas = []
+        azis = []
+        distances = []
+        times = []
+        k = 0
+        for path in sorted(pathlist):
+                counter = 0
+                path_in_str = str(path)
+                if path_in_str[-14] is not "o":
+
+                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    for i in range(0, len(data[:, 2])):
+                        for kl in data[:, 2]:
+                            if kl == datamax[k]:
+                                counter = counter+1
+                        if data[i, 2] == datamax[k]:
+                            lats_list = []
+                            lons_list = []
+                            times_list = []
+                            if counter == 0:
+                                lats = data[i, 1]
+                                lons = data[i, 0]
+                                datas.append(data[i, 2])
+                                dist = orthodrome.distance_accurate50m(lats, lons,
+                                                                       lat_ev,
+                                                                       lon_ev)
+                                azis.append(toAzimuth(lat_ev, lon_ev,
+                                                      lats, lons))
+                                distances.append(dist)
+                                time = float(path_in_str[-8:-6]) * step
+                                times.append(time)
+                            else:
+                                lats_list.append(data[i, 1])
+                                lons_list.append(data[i, 0])
+
+                    if counter != 0:
+                        dist = orthodrome.distance_accurate50m(num.mean(lats_list),
+                                                               num.mean(lons_list),
+                                                               lat_ev,
+                                                               lon_ev)
+                        distances.append(dist)
+
+                        time = float(path_in_str[-8:-6]) * step
+                        times.append(time)
+                    k = k+1
         print(num.mean(distances)/num.mean(time))
 
     plt.figure()
@@ -2780,7 +2813,7 @@ def main():
             plot_semblance_timestep()
         elif sys.argv[2] == 'distance_time':
             distance_time()
-        elif sys.argv[2] == 'semblance_movie':
+        elif sys.argv[2] == 'semblance_map_movie':
             plot_semblance_movie()
         elif sys.argv[2] == 'timeshifts':
             empiricial_timeshifts()

@@ -758,26 +758,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
             if semb > sembmax:
                 sembmax = semb
-
-
-                    # delta_min = None
-                    # for js in range(num.shape(latv)[0]):
-                    #     xs = latv[js]
-                    #     ys = lonv[js]
-                    #     delta = orthodrome.distance_accurate50m_numpy(xs, ys, x_shift,
-                    #                                               y_shift)
-                    #
-                    #     if delta_min is None:
-                    #         delta_min = delta
-                    #         x_use = xs
-                    #         y_use = ys
-                    #     if delta < delta_min:
-                    #         delta_min = delta
-                    #         x_use = xs
-                    #         y_use = ys
-                    # x = x_use
-                    # y = y_use
-
                 sembmaxX = x
                 sembmaxY = y
 

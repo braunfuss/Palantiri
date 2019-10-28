@@ -104,12 +104,12 @@ The command to cluster the stations into virtual arrays is:
 .. highlight:: console
 
 ::
-
+    $ cd events
 		$ palantiri_cluster
 		Usage: palantiri_cluster eventname_date
 
 
-
+The command needs to be executed in the events folder. 
 The desired stations in each array can be given/modified in the eventname_date.config file, also allowing for manual array creation.
 As input a comma separated list of station names is expected in the format::
 
@@ -127,6 +127,9 @@ The last step is the actual processing.
 This chapter describes the main processing. After the pre-processing you will have a folder named after the specific event in the events subfolder and your eventname_date.config file contains a list of arrays.
 The eventfolder will contain all work and data specific to this event. If you reprocess a certain event the results will be overwritten.
 For beamforming several methods are incorporated, including linear, phase-weighted and coherence based stacking.
+In the Palantiri code we also implemented the possibility to weight the individual traces contribution to each virtual arrays semblance by the variance of the pre-event noise.
+Furthermore our code supports also linear and coherency stacking. In the coherency stacking approach we stack according to the coherence of all stations in an an array to the reference station of that array. We than stack the coherence of all arrays together.
+This only works given that all stations in an array have the same polarity.
 
 The MUSIC algorithm is at this stage partly supported but will be fully implemented in later versions.
 
