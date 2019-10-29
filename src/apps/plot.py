@@ -861,99 +861,129 @@ def plot_cluster():
     plt.show()
 
 
+def load_refs(rel, phase, filterindex):
+
+    stations = []
+    refs = []
+    if filterindex == 0:
+        if phase == "P":
+            pathlist = Path(rel).glob('*.shift*l%s*' % filterindex)
+        else:
+            pathlist = Path(rel).glob('*.shift_S*l%s*' % filterindex)
+    if filterindex == 1:
+        if phase == "P":
+            pathlist = Path(rel).glob('*.shift*h%s*' % filterindex)
+        else:
+            pathlist = Path(rel).glob('*.shift_S*h%s*' % filterindex)
+
+    for path in sorted(pathlist):
+            path_in_str = str(path)
+            if path_in_str[-1] != "s":
+                f = open(path_in_str, 'rb')
+                refshifts = pickle.load(f)
+                f.close()
+                for s in refshifts.values():
+                    refs.append(s)
+
+            else:
+                f = open(path_in_str, 'rb')
+                refshifts_stations = pickle.load(f)
+                f.close()
+                for s in refshifts_stations.values():
+                    stations.append(s)
+
+    return stations, refs
+
+
 def plot_timeshift_map():
 
     step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
     evpath = 'events/' + str(sys.argv[1])
-    stations = []
-    refs = []
+
     event, lat_ev, lon_ev, event_mech, rel = get_event()
     filters = cfg.String('filters')
     filters = int(filters)
-    fig = plt.figure()
-    for filterindex in range(0, filters):
-        if cfg.Bool('synthetic_test') is True:
-            evpath = 'events/' + str(sys.argv[1])
-            C = config.Config(evpath)
-            Syn_in = C.parseConfig('syn')
-            syn_in = SynthCfg(Syn_in)
-            lat_ev = float(syn_in.lat_0())
-            lon_ev = float(syn_in.lon_0())
-        else:
-            event, lat_ev, lon_ev, event_mech, rel = get_event()
+    phases = cfg.Str('ttphases')
+    phases = phases.split(',')
+    minima = 0
+    maxima = 0
+    for phase in phases:
+        for filterindex in range(0, filters):
+            stations, refs = load_refs(rel, phase, filterindex)
+            if num.min(refs) < minima:
+                minima = min(refs)
+            if num.max(refs) > maxima:
+                maxima = max(refs)
+    for phase in phases:
+        for filterindex in range(0, filters):
+            stations, refs = load_refs(rel, phase, filterindex)
+            fig = plt.figure()
 
-        pathlist = Path(rel).glob('*.shift*l%s*' % filterindex)
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-                if path_in_str[-1] != "s":
-                    f = open(path_in_str, 'rb')
-                    refshifts = pickle.load(f)
-                    f.close()
-                    for s in refshifts.values():
-                        refs.append(s)
+            if cfg.Bool('synthetic_test') is True:
+                evpath = 'events/' + str(sys.argv[1])
+                C = config.Config(evpath)
+                Syn_in = C.parseConfig('syn')
+                syn_in = SynthCfg(Syn_in)
+                lat_ev = float(syn_in.lat_0())
+                lon_ev = float(syn_in.lon_0())
+            else:
+                event, lat_ev, lon_ev, event_mech, rel = get_event()
 
-                else:
-                    f = open(path_in_str, 'rb')
-                    refshifts_stations = pickle.load(f)
-                    f.close()
-                    for s in refshifts_stations.values():
-                        stations.append(s)
 
-        map, ax = make_world_map(event, event_mech)
+            map, ax = make_world_map(event, event_mech)
 
-        pathlist = Path(rel).glob('*.dat')
-        i = 0
-        minima = min(refs)
-        maxima = max(refs)
-        cmap = cm.jet
-        norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
-        mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
-        for st, ref in zip(stations, refs):
+            pathlist = Path(rel).glob('*.dat')
+            i = 0
 
-            x, y = map(st[1], st[0])
+            cmap = cm.jet
+            norm = matplotlib.colors.Normalize(vmin=minima, vmax=maxima, clip=True)
+            mapper = cm.ScalarMappable(norm=norm, cmap=cmap)
+            for st, ref in zip(stations, refs):
 
-            map.scatter(x, y, 30, marker='o', c=mapper.to_rgba(ref))
+                x, y = map(st[1], st[0])
 
-        lon_0, lat_0 = lat_ev, lon_ev
-        x, y = map(lon_0, lat_0)
-        degree_sign = u'\N{DEGREE SIGN}'
-        x2, y2 = map(lon_0, lat_0-20)
-        plt.text(x2, y2, '20'+degree_sign, fontsize=22, color='blue')
-        circle1 = plt.Circle((x, y), y2-y, color='blue',
-                             fill=False, linestyle='dashed')
-        ax.add_patch(circle1)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-60)
-        plt.text(x2, y2, '60' + degree_sign, fontsize=22, color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-90)
-        plt.text(x2, y2, '90'+degree_sign, fontsize=22, color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-94)
-        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-22)
-        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        plt.show()
+                map.scatter(x, y, 30, marker='o', c=mapper.to_rgba(ref))
 
-        fig, ax = plt.subplots(figsize=(6, 1))
-        fig.subplots_adjust(bottom=0.5)
+            lon_0, lat_0 = lon_ev, lat_ev
+            x, y = map(lon_0, lat_0)
+            degree_sign = u'\N{DEGREE SIGN}'
+            x2, y2 = map(lon_0, lat_0-20)
+            plt.text(x2, y2, '20'+degree_sign, fontsize=22, color='blue')
+            circle1 = plt.Circle((x, y), y2-y, color='blue',
+                                 fill=False, linestyle='dashed')
+            ax.add_patch(circle1)
+            x, y = map(lon_0, lat_0)
+            x2, y2 = map(lon_0, lat_0-60)
+            plt.text(x2, y2, '60' + degree_sign, fontsize=22, color='blue')
+            circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                                 linestyle='dashed')
+            ax.add_patch(circle2)
+            x, y = map(lon_0, lat_0)
+            x2, y2 = map(lon_0, lat_0-90)
+            plt.text(x2, y2, '90'+degree_sign, fontsize=22, color='blue')
+            circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                                 linestyle='dashed')
+            ax.add_patch(circle2)
+            x, y = map(lon_0, lat_0)
+            x2, y2 = map(lon_0, lat_0-94)
+            circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                                 linestyle='dashed')
+            ax.add_patch(circle2)
+            x, y = map(lon_0, lat_0)
+            x2, y2 = map(lon_0, lat_0-22)
+            circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                                 linestyle='dashed')
+            ax.add_patch(circle2)
+            plt.show()
 
-        cb1 = matplotlib.colorbar.ColorbarBase(ax, cmap=cmap,
-                                        norm=norm,
-                                        orientation='horizontal')
-        cb1.set_label('[s]')
-        plt.show()
+            fig, ax = plt.subplots(figsize=(6, 1))
+            fig.subplots_adjust(bottom=0.5)
+
+            cb1 = matplotlib.colorbar.ColorbarBase(ax, cmap=cmap,
+                                            norm=norm,
+                                            orientation='horizontal')
+            cb1.set_label('[s]')
+            plt.show()
 
 
 def plot_movie():
