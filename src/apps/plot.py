@@ -237,6 +237,8 @@ def make_map(data):
                       urcrnrlon=num.max(eastings),
                       urcrnrlat=num.max(northings),
                       resolution='h', epsg=3395)
+
+
         ratio_lat = num.max(northings)/num.min(northings)
         ratio_lon = num.max(eastings)/num.min(eastings)
 
@@ -244,13 +246,13 @@ def make_map(data):
                          num.min(northings)+ratio_lat*0.25,
                          num.mean(eastings), num.mean(northings), 50)
 
-        #parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
-        #meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
+        parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
+        meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
 
 
         eastings, northings = map(eastings, northings)
-        #map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        #map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
         x, y = map(data[:,1], data[:,0])
         return map, x, y
 
@@ -619,9 +621,12 @@ def distance_time():
                         times.append(time)
                     k = k+1
         print(num.mean(distances)/num.mean(time))
-
+    fit_dt = num.polyfit(distances, times, 1)
+    p = num.poly1d(fit_dt)
+    xp = num.linspace(num.min(distances), num.max(distances), 10)
     plt.figure()
     plt.scatter(distances, times, s=100)
+    _ = plt.plot(distances, times, '.', xp, p(xp), '-')
     plt.show()
 
     plt.figure()
@@ -822,7 +827,7 @@ def plot_cluster():
             lats = data[1]
 
         x, y = map(lons, lats)
-        map.scatter(x, y, 30, marker='o', c=next(colors))
+        map.scatter(x, y, 20, marker='o', c=next(colors))
         try:
             plt.text(x[0], y[0], 'r'+str(data[0, 0])[:], fontsize=12)
         except:
@@ -942,7 +947,7 @@ def plot_timeshift_map():
 
                 x, y = map(st[1], st[0])
 
-                map.scatter(x, y, 30, marker='o', c=mapper.to_rgba(ref))
+                map.scatter(x, y, 20, marker='o', c=mapper.to_rgba(ref))
 
             lon_0, lat_0 = lon_ev, lat_ev
             x, y = map(lon_0, lat_0)
@@ -1430,19 +1435,26 @@ def plot_semblance():
             Config = C.parseConfig('config')
             cfg = ConfigObj(dict=Config)
             filters = cfg.String('filters')
+            dgrid = float(cfg.String('gridspacing'))
+
             filters = int(filters)
             boot = False
+            zoom = True
             try:
                 for argv in sys.argv:
                     if argv == 'boot':
                         boot = True
+                    if argv == '--zoom':
+                        zoom = True
             except:
                 pass
 
             for filterindex in range(0, filters):
                 data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
-                rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-
+                if filterindex == 0:
+                    cmap = 'cool'
+                if filterindex == 1:
+                    cmap = 'hot'
                 dimx = int(Config['dimx'])
                 dimy = int(Config['dimy'])
 
@@ -1458,12 +1470,35 @@ def plot_semblance():
 
                 triang = tri.Triangulation(x, y)
                 isbad = np.less(data_int, num.max(data_int)*0.001)
-                mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
+                mask = np.all(np.where(isbad[triang.triangles], True, False),
+                              axis=1)
                 triang.set_mask(mask)
-                plt.tricontourf(triang, data_int, cmap='cool')
+                plt.tricontourf(triang, data_int, cmap=cmap)
                 plt.colorbar(orientation="horizontal")
                 plt.title(path_in_str)
+                x_grid = num.linspace(xmin, xmax, dimx)
+                y_grid = num.linspace(ymin, ymax, dimy)
+                xv, yv = np.meshgrid(x_grid, y_grid, sparse=False, indexing='ij')
+                map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
+                import pyproj
+                eastings = data[:, 1]
+                northings = data[:, 0]
+                pp = pyproj.Proj(init='epsg:3395')
+                for x_an, east in zip (x[::30], eastings[::30]) :
+                    xutm, yutm = pp(east, northings[-1])
+                    ax.annotate(str(int(xutm/1000)), \
+                                (x_an, y[-1]), \
+                                xytext=[10,-5], \
+                                textcoords='offset points', \
+                                color='b', fontsize=22)
 
+                for y_an, north in zip (y[::30], northings[::30]) :
+                    xutm, yutm = pp(eastings[-1], north)
+                    ax.annotate(str(int(yutm/1000)), \
+                                (x[-1], y_an), \
+                                xytext=[0,0], \
+                                textcoords='offset points', \
+                                color='b', fontsize=22)
                 if boot is True:
                     plot_comb_bs = False
                     plot_ind_bs = False
