@@ -20,6 +20,7 @@ from pyrocko import util
 import matplotlib
 import _pickle as pickle
 global evpath
+matplotlib.rcParams.update({'font.size': 22})
 
 
 w = 25480390.0
@@ -364,6 +365,20 @@ def equi(m, centerlon, centerlat, radius, *args, **kwargs):
 
     X, Y = m(X, Y)
     plt.plot(X, Y, color='gray', **kwargs)
+
+
+def get_filter_params(cfg):
+    filters = cfg.String('filters')
+    filters = int(filters)
+    phases = cfg.Str('ttphases')
+    phases = phases.split(',')
+    duration = cfg.UInt('duration')
+    forerun = cfg.UInt('forerun')
+    step = cfg.UInt('step')
+
+    ntimes = int((forerun+duration)/step)
+
+    return filters, phases, duration, forerun, ntimes
 
 
 def get_params():
@@ -821,7 +836,6 @@ def plot_cluster():
         try:
             lons = data[:, 2]
             lats = data[:, 1]
-
         except:
             lons = data[2]
             lats = data[1]
@@ -906,10 +920,8 @@ def plot_timeshift_map():
     evpath = 'events/' + str(sys.argv[1])
 
     event, lat_ev, lon_ev, event_mech, rel = get_event()
-    filters = cfg.String('filters')
-    filters = int(filters)
-    phases = cfg.Str('ttphases')
-    phases = phases.split(',')
+    filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
+
     minima = 0
     maxima = 0
     for phase in phases:
@@ -1293,16 +1305,14 @@ def plot_semblance_movie():
     cfg = ConfigObj(dict=Config)
     step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
 
-    duration = cfg.UInt('duration')
-    forerun = cfg.UInt('forerun')
+    filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
+
     plt_time = False
     boot = False
-    ntimes = int((forerun+duration)/step)
 
     dimx = int(Config['dimx'])
     dimy = int(Config['dimy'])
-    filters = cfg.String('filters')
-    filters = int(filters)
+
     max_rel = False
     try:
         for argv in sys.argv:
@@ -1434,18 +1444,20 @@ def plot_semblance():
             C = config.Config(evpath)
             Config = C.parseConfig('config')
             cfg = ConfigObj(dict=Config)
-            filters = cfg.String('filters')
             dgrid = float(cfg.String('gridspacing'))
+            filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
 
-            filters = int(filters)
             boot = False
-            zoom = True
+            zoom = False
+            grid = False
             try:
                 for argv in sys.argv:
                     if argv == 'boot':
                         boot = True
                     if argv == '--zoom':
                         zoom = True
+                    if argv == '--grid':
+                        grid = True
             except:
                 pass
 
@@ -1479,25 +1491,26 @@ def plot_semblance():
                 x_grid = num.linspace(xmin, xmax, dimx)
                 y_grid = num.linspace(ymin, ymax, dimy)
                 xv, yv = np.meshgrid(x_grid, y_grid, sparse=False, indexing='ij')
-                map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
+                if grid is True:
+                    map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
                 import pyproj
                 eastings = data[:, 1]
                 northings = data[:, 0]
                 pp = pyproj.Proj(init='epsg:3395')
-                for x_an, east in zip (x[::30], eastings[::30]) :
+                for x_an, east in zip(x[::30], eastings[::30]):
                     xutm, yutm = pp(east, northings[-1])
-                    ax.annotate(str(int(xutm/1000)), \
-                                (x_an, y[-1]), \
-                                xytext=[10,-5], \
-                                textcoords='offset points', \
+                    ax.annotate(str(int(xutm/1000)),
+                                (x_an, y[-1]),
+                                xytext=[0, 0],
+                                textcoords='offset points',
                                 color='b', fontsize=22)
 
-                for y_an, north in zip (y[::30], northings[::30]) :
+                for y_an, north in zip(y[::200], northings[::200]):
                     xutm, yutm = pp(eastings[-1], north)
-                    ax.annotate(str(int(yutm/1000)), \
-                                (x[-1], y_an), \
-                                xytext=[0,0], \
-                                textcoords='offset points', \
+                    ax.annotate(str(int(yutm/1000)),
+                                (x[-1], y_an),
+                                xytext=[0, 0],
+                                textcoords='offset points',
                                 color='b', fontsize=22)
                 if boot is True:
                     plot_comb_bs = False
@@ -2104,8 +2117,8 @@ def plot_sembmax():
     C = config.Config (evpath)
     Config = C.parseConfig ('config')
     cfg = ConfigObj (dict=Config)
-    filters = cfg.String('filters')
-    filters = int(filters)
+    filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
+
     step = cfg.UInt ('step')
     step2 = cfg.UInt ('step_f2')
     rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
@@ -2430,70 +2443,77 @@ def sta_lta(data, dt, min_period):
 
 
 def plot_semb():
-    import matplotlib
-    evpath = 'events/'+ str(sys.argv[1])
-    C = config.Config(evpath)
-    Config = C.parseConfig('config')
-    cfg = ConfigObj(dict=Config)
-    step = cfg.UInt('step')
-    winlen = cfg.UInt('winlen')
-    step2 = cfg.UInt('step_f2')
-    winlen2 = cfg.UInt('winlen_f2')
-    matplotlib.rcParams.update({'font.size': 22})
-    rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-    astf = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
-    astf_data = astf[:, 3]
-    trigger = sta_lta(astf_data, step, winlen)
     from scipy.signal import argrelextrema
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+    filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
 
-    trigger[trigger<num.max(trigger*0.1)] =0
-    extremas = argrelextrema(trigger, num.greater, order=4)
-    minimas = argrelextrema(trigger, num.less, order=2)
-    absmax = num.where(trigger>num.max(trigger)*0.2)
-    print('duration from lf:', absmax[0][-1]*step-absmax[0][0]*step)
+    if cfg.Bool('bootstrap_array_weights') is True:
+        n_bootstrap = cfg.UInt('n_bootstrap')
+    else:
+        n_bootstrap = 0
+    colors = iter(cm.rainbow(np.linspace(0, 1, n_bootstrap*filters)))
+    sembmax_load = False
+    for argv in sys.argv:
+        if argv == "--max":
+            sembmax_load = True
 
-    fig = plt.figure()
-    l = num.linspace(0,len(astf_data)*step,len(astf_data))
-    plt.plot(l, astf_data ,'k')
-    plt.ylabel('Semblance', fontsize=22)
-    plt.xlabel('Time [s]', fontsize=22)
+    for filterindex in range(0, filters):
+        if sembmax_load is True:
+            astf = num.loadtxt(rel+'sembmax_%s_boot%s_P.txt' % (filterindex, 0), delimiter=' ')
+            astf_data = astf[:, 3]
+        else:
+            astf_data = []
 
-    plt.axvline(x=absmax[0][-1]*step, lw=4, c='r')
-    plt.axvline(x=absmax[0][0]*step, lw=4, c='r')
-    for ex in extremas[0]:
-        plt.axvline(x=ex*step, lw=4, c='b')
-    for ex in minimas[0]:
-        plt.axvline(x=ex*step, lw=4, c='k')
+            for i in range(0, ntimes):
+                    data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
+                    astf_data.append(num.max(data_int))
+            astf_data = num.asarray(astf_data)
+        fig = plt.figure()
+        trigger = sta_lta(astf_data, step, winlen)
 
-    plt.savefig(rel+'semblance_0.pdf', bbox_inches='tight')
-    plt.show()
+        trigger[trigger<num.max(trigger*0.1)] =0
+        extremas = argrelextrema(trigger, num.greater, order=4)
+        minimas = argrelextrema(trigger, num.less, order=2)
+        absmax = num.where(trigger>num.max(trigger)*0.2)
 
-    rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-    astf = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
-    astf_data = astf[:, 3]
-    trigger = sta_lta(astf_data, step2, winlen2)
-    trigger[trigger<num.max(trigger*0.1)] =0
-    extremas = argrelextrema(trigger, num.greater, order=4)
-    minimas = argrelextrema(trigger, num.less, order=2)
-    absmax = num.where(trigger>num.max(trigger)*0.2)
-    print('duration from hf:',absmax[0][-1]*step2-absmax[0][0]*step2)
-
-    fig = plt.figure()
-    l = num.linspace(0,len(astf_data)*step2,len(astf_data))
-    plt.plot(l, astf_data ,'k')
-    plt.ylabel('Semblance', fontsize=22)
-    plt.xlabel('Time [s]', fontsize=22)
-
-    plt.axvline(x=absmax[0][-1]*step2, lw=4, c='r')
-    plt.axvline(x=absmax[0][0]*step2, lw=4, c='r')
-    for ex in extremas[0]:
-        plt.axvline(x=ex*step2, lw=4, c='b')
-    for ex in minimas[0]:
-        plt.axvline(x=ex*step2, lw=4, c='k')
+        l = num.linspace(0, len(astf_data)*step, len(astf_data))
+        if filterindex is 0:
+            c = 'b'
+        if filterindex is 1:
+            c = 'r'
+        plt.plot(l, astf_data, c)
+        plt.ylabel('Semblance', fontsize=22)
+        plt.xlabel('Time [s]', fontsize=22)
 
 
-    plt.savefig(rel+'semblance_1.pdf', bbox_inches='tight')
-    plt.show()
+        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+        for iboot in range(0, n_bootstrap):
+            astf_data_bs = []
+            for i in range(0, ntimes):
+                if sembmax_load is True:
+                    astf_data_bs = num.loadtxt(rel+'sembmax_%s_boot%s_P.txt' % (filterindex, i), delimiter=' ')
+                    astf_data_bs = astf_data_bs[:, 3]
+                else:
+                    datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step=i, step_boot=iboot, booting_load=True)
+                    astf_data_bs.append(num.max(data_intb))
+            plt.plot(l, astf_data_bs, c=next(colors))
+
+        try:
+            print('duration from filter %s:' % filterindex, absmax[0][-1]*step-absmax[0][0]*step)
+            plt.axvline(x=absmax[0][-1]*step, lw=4, c='r')
+            plt.axvline(x=absmax[0][0]*step, lw=4, c='r')
+            for ex in extremas[0]:
+                plt.axvline(x=ex*step, lw=4, c='b')
+            for ex in minimas[0]:
+                plt.axvline(x=ex*step, lw=4, c='k')
+        except:
+            pass
+
+        plt.savefig(rel+'semblance_%s.pdf' % (filterindex),
+                    bbox_inches='tight')
+        plt.show()
+
 
 
 def blobify():
@@ -2857,7 +2877,7 @@ def main():
             plot_movie()
         elif sys.argv[2] == 'sembmax':
             plot_sembmax()
-        elif sys.argv[2] == 'semblance_function':
+        elif sys.argv[2] == 'semblance':
             plot_semb()
         elif sys.argv[2] == 'interactive_max':
             plot_movingsembmax()
