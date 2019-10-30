@@ -18,6 +18,7 @@ from palantiri.tools import config
 from palantiri.process.sembCalc import toAzimuth
 from pyrocko import util
 import matplotlib
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 import _pickle as pickle
 global evpath
 matplotlib.rcParams.update({'font.size': 22})
@@ -1470,9 +1471,22 @@ def plot_semblance():
                 dimx = int(Config['dimx'])
                 dimy = int(Config['dimy'])
 
-                plt.figure()
-                ax = plt.gca()
+        #        plt.figure()
+        #        ax = plt.gca()
+                from matplotlib.ticker import NullFormatter
+                nullfmt = NullFormatter()         # no labels
 
+                # definitions for the axes
+                left, width = 0.1, 0.65
+                bottom, height = 0.1, 0.65
+                bottom_h = left_h = left + width + 0.02
+
+                rect = [left, bottom, width, height]
+
+
+                # start with a rectangular Figure
+                plt.figure(1, figsize=(8, 8))
+                ax = plt.axes(rect)
                 map, x, y = make_map(data)
                 xmax = num.max(x)
                 xmin = num.min(x[num.nonzero(x)])
@@ -1485,9 +1499,11 @@ def plot_semblance():
                 mask = np.all(np.where(isbad[triang.triangles], True, False),
                               axis=1)
                 triang.set_mask(mask)
-                plt.tricontourf(triang, data_int, cmap=cmap)
-                plt.colorbar(orientation="horizontal")
-                plt.title(path_in_str)
+                im = plt.tricontourf(triang, data_int, cmap=cmap)
+                divider = make_axes_locatable(ax)
+                cax = divider.append_axes("bottom", size="5%", pad=1.2)
+                plt.colorbar(im, cax=cax, orientation="horizontal")
+            #    plt.title(path_in_str)
                 x_grid = num.linspace(xmin, xmax, dimx)
                 y_grid = num.linspace(ymin, ymax, dimy)
                 xv, yv = np.meshgrid(x_grid, y_grid, sparse=False, indexing='ij')
@@ -1565,6 +1581,29 @@ def plot_semblance():
                     Syn_in = C.parseConfig('syn')
                     syn_in = SynthCfg(Syn_in)
                     draw_sources(ax, syn_in, map, scale)
+                data_int_2d = num.reshape(data_int, (dimx, dimy))
+                fig = plt.gcf()
+                factor = 0.76
+                rect_histx = [left+0.21, bottom_h+0.05, width*0.35, 0.1]
+                rect_histy = [left_h-0.14, bottom+0.15, 0.1, height*factor]
+                ax_right = plt.axes(rect_histy)
+                ax_bottom = plt.axes(rect_histx)
+                # histogram on the right
+            #    h, xe, ye = num.histogram2d(
+            #        data_int_2d[0, :], northings,
+            #        bins=[len(data_int_2d[0, :]), len(data_int_2d[:, 0])],)
+                #ax_bottom.xaxis.set_major_formatter(nullfmt)
+                #ax_right.yaxis.set_major_formatter(nullfmt)
+                # Projected histograms inx and y
+            #    x_data_int, y_data_int = num.meshgrid(data_int_2d)
+            #    h, xe, ye = num.histogram2d(x_data_int, y_data_int)
+            #    hx, hy = h.sum(axis=0), h.sum(axis=1)
+            #    ax_bottom.hist(hx, 60, histtype='bar', orientation='vertical', color='k')
+            #    ax_bottom.invert_yaxis()
+
+                # histogram in the bottom
+            #    ax_right.hist(hy, 60, histtype='bar', orientation='horizontal', color='k')
+
                 plt.show()
 
 
@@ -2472,10 +2511,10 @@ def plot_semb():
         fig = plt.figure()
         trigger = sta_lta(astf_data, step, winlen)
 
-        trigger[trigger<num.max(trigger*0.1)] =0
+        trigger[trigger < num.max(trigger*0.1)] = 0
         extremas = argrelextrema(trigger, num.greater, order=4)
         minimas = argrelextrema(trigger, num.less, order=2)
-        absmax = num.where(trigger>num.max(trigger)*0.2)
+        absmax = num.where(trigger > num.max(trigger)*0.2)
 
         l = num.linspace(0, len(astf_data)*step, len(astf_data))
         if filterindex is 0:
@@ -2485,7 +2524,6 @@ def plot_semb():
         plt.plot(l, astf_data, c)
         plt.ylabel('Semblance', fontsize=22)
         plt.xlabel('Time [s]', fontsize=22)
-
 
         rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         for iboot in range(0, n_bootstrap):
@@ -2500,7 +2538,7 @@ def plot_semb():
             plt.plot(l, astf_data_bs, c=next(colors))
 
         try:
-            print('duration from filter %s:' % filterindex, absmax[0][-1]*step-absmax[0][0]*step)
+            print('duration from filter %s:' % filterindex, absmax[0][-1]*step - absmax[0][0] * step)
             plt.axvline(x=absmax[0][-1]*step, lw=4, c='r')
             plt.axvline(x=absmax[0][0]*step, lw=4, c='r')
             for ex in extremas[0]:
