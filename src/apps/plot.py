@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
+import math
 from matplotlib.pyplot import cm
 from matplotlib.widgets import Slider
 from pylab import plot, show, scatter, axes, draw
@@ -25,17 +26,112 @@ matplotlib.rcParams.update({'font.size': 22})
 
 
 w = 25480390.0
+torad = num.pi/180.
+d2r = math.pi/180.
+r2d = 1./d2r
+earth_oblateness = 1./298.257223563
+earthradius_equator = 6378.14 * 1000.
+d2m = earthradius_equator*math.pi/180.
+m2d = 1./d2m
+
+
+
+def bounding_box(image, area=None):
+    from skimage.morphology import rectangle, closing, square
+    import weathertop.process.contour as contour
+    from matplotlib import pyplot as plt
+    from skimage.filters import rank, threshold_otsu
+    from skimage.segmentation import clear_border
+    from skimage.measure import label, regionprops, approximate_polygon, subdivide_polygon
+    from skimage.color import label2rgb
+    from skimage.draw import ellipse_perimeter
+    import matplotlib.patches as mpatches
+    from shapely.geometry import LineString, MultiLineString, Polygon
+    from shapely import geometry
+    thresh = threshold_otsu(image)
+    bw = closing(image > thresh, square(1))
+    if area is None:
+        area = 900
+
+    label_image = label(bw)
+    image_label_overlay = label2rgb(label_image, image=image)
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.imshow(image_label_overlay)
+    newlist = sorted(regionprops(label_image), key=lambda region: region.area, reverse=True)
+    polys = []
+    centers = []
+    coords_out = []
+    coords_box = []
+    ellipses = []
+    strikes = []
+    minrs = []
+    mincs = []
+    maxrs = []
+    maxcs = []
+    for region in regionprops(label_image):
+        if region.area >= 1: #check if nec.
+
+            coords = []
+            minr, minc, maxr, maxc = region.bbox
+            rect = mpatches.Rectangle((minc, minr), maxc - minc, maxr - minr,
+                                      fill=False, edgecolor='red', linewidth=2)
+            ax.add_patch(rect)
+
+            y0, x0 = region.centroid
+            orientation = region.orientation
+            strikes.append(num.rad2deg(orientation)+90.)
+            ellipses.append([x0, y0, region.major_axis_length,
+                            region.minor_axis_length, orientation])
+            coords_box.append([minr, minc, maxr, maxc])
+            minrs.append(minr)
+            mincs.append(minc)
+            maxrs.append(maxr)
+            maxcs.append(maxc)
+            x1 = x0 + math.cos(orientation) * 0.5 * region.major_axis_length
+            y1 = y0 - math.sin(orientation) * 0.5 * region.major_axis_length
+            x1a = x0 - math.cos(orientation) * 0.5 * region.major_axis_length
+            y1a = y0 + math.sin(orientation) * 0.5 * region.major_axis_length
+            x2 = x0 - math.sin(orientation) * 0.05 * region.minor_axis_length
+            y2 = y0 - math.cos(orientation) * 0.05 * region.minor_axis_length
+            coords.append([x1, y1])
+            coords.append([x1a, y1a])
+            coords.append([x0, y0])
+            coords.append([x2, y2])
+            coords = num.array(coords)
+            poly = geometry.Polygon([[p[0], p[1]] for p in coords])
+            polys.append(poly)
+            hull = poly.convex_hull
+            try:
+                koor = hull.exterior.coords
+                pol = geometry.Polygon([[p[1], p[0]] for p in koor])
+                center = Centerline(pol)
+                centers.append(center)
+            except:
+                pass
+
+            ax.plot((x0, x1), (y0, y1), '-r', linewidth=12.5)
+            ax.plot((x0, x1a), (y0, y1a), '-r', linewidth=12.5)
+
+            ax.plot((x0, x2), (y0, y2), '-r', linewidth=12.5)
+            ax.plot(x0, y0, '.g', markersize=15)
+            coords_out.append(coords)
+    ax.set_axis_off()
+    plt.show()
+    max_bound = [num.min(minrs), num.min(mincs),  num.max(maxrs), num.max(maxcs)]
+
+    return centers, coords_out, coords_box, strikes, ellipses, max_bound
 
 
 def draw_beach(ax, scale, map, event):
     desired = [3, 4]
     with open(event, 'r') as fin:
         reader = csv.reader(fin)
-        event_cor = [[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
     desired = [7, 8, 9]
     with open(event, 'r') as fin:
         reader = csv.reader(fin)
-        event_mech = [[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
+        event_mech = [[float(s[-3:]) for s in row] for i, row in enumerate(reader) if i in desired]
     x, y = map(event_cor[1][0], event_cor[0][0])
     ax = plt.gca()
 
@@ -817,9 +913,21 @@ def distance_time_bootstrap():
 
     plt.show()
 
+def center_lat_lon(lats, lons):
+    '''Calculate a mean geographical centre of the array
+    using spherical earth'''
+
+    for i, s in enumerate(lats):
+        lats[i] = lats[i]*torad
+        lons[i] = lons[i]*torad
+    return(lats.mean()*180/num.pi, lons.mean()*180/num.pi)
+
 
 def plot_cluster():
-
+    radius_plt = False
+    for argv in sys.argv:
+        if argv == "--radius":
+            radius_plt = True
     step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
     event, lat_ev, lon_ev, event_mech, rel = get_event()
 
@@ -840,44 +948,70 @@ def plot_cluster():
         except:
             lons = data[2]
             lats = data[1]
+        lat_c, lon_c = center_lat_lon(lats.copy(), lons.copy())
+        x_c, y_c = map(lon_c, lat_c)
 
+        dists = []
+        for lat, lon in zip(lats, lons):
+            dists.append(orthodrome.distance_accurate50m(lat_c, lon_c, lat,
+                                                         lon))
+        appert = num.max(dists)*m2d
         x, y = map(lons, lats)
-        map.scatter(x, y, 20, marker='o', c=next(colors))
-        try:
-            plt.text(x[0], y[0], 'r'+str(data[0, 0])[:], fontsize=12)
-        except:
-            plt.text(x, y, 'r'+str(data[0])[0:2], fontsize=12)
-            pass
-        lon_0, lat_0 = lat_ev, lon_ev,
-        x, y = map(lon_0, lat_0)
-        degree_sign = u'\N{DEGREE SIGN}'
-        x2, y2 = map(lon_0, lat_0-20)
-        plt.text(x2, y2, '20'+degree_sign, fontsize=22, color='blue')
-        circle1 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+        x2c, y2c = map(lon_c, lat_c-appert)
+        color = next(colors)
+        map.scatter(x_c, y_c, 50, marker='X', c=color)
+
+
+        map.scatter(x, y, 20, marker='o', c=color)
+        if radius_plt is False:
+            try:
+                plt.text(x[0], y[0], 'r'+str(data[0, 0])[:], fontsize=12)
+            except:
+                plt.text(x, y, 'r'+str(data[0])[0:2], fontsize=12)
+                pass
+        else:
+            try:
+                plt.text(x[0], y[0], 'r='+str(round(appert)), fontsize=12)
+                plt.text(x_c, y_c-9000, 'n='+str(len(x)), fontsize=12)
+
+            except:
+                plt.text(x, y, 'r='+str(round(appert)), fontsize=12)
+                plt.text(x_c, y_c-9000, 'n='+str(len(x)), fontsize=12)
+
+                pass
+        circle1 = plt.Circle((x_c, y_c), y2c-y_c, color=color, fill=False,
                              linestyle='dashed')
         ax.add_patch(circle1)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-60)
-        plt.text(x2, y2, '60'+degree_sign, fontsize=22, color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-90)
-        plt.text(x2, y2, '90'+degree_sign, fontsize=22, color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-94)
-        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
-        x, y = map(lon_0, lat_0)
-        x2, y2 = map(lon_0, lat_0-22)
-        circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
-                             linestyle='dashed')
-        ax.add_patch(circle2)
+    lon_0, lat_0 = lat_ev, lon_ev
+    x, y = map(lon_0, lat_0)
+    degree_sign = u'\N{DEGREE SIGN}'
+    x2, y2 = map(lon_0, lat_0-20)
+    plt.text(x2, y2, '20'+degree_sign, fontsize=22, color='blue')
+    circle1 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                         linestyle='dashed')
+    ax.add_patch(circle1)
+    x, y = map(lon_0, lat_0)
+    x2, y2 = map(lon_0, lat_0-60)
+    plt.text(x2, y2, '60'+degree_sign, fontsize=22, color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                         linestyle='dashed')
+    ax.add_patch(circle2)
+    x, y = map(lon_0, lat_0)
+    x2, y2 = map(lon_0, lat_0-90)
+    plt.text(x2, y2, '90'+degree_sign, fontsize=22, color='blue')
+    circle2 = plt.Circle((x, y), y2-y, color='blue', fill=False,
+                         linestyle='dashed')
+    ax.add_patch(circle2)
+    x, y = map(lon_0, lat_0)
+    x2, y2 = map(lon_0, lat_0-94)
+    circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                         linestyle='dashed')
+    ax.add_patch(circle2)
+    x, y = map(lon_0, lat_0)
+    x2, y2 = map(lon_0, lat_0-22)
+    circle2 = plt.Circle((x, y), y2-y, color='red', fill=False,
+                         linestyle='dashed')
+    ax.add_patch(circle2)
     plt.show()
 
 
@@ -1605,7 +1739,18 @@ def plot_semblance():
             #    ax_right.hist(hy, 60, histtype='bar', orientation='horizontal', color='k')
 
                 plt.show()
+                centers, coords_out, coords_box, strikes, ellipses, max_bound = bounding_box(data_int_2d)
+                coords_all = []
+                xc = num.reshape(eastings, (dimx, dimy))
 
+                yc = num.reshape(northings, (dimx, dimy))
+                for coords in coords_out:
+                    coords_boxes = []
+                    for k in coords:
+                        kx = k[1]
+                        ky = k[0]
+                        coords_boxes.append([xc[int(kx)][int(ky)], yc[int(kx)][int(ky)]])
+                    coords_all.append(coords_boxes)
 
 def plot_time():
     if len(sys.argv)<4:
