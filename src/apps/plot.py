@@ -510,6 +510,20 @@ def get_event():
     return event, lat_ev, lon_ev, event_mech, rel
 
 
+def make_event_plot(event, event_mech, ax, map):
+
+    desired = [3, 4]
+    with open(event, 'r') as fin:
+        reader = csv.reader(fin)
+        event_cor = [[float(s[6:]) for s in row] for i, row in enumerate(reader) if i in desired]
+
+    x, y = map(event_cor[1][0], event_cor[0][0])
+    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
+    beach1 = beach(np1, xy=(x, y), width=90)
+    ax.add_collection(beach1)
+
+    return ax
+
 
 def make_world_map(event, event_mech):
 
@@ -1572,6 +1586,8 @@ def plot_semblance_movie():
 
 
 def plot_semblance():
+    import pyproj
+
     if len(sys.argv)<4:
         print("missing input arrayname")
     else:
@@ -1581,10 +1597,14 @@ def plot_semblance():
             cfg = ConfigObj(dict=Config)
             dgrid = float(cfg.String('gridspacing'))
             filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
+            event, lat_ev, lon_ev, event_mech, rel = get_event()
+            step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
 
             boot = False
             zoom = False
             grid = False
+            scatter = False
+
             try:
                 for argv in sys.argv:
                     if argv == 'boot':
@@ -1593,6 +1613,8 @@ def plot_semblance():
                         zoom = True
                     if argv == '--grid':
                         grid = True
+                    if argv == '--scatter':
+                        scatter = True
             except:
                 pass
 
@@ -1604,9 +1626,6 @@ def plot_semblance():
                     cmap = 'hot'
                 dimx = int(Config['dimx'])
                 dimy = int(Config['dimy'])
-
-        #        plt.figure()
-        #        ax = plt.gca()
                 from matplotlib.ticker import NullFormatter
                 nullfmt = NullFormatter()         # no labels
 
@@ -1627,7 +1646,34 @@ def plot_semblance():
                 ymax = num.max(y)
                 ymin = num.min(y[num.nonzero(y)])
                 scale = (xmax/xmin)*(ymax/ymin)*10
+                if scatter is True:
+                    ax = plt.gca()
+                    make_event_plot(event, event_mech, ax, map)
+                    data_int_max = []
+                    x_scatter = []
+                    y_scatter = []
+                    for i in range(0, ntimes):
+                        xm, ym = x, y
+                        datas, data_ints, data_boots, data_int_boots, path_in_str, maxsbs, datamaxbs = load(filterindex, step=i)
+                        data_ints = data_ints / num.sqrt(num.sum(data_ints**2))
+                        #data_idx = np.where(data_int > num.max(data_int)*0.4)
+                        data_ints = data_ints[np.where(data_ints > num.max(data_ints)*0.9)]
+                        xm = xm[np.where(data_int > num.max(data_int)*0.9)]
+                        ym = ym[np.where(data_int > num.max(data_int)*0.9)]
+                        for dt, xt, yt in zip(data_ints, xm, ym):
+                            data_int_max.append(dt)
+                            x_scatter.append(xt)
+                            y_scatter.append(yt)
+                #    ps = make_max_scatter(map, rel, filterindex, step, num.asarray(data_int_max), num.asarray(x_scatter), num.asarray(y_scatter))
+                    size = data_int_max*30000
 
+                    l = num.linspace(0, len(data_int_max)*step, len(data_int_max))
+                    #map.scatter(x_scatter, y_scatter, marker='o', c='k', s=size, cmap='seismic')
+                    ps = make_max_scatter(map, rel, filterindex, step, data_int_max, x_scatter, y_scatter)
+
+                    data = num.loadtxt(rel+'sembmax_%s_boot0_P.txt' % filterindex, delimiter=' ')
+                    xm, ym = map(data[:,2], data[:,1])
+                    #ps = make_max_scatter(map, rel, filterindex, step, data, xm, ym)
                 triang = tri.Triangulation(x, y)
                 isbad = np.less(data_int, num.max(data_int)*0.001)
                 mask = np.all(np.where(isbad[triang.triangles], True, False),
@@ -1643,9 +1689,12 @@ def plot_semblance():
                 xv, yv = np.meshgrid(x_grid, y_grid, sparse=False, indexing='ij')
                 if grid is True:
                     map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
-                import pyproj
                 eastings = data[:, 1]
                 northings = data[:, 0]
+
+
+
+
                 pp = pyproj.Proj(init='epsg:3395')
                 for x_an, east in zip(x[::30], eastings[::30]):
                     xutm, yutm = pp(east, northings[-1])
@@ -1715,6 +1764,8 @@ def plot_semblance():
                     Syn_in = C.parseConfig('syn')
                     syn_in = SynthCfg(Syn_in)
                     draw_sources(ax, syn_in, map, scale)
+
+
                 data_int_2d = num.reshape(data_int, (dimx, dimy))
                 fig = plt.gcf()
                 factor = 0.76
@@ -1751,6 +1802,16 @@ def plot_semblance():
                         ky = k[0]
                         coords_boxes.append([xc[int(kx)][int(ky)], yc[int(kx)][int(ky)]])
                     coords_all.append(coords_boxes)
+
+
+def make_max_scatter(map, rel, filterindex, step, data, x, y):
+        size = 3000
+        l = num.linspace(0, len(data)*step, len(data))
+        ps = map.scatter(x, y, marker='o', c=l, s=size, cmap='seismic')
+        for i in range(0, len(x)):
+            #if data[i,3]> np.max(data[:,3])*0.05:
+                plt.text(x[i], y[i], '%s' %i)
+        return ps
 
 def plot_time():
     if len(sys.argv)<4:
@@ -2298,155 +2359,27 @@ def plot_moving():
 
 def plot_sembmax():
     evpath = 'events/'+ str(sys.argv[1])
-    C = config.Config (evpath)
-    Config = C.parseConfig ('config')
-    cfg = ConfigObj (dict=Config)
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
     filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
-
-    step = cfg.UInt ('step')
-    step2 = cfg.UInt ('step_f2')
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0)
-    map, x, y = make_map(data)
-    data = num.loadtxt(rel+'sembmax_0_boot0_P.txt', delimiter=' ')
-    eastings = data[:,2]
-    northings =  data[:,1]
-
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
     xpixels = 1000
-
-
-    try:
-        if sys.argv[3] is not None:
-            with open(sys.argv[3], 'r') as fin:
-                reader=csv.reader(fin)
-                event_cor=[[(s) for s in row] for i,row in enumerate(reader)]
-                event_cor_x = event_cor[:]
-                event_cor_x = np.asarray(event_cor)
-                event_cor_x = event_cor_x[:,1]
-                event_cor_y = event_cor[:]
-                event_cor_y = np.asarray(event_cor)
-                event_cor_y = event_cor_y[:,2]
-                list_x = []
-                list_y = []
-                for item in event_cor_x:
-                    list_x.append(float(item))
-                for item in event_cor_y:
-                    list_y.append(float(item))
-            x, y = map(list_x,list_y)
-            ps = map.scatter(x,y,marker='o',c='k', s=size, cmap='seismic')
-    except:
-        pass
-
-    ratio_lat = num.max(northings)/num.min(northings)
-    ratio_lon = num.max(eastings)/num.min(eastings)
-    #map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-    event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-    desired=[3,4]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    desired=[7,8,9]
-    with open(event, 'r') as fin:
-        reader=csv.reader(fin)
-        event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-    x, y = map(event_cor[1][0],event_cor[0][0])
-    ax = plt.gca()
-    np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-    beach1 = beach(np1, xy=(x, y), width=1000.3, alpha=0.4)
-    ax.add_collection(beach1)
-    X,Y = np.meshgrid(eastings, northings)
-
-    eastings, northings = map(X, Y)
-    x, y = map(data[:,2], data[:,1])
-    size =(data[:,3]/np.max(data[:,3]))*3000
-    l = num.linspace(0,len(data[:,2])*step,len(data[:,2]))
-
-    ps = map.scatter(x,y,marker='o',c=l, s=300, cmap='seismic')
-    for i in range(0,len(x)):
-        #if data[i,3]> np.max(data[:,3])*0.05:
-            plt.text(x[i],y[i],'%s' %i)
-    xpixels = 1000
-#    map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-#    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
-#    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
-    #map.drawmeridians(meridians,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
-    #map.drawparallels(parallels,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
-    cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
-    plt.show()
-    try:
-        rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-        data = num.loadtxt(rel+'sembmax_1_boot0_P.txt', delimiter=' ')
-        eastings = data[:,2]
-        northings =  data[:,1]
-
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                      llcrnrlat=num.min(northings),
-                      urcrnrlon=num.max(eastings),
-                      urcrnrlat=num.max(northings),
-                      resolution='h', epsg=3395)
-
-        try:
-            if sys.argv[3] is not None:
-                with open(sys.argv[3], 'r') as fin:
-                    reader=csv.reader(fin)
-                    event_cor=[[(s) for s in row] for i,row in enumerate(reader)]
-                    event_cor_x = event_cor[:]
-                    event_cor_x = np.asarray(event_cor)
-                    event_cor_x = event_cor_x[:,1]
-                    event_cor_y = event_cor[:]
-                    event_cor_y = np.asarray(event_cor)
-                    event_cor_y = event_cor_y[:,2]
-                    list_x = []
-                    list_y = []
-                    for item in event_cor_x:
-                        list_x.append(float(item))
-                    for item in event_cor_y:
-                        list_y.append(float(item))
-                x, y = map(list_x,list_y)
-                ps = map.scatter(x,y,marker='o',c='k', s=size, cmap='seismic')
-        except:
-            pass
-
-        ratio_lat = num.max(northings)/num.min(northings)
-        ratio_lon = num.max(eastings)/num.min(eastings)
-
-        map.drawmapscale(num.min(eastings)+ratio_lon*0.25, num.min(northings)+ratio_lat*0.25, num.mean(eastings), num.mean(northings), 30)
-
-        event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-        desired=[3,4]
-        with open(event, 'r') as fin:
-            reader=csv.reader(fin)
-            event_cor=[[float(s[6:]) for s in row] for i,row in enumerate(reader) if i in desired]
-        desired=[7,8,9]
-        with open(event, 'r') as fin:
-            reader=csv.reader(fin)
-            event_mech=[[float(s[-3:]) for s in row] for i,row in enumerate(reader) if i in desired]
-        x, y = map(event_cor[1][0],event_cor[0][0])
+    for filterindex in range(0, filters):
+        data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
+        map, x, y = make_map(data)
         ax = plt.gca()
-        np1 = [event_mech[0][0], event_mech[1][0], event_mech[2][0]]
-        beach1 = beach(np1, xy=(x, y), width=1000.03, alpha=0.4)
-        ax.add_collection(beach1)
-        X,Y = np.meshgrid(eastings, northings)
-
-        eastings, northings = map(X, Y)
-        map.drawcoastlines(color='b',linewidth=1)
-
+        make_event_plot(event, event_mech, ax, map)
+        data = num.loadtxt(rel+'sembmax_%s_boot0_P.txt' % filterindex, delimiter=' ')
         x, y = map(data[:,2], data[:,1])
-        for i in range(0,len(x)):
-            if data[i,3]> np.max(data[:,3])*0.05:
-                plt.text(x[i],y[i],'%s' %i)
-        l = num.linspace(0,len(data[:,2])*step2,len(data[:,2]))
-        size =(data[:,3]/np.max(data[:,3]))*3000
-        ps = map.scatter(x,y,marker='o',c=l, s=size, cmap='seismic')
+        ps = make_max_scatter(map, rel, filterindex, step, data, x, y)
         xpixels = 1000
-        map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-        parallels = num.arange(num.min(northings),num.max(northings),0.2)
-        meridians = num.arange(num.min(eastings),num.max(eastings),0.2)
-        cbar = map.colorbar(ps,location='bottom',pad="5%", label='Time [s]')
-        plt.savefig(rel+'semblance_max_1.pdf', bbox_inches='tight')
+    #    map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+    #    parallels = num.arange(num.min(northings),num.max(northings),ratio_lat)
+    #    meridians = num.arange(num.min(eastings),num.max(eastings),ratio_lon)
+        #map.drawmeridians(meridians,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
+        #map.drawparallels(parallels,labels=[1,1,1,1],linewidth=0.5, fontsize=10, dashes=[1,5])
+        cbar = map.colorbar(ps, location='bottom',pad="5%", label='Time [s]')
         plt.show()
-    except:
-        pass
+
 
 
 def plot_movingsembmax():
