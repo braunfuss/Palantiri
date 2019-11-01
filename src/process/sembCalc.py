@@ -703,7 +703,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     semb_sums = 0
     count_is = 0
     for a, i in enumerate(tmp_boot):
-            semb_cum =+ i
             semb_sums = semb_sums + num.sum(i)
             count_is = count_is + 1
     semb_sums = semb_sums/count_is
@@ -711,6 +710,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     norm = num.max(num.max(tmp, axis=1))
     for a, i in enumerate(tmp):
         logger.info('timestep %d' % a)
+
         if cboot is None:
             fobj = open(os.path.join(folder, '%s-%s_%03d_%s.ASC'
                                      % (switch, Origin['depth'], a, phase)),
@@ -740,6 +740,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         else:
             i = (i / num.sqrt(num.sum(i**2)))
 
+        semb_cum = semb_cum + i
         for j in range(num.shape(latv)[0]):
             x = latv[j]
             y = lonv[j]
@@ -754,7 +755,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 semb_prior[j] = i[j]
                 times_cum[j] = a
                 times_max[j] = a*i[j]
-
 
             if semb > sembmax:
                 sembmax = semb
@@ -787,6 +787,10 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         fobj_cum = open(os.path.join(folder, 'semb_cum_%s_%s_boot%s_%s.ASC'
                                      % (switch, Origin['depth'], cboot, phase)),
                         'w')
+
+    print(os.path.join(folder, 'semb_cum_%s_%s_%s.ASC'
+                             % (switch, Origin['depth'], phase)))
+
     for x, y, sembcums in zip(latv, lonv, semb_cum):
         fobj_cum.write('%.2f %.2f %.20f\n' % (x, y, sembcums))
     fobj_cum.close()
