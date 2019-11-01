@@ -1765,7 +1765,6 @@ def plot_semblance():
                     syn_in = SynthCfg(Syn_in)
                     draw_sources(ax, syn_in, map, scale)
 
-
                 data_int_2d = num.reshape(data_int, (dimx, dimy))
                 fig = plt.gcf()
                 factor = 0.76
@@ -1773,22 +1772,16 @@ def plot_semblance():
                 rect_histy = [left_h-0.14, bottom+0.15, 0.1, height*factor]
                 ax_right = plt.axes(rect_histy)
                 ax_bottom = plt.axes(rect_histx)
-                # histogram on the right
-            #    h, xe, ye = num.histogram2d(
-            #        data_int_2d[0, :], northings,
-            #        bins=[len(data_int_2d[0, :]), len(data_int_2d[:, 0])],)
-                #ax_bottom.xaxis.set_major_formatter(nullfmt)
-                #ax_right.yaxis.set_major_formatter(nullfmt)
-                # Projected histograms inx and y
-            #    x_data_int, y_data_int = num.meshgrid(data_int_2d)
-            #    h, xe, ye = num.histogram2d(x_data_int, y_data_int)
-            #    hx, hy = h.sum(axis=0), h.sum(axis=1)
-            #    ax_bottom.hist(hx, 60, histtype='bar', orientation='vertical', color='k')
-            #    ax_bottom.invert_yaxis()
 
-                # histogram in the bottom
-            #    ax_right.hist(hy, 60, histtype='bar', orientation='horizontal', color='k')
+                ax_bottom.xaxis.set_major_formatter(nullfmt)
+                ax_right.yaxis.set_major_formatter(nullfmt)
 
+                x_data_int = data_int_2d.flatten(order='F')
+                y_data_int = data_int_2d.flatten(order='C')
+
+                ax_bottom.plot(x_data_int)
+
+                ax_right.plot(y_data_int, y)
                 plt.show()
                 centers, coords_out, coords_box, strikes, ellipses, max_bound = bounding_box(data_int_2d)
                 coords_all = []
