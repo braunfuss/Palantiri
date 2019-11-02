@@ -229,6 +229,10 @@ def load(filter, step=None, step_boot=None, booting_load=False):
             for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                    try:
+                        data_int = num.zeros(num.shape(data[:, 2]))
+                    except:
+                        pass
                     maxd = np.max(data[:, 2])
                     if maxs < maxd:
                         maxs = maxd
@@ -246,7 +250,8 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter,
                                                                         step,
                                                                         phase))
-                data_int = num.zeros(num.shape(data[:, 2]))
+
+
                 for path in sorted(pathlist):
                         path_in_str = str(path)
                         data = num.loadtxt(path_in_str, delimiter=' ',
@@ -344,13 +349,17 @@ def make_map(data):
                          num.min(northings)+ratio_lat*0.25,
                          num.mean(eastings), num.mean(northings), 50)
 
-        parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
-        meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
+        try:
+
+            parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
+            meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
 
 
-        eastings, northings = map(eastings, northings)
-        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
+            eastings, northings = map(eastings, northings)
+            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
+        except ValueError:
+            pass
         x, y = map(data[:,1], data[:,0])
         return map, x, y
 
@@ -1599,6 +1608,7 @@ def plot_semblance():
             filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
             event, lat_ev, lon_ev, event_mech, rel = get_event()
             step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+            ntimes2 = int((forerun+duration)/step2)
 
             boot = False
             zoom = False
@@ -1629,15 +1639,12 @@ def plot_semblance():
                 from matplotlib.ticker import NullFormatter
                 nullfmt = NullFormatter()         # no labels
 
-                # definitions for the axes
                 left, width = 0.1, 0.65
                 bottom, height = 0.1, 0.65
                 bottom_h = left_h = left + width + 0.02
 
                 rect = [left, bottom, width, height]
 
-
-                # start with a rectangular Figure
                 plt.figure(1, figsize=(8, 8))
                 ax = plt.axes(rect)
                 map, x, y = make_map(data)
@@ -1652,11 +1659,14 @@ def plot_semblance():
                     data_int_max = []
                     x_scatter = []
                     y_scatter = []
-                    for i in range(0, ntimes):
+                    if filterindex == 0:
+                        times = ntimes
+                    else:
+                        times = ntimes2
+                    for i in range(0, times):
                         xm, ym = x, y
                         datas, data_ints, data_boots, data_int_boots, path_in_str, maxsbs, datamaxbs = load(filterindex, step=i)
                         data_ints = data_ints / num.sqrt(num.sum(data_ints**2))
-                        #data_idx = np.where(data_int > num.max(data_int)*0.4)
                         data_ints = data_ints[np.where(data_ints > num.max(data_ints)*0.9)]
                         xm = xm[np.where(data_int > num.max(data_int)*0.9)]
                         ym = ym[np.where(data_int > num.max(data_int)*0.9)]
@@ -1664,16 +1674,13 @@ def plot_semblance():
                             data_int_max.append(dt)
                             x_scatter.append(xt)
                             y_scatter.append(yt)
-                #    ps = make_max_scatter(map, rel, filterindex, step, num.asarray(data_int_max), num.asarray(x_scatter), num.asarray(y_scatter))
                     size = data_int_max*30000
 
                     l = num.linspace(0, len(data_int_max)*step, len(data_int_max))
-                    #map.scatter(x_scatter, y_scatter, marker='o', c='k', s=size, cmap='seismic')
                     ps = make_max_scatter(map, rel, filterindex, step, data_int_max, x_scatter, y_scatter)
 
                     data = num.loadtxt(rel+'sembmax_%s_boot0_P.txt' % filterindex, delimiter=' ')
                     xm, ym = map(data[:,2], data[:,1])
-                    #ps = make_max_scatter(map, rel, filterindex, step, data, xm, ym)
                 triang = tri.Triangulation(x, y)
                 isbad = np.less(data_int, num.max(data_int)*0.001)
                 mask = np.all(np.where(isbad[triang.triangles], True, False),
@@ -1691,9 +1698,6 @@ def plot_semblance():
                     map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
                 eastings = data[:, 1]
                 northings = data[:, 0]
-
-
-
 
                 pp = pyproj.Proj(init='epsg:3395')
                 for x_an, east in zip(x[::30], eastings[::30]):
@@ -1783,19 +1787,21 @@ def plot_semblance():
 
                 ax_right.plot(y_data_int, y)
                 plt.show()
-                centers, coords_out, coords_box, strikes, ellipses, max_bound = bounding_box(data_int_2d)
-                coords_all = []
-                xc = num.reshape(eastings, (dimx, dimy))
+                try:
+                    centers, coords_out, coords_box, strikes, ellipses, max_bound = bounding_box(data_int_2d)
+                    coords_all = []
+                    xc = num.reshape(eastings, (dimx, dimy))
 
-                yc = num.reshape(northings, (dimx, dimy))
-                for coords in coords_out:
-                    coords_boxes = []
-                    for k in coords:
-                        kx = k[1]
-                        ky = k[0]
-                        coords_boxes.append([xc[int(kx)][int(ky)], yc[int(kx)][int(ky)]])
-                    coords_all.append(coords_boxes)
-
+                    yc = num.reshape(northings, (dimx, dimy))
+                    for coords in coords_out:
+                        coords_boxes = []
+                        for k in coords:
+                            kx = k[1]
+                            ky = k[0]
+                            coords_boxes.append([xc[int(kx)][int(ky)], yc[int(kx)][int(ky)]])
+                        coords_all.append(coords_boxes)
+                except:
+                    pass
 
 def make_max_scatter(map, rel, filterindex, step, data, x, y):
         size = 3000
@@ -2957,7 +2963,6 @@ def empiricial_timeshifts():
         bazis = []
         dists = []
         for s in stations:
-            print(s)
             b = orthodrome.azimuth(s[0], s[1], lat_ev, lon_ev)
             dists.append(orthodrome.distance_accurate50m(s[0], s[1], lat_ev, lon_ev))
 
