@@ -964,44 +964,49 @@ def plot_cluster():
     pathlist = Path(rel).glob('*.dat')
     for path in sorted(pathlist):
         path_in_str = str(path)
-        data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0, 3, 4))
+        try:
+            data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0, 3, 4))
+        except:
+            data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0, 2, 3))
         try:
             lons = data[:, 2]
             lats = data[:, 1]
         except:
             lons = data[2]
             lats = data[1]
-        lat_c, lon_c = center_lat_lon(lats.copy(), lons.copy())
-        x_c, y_c = map(lon_c, lat_c)
+        try:
+            lat_c, lon_c = center_lat_lon(lats.copy(), lons.copy())
+            x_c, y_c = map(lon_c, lat_c)
+            dists = []
+            for lat, lon in zip(lats, lons):
+                dists.append(orthodrome.distance_accurate50m(lat_c, lon_c, lat,
+                                                             lon))
+            appert = num.max(dists)*m2d
+            x, y = map(lons, lats)
+            x2c, y2c = map(lon_c, lat_c-appert)
+            color = next(colors)
+            map.scatter(x_c, y_c, 50, marker='X', c=color)
+            map.scatter(x, y, 20, marker='o', c=color)
+            if radius_plt is False:
+                try:
+                    plt.text(x[0], y[0], 'r'+str(data[0, 0])[:], fontsize=12)
+                except:
+                    plt.text(x, y, 'r'+str(data[0])[0:2], fontsize=12)
+                    pass
+            else:
+                try:
+                    plt.text(x[0], y[0], 'r='+str(round(appert)), fontsize=12)
+                    plt.text(x_c, y_c-9000, 'n='+str(len(x)), fontsize=12)
 
-        dists = []
-        for lat, lon in zip(lats, lons):
-            dists.append(orthodrome.distance_accurate50m(lat_c, lon_c, lat,
-                                                         lon))
-        appert = num.max(dists)*m2d
-        x, y = map(lons, lats)
-        x2c, y2c = map(lon_c, lat_c-appert)
-        color = next(colors)
-        map.scatter(x_c, y_c, 50, marker='X', c=color)
+                except:
+                    plt.text(x, y, 'r='+str(round(appert)), fontsize=12)
+                    plt.text(x_c, y_c-9000, 'n='+str(len(x)), fontsize=12)
+
+                    pass
+        except TypeError:
+            pass
 
 
-        map.scatter(x, y, 20, marker='o', c=color)
-        if radius_plt is False:
-            try:
-                plt.text(x[0], y[0], 'r'+str(data[0, 0])[:], fontsize=12)
-            except:
-                plt.text(x, y, 'r'+str(data[0])[0:2], fontsize=12)
-                pass
-        else:
-            try:
-                plt.text(x[0], y[0], 'r='+str(round(appert)), fontsize=12)
-                plt.text(x_c, y_c-9000, 'n='+str(len(x)), fontsize=12)
-
-            except:
-                plt.text(x, y, 'r='+str(round(appert)), fontsize=12)
-                plt.text(x_c, y_c-9000, 'n='+str(len(x)), fontsize=12)
-
-                pass
         circle1 = plt.Circle((x_c, y_c), y2c-y_c, color=color, fill=False,
                              linestyle='dashed')
         ax.add_patch(circle1)
@@ -1663,9 +1668,56 @@ def plot_semblance():
                 ymax = num.max(y)
                 ymin = num.min(y[num.nonzero(y)])
                 scale = (xmax/xmin)*(ymax/ymin)*10
+                make_event_plot(event, event_mech, ax, map)
+                if boot is True:
+                    plot_comb_bs = False
+                    plot_ind_bs = False
+                    print('plotting boot')
+                    for argv in sys.argv:
+                        if argv == "--induvidual":
+                            plot_ind_bs = True
+                        else:
+                            plot_comb_bs = True
+                    n_bootstrap = cfg.UInt('n_bootstrap')
+                    if plot_comb_bs is False and ensemble is False:
+                        for iboot in range(0, n_bootstrap):
+                            datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
+                            print(data_intb)
+
+                            where_are_NaNs = num.isnan(data_int_boot)
+                            data_int_boot[where_are_NaNs] = 0
+                            data_int_boot = num.reshape(data_int_boot, (dimx,
+                                                                        dimy))
+                            xc = num.reshape(x, (dimx, dimy))
+                            yc = num.reshape(y, (dimx, dimy))
+
+                            cp = plt.contour(xc, yc, data_int_boot, ls=96)
+
+
+                    if plot_comb_bs is True and ensemble is False:
+                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, booting_load=True)
+                        print(num.max(data_intb))
+                        print(num.max(data_int_boot))
+
+                        offset = [num.mean(x), num.mean(y)]
+                        data_int_boot = num.reshape(data_intb, (dimx,
+                                                                    dimy))
+                        xc = num.reshape(x, (dimx, dimy))
+                        yc = num.reshape(y, (dimx, dimy))
+                        cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2], ls=44)
+                        ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
+                    if ensemble is True:
+                        for iboot in range(0, n_bootstrap):
+                            datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
+                            triang = tri.Triangulation(x, y)
+                            isbad = np.less(data_int, num.max(data_intb)*0.01)
+                            mask = np.all(np.where(isbad[triang.triangles], True, False),
+                                          axis=1)
+                            triang.set_mask(mask)
+                            im = plt.tricontourf(triang, data_intb, cmap=cmap)
+
                 if scatter is True:
                     ax = plt.gca()
-                    make_event_plot(event, event_mech, ax, map)
                     data_int_max = []
                     x_scatter = []
                     y_scatter = []
@@ -1690,7 +1742,7 @@ def plot_semblance():
                     ps = make_max_scatter(map, rel, filterindex, step, data_int_max, x_scatter, y_scatter)
 
                     data = num.loadtxt(rel+'sembmax_%s_boot0_P.txt' % filterindex, delimiter=' ')
-                    xm, ym = map(data[:,2], data[:,1])
+                    xm, ym = map(data[:, 2], data[:, 1])
                 triang = tri.Triangulation(x, y)
                 isbad = np.less(data_int, num.max(data_int)*0.001)
                 mask = np.all(np.where(isbad[triang.triangles], True, False),
@@ -1725,48 +1777,8 @@ def plot_semblance():
                                 xytext=[0, 0],
                                 textcoords='offset points',
                                 color='b', fontsize=22)
-                if boot is True:
-                    plot_comb_bs = False
-                    plot_ind_bs = False
-                    print('plotting boot')
-                    for argv in sys.argv:
-                        if argv == "--induvidual":
-                            plot_ind_bs = True
-                        else:
-                            plot_comb_bs = True
-                    n_bootstrap = cfg.UInt('n_bootstrap')
-                    for iboot in range(0, n_bootstrap):
-                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
 
-                        where_are_NaNs = num.isnan(data_int_boot)
-                        data_int_boot[where_are_NaNs] = 0
-                        data_int_boot = num.reshape(data_int_boot, (dimx,
-                                                                    dimy))
-                        xc = num.reshape(x, (dimx, dimy))
-                        yc = num.reshape(y, (dimx, dimy))
-
-                        if plot_ind_bs is True:
-
-                            try:
-                                cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*4])
-                            except ValueError:
-                                pass
-
-                    if plot_comb_bs is True:
-                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, booting_load=True)
-
-                        offset = [num.mean(x), num.mean(y)]
-                        data_int_boot = num.reshape(data_int_boot, (dimx,
-                                                                    dimy))
-                        xc = num.reshape(x, (dimx, dimy))
-                        yc = num.reshape(y, (dimx, dimy))
-                        cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
-                        ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
-                    if ensemble is True:
-                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, booting_load=True)
-                        im = plt.tricontourf(triang, data_intb, cmap=cmap)
                 event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
-                draw_beach(ax, scale, map, event)
 
                 for argv in sys.argv:
                     if argv == "--topography":
