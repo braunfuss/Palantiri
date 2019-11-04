@@ -1682,7 +1682,6 @@ def plot_semblance():
                     if plot_comb_bs is False and ensemble is False:
                         for iboot in range(0, n_bootstrap):
                             datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
-                            print(data_intb)
 
                             where_are_NaNs = num.isnan(data_int_boot)
                             data_int_boot[where_are_NaNs] = 0
@@ -1691,13 +1690,11 @@ def plot_semblance():
                             xc = num.reshape(x, (dimx, dimy))
                             yc = num.reshape(y, (dimx, dimy))
 
-                            cp = plt.contour(xc, yc, data_int_boot, ls=96)
+                            cp = plt.contour(xc, yc, data_intb, ls=96)
 
 
                     if plot_comb_bs is True and ensemble is False:
                         datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, booting_load=True)
-                        print(num.max(data_intb))
-                        print(num.max(data_int_boot))
 
                         offset = [num.mean(x), num.mean(y)]
                         data_int_boot = num.reshape(data_intb, (dimx,
@@ -1707,14 +1704,13 @@ def plot_semblance():
                         cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2], ls=44)
                         ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
                     if ensemble is True:
+                        cmaps = ['Blues', 'Greens', 'Reds', 'Purples', 'Greys', 'Wistia', 'bone', 'copper', 'dusk']
                         for iboot in range(0, n_bootstrap):
                             datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step_boot=iboot, booting_load=True)
                             triang = tri.Triangulation(x, y)
-                            isbad = np.less(data_int, num.max(data_intb)*0.01)
-                            mask = np.all(np.where(isbad[triang.triangles], True, False),
-                                          axis=1)
-                            triang.set_mask(mask)
-                            im = plt.tricontourf(triang, data_intb, cmap=cmap)
+                            isbad = np.less(data_int_boot, num.max(data_int_boot)*0.01)
+                            cmapb = cm.get_cmap(cmaps[iboot])
+                            im = plt.tricontourf(triang, data_intb, cmap=cmapb)
 
                 if scatter is True:
                     ax = plt.gca()
