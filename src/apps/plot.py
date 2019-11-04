@@ -1614,6 +1614,8 @@ def plot_semblance():
             zoom = False
             grid = False
             scatter = False
+            ensemble = False
+            hists = False
 
             try:
                 for argv in sys.argv:
@@ -1625,6 +1627,10 @@ def plot_semblance():
                         grid = True
                     if argv == '--scatter':
                         scatter = True
+                    if argv == '--ensemble':
+                        ensemble = True
+                    if argv == '--histograms':
+                        hists = True
             except:
                 pass
 
@@ -1646,7 +1652,11 @@ def plot_semblance():
                 rect = [left, bottom, width, height]
 
                 plt.figure(1, figsize=(8, 8))
-                ax = plt.axes(rect)
+                if hists is True:
+                    ax = plt.axes(rect)
+                else:
+                    ax = plt.gca()
+
                 map, x, y = make_map(data)
                 xmax = num.max(x)
                 xmin = num.min(x[num.nonzero(x)])
@@ -1752,7 +1762,9 @@ def plot_semblance():
                         yc = num.reshape(y, (dimx, dimy))
                         cp = plt.contour(xc, yc, data_int_boot, levels=[num.std(data_intb)*2])
                         ax.clabel(cp, fmt='%2.1f', colors='w', fontsize=14)
-
+                    if ensemble is True:
+                        datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, booting_load=True)
+                        im = plt.tricontourf(triang, data_intb, cmap=cmap)
                 event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
                 draw_beach(ax, scale, map, event)
 
@@ -1769,24 +1781,26 @@ def plot_semblance():
                     syn_in = SynthCfg(Syn_in)
                     draw_sources(ax, syn_in, map, scale)
 
-                data_int_2d = num.reshape(data_int, (dimx, dimy))
-                fig = plt.gcf()
-                factor = 0.76
-                rect_histx = [left+0.21, bottom_h+0.05, width*0.35, 0.1]
-                rect_histy = [left_h-0.14, bottom+0.15, 0.1, height*factor]
-                ax_right = plt.axes(rect_histy)
-                ax_bottom = plt.axes(rect_histx)
+                if hists is True:
+                    data_int_2d = num.reshape(data_int, (dimx, dimy))
+                    fig = plt.gcf()
+                    factor = 0.76
+                    rect_histx = [left+0.21, bottom_h+0.05, width*0.35, 0.1]
+                    rect_histy = [left_h-0.14, bottom+0.15, 0.1, height*factor]
+                    ax_right = plt.axes(rect_histy)
+                    ax_bottom = plt.axes(rect_histx)
 
-                ax_bottom.xaxis.set_major_formatter(nullfmt)
-                ax_right.yaxis.set_major_formatter(nullfmt)
+                    ax_bottom.xaxis.set_major_formatter(nullfmt)
+                    ax_right.yaxis.set_major_formatter(nullfmt)
 
-                x_data_int = data_int_2d.flatten(order='F')
-                y_data_int = data_int_2d.flatten(order='C')
+                    x_data_int = data_int_2d.flatten(order='F')
+                    y_data_int = data_int_2d.flatten(order='C')
 
-                ax_bottom.plot(x_data_int)
+                    ax_bottom.plot(x_data_int)
 
-                ax_right.plot(y_data_int, y)
+                    ax_right.plot(y_data_int, y)
                 plt.show()
+
                 try:
                     centers, coords_out, coords_box, strikes, ellipses, max_bound = bounding_box(data_int_2d)
                     coords_all = []
