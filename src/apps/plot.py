@@ -18,6 +18,7 @@ from palantiri.common.ConfigFile import ConfigObj, OriginCfg, SynthCfg
 from palantiri.tools import config
 from palantiri.process.sembCalc import toAzimuth
 from pyrocko import util
+from pyrocko import moment_tensor as pmt
 import matplotlib
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import _pickle as pickle
@@ -140,30 +141,147 @@ def draw_beach(ax, scale, map, event):
     ax.add_collection(beach1)
 
 
+def from_plane_coords(strike, dip, length, width, depth, x_plane_coords,
+                      y_plane_coords, lat=0., lon=0., north_shift=0,
+                      east_shift=0, anchor='top', cs='xy'):
+
+
+        from pyrocko.orthodrome import ne_to_latlon
+        ln = length
+        wd = width
+        x_abs = []
+        y_abs = []
+
+
+        map_anchor = {
+            'center': (0.0, 0.0),
+            'center_left': (-1.0, 0.0),
+            'center_right': (1.0, 0.0),
+            'top': (0.0, -1.0),
+            'top_left': (-1.0, -1.0),
+            'top_right': (1.0, -1.0),
+            'bottom': (0.0, 1.0),
+            'bottom_left': (-1.0, 1.0),
+            'bottom_right': (1.0, 1.0)}
+
+        if not isinstance(x_plane_coords, list):
+            x_plane_coords = [x_plane_coords]
+            y_plane_coords = [y_plane_coords]
+
+        for x_plane, y_plane in zip(x_plane_coords, y_plane_coords):
+            points = num.array(
+                [[-0.5 * ln*x_plane, -0.5 * wd*y_plane, 0.],
+                 [0.5 * ln*x_plane, -0.5 * wd*y_plane, 0.],
+                 [0.5 * ln*x_plane, 0.5 * wd*y_plane, 0.],
+                 [-0.5 * ln*x_plane, 0.5 * wd*y_plane, 0.],
+                 [-0.5 * ln*x_plane, -0.5 * wd*y_plane, 0.]])
+
+            anch_x, anch_y = map_anchor[anchor]
+            points[:, 0] -= anch_x * 0.5 * length
+            points[:, 1] -= anch_y * 0.5 * width
+
+            rotmat = num.asarray(
+                pmt.euler_to_matrix(dip * d2r, strike * d2r, 0.0))
+
+            points = num.dot(rotmat.T, points.T).T
+            points[:, 0] += north_shift
+            points[:, 1] += east_shift
+            points[:, 2] += depth
+            if cs in ('latlon', 'lonlat'):
+                latlon = ne_to_latlon(lat, lon,
+                                      points[:, 0], points[:, 1])
+                latlon = num.array(latlon).T
+                x_abs.append(latlon[1:2, 1])
+                y_abs.append(latlon[2:3, 0])
+            if cs == 'xy':
+                x_abs.append(points[1:2, 1])
+                y_abs.append(points[2:3, 0])
+
+        if cs == 'lonlat':
+            return y_abs, x_abs
+        else:
+            return x_abs, y_abs
+
+
+
 def draw_sources(ax, syn_in, map, scale):
     from pyrocko.gf import DCSource, RectangularSource, MTSource
 
     sources = []
 
     if syn_in.source() == 'RectangularSource':
-        sources.append(RectangularSource(
-            lat=float(syn_in.lat_0()),
-            lon=float(syn_in.lon_0()),
-            east_shift=float(syn_in.east_shift_0())*1000.,
-            north_shift=float(syn_in.north_shift_0())*1000.,
-            depth=syn_in.depth_syn_0()*1000.,
-            strike=syn_in.strike_0(),
-            dip=syn_in.dip_0(),
-            rake=syn_in.rake_0(),
-            width=syn_in.width_0()*1000.,
-            length=syn_in.length_0()*1000.,
-            nucleation_x=syn_in.nucleation_x_0(),
-            slip=syn_in.slip_0(),
-            nucleation_y=syn_in.nucleation_y_0(),
-            velocity=syn_in.velocity_0(),
-            anchor=syn_in.anchor(),
-            time=util.str_to_time(syn_in.time_0())))
+        if syn_in.nsources() == 1:
+            sources.append(RectangularSource(
+                lat=float(syn_in.lat_0()),
+                lon=float(syn_in.lon_0()),
+                east_shift=float(syn_in.east_shift_0())*1000.,
+                north_shift=float(syn_in.north_shift_0())*1000.,
+                depth=syn_in.depth_syn_0()*1000.,
+                strike=syn_in.strike_0(),
+                dip=syn_in.dip_0(),
+                rake=syn_in.rake_0(),
+                width=syn_in.width_0()*1000.,
+                length=syn_in.length_0()*1000.,
+                nucleation_x=syn_in.nucleation_x_0(),
+                slip=syn_in.slip_0(),
+                nucleation_y=syn_in.nucleation_y_0(),
+                velocity=syn_in.velocity_0(),
+                anchor=syn_in.anchor(),
+                time=util.str_to_time(syn_in.time_0())))
+        else:
+            for i in range(syn_in.nsources()):
+                    sources.append(RectangularSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        east_shift=float(syn_in.east_shift_1(i))*1000.,
+                        north_shift=float(syn_in.north_shift_1(i))*1000.,
+                        depth=syn_in.depth_syn_1(i)*1000.,
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
+                        width=syn_in.width_1(i)*1000.,
+                        length=syn_in.length_1(i)*1000.,
+                        nucleation_x=syn_in.nucleation_x_1(i),
+                        slip=syn_in.slip_1(i),
+                        nucleation_y=syn_in.nucleation_y_1(i),
+                        time=util.str_to_time(syn_in.time_1(i))))
+        if syn_in.nsources() == 1:
+            for source in sources:
+
+                x_abs, y_abs =  from_plane_coords(syn_in.strike_0(),
+                                                  syn_in.dip_0(),
+                                                  syn_in.length_0()*1000.,
+                                                  syn_in.width_0()*1000.,
+                                                  syn_in.depth_syn_0()*1000.,
+                                                  syn_in.nucleation_x_0(),
+                                                  syn_in.nucleation_y_0(),
+                                                  lat=float(syn_in.lat_0()),
+                                                  lon=float(syn_in.lon_0()),
+                                                  north_shift=float(syn_in.north_shift_0())*1000.,
+                                                  east_shift=float(syn_in.east_shift_0())*1000.,
+                                                  anchor=syn_in.anchor(), cs='latlon')
+                x_abs, y_abs = map(x_abs, y_abs)
+                ax.scatter(x_abs, y_abs, c='r')
+        else:
+            for i, source in enumerate(sources):
+                x_abs, y_abs =  from_plane_coords(syn_in.strike_1(i),
+                                                  syn_in.dip_1(i),
+                                                  syn_in.length_1(i)*1000.,
+                                                  syn_in.width_1(i)*1000.,
+                                                  syn_in.depth_syn_1(i)*1000.,
+                                                  syn_in.nucleation_x_1(i),
+                                                  syn_in.nucleation_y_1(i),
+                                                  lat=float(syn_in.lat_1(i)),
+                                                  lon=float(syn_in.lon_1(i)),
+                                                  north_shift=float(syn_in.north_shift_1(i))*1000.,
+                                                  east_shift=float(syn_in.east_shift_1(i))*1000.,
+                                                  anchor=syn_in.anchor(), cs='latlon')
+                x_abs, y_abs = map(x_abs, y_abs)
+                ax.scatter(x_abs, y_abs, c='r', )
+
         for source in sources:
+
+
             n, e = source.outline(cs='latlon').T
             e, n = map(e, n)
             ax.fill(e, n, color=(0.5, 0.5, 0.5), lw=2)
@@ -328,7 +446,6 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                     data_int = data_int_boot
                 except IndexError:
                     pass
-
             return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
 
@@ -344,22 +461,20 @@ def make_map(data):
 
         ratio_lat = num.max(northings)/num.min(northings)
         ratio_lon = num.max(eastings)/num.min(eastings)
+        if int(ratio_lat) == 0:
+            ratio_lat = 0.25
+            ratio_lon = 0.25
 
         map.drawmapscale(num.min(eastings)+ratio_lon*0.25,
                          num.min(northings)+ratio_lat*0.25,
                          num.mean(eastings), num.mean(northings), 50)
+        parallels = np.arange(num.min(northings),num.max(northings), ratio_lat)
+        meridians = np.arange(num.min(eastings),num.max(eastings), ratio_lon)
 
-        try:
+        eastings, northings = map(eastings, northings)
+        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
 
-            parallels = np.arange(num.min(northings),num.max(northings), int(ratio_lat))
-            meridians = np.arange(num.min(eastings),num.max(eastings), int(ratio_lon))
-
-
-            eastings, northings = map(eastings, northings)
-            map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-            map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
-        except ValueError:
-            pass
         x, y = map(data[:,1], data[:,0])
         return map, x, y
 
@@ -562,211 +677,213 @@ def distance_time():
     step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
     event, lat_ev, lon_ev, event_mech, rel = get_event()
 
-    pathlist = Path(rel).glob('0-*.ASC')
     maxs = 0.
-    if sys.argv[3] == 'combined':
 
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-                if path_in_str[-14] is not "o":
+    filters, phases, duration, forerun, ntimes = get_filter_params(cfg)
+
+    minima = 0
+    maxima = 0
+    for filterindex in range(0, filters):
+        pathlist = Path(rel).glob('%s-*.ASC' % filterindex)
+
+        if sys.argv[3] == 'combined':
+
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+                    if path_in_str[-14] is not "o":
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        max = np.max(data[:, 2])
+                        if maxs < max:
+                            maxs = max
+                            datamax = np.max(data[:, 2])
+
+            pathlist = Path(rel).glob('0-*.ASC')
+            maxs = 0.
+            data_int = num.zeros(num.shape(data[:, 2]))
+            time_grid = num.zeros(num.shape(data[:, 2]))
+
+            azis = []
+            distances = []
+            times = []
+            for path in sorted(pathlist):
+                    if path_in_str[-14] is not "o":
+                        path_in_str = str(path)
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        data_int = data_int + data[:,2]
+                        for i in range(0, len(data[:, 2])):
+                            if data_int[i] > datamax*0.1:
+                                time_grid[i] = float(path_in_str[-8:-6]) * step
+            for i in range(0, len(data[:, 2])):
+                if data_int[i] > datamax*0.1:
+                    lats = data[i, 1]
+                    lons = data[i, 0]
+                    dist = orthodrome.distance_accurate50m(lats, lons,
+                                                           lat_ev,
+                                                           lon_ev)
+                    azis.append(toAzimuth(lat_ev, lon_ev,
+                                          lats, lons))
+                    distances.append(dist)
+                    time = time_grid[i]
+                    times.append(time)
+            datas = data_int
+        if sys.argv[3] == 'max':
+
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     max = np.max(data[:, 2])
                     if maxs < max:
                         maxs = max
                         datamax = np.max(data[:, 2])
 
-        pathlist = Path(rel).glob('0-*.ASC')
-        maxs = 0.
-        data_int = num.zeros(num.shape(data[:, 2]))
-        time_grid = num.zeros(num.shape(data[:, 2]))
-
-        azis = []
-        distances = []
-        times = []
-        for path in sorted(pathlist):
-                if path_in_str[-14] is not "o":
+            pathlist = Path(rel).glob('0-*.ASC')
+            maxs = 0.
+            datas = []
+            azis = []
+            distances = []
+            times = []
+            for path in sorted(pathlist):
                     path_in_str = str(path)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    data_int = data_int + data[:,2]
                     for i in range(0, len(data[:, 2])):
-                        if data_int[i] > datamax*0.1:
-                            time_grid[i] = float(path_in_str[-8:-6]) * step
-        for i in range(0, len(data[:, 2])):
-            if data_int[i] > datamax*0.1:
-                lats = data[i, 1]
-                lons = data[i, 0]
-                dist = orthodrome.distance_accurate50m(lats, lons,
-                                                       lat_ev,
-                                                       lon_ev)
-                azis.append(toAzimuth(lat_ev, lon_ev,
-                                      lats, lons))
-                distances.append(dist)
-                time = time_grid[i]
-                times.append(time)
-        datas = data_int
-    if sys.argv[3] == 'max':
+                        if data[i, 2] > datamax*0.9:
+                            lats = data[i, 1]
+                            lons = data[i, 0]
+                            datas.append(data[i, 2])
+                            dist = orthodrome.distance_accurate50m(lats, lons,
+                                                                   lat_ev,
+                                                                   lon_ev)
+                            azis.append(toAzimuth(lat_ev, lon_ev,
+                                                  lats, lons))
+                            distances.append(dist)
+                            time = float(path_in_str[-8:-6]) * step
+                            times.append(time)
 
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                max = np.max(data[:, 2])
-                if maxs < max:
-                    maxs = max
-                    datamax = np.max(data[:, 2])
+        if sys.argv[3] == 'stepwise_max':
+            datamax = []
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
 
-        pathlist = Path(rel).glob('0-*.ASC')
-        maxs = 0.
-        datas = []
-        azis = []
-        distances = []
-        times = []
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                for i in range(0, len(data[:, 2])):
-                    if data[i, 2] > datamax*0.9:
-                        lats = data[i, 1]
-                        lons = data[i, 0]
-                        datas.append(data[i, 2])
-                        dist = orthodrome.distance_accurate50m(lats, lons,
-                                                               lat_ev,
-                                                               lon_ev)
-                        azis.append(toAzimuth(lat_ev, lon_ev,
-                                              lats, lons))
-                        distances.append(dist)
-                        time = float(path_in_str[-8:-6]) * step
-                        times.append(time)
+                    if path_in_str[-14] is not "o":
 
-    if sys.argv[3] == 'stepwise':
-        datamax = []
-        for path in sorted(pathlist):
-                path_in_str = str(path)
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        max = np.max(data[:, 2])
+                        datamax.append(np.max(data[:, 2]))
+            rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+            pathlist = Path(rel).glob('%s-*.ASC' % filterindex)
+            maxs = 0.
+            datas = []
+            azis = []
+            distances = []
+            times = []
+            k = 0
+            lats_list = []
+            lons_list = []
+            times_list = []
+            counter = 0
 
-                if path_in_str[-14] is not "o":
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
 
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    max = np.max(data[:, 2])
-                    datamax.append(np.max(data[:, 2]))
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-        pathlist = Path(rel).glob('0-*.ASC')
-        maxs = 0.
-        datas = []
-        azis = []
-        distances = []
-        times = []
-        k = 0
-        for path in sorted(pathlist):
-                counter = 0
-                path_in_str = str(path)
-                if path_in_str[-14] is not "o":
+                    if path_in_str[-14] is not "o":
 
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    for i in range(0, len(data[:, 2])):
-                        for kl in data[:, 2]:
-                            if kl == datamax[k]:
-                                counter = counter+1
-                        if data[i, 2] > datamax[k]*0.6:
-                            lats_list = []
-                            lons_list = []
-                            times_list = []
-                            if counter == 0:
-                                lats = data[i, 1]
-                                lons = data[i, 0]
-                                datas.append(data[i, 2])
-                                dist = orthodrome.distance_accurate50m(lats, lons,
-                                                                       lat_ev,
-                                                                       lon_ev)
-                                azis.append(toAzimuth(lat_ev, lon_ev,
-                                                      lats, lons))
-                                distances.append(dist)
-                                time = float(path_in_str[-8:-6]) * step
-                                times.append(time)
-                            else:
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        for i in range(0, len(data[:, 2])):
+                            if data[i, 2] > num.max(datamax)*0.00000001 and data[i, 2] == datamax[k]:
+
                                 lats_list.append(data[i, 1])
                                 lons_list.append(data[i, 0])
-
-                    if counter != 0:
-                        dist = orthodrome.distance_accurate50m(num.mean(lats_list),
-                                                               num.mean(lons_list),
-                                                               lat_ev,
-                                                               lon_ev)
-                        distances.append(dist)
-
-                        time = float(path_in_str[-8:-6]) * step
-                        times.append(time)
-                    k = k+1
-        print(num.mean(distances)/num.mean(time))
-
-    if sys.argv[3] == 'stepwise_max':
-        datamax = []
-        for path in sorted(pathlist):
-                path_in_str = str(path)
-
-                if path_in_str[-14] is not "o":
-
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    max = np.max(data[:, 2])
-                    datamax.append(np.max(data[:, 2]))
-        rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
-        pathlist = Path(rel).glob('0-*.ASC')
-        maxs = 0.
-        datas = []
-        azis = []
-        distances = []
-        times = []
-        k = 0
-        for path in sorted(pathlist):
-                counter = 0
-                path_in_str = str(path)
-                if path_in_str[-14] is not "o":
-
-                    data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    for i in range(0, len(data[:, 2])):
-                        for kl in data[:, 2]:
-                            if kl == datamax[k]:
-                                counter = counter+1
-                        if data[i, 2] == datamax[k]:
-                            lats_list = []
-                            lons_list = []
-                            times_list = []
-                            if counter == 0:
-                                lats = data[i, 1]
-                                lons = data[i, 0]
-                                datas.append(data[i, 2])
-                                dist = orthodrome.distance_accurate50m(lats, lons,
-                                                                       lat_ev,
-                                                                       lon_ev)
-                                azis.append(toAzimuth(lat_ev, lon_ev,
-                                                      lats, lons))
-                                distances.append(dist)
                                 time = float(path_in_str[-8:-6]) * step
                                 times.append(time)
-                            else:
-                                lats_list.append(data[i, 1])
-                                lons_list.append(data[i, 0])
 
-                    if counter != 0:
-                        dist = orthodrome.distance_accurate50m(num.mean(lats_list),
-                                                               num.mean(lons_list),
-                                                               lat_ev,
-                                                               lon_ev)
-                        distances.append(dist)
+                        k = k+1
+                        counter = counter+1
 
-                        time = float(path_in_str[-8:-6]) * step
-                        times.append(time)
-                    k = k+1
-        print(num.mean(distances)/num.mean(time))
-    fit_dt = num.polyfit(distances, times, 1)
-    p = num.poly1d(fit_dt)
-    xp = num.linspace(num.min(distances), num.max(distances), 10)
-    plt.figure()
-    plt.scatter(distances, times, s=100)
-    _ = plt.plot(distances, times, '.', xp, p(xp), '-')
-    plt.show()
 
-    plt.figure()
-    plt.scatter(azis, times, s=100)
-    plt.show()
+            for counter in range(0, len(lats_list)):
+                    dist = orthodrome.distance_accurate50m(lats_list[0],
+                                                           lons_list[0],
+                                                           lats_list[counter],
+                                                           lons_list[counter])
+                    distances.append(dist)
+
+
+            print(num.mean(distances)/num.mean(time))
+
+        if sys.argv[3] == 'stepwise':
+            datamax = []
+            for path in sorted(pathlist):
+                    path_in_str = str(path)
+
+                    if path_in_str[-14] is not "o":
+
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        max = np.max(data[:, 2])
+                        datamax.append(np.max(data[:, 2]))
+            rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+            pathlist = Path(rel).glob('0-*.ASC')
+            maxs = 0.
+            datas = []
+            azis = []
+            distances = []
+            times = []
+            k = 0
+            for path in sorted(pathlist):
+                    counter = 0
+                    path_in_str = str(path)
+                    if path_in_str[-14] is not "o":
+
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                        for i in range(0, len(data[:, 2])):
+                            for kl in data[:, 2]:
+                                if kl == datamax[k]:
+                                    counter = counter+1
+                            if data[i, 2] == datamax[k]:
+                                lats_list = []
+                                lons_list = []
+                                times_list = []
+                                if counter == 0:
+                                    lats = data[i, 1]
+                                    lons = data[i, 0]
+                                    datas.append(data[i, 2])
+                                    dist = orthodrome.distance_accurate50m(lats, lons,
+                                                                           lat_ev,
+                                                                           lon_ev)
+                                    azis.append(toAzimuth(lat_ev, lon_ev,
+                                                          lats, lons))
+                                    distances.append(dist)
+                                    time = float(path_in_str[-8:-6]) * step
+                                    times.append(time)
+                                else:
+                                    lats_list.append(data[i, 1])
+                                    lons_list.append(data[i, 0])
+
+                        if counter != 0 and len(lats_list)>0:
+                            dist = orthodrome.distance_accurate50m(num.mean(lats_list),
+                                                                   num.mean(lons_list),
+                                                                   lat_ev,
+                                                                   lon_ev)
+                            distances.append(dist)
+
+                            time = float(path_in_str[-8:-6]) * step
+                            times.append(time)
+                        k = k+1
+            print(num.mean(distances)/num.mean(time))
+        try:
+            fit_dt = num.polyfit(distances, times, 1)
+            p = num.poly1d(fit_dt)
+            xp = num.linspace(num.min(distances), num.max(distances), 10)
+            plt.figure()
+            plt.scatter(distances, times, s=100)
+            _ = plt.plot(distances, times, '.', xp, p(xp), '-')
+            plt.show()
+
+            plt.figure()
+            plt.scatter(azis, times, s=100)
+            plt.show()
+
+        except:
+            pass
 
 
 def distance_time_bootstrap():
@@ -1614,6 +1731,7 @@ def plot_semblance():
             event, lat_ev, lon_ev, event_mech, rel = get_event()
             step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
             ntimes2 = int((forerun+duration)/step2)
+            ntimes = int((forerun+duration)/step)
 
             boot = False
             zoom = False
@@ -1621,6 +1739,7 @@ def plot_semblance():
             scatter = False
             ensemble = False
             hists = False
+            scattermax = False
 
             try:
                 for argv in sys.argv:
@@ -1632,6 +1751,8 @@ def plot_semblance():
                         grid = True
                     if argv == '--scatter':
                         scatter = True
+                    if argv == '--scattermax':
+                        scattermax = True
                     if argv == '--ensemble':
                         ensemble = True
                     if argv == '--histograms':
@@ -1657,18 +1778,32 @@ def plot_semblance():
                 rect = [left, bottom, width, height]
 
                 plt.figure(1, figsize=(8, 8))
+                map, x, y = make_map(data)
+
                 if hists is True:
                     ax = plt.axes(rect)
                 else:
                     ax = plt.gca()
 
-                map, x, y = make_map(data)
+                make_event_plot(event, event_mech, ax, map)
                 xmax = num.max(x)
                 xmin = num.min(x[num.nonzero(x)])
                 ymax = num.max(y)
                 ymin = num.min(y[num.nonzero(y)])
                 scale = (xmax/xmin)*(ymax/ymin)*10
-                make_event_plot(event, event_mech, ax, map)
+                if cfg.Bool('synthetic_test') is True:
+                    Syn_in = C.parseConfig('syn')
+                    syn_in = SynthCfg(Syn_in)
+                    draw_sources(ax, syn_in, map, scale)
+
+                for argv in sys.argv:
+                    if argv == "--topography":
+                        try:
+                            xpixels = 1000
+                            map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
+                        except:
+                            pass
+
                 if boot is True:
                     plot_comb_bs = False
                     plot_ind_bs = False
@@ -1712,7 +1847,7 @@ def plot_semblance():
                             cmapb = cm.get_cmap(cmaps[iboot])
                             im = plt.tricontourf(triang, data_intb, cmap=cmapb)
 
-                if scatter is True:
+                if scatter is True or scattermax is True:
                     ax = plt.gca()
                     data_int_max = []
                     x_scatter = []
@@ -1722,18 +1857,27 @@ def plot_semblance():
                     else:
                         times = ntimes2
                     for i in range(0, times):
-                        xm, ym = x, y
-                        datas, data_ints, data_boots, data_int_boots, path_in_str, maxsbs, datamaxbs = load(filterindex, step=i)
-                        data_ints = data_ints / num.sqrt(num.sum(data_ints**2))
-                        data_ints = data_ints[np.where(data_ints > num.max(data_ints)*0.9)]
-                        xm = xm[np.where(data_int > num.max(data_int)*0.9)]
-                        ym = ym[np.where(data_int > num.max(data_int)*0.9)]
-                        for dt, xt, yt in zip(data_ints, xm, ym):
-                            data_int_max.append(dt)
-                            x_scatter.append(xt)
-                            y_scatter.append(yt)
-                    size = data_int_max*30000
+                        try:
+                            xm, ym = x.copy(), y.copy()
+                            datas, data_ints, data_boots, data_int_boots, path_in_str, maxsbs, datamaxbs = load(filterindex, step=i)
+                            data_ints = data_ints / num.sqrt(num.sum(data_ints**2))
+                            if scattermax is True:
+                                xms = xm[np.where(data_ints == num.max(data_ints))]
+                                yms = ym[np.where(data_ints == num.max(data_ints))]
+                                data_int_max.append(data_ints[np.where(data_ints == num.max(data_ints))])
+                                x_scatter.append(xm[np.where(data_ints == num.max(data_ints))])
+                                y_scatter.append(ym[np.where(data_ints == num.max(data_ints))])
 
+                            else:
+                                data_ints = data_ints[np.where(data_ints > num.max(data_ints)*0.4)]
+                                xm = xm[np.where(data_int > num.max(data_int)*0.4)]
+                                ym = ym[np.where(data_int > num.max(data_int)*0.4)]
+                                for dt, xt, yt in zip(data_ints, xm, ym):
+                                    data_int_max.append(dt)
+                                    x_scatter.append(xt)
+                                    y_scatter.append(yt)
+                        except:
+                            pass
                     l = num.linspace(0, len(data_int_max)*step, len(data_int_max))
                     ps = make_max_scatter(map, rel, filterindex, step, data_int_max, x_scatter, y_scatter)
 
@@ -1776,19 +1920,6 @@ def plot_semblance():
 
                 event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
 
-                for argv in sys.argv:
-                    if argv == "--topography":
-                        try:
-                            xpixels = 1000
-                            map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
-                        except:
-                            pass
-
-                if cfg.Bool('synthetic_test') is True:
-                    Syn_in = C.parseConfig('syn')
-                    syn_in = SynthCfg(Syn_in)
-                    draw_sources(ax, syn_in, map, scale)
-
                 if hists is True:
                     data_int_2d = num.reshape(data_int, (dimx, dimy))
                     fig = plt.gcf()
@@ -1829,8 +1960,10 @@ def make_max_scatter(map, rel, filterindex, step, data, x, y):
         size = 3000
         l = num.linspace(0, len(data)*step, len(data))
         ps = map.scatter(x, y, marker='o', c=l, s=size, cmap='seismic')
+        cbar = map.colorbar(ps, location='top',pad="-2%", label='Time [s]')
+
         for i in range(0, len(x)):
-            #if data[i,3]> np.max(data[:,3])*0.05:
+            #if data[i]> np.max(data[:])*0.6:
                 plt.text(x[i], y[i], '%s' %i)
         return ps
 

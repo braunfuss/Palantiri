@@ -420,7 +420,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                         except:
                             sums = sums
 
-
                 relstarts -= relstart
             sums_schimmel = abs(sums_schimmel)**2.
 
@@ -464,7 +463,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         backSemb = backSemb/num.max(num.max(backSemb))
 
     return backSemb
-
 
 
 def music_wrapper(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
