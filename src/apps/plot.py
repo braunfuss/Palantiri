@@ -204,11 +204,14 @@ def from_plane_coords(strike, dip, length, width, depth, x_plane_coords,
 
 
 
-def draw_sources(ax, syn_in, map, scale):
+def draw_sources(ax, syn_in, map, scale, zoom=False):
     from pyrocko.gf import DCSource, RectangularSource, MTSource
 
     sources = []
-
+    if zoom is True:
+        s = 1
+    else:
+        s = 40
     if syn_in.source() == 'RectangularSource':
         if syn_in.nsources() == 1:
             sources.append(RectangularSource(
@@ -247,8 +250,7 @@ def draw_sources(ax, syn_in, map, scale):
                         time=util.str_to_time(syn_in.time_1(i))))
         if syn_in.nsources() == 1:
             for source in sources:
-
-                x_abs, y_abs =  from_plane_coords(syn_in.strike_0(),
+                x_abs, y_abs = from_plane_coords(syn_in.strike_0(),
                                                   syn_in.dip_0(),
                                                   syn_in.length_0()*1000.,
                                                   syn_in.width_0()*1000.,
@@ -261,10 +263,10 @@ def draw_sources(ax, syn_in, map, scale):
                                                   east_shift=float(syn_in.east_shift_0())*1000.,
                                                   anchor=syn_in.anchor(), cs='latlon')
                 x_abs, y_abs = map(x_abs, y_abs)
-                ax.scatter(x_abs, y_abs, c='r')
+                ax.scatter(x_abs, y_abs, c='r', s=s)
         else:
             for i, source in enumerate(sources):
-                x_abs, y_abs =  from_plane_coords(syn_in.strike_1(i),
+                x_abs, y_abs = from_plane_coords(syn_in.strike_1(i),
                                                   syn_in.dip_1(i),
                                                   syn_in.length_1(i)*1000.,
                                                   syn_in.width_1(i)*1000.,
@@ -277,17 +279,16 @@ def draw_sources(ax, syn_in, map, scale):
                                                   east_shift=float(syn_in.east_shift_1(i))*1000.,
                                                   anchor=syn_in.anchor(), cs='latlon')
                 x_abs, y_abs = map(x_abs, y_abs)
-                ax.scatter(x_abs, y_abs, c='r', )
+                ax.scatter(x_abs, y_abs, c='r', s=s)
 
         for source in sources:
-
-
             n, e = source.outline(cs='latlon').T
             e, n = map(e, n)
             ax.fill(e, n, color=(0.5, 0.5, 0.5), lw=2)
             #add drawing of absolute nucleation point
 
     if syn_in.source() == 'DCSource':
+        if syn_in.nsources() == 1:
             sources.append(DCSource(
                 lat=float(syn_in.lat_0()),
                 lon=float(syn_in.lon_0()),
@@ -299,10 +300,25 @@ def draw_sources(ax, syn_in, map, scale):
                 rake=syn_in.rake_0(),
                 time=util.str_to_time(syn_in.time_0()),
                 magnitude=syn_in.magnitude_0()))
-            for source in sources:
-                ev = source.pyrocko_event()
-                e, n = map(ev.lon, ev.lat)
-                map.scatter(e, n, s=scale/200)
+        else:
+            for i in range(syn_in.nsources()):
+                    sources.append(DCSource(
+                        lat=float(syn_in.lat_1(i)),
+                        lon=float(syn_in.lon_1(i)),
+                        east_shift=float(syn_in.east_shift_1(i))*1000.,
+                        north_shift=float(syn_in.north_shift_1(i))*1000.,
+                        depth=syn_in.depth_syn_1(i)*1000.,
+                        strike=syn_in.strike_1(i),
+                        dip=syn_in.dip_1(i),
+                        rake=syn_in.rake_1(i),
+                        time=util.str_to_time(syn_in.time_1(i)),
+                        magnitude=syn_in.magnitude_1(i)))
+        for source in sources:
+            ev = source.pyrocko_event()
+            print(ev)
+            lat, lon = orthodrome.ne_to_latlon(ev.lat, ev.lon, ev.north_shift, ev.east_shift)
+            e, n = map(lon, lat)
+            map.scatter(e, n, s=s, zorder=3)
 
 
 def load(filter, step=None, step_boot=None, booting_load=False):
@@ -449,13 +465,13 @@ def load(filter, step=None, step_boot=None, booting_load=False):
             return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
 
-def make_map(data):
+def make_map(data, redx=0, redy=0):
         eastings = data[:, 1]
         northings = data[:, 0]
-        map = Basemap(projection='merc', llcrnrlon=num.min(eastings),
-                      llcrnrlat=num.min(northings),
-                      urcrnrlon=num.max(eastings),
-                      urcrnrlat=num.max(northings),
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings)+redx,
+                      llcrnrlat=num.min(northings)+redy,
+                      urcrnrlon=num.max(eastings)-redy,
+                      urcrnrlat=num.max(northings)-redy,
                       resolution='h', epsg=3395)
 
 
@@ -465,15 +481,15 @@ def make_map(data):
             ratio_lat = 0.25
             ratio_lon = 0.25
 
-        map.drawmapscale(num.min(eastings)+ratio_lon*0.25,
-                         num.min(northings)+ratio_lat*0.25,
-                         num.mean(eastings), num.mean(northings), 50)
-        parallels = np.arange(num.min(northings),num.max(northings), ratio_lat)
-        meridians = np.arange(num.min(eastings),num.max(eastings), ratio_lon)
+        map.drawmapscale(num.min(eastings)+redx+ratio_lon*0.25,
+                         num.min(northings)+redy+ratio_lat*0.25,
+                         num.mean(eastings)+redx, num.mean(northings)+redy, 50)
+        parallels = np.arange(num.min(northings)+redx,num.max(northings)-redx, ratio_lat)
+        meridians = np.arange(num.min(eastings)+redy,num.max(eastings)-redy, ratio_lon)
 
         eastings, northings = map(eastings, northings)
-        map.drawparallels(parallels,labels=[1,0,0,0],fontsize=22)
-        map.drawmeridians(meridians,labels=[1,1,0,1],fontsize=22, rotation=45)
+        map.drawparallels(num.round(parallels, 1),labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(num.round(meridians, 1) ,labels=[1,1,0,1],fontsize=22, rotation=45)
 
         x, y = map(data[:,1], data[:,0])
         return map, x, y
@@ -634,7 +650,7 @@ def get_event():
     return event, lat_ev, lon_ev, event_mech, rel
 
 
-def make_event_plot(event, event_mech, ax, map):
+def make_event_plot(event, event_mech, ax, map, zoom=False):
 
     desired = [3, 4]
     with open(event, 'r') as fin:
@@ -1471,8 +1487,8 @@ def semblance_scatter():
             xpixels = 6000
             eastings = data[:, 1]
             northings = data[:, 0]
-            map.arcgisimage(service='World_Shaded_Relief',
-                            xpixels=xpixels, verbose=False)
+            #map.arcgisimage(service='World_Shaded_Relief',
+            #                xpixels=xpixels, verbose=False)
             plt.show()
             pathlist = Path(rel).glob('1-'+'*boot*.ASC')
             maxs = 0.
@@ -1523,8 +1539,8 @@ def semblance_scatter():
             xpixels = 6000
             eastings = data[:,1]
             northings = data[:,0]
-            map.arcgisimage(service='World_Shaded_Relief',
-                            xpixels=xpixels, verbose=False)
+            #map.arcgisimage(service='World_Shaded_Relief',
+            #                xpixels=xpixels, verbose=False)
             plt.show()
 
 
@@ -1776,25 +1792,56 @@ def plot_semblance():
                 bottom_h = left_h = left + width + 0.02
 
                 rect = [left, bottom, width, height]
-
+                eastings = data[:, 1]
+                northings = data[:, 0]
                 plt.figure(1, figsize=(8, 8))
-                map, x, y = make_map(data)
-
-                if hists is True:
-                    ax = plt.axes(rect)
+                if zoom is True:
+                    redx = 2.0
+                    redy = 2.0
                 else:
-                    ax = plt.gca()
-
-                make_event_plot(event, event_mech, ax, map)
+                    redx = 0
+                    redy = 0
+                map, x, y = make_map(data, redx=redx, redy=redy)
                 xmax = num.max(x)
                 xmin = num.min(x[num.nonzero(x)])
                 ymax = num.max(y)
                 ymin = num.min(y[num.nonzero(y)])
                 scale = (xmax/xmin)*(ymax/ymin)*10
+                dxmin, dymin = map(num.min(eastings)+redx, num.min(northings)+redy)
+                dxmax, dymax = map(num.max(eastings)-redx, num.max(northings)-redy)
+
+
+                if hists is True:
+                    ax = plt.axes(rect)
+                else:
+                    ax = plt.gca()
+                ax.set_xlim([dxmin, dxmax])
+                ax.set_ylim([dymin, dymax])
+
+                pp = pyproj.Proj(init='epsg:3395')
+                for x_an, east in zip(x[::30], eastings[::30]):
+                    xutm, yutm = pp(east, northings[-1])
+                    ax.annotate(str(int(xutm/1000)),
+                                (x_an, y[-1]),
+                                xytext=[0, 0],
+                                textcoords='offset points',
+                                color='b', fontsize=22)
+
+                for y_an, north in zip(y[::200], northings[::200]):
+                    xutm, yutm = pp(eastings[-1], north)
+                    ax.annotate(str(int(yutm/1000)),
+                                (x[-1], y_an),
+                                xytext=[0, 0],
+                                textcoords='offset points',
+                                color='b', fontsize=22)
+
+                make_event_plot(event, event_mech, ax, map)
+
                 if cfg.Bool('synthetic_test') is True:
                     Syn_in = C.parseConfig('syn')
                     syn_in = SynthCfg(Syn_in)
                     draw_sources(ax, syn_in, map, scale)
+
 
                 for argv in sys.argv:
                     if argv == "--topography":
@@ -1803,6 +1850,12 @@ def plot_semblance():
                             map.arcgisimage(service='World_Shaded_Relief', xpixels = xpixels, verbose= False)
                         except:
                             pass
+                x_grid = num.linspace(xmin, xmax, dimx*2)
+                y_grid = num.linspace(ymin, ymax, dimy*2)
+                xv, yv = np.meshgrid(x_grid, y_grid, sparse=False, indexing='ij')
+                if grid is True:
+                    map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
+
 
                 if boot is True:
                     plot_comb_bs = False
@@ -1848,7 +1901,6 @@ def plot_semblance():
                             im = plt.tricontourf(triang, data_intb, cmap=cmapb)
 
                 if scatter is True or scattermax is True:
-                    ax = plt.gca()
                     data_int_max = []
                     x_scatter = []
                     y_scatter = []
@@ -1893,33 +1945,29 @@ def plot_semblance():
                 cax = divider.append_axes("bottom", size="5%", pad=1.2)
                 plt.colorbar(im, cax=cax, orientation="horizontal")
             #    plt.title(path_in_str)
-                x_grid = num.linspace(xmin, xmax, dimx)
-                y_grid = num.linspace(ymin, ymax, dimy)
-                xv, yv = np.meshgrid(x_grid, y_grid, sparse=False, indexing='ij')
-                if grid is True:
-                    map.scatter(xv, yv, s=3, c='gray', alpha=0.3, zorder=-1)
-                eastings = data[:, 1]
-                northings = data[:, 0]
 
-                pp = pyproj.Proj(init='epsg:3395')
-                for x_an, east in zip(x[::30], eastings[::30]):
-                    xutm, yutm = pp(east, northings[-1])
-                    ax.annotate(str(int(xutm/1000)),
-                                (x_an, y[-1]),
-                                xytext=[0, 0],
-                                textcoords='offset points',
-                                color='b', fontsize=22)
-
-                for y_an, north in zip(y[::200], northings[::200]):
-                    xutm, yutm = pp(eastings[-1], north)
-                    ax.annotate(str(int(yutm/1000)),
-                                (x[-1], y_an),
-                                xytext=[0, 0],
-                                textcoords='offset points',
-                                color='b', fontsize=22)
 
                 event = 'events/'+ str(sys.argv[1]) + '/' + str(sys.argv[1])+'.origin'
+                if zoom is True:
 
+                    from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+                    axins = zoomed_inset_axes(ax, 0.1, loc=1)
+                    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
+                #    mapinset, x, y = make_map(data)
+                    im = plt.tricontourf(triang, data_int, cmap=cmap)
+                    axins.xaxis.set_major_formatter(nullfmt)
+                    axins.yaxis.set_major_formatter(nullfmt)
+                    axins.xaxis.set_ticks([])
+                    axins.yaxis.set_ticks([])
+
+                    make_event_plot(event, event_mech, axins, map, zoom=True)
+
+                    if grid is True:
+                        axins.scatter(xv, yv, s=0.1, c='gray', alpha=0.3, zorder=-1)
+                    if cfg.Bool('synthetic_test') is True:
+                        Syn_in = C.parseConfig('syn')
+                        syn_in = SynthCfg(Syn_in)
+                        draw_sources(axins, syn_in, map, scale, zoom=True)
                 if hists is True:
                     data_int_2d = num.reshape(data_int, (dimx, dimy))
                     fig = plt.gcf()
@@ -2760,11 +2808,11 @@ def plot_semb():
         rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
         for iboot in range(0, n_bootstrap):
             astf_data_bs = []
-            for i in range(0, ntimes):
-                if sembmax_load is True:
-                    astf_data_bs = num.loadtxt(rel+'sembmax_%s_boot%s_P.txt' % (filterindex, i), delimiter=' ')
-                    astf_data_bs = astf_data_bs[:, 3]
-                else:
+            if sembmax_load is True:
+                astf_data_bs = num.loadtxt(rel+'sembmax_%s_boot%s_P.txt' % (filterindex, iboot), delimiter=' ')
+                astf_data_bs = astf_data_bs[:, 3]
+            else:
+                for i in range(0, ntimes):
                     datab, data_intb, data_boot, data_int_boot, path_in_strb, maxsb, datamaxb = load(filterindex, step=i, step_boot=iboot, booting_load=True)
                     astf_data_bs.append(num.max(data_intb))
             plt.plot(l, astf_data_bs, c=next(colors))

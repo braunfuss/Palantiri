@@ -122,7 +122,7 @@ def readpyrockostations(path, disp, cfg):
             desired = 'T'
     for sl in stations:
             for channel in sl.channels:
-                if channel.name == desired:
+                if channel.name[-1] == desired and len(channel.name)<3:
                     MetaL.append(Station(str(sl.network), str(sl.station),
                                          str(sl.location), str(channel.name),
                                          str(sl.lat), str(sl.lon),
@@ -183,7 +183,6 @@ def filterStations(StationList, Config, Origin):
     origin = DataTypes.dictToLocation(Origin)
 
     Logfile.red('Filter stations with configured parameters')
-
     for i in StationList:
         sdelta = loc2degrees(origin, i)
 

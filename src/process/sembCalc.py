@@ -409,6 +409,13 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
         fobj.close()
 
 
+def normalize(v):
+    norm = num.linalg.norm(v)
+    if norm == 0:
+       return v
+    return v / norm
+
+
 def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 array_centers, phase, cboot=None, temp_comb=None):
     '''
@@ -512,15 +519,17 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         for a in SembList:
             if num.max(a) != 0:
                 if cfg.Bool('weight_by_azimuth') is True:
-                    tmp_boot *= a*aziweights[c]
-                    tmp *= a*aziweights[c]
+                    tmp_boot = tmp_boot*a*aziweights[c]
+                    tmp = tmp*a*aziweights[c]
                 elif cfg.Bool('bootstrap_array_weights') is True:
-                    tmp_boot *= a*bs_weights[boot, c]
+                    tmp_boot = tmp_boot*a*bs_weights[boot, c]
+                    tmp = tmp*a*bs_weights[boot, c]
                 else:
-                    tmp_boot *= a
+                    tmp_boot = tmp_boot * a
+                    tmp = tmp*a
+                #tmp = normalize(tmp) # normalize array
 
-                tmp *= a
-                tmp_general *= tmp
+                tmp_general = tmp_general*tmp
                 deltas = []
                 x = array_centers[c][0]
                 y = array_centers[c][1]
@@ -584,9 +593,12 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
         semb_sums = 0
         count_is = 0
+        semb_cum_sum = num.zeros(num.shape(ishape))
+
         for a, i in enumerate(tmp_boot):
                 semb_cum =+ i
                 semb_sums = semb_sums + num.sum(i)
+                semb_cum_sum = semb_cum_sum + i
                 count_is = count_is + 1
         semb_sums = semb_sums/count_is
 
@@ -611,11 +623,15 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 sembmaxY = 0
                 counter_time = 0
                 uncert = num.std(i)
+                #import matplotlib.pyplot as plt
+                #ist = num.reshape(i, (dimX, dimY))
+                #plt.figure()
+                #plt.imshow(ist)
+                #plt.show()
                 if cfg.Bool('norm_all') is True:
-                    i = i / num.sqrt(num.sum(semb_sums))
+                    i = i / num.sqrt(num.sum(semb_cum_sum**2))
                 else:
-                    i = (i / num.sqrt(num.sum(i**2)))/norm
-
+                    i = normalize(i)
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]
@@ -625,7 +641,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                         x = x+dist_x
                         y = y+dist_y
 
-                    semb = i[j]
+                    semb = semb_cum_sum[j]
                     if semb_prior[j] <= semb:
                         semb_prior[j] = i[j]
                         times_cum[j] = a
@@ -701,9 +717,12 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         times_max = num.zeros(num.shape(ishape))
         semb_prior = num.zeros(num.shape(ishape))
     semb_sums = 0
+    semb_cum_sum = num.zeros(num.shape(ishape))
+
     count_is = 0
     for a, i in enumerate(tmp_boot):
             semb_sums = semb_sums + num.sum(i)
+            semb_cum_sum = semb_cum_sum + i
             count_is = count_is + 1
     semb_sums = semb_sums/count_is
 
@@ -736,9 +755,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         counter_time = 0
         uncert = num.std(i)
         if cfg.Bool('norm_all') is True:
-            i = i / num.sqrt(num.sum(semb_sums**2))
+            i = i / num.sqrt(num.sum(semb_cum_sum**2))
         else:
-            i = (i / num.sqrt(num.sum(i**2)))
+            i = normalize(i)
 
         semb_cum = semb_cum + i
         for j in range(num.shape(latv)[0]):
