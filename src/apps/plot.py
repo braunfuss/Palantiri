@@ -352,11 +352,16 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                 except:
                     pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
             else:
-
-                try:
-                    pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
-                except:
-                    pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
+                if step < 10:
+                    try:
+                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'%s_*.ASC' % (filter, step))
+                    except:
+                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
+                else:
+                    try:
+                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'%s_*.ASC' % (filter, step))
+                    except:
+                        pathlist = Path(rel).glob('%s-*0%s_*%s.ASC' % (filter, step, phase))
             if booting_load is True:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, 0, phase))
             maxs = 0.
@@ -379,9 +384,9 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
                 else:
                     try:
-                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
+                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'0%s_*.ASC' % (filter, step))
                     except:
-                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter,
+                        pathlist = Path(rel).glob('%s-*0%s_*%s.ASC' % (filter,
                                                                         step,
                                                                         phase))
 
@@ -428,7 +433,7 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
                 else:
                     try:
-                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
+                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'0%s_*.ASC' % (filter, step))
                     except:
                         pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
                 data_int = num.zeros(num.shape(data[:, 2]))
@@ -822,7 +827,6 @@ def distance_time():
                                                            lats_list[counter],
                                                            lons_list[counter])
                     distances.append(dist)
-
 
             print(num.mean(distances)/num.mean(time))
 
@@ -1622,12 +1626,16 @@ def plot_semblance_movie():
         pass
     if plt_time is True:
         fig = plt.figure()
-
+    max_all = 0.
     for filterindex in range(0, filters):
         data_all, data_int_all, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
         cmaps = ['Blues', 'Greens', 'Reds', 'Purples', 'Greys', 'Wistia', 'bone', 'copper', 'dusk']
+        for i in range(0, ntimes-1):
+                data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
+                if maxsb > max_all:
+                    max_all = maxsb
 
-        levels = np.linspace(num.min(data_int_all), maxs, 20)
+        levels = np.linspace(num.min(data_int_all), max_all, 20)
         for i in range(0, ntimes):
             if len(sys.argv) < 4:
                 print("missing input arrayname")
@@ -1652,13 +1660,14 @@ def plot_semblance_movie():
                                            True, False), axis=1)
                     triang.set_mask(mask)
                     if plt_time is False:
-                        plt.tricontourf(triang, data_int, vmax=maxs, vmin=0,
+                        print(max_all, maxsb, num.max(data_int))
+                        plt.tricontourf(triang, data_int, levels=levels, vmax=max_all, vmin=0,
                                         cmap=cm.coolwarm)
                         m = plt.cm.ScalarMappable(cmap=cm.coolwarm)
                         m.set_array(data_int)
-                        m.set_clim(0., maxs)
+                        m.set_clim(0., max_all)
                         plt.colorbar(m, orientation="horizontal",
-                                     boundaries=np.linspace(0, maxs, 10))
+                                     boundaries=np.linspace(0, max_all, 10))
                         plt.title(path_in_str)
 
                     else:
