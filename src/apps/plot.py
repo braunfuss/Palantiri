@@ -512,7 +512,7 @@ def plot_cluster():
         i = i+1
     colors = iter(cm.rainbow(np.linspace(0, 1, i)))
     pathlist = Path(rel).glob('*.dat')
-
+    number = 0
     for path in sorted(pathlist):
         path_in_str = str(path)
         data = num.loadtxt(path_in_str, delimiter=' ', usecols=(0,3,4))
@@ -525,6 +525,7 @@ def plot_cluster():
             lats = data[1]
 
         x, y = map(lons,lats)
+        number = number + len(x)
 
         map.scatter(x,y,30,marker='o',c=next(colors))
         try:
@@ -532,31 +533,6 @@ def plot_cluster():
         except:
             plt.text(x,y,'r'+str(data[0])[0:2], fontsize=12)
             pass
-        lon_0, lat_0 = event_cor[1][0],event_cor[0][0]
-        x,y=map(lon_0,lat_0)
-        degree_sign= u'\N{DEGREE SIGN}'
-        x2,y2 = map(lon_0,lat_0-20)
-        plt.text(x2,y2,'20'+degree_sign, fontsize=22,color='blue')
-        circle1 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle1)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-60)
-        plt.text(x2,y2,'60'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-90)
-        plt.text(x2,y2,'90'+degree_sign, fontsize=22,color='blue')
-        circle2 = plt.Circle((x, y), y2-y, color='blue',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-94)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
-        x,y=map(lon_0,lat_0)
-        x2,y2 = map(lon_0,lat_0-22)
-        circle2 = plt.Circle((x, y), y2-y, color='red',fill=False, linestyle='dashed')
-        ax.add_patch(circle2)
     plt.show()
 
 
@@ -1219,7 +1195,7 @@ def plot_integrated():
             triang = tri.Triangulation(x, y)
             isbad = np.less(data_int, datamax*0.05)
             mask = np.all(np.where(isbad[triang.triangles], True, False), axis=1)
-            #triang.set_mask(mask)
+            triang.set_mask(mask)
             plt.tricontourf(triang, data_int, cmap='cool')
             plt.colorbar(orientation="horizontal")
             plt.title(path_in_str)
@@ -2455,6 +2431,36 @@ def empiricial_timeshifts():
         plt.figure()
         plt.plot(refs,bazis)
         plt.show()
+
+    def from_palantiri(file):
+        values = data[:, 2]
+        x, y, z = data[:, 0], data[:, 1], -10*km
+        xmin = num.min(x)
+        xmax =
+        ncorners = 4
+        verts = []
+        for i, patch in enumerate(self.data[:, 0]):
+            #regrid to outline, relative xyz
+            xyz tmin= patch.outline()
+            #here regrid bp into 4 corners
+            latlon = patch.outline('latlon')
+            patchverts = num.hstack((latlon, xyz))
+            verts.append(patchverts[:-1, :])  #  last vertex double
+
+        faces1 = num.arange(ncorners * self.npatches, dtype='int64').reshape(
+            self.npatches, ncorners)
+        faces2 = num.fliplr(faces1)
+        faces = num.vstack((faces1, faces2))
+        srf_slips = num.vstack((srf_slips, srf_slips))
+
+        vertices = num.vstack(verts)
+
+        from pyrocko.model import Geometry
+        geom = Geometry(times=srf_times)
+        geom.setup(vertices, faces)
+        sub_headers = tuple([str(i) for i in num.arange(srf_times.size)])
+        geom.add_property((('slip', 'float64', sub_headers)), srf_slips)
+        return geom
 
 def main():
     if len(sys.argv)<3:
