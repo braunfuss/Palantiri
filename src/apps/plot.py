@@ -1,6 +1,5 @@
 from affine import Affine
 from pyproj import Proj, transform
-from mpl_toolkits.basemap import Basemap
 import numpy as num
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,12 +21,21 @@ from palantiri.tools import config
 from palantiri.process.sembCalc import toAzimuth
 global evpath
 from pyrocko import util
+from scipy import interpolate
+try:
+    from mpl_toolkits.basemap import Basemap
+except:
+    pass
+
 
 w=25480390.0
 
 
-def load(filter, step=None):
-            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+def load(filter, step=None, path=None):
+            if path is None:
+                rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+            else:
+                rel = path
             boot = False
             evpath = 'events/'+ str(sys.argv[1])
             C  = config.Config (evpath)
@@ -2432,23 +2440,83 @@ def empiricial_timeshifts():
         plt.plot(refs,bazis)
         plt.show()
 
-    def from_palantiri(file):
-        values = data[:, 2]
-        x, y, z = data[:, 0], data[:, 1], -10*km
-        xmin = num.min(x)
-        xmax =
-        ncorners = 4
+
+    def patches2vertices(patches):
         verts = []
-        for i, patch in enumerate(self.data[:, 0]):
-            #regrid to outline, relative xyz
-            xyz tmin= patch.outline()
-            #here regrid bp into 4 corners
+        for patch in patches:
+            patch.anchor = 'top'
+            xyz = patch.outline()
             latlon = patch.outline('latlon')
+            patchverts = num.hstack((latlon, xyz))
+            verts.append(patchverts[:-1, :])  # last vertex double
+
+        return num.vstack(verts)
+
+    def from_palantiri():
+        from pyrocko.model import event
+        from pyrocko import orthodrome
+        evpath = 'events/'+ str(sys.argv[1])
+        C  = config.Config(evpath)
+        Origin = C.parseConfig('origin')
+        try:
+            path = sys.argv[3]
+        except:
+            path = None
+        Config = C.parseConfig('config')
+        cfg = ConfigObj(dict=Config)
+        step = cfg.UInt('step')
+        step2 = cfg.UInt('step_f2')
+        duration = cfg.UInt('duration')
+        forerun = cfg.UInt('forerun')
+        ntimes = int((forerun+duration)/step)
+        deltat = step
+        deltat2 = step2
+        rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
+
+
+        origin = OriginCfg(Origin)
+
+        ev = event.Event(lat=origin.lat(), lon=origin.lon(), depth=origin.depth()*1000., time=util.str_to_time(origin.time()))
+        data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0, path=path)
+        values_orig = data[:, 2]
+        lat_orig = data[:, 1]
+        lon_orig = data[:, 0]
+        ncorners = 4
+        lat_grid_orig = num.arange(num.min(lat_org), num.max(lat_orig), abs(lat_orig[1]-lat_orig[0]))
+        lon_grid_orig = num.arange(num.min(lon_orig), num.max(lon_orig), abs(lon_orig[1]-lon_orig[0]))
+        lat_grid = num.arange(num.min(lat_orig), num.max(lat_orig), abs(lat_orig[1]-lat_orig[0])/4.)
+        lon_grid = num.arange(num.min(lon_orig), num.max(lon_orig), abs(lon_orig[1]-lon_orig[0])/4.)
+
+        x_orig = []
+        y_orig = []
+        x_grid = []
+        y_grid = []
+
+        for i in range(0, len(lat_grid)):
+            x_grid.append(orthodrome.latlon_to_ne(lat_grid[i], lon_grid[i], ev.lat, ev.lon)
+
+        verts = []
+        # interpolate once for xyz and once for latlon
+        for i in range(0, len(data[:, 0])):
+            #regrid to outline, relative xyz
+            xyz =
+            #here regrid bp into 4 corners
+            latlon =
             patchverts = num.hstack((latlon, xyz))
             verts.append(patchverts[:-1, :])  #  last vertex double
 
-        faces1 = num.arange(ncorners * self.npatches, dtype='int64').reshape(
-            self.npatches, ncorners)
+        xmin = num.min(x)
+
+        # for times extract the time dependent semblance
+        for i in range(0, ntimes):
+            if len(sys.argv)<4:
+                print("missing input arrayname")
+            else:
+                    data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(0, step=i, path=path)
+
+        npatches = len(data[:,0])
+        faces1 = num.arange(ncorners * npatches, dtype='int64').reshape(
+            npatches, ncorners)
         faces2 = num.fliplr(faces1)
         faces = num.vstack((faces1, faces2))
         srf_slips = num.vstack((srf_slips, srf_slips))
@@ -2456,7 +2524,7 @@ def empiricial_timeshifts():
         vertices = num.vstack(verts)
 
         from pyrocko.model import Geometry
-        geom = Geometry(times=srf_times)
+        geom = Geometry(times=srf_times, event=ev)
         geom.setup(vertices, faces)
         sub_headers = tuple([str(i) for i in num.arange(srf_times.size)])
         geom.add_property((('slip', 'float64', sub_headers)), srf_slips)
