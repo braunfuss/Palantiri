@@ -241,8 +241,6 @@ def from_palantiri():
                 srf_semblance = data[:,2]
                 srf_semblance = num.append(srf_semblance, num.array([0., 0.]))
                 srf_semblance = duplicate_property(srf_semblance)
-                srf_semblance = duplicate_property(srf_semblance)
-                srf_semblance = duplicate_property(srf_semblance)
                 srf_semblance_list.append(srf_semblance)
 
     srf_semblance = num.asarray(srf_semblance_list).T
