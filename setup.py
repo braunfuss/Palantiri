@@ -42,6 +42,7 @@ setup(
             'bat = palantiri.apps.arraytool:main',
             'palantiri_plot = palantiri.apps.plot:main',
             'palantiri_down = palantiri.apps.palantiri_down:main',
+            'palantiri_geometry_export = palantiri.apps.palantiri_geometry_export:main',
             'palantiri_eventsearch = palantiri.tools.eventsearch:main',
             'palantiri_cluster = palantiri.cluster.callcluster:main',
             'palantiri_create = palantiri.tools.create:main',

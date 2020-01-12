@@ -68,12 +68,16 @@ def load(filter, step=None, path=None):
                     pathlist = Path(rel).glob('%s-*%s.ASC' % (filter,phase))
             else:
                 try:
-                    pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
+                    try:
+                        pathlist = Path(rel).glob('*0%s.ASC' % step)
+                    except:
+                        pathlist = Path(rel).glob('*%s.ASC' % step)
                 except:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
+                    print(path_in_str)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     maxd = np.max(data[:, 2])
                     if maxs < maxd:
@@ -2431,7 +2435,6 @@ def empiricial_timeshifts():
                     for s in refshifts_stations.values():
                         stations.append(s)
         bazis = []
-        print(len(stations), len(refs))
         for s in stations:
             b = orthodrome.azimuth(s[1], s[0], lat_ev, lon_ev)
             if b>=0.:
@@ -2444,146 +2447,6 @@ def empiricial_timeshifts():
         plt.show()
 
 
-def duplicate_property(array):
-    ndims = len(array.shape)
-    if ndims == 1:
-        return num.hstack((array, array))
-    elif ndims == 2:
-        return num.vstack((array, array))
-    else:
-        raise TypeError('Only 1-2d data supported!')
-
-
-def from_palantiri():
-    from pyrocko.model import event
-    from pyrocko import orthodrome
-    from pyrocko.guts import dump
-    import utm
-    km = 1000.
-    try:
-        path = sys.argv[3]
-        evpath = path
-    except:
-        path = None
-        evpath = 'events/'+ str(sys.argv[1])
-    C  = config.Config(evpath)
-    Origin = C.parseConfig('origin')
-    Config = C.parseConfig('config')
-    cfg = ConfigObj(dict=Config)
-    step = cfg.UInt('step')
-    step2 = cfg.UInt('step_f2')
-    duration = cfg.UInt('duration')
-    forerun = cfg.UInt('forerun')
-    ntimes = int((forerun+duration)/step)
-    deltat = step
-    deltat2 = step2
-    rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
-
-    dimx = int(Config['dimx'])
-    dimy = int(Config['dimy'])
-    dimx= 2
-    dimy= 2
-    origin = OriginCfg(Origin)
-
-    ev = event.Event(lat=origin.lat(), lon=origin.lon(), depth=origin.depth()*1000., time=util.str_to_time(origin.time()))
-    data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax = load(0, path=path)
-    values_orig = data[:, 2]
-    lat_orig = data[:, 1]
-    lon_orig = data[:, 0]
-    ncorners = 4
-    lon_grid_orig = num.linspace(num.min(lat_orig), num.max(lat_orig), (dimy))
-    lat_grid_orig = num.linspace(num.min(lon_orig), num.max(lon_orig), dimx)
-    print(num.min(lat_orig), num.max(lat_orig), num.min(lon_orig), num.max(lon_orig))
-    #lon_grid = num.arange(num.min(lat_orig), num.max(lat_orig), ((lat_orig)[1]-(lat_orig)[0])/4.)
-    #lat_grid = num.arange(num.min(lon_orig), num.max(lon_orig), ((lon_orig)[dimy+1]-(lon_orig)[0])/4.)
-    x_orig = []
-    y_orig = []
-    x_grid = []
-    y_grid = []
-
-#    for i in range(0, len(lat_grid)):
-        #x_grid.append(orthodrome.latlon_to_ne(lat_grid[i], lon_grid[i], ev.lat, ev.lon)
-
-    verts = []
-    # interpolate once for xyz and once for latlon
-    lon_diff = ((lon_orig)[dimy+1]-(lon_orig)[0])/4.
-    lat_diff = ((lat_orig)[1]-(lat_orig)[0])/4.
-#    lon_diff = 2.
-#    lat_diff = 2.
-    x = []
-    y =[]
-    #dist = orthodrome.distance_accurate50m(lat_grid_orig[1], lon_grid_orig[1], lat_grid_orig[0], lon_grid_orig[0])
-    #n1s, e1s = orthodrome.latlon_to_ne(lon_orig[],lon_grid_orig, ev.lat, ev.lon)
-    for i in range(0, dimx):
-        for j in range(0, dimy):
-        #regrid to outline, relative xyz
-        #    xyz = ([0+i+j, 0+i+j, -1000*km], [0+i+j+0.1, i+i+j+0.1, -1000*km], [i-1000*j, i+1000*j, -1000*km], [i-1000*j, i-1000*j, -1000*km])
-        #here regrid bp into 4 corners
-            #xyz = ([lat_grid_orig[i]-lat_diff,lon_grid_orig[j]-lon_diff, 10000], [lat_grid_orig[i]-lat_diff,lon_grid_orig[j]+lon_diff, 10000], [lat_grid_orig[i]+lat_diff,lon_grid_orig[j]+lon_diff, 10000], [lat_grid_orig[i]+lat_diff,lon_grid_orig[j]-lon_diff, 10000])
-
-        #    dx = utm.from_latlon(lat_grid_orig[i]-lat_diff,lon_grid_orig[j]-lon_diff)
-        #    dx1 = utm.from_latlon(lat_grid_orig[i]-lat_diff,lon_grid_orig[j]+lon_diff)
-        #    dx2 = utm.from_latlon(lat_grid_orig[i]+lat_diff,lon_grid_orig[j]+lon_diff)
-        #    dx3 = utm.from_latlon(lat_grid_orig[i]+lat_diff,lon_grid_orig[j]-lon_diff)
-
-        #    xyz = ([dx[0], dx[1], +10000], [dx1[0], dx1[1], +10000], [dx2[0], dx2[1], +10000], [dx3[0], dx3[1], +10000])
-        #    n1, e1 = orthodrome.latlon_to_ne(lat_grid_orig[i]-lat_diff,lon_grid_orig[j]-lon_diff, ev.lat, ev.lon)
-        #    n1d, e1d = orthodrome.latlon_to_ne(lat_grid_orig[i],lon_grid_orig[j], ev.lat, ev.lon)
-        #    diffn = n1d-n1
-        #    diffe = e1d-e1
-        #    n2, e2 = orthodrome.latlon_to_ne(lat_grid_orig[i]-lat_diff,lon_grid_orig[i]+lon_diff, ev.lat, ev.lon)
-        #    n3, e3 = orthodrome.latlon_to_ne(lat_grid_orig[i]+lat_diff,lon_grid_orig[i]+lon_diff, ev.lat, ev.lon)
-        #    n4, e4 = orthodrome.latlon_to_ne(lat_grid_orig[i]+lat_diff,lon_grid_orig[i]-lon_diff, ev.lat, ev.lon)
-        #    n1c, e1c = orthodrome.latlon_to_ne(lat_grid_orig[i],lon_grid_orig[j], ev.lat, ev.lon)
-        #    xyz = ([-e1d, -n1d, -5000], [-e1d, n1d, -5000], [e1d, -n1d, -5000], [e1d, n1d, -5000], [-e1d, -n1d, -5000])
-
-            xyz = (   [-2000., -2000., 5000], [-2000., 2000., 5000],[2000., 2000., 5000], [2000., -2000., 5000] )
-
-            latlon = ([lat_grid_orig[i],lon_grid_orig[j]], [lat_grid_orig[i],lon_grid_orig[j]], [lat_grid_orig[i],lon_grid_orig[j]], [lat_grid_orig[i],lon_grid_orig[j]])
-        #    xyz = ([e1d-diffe, n1d-diffn, -5000], [e1d-diffe, n1d+diffn, -5000], [e1d-diffe, n1d-diffn, +5000], [e1d+diffe, n1d+diffn, -5000], [e1c, n1c, -5000])
-    #        xyz = ([e1, e2, e3, e4], [n1, n2, n3, n4], [-5000.,-5000.,-5000.,-5000. ])
-    #        latlon = ([lat_grid_orig[i]-lat_diff,lon_grid_orig[j]-lon_diff], [lat_grid_orig[i]-lat_diff,lon_grid_orig[j]+lon_diff], [lat_grid_orig[i]+lat_diff,lon_grid_orig[j]+lon_diff], [lat_grid_orig[i]+lat_diff,lon_grid_orig[j]-lon_diff], [lat_grid_orig[i]+lat_diff,lon_grid_orig[j]+lon_diff])
-    #        latlon = ([lat_grid_orig[i]-lat_diff, lat_grid_orig[i]-lat_diff, lat_grid_orig[i]+lat_diff, lat_grid_orig[i]+lat_diff], [lon_grid_orig[i]-lon_diff, lon_grid_orig[i]+lon_diff, lon_grid_orig[i]-lon_diff, lon_grid_orig[i]+lon_diff])
-        #    print(xyz)
-            patchverts = num.hstack((latlon, xyz))
-            verts.append(patchverts)  #  last vertex double
-
-
-    # for times extract the time dependent semblance
-#    for i in range(0, ntimes):
-#        if len(sys.argv)<4:
-#            print("missing input arrayname")
-#        else:
-#                data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(0, step=i, path=path)
-    npatches = dimx*dimy*2
-    faces1 = num.arange(ncorners * npatches, dtype='int64').reshape(
-        npatches, ncorners)
-    faces2 = num.fliplr(faces1)
-    faces = num.vstack((faces1, faces2))
-    #faces = num.vstack((faces1))
-
-    srf_semblance = num.ones(npatches)
-
-#    srf_times = num.ones(npatches*2)
-    srf_semblance = duplicate_property(srf_semblance)
-    print(npatches, len(srf_semblance), len(faces), len(verts) )
-
-    srf_semblance = num.vstack((srf_semblance, srf_semblance))
-    #srf_times = num.vstack((srf_times, srf_times))
-    vertices = num.vstack(verts)
-    #srf_times = num.ones(npatches*2)
-    #srf_times = num.arange(1., 1., 0)
-    srf_times = [1]
-    from pyrocko.model import Geometry
-    geom = Geometry(times=srf_times, event=ev)
-    geom.setup(vertices, faces)
-    #print(len(srf_times), len(srf_semblance), npatches, len(verts), len(faces))
-
-    sub_headers = tuple([str(i) for i in num.arange(npatches*2)])
-    geom.add_property((('slip', 'float64', sub_headers)), srf_semblance)
-#    geom.add_property((('slip', 'float64')), srf_semblance)
-    print(geom.vertices)
-    dump(geom, filename='geom.yaml')
 
 def main():
     if len(sys.argv)<3:
@@ -2629,5 +2492,3 @@ def main():
             empiricial_timeshifts()
         elif sys.argv[2] == 'distance_time_bootstrap':
             distance_time_bootstrap()
-        elif sys.argv[2] == 'export_geometry':
-            from_palantiri()
