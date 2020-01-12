@@ -244,7 +244,7 @@ def from_palantiri():
                 srf_semblance_list.append(srf_semblance)
 
     srf_semblance = num.asarray(srf_semblance_list).T
-    srf_times = num.linspace(1, 1000, ntimes)
+    srf_times = num.linspace(0, duration, ntimes)
     srf_slip = num.ones(num.shape(srf_semblance))
     geom = Geometry(times=srf_times, event=ev)
     geom.setup(vertices, faces)
