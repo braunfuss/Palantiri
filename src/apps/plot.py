@@ -1,7 +1,8 @@
-from pyproj import transform
-from mpl_toolkits.basemap import Basemap
+from affine import Affine
+from pyproj import Proj, transform
 import numpy as num
 import numpy as np
+from mpl_toolkits.basemap import Basemap
 import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
@@ -348,10 +349,11 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                     phase = "P"
             if step is None:
                 try:
-                    pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
+                    pathlist = Path(rel).glob('*.ASC')
                 except:
                     pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
             else:
+<<<<<<< HEAD
                 if step < 10:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'%s_*.ASC' % (filter, step))
@@ -364,9 +366,19 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('%s-*0%s_*%s.ASC' % (filter, step, phase))
             if booting_load is True:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, 0, phase))
+=======
+                try:
+                    try:
+                        pathlist = Path(rel).glob('*0%s.ASC' % step)
+                    except:
+                        pathlist = Path(rel).glob('*%s.ASC' % step)
+                except:
+                    pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
+>>>>>>> geometry_export
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
+                    print(path_in_str)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     try:
                         data_int = num.zeros(num.shape(data[:, 2]))
