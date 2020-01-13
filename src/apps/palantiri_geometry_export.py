@@ -245,12 +245,10 @@ def from_palantiri():
 
     srf_semblance = num.asarray(srf_semblance_list).T
     srf_times = num.linspace(0, forerun+duration, ntimes)
-    srf_slip = num.ones(num.shape(srf_semblance))
     geom = Geometry(times=srf_times, event=ev)
     geom.setup(vertices, faces)
     sub_headers = tuple([str(i) for i in srf_times])
     geom.add_property((('semblance', 'float64', sub_headers)), srf_semblance)
-    geom.add_property((('slip', 'float64', sub_headers)), srf_slip)
     dump(geom, filename='geom.yaml')
 
 
