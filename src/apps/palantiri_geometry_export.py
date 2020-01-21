@@ -197,14 +197,31 @@ def from_palantiri():
     ev = event.Event(lat=origin.lat(), lon=origin.lon(), depth=depth, time=util.str_to_time(origin.time()))
     data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax, n_files = load(0, path=path)
     values_orig = data[:, 2]
-    values_orig = num.append(values_orig, num.array([0., 0.]))
 
     lat_orig = data[:, 1]
     lon_orig = data[:, 0]
 
     ncorners = 4
-    lon_grid_orig = num.linspace(num.min(lat_orig), num.max(lat_orig), (dimy))
-    lat_grid_orig = num.linspace(num.min(lon_orig), num.max(lon_orig), dimx)
+
+    from pyrocko.gf import RectangularSource
+
+    rect_source = RectangularSource(
+    lat=origin.lat(), lon=origin.lon(),
+    north_shift=0., east_shift=0., depth=20*km,
+    width=20*km, length=160*km,
+    dip=81., rake=0., strike=75.,
+    slip=1.)
+
+    latlon = rect_source.outline('latlon')
+    lat = latlon[:,0]
+    lon = latlon[:, 1]
+    xyz = rect_source.outline()
+    z = xyz[:, 2]
+    zmin = min(z)
+    zmax = max(z)
+    z = num.linspace(num.max(z), num.min(z), 21)
+    lat_grid_orig = num.linspace(num.min(lon), num.max(lon), 161)
+    lon_grid_orig = num.linspace(num.min(lat), num.max(lat), 21)
 
     if path is None:
         ntimes = int((forerun+duration)/step)
@@ -212,22 +229,29 @@ def from_palantiri():
         ntimes = n_files
 
     verts = []
-    lon_diff = ((lon_orig)[dimy+1]-(lon_orig)[0])/4.
-    lat_diff = ((lat_orig)[1]-(lat_orig)[0])/4.
 
-    dist = orthodrome.distance_accurate50m(lat_grid_orig[1], lon_grid_orig[1], lat_grid_orig[0], lon_grid_orig[0])
-
-    for x,y in zip(lon_orig, lat_orig):
-
-            xyz = ([dist/2., dist/2., depth], [-dist/2., dist/2., depth],[-dist/2., -dist/2., depth], [dist/2., -dist/2., depth] )
+#    dist = orthodrome.distance_accurate50m(lat_grid_orig[1], lon_grid_orig[1], lat_grid_orig[0], lon_grid_orig[0])
+    # now over depth und grids
+    xs = []
+    ys = []
+    depths = []
+    depth_diff = z[0]-z[1]
+    for j in range(0, len(lon_grid_orig)):
+        for i in range(0, len(lat_grid_orig)):
+            x = lon_grid_orig[j]
+            y = lat_grid_orig[i]
+            xs.append(x)
+            ys.append(y)
+            dist = 4000.
+            depth = z[j]
+            xyz = ([dist/4., dist/4., depth], [-dist/4., dist/4., depth+depth_diff],[-dist/4., -dist/4., depth+depth_diff], [dist/4., -dist/4., depth] )
             latlon = ([x,y], [x,y], [x,y], [x,y])
             patchverts = num.hstack((latlon, xyz))
             verts.append(patchverts)
 
-
     vertices = num.vstack(verts)
 
-    npatches = int(len(vertices)) #*2?
+    npatches = int(len(vertices))*2 #*2?
     faces1 = num.arange(ncorners * npatches, dtype='int64').reshape(
         npatches, ncorners)
     faces2 = num.fliplr(faces1)
@@ -239,7 +263,6 @@ def from_palantiri():
         else:
                 data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb, n_files = load(0, step=i, path=path)
                 srf_semblance = data[:,2]
-                srf_semblance = num.append(srf_semblance, num.array([0., 0.]))
                 srf_semblance = duplicate_property(srf_semblance)
                 srf_semblance_list.append(srf_semblance)
 
