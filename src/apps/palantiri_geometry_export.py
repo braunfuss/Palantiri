@@ -197,7 +197,7 @@ def from_palantiri():
     ev = event.Event(lat=origin.lat(), lon=origin.lon(), depth=depth, time=util.str_to_time(origin.time()))
     data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax, n_files = load(0, path=path)
     values_orig = data[:, 2]
-    values_orig = num.append(values_orig, num.array([0., 0.]))
+    #values_orig = num.append(values_orig, num.array([0., 0.]))
 
     lat_orig = data[:, 1]
     lon_orig = data[:, 0]
@@ -219,7 +219,7 @@ def from_palantiri():
 
     for x,y in zip(lon_orig, lat_orig):
 
-            xyz = ([dist/2., dist/2., depth], [-dist/2., dist/2., depth],[-dist/2., -dist/2., depth], [dist/2., -dist/2., depth] )
+            xyz = ([dist/2.8, dist/2.8, depth], [-dist/2.8, dist/2.8, depth],[-dist/2.8, -dist/2.8, depth], [dist/2.8, -dist/2.8, depth] )
             latlon = ([x,y], [x,y], [x,y], [x,y])
             patchverts = num.hstack((latlon, xyz))
             verts.append(patchverts)
@@ -239,10 +239,10 @@ def from_palantiri():
         else:
                 data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb, n_files = load(0, step=i, path=path)
                 srf_semblance = data[:,2]
-                srf_semblance = num.append(srf_semblance, num.array([0., 0.]))
+                #srf_semblance = num.append(srf_semblance, num.array([0., 0.]))
                 srf_semblance = duplicate_property(srf_semblance)
                 srf_semblance_list.append(srf_semblance)
-
+                print(len(srf_semblance))
     srf_semblance = num.asarray(srf_semblance_list).T
     srf_times = num.linspace(0, forerun+duration, ntimes)
     geom = Geometry(times=srf_times, event=ev)
