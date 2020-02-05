@@ -322,20 +322,20 @@ def draw_sources(ax, syn_in, map, scale, zoom=False):
             map.scatter(e, n, s=s, zorder=3)
 
 
-def load(filter, step=None, step_boot=None, booting_load=False):
-            rel = 'events/' + str(sys.argv[1]) + '/work/semblance/'
+d
+def load(filter, step=None):
+            rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             boot = False
-            evpath = 'events/' + str(sys.argv[1])
-            C = config.Config(evpath)
-            Config = C.parseConfig('config')
-            cfg = ConfigObj(dict=Config)
-            n_bootstrap = cfg.UInt('n_bootstrap')
+            evpath = 'events/'+ str(sys.argv[1])
+            C  = config.Config (evpath)
+            Config = C.parseConfig ('config')
+            cfg = ConfigObj (dict=Config)
             dimx = int(Config['dimx'])
             dimy = int(Config['dimy'])
             data_int = None
             data = None
             data_boot = None
-            data_int_boot = []
+            data_int_boot = None
             datamax = 0
             phase = "P"
             for argv in sys.argv:
@@ -349,38 +349,18 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                     phase = "P"
             if step is None:
                 try:
-                    pathlist = Path(rel).glob('*.ASC')
+                    pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                 except:
-                    pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
+                    pathlist = Path(rel).glob('%s-*%s.ASC' % (filter,phase))
             else:
-                if step < 10:
-                    try:
-                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'%s_*.ASC' % (filter, step))
-                    except:
-                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
-                else:
-                    try:
-                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'%s_*.ASC' % (filter, step))
-                    except:
-                        pathlist = Path(rel).glob('%s-*0%s_*%s.ASC' % (filter, step, phase))
-            if booting_load is True:
-                    pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, 0, phase))
                 try:
-                    try:
-                        pathlist = Path(rel).glob('*0%s.ASC' % step)
-                    except:
-                        pathlist = Path(rel).glob('*%s.ASC' % step)
+                    pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                 except:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
-                    print(path_in_str)
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                    try:
-                        data_int = num.zeros(num.shape(data[:, 2]))
-                    except:
-                        pass
                     maxd = np.max(data[:, 2])
                     if maxs < maxd:
                         maxs = maxd
@@ -393,17 +373,13 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
                 else:
                     try:
-                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'0%s_*.ASC' % (filter, step))
+                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
-                        pathlist = Path(rel).glob('%s-*0%s_*%s.ASC' % (filter,
-                                                                        step,
-                                                                        phase))
-
-
+                        pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
+                data_int = num.zeros(num.shape(data[:, 2]))
                 for path in sorted(pathlist):
                         path_in_str = str(path)
-                        data = num.loadtxt(path_in_str, delimiter=' ',
-                                           skiprows=5)
+                        data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                         i = 0
                         for k in np.nan_to_num(data[:,2]):
                             if k>data_int[i]:
@@ -412,24 +388,28 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                                 data_int[i]= 0
                             i = i+1
                 try:
-                    if booting_load is True:
+                    if sys.argv[4] == 'boot':
                         boot = True
-                        if step is None and step_boot is None:
-                            pathlist = Path(rel).glob(('%s-*boot*'+'%s.ASC') % (filter, phase))
-                        elif step is None:
-                            pathlist = Path(rel).glob(('%s-*boot%s_*'+'%s.ASC') % (filter, step_boot, phase))
+                        if step is None:
+                            try:
+                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
+                            except:
+                                pathlist = Path(rel).glob('%s-*boot*%s.ASC' % (filter, phase))
                         else:
-                            pathlist = Path(rel).glob(('%s-*boot%s_*%s_'+'*%s.ASC') % (filter, step_boot, step, phase))
+                            try:
+                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
+                            except:
+                                pathlist = Path(rel).glob('%s-*boot00%s_*%s.ASC' % (filter, step, phase))
                         data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
                                 data_boot = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                                 i = 0
-                                for k in np.nan_to_num(data_boot[:,2]):
+                                for k in np.nan_to_num(data[:,2]):
                                     if k>data_int_boot[i]:
                                         data_int_boot[i]= k
-                                #    if num.max(datamax) == 0:
-                                #        data_int_boot[i]= 0
+                                    if num.max(datamax) == 0:
+                                        data_int[i]= 0
                                     i = i+1
                 except IndexError:
                     pass
@@ -439,45 +419,42 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'*.ASC' % filter)
                     except:
-                        pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
+                        pathlist = Path(rel).glob('%s*-%s*.ASC' % (filter,phase))
                 else:
                     try:
-                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'0%s_*.ASC' % (filter, step))
+                        pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
                         pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
                 data_int = num.zeros(num.shape(data[:, 2]))
-                data_int_boot = num.ones(num.shape(data[:, 2]))
-
                 for path in sorted(pathlist):
                         path_in_str = str(path)
-
                         if path_in_str[-14] is not "o":
                             data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                            i = 0
-                            for k in np.nan_to_num(data[:,2]):
-                                data_int_boot[i] = k+data_int_boot[i]
-                                i = i+1
+                            data_int += np.nan_to_num(data[:,2])
+
                 try:
-                    if booting_load is True:
-                        if step is None and step_boot is None:
-                            pathlist = Path(rel).glob(('%s-*boot*'+'%s.ASC') % (filter, phase))
-                        elif step is None:
-                            pathlist = Path(rel).glob(('%s-*boot%s_*'+'%s.ASC') % (filter, step_boot, phase))
+                    if sys.argv[4] == 'boot':
+                        boot = True
+
+                        if step is None:
+                            try:
+                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'*.ASC' % filter)
+                            except:
+                                pathlist = Path(rel).glob('%s-*boot*.ASC' % filter)
                         else:
-                            pathlist = Path(rel).glob(('%s-*boot%s_*%s_'+'%s.ASC') % (filter, step_boot, step, phase))
-                        data_int_boot = num.ones(num.shape(data[:, 2]))
+                            try:
+                                pathlist = Path(rel).glob('%s-*boot*'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
+                            except:
+                                pathlist = Path(rel).glob('%s-*boot*00%s_*.ASC' % (filter, step))
+                        data_int_boot = num.zeros(num.shape(data[:, 2]))
                         for path in sorted(pathlist):
                                 path_in_str = str(path)
-                                i = 0
-                                data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
-                                for k in np.nan_to_num(data[:,2]):
-                                    data_int_boot[i] = k+data_int_boot[i]
-                                    i = i+1
-                    data_int = data_int_boot
+                                data_boot = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
+                                data_int_boot += np.nan_to_num(data_boot[:,2])
                 except IndexError:
                     pass
-            return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
+            return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
 def make_map(data, redx=0, redy=0):
         eastings = data[:, 1]
