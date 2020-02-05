@@ -321,8 +321,6 @@ def draw_sources(ax, syn_in, map, scale, zoom=False):
             e, n = map(lon, lat)
             map.scatter(e, n, s=s, zorder=3)
 
-
-d
 def load(filter, step=None):
             rel = 'events/'+ str(sys.argv[1]) + '/work/semblance/'
             boot = False
