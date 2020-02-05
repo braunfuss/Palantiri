@@ -353,7 +353,6 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                 except:
                     pathlist = Path(rel).glob('%s-*%s.ASC' % (filter, phase))
             else:
-<<<<<<< HEAD
                 if step < 10:
                     try:
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'%s_*.ASC' % (filter, step))
@@ -366,7 +365,6 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('%s-*0%s_*%s.ASC' % (filter, step, phase))
             if booting_load is True:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, 0, phase))
-=======
                 try:
                     try:
                         pathlist = Path(rel).glob('*0%s.ASC' % step)
@@ -374,7 +372,6 @@ def load(filter, step=None, step_boot=None, booting_load=False):
                         pathlist = Path(rel).glob('*%s.ASC' % step)
                 except:
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
->>>>>>> geometry_export
             maxs = 0.
             for path in sorted(pathlist):
                     path_in_str = str(path)
