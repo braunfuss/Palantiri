@@ -374,7 +374,10 @@ def load(filter, step=None):
                         pathlist = Path(rel).glob('%s-'+ str(sys.argv[5])+'00%s_*.ASC' % (filter, step))
                     except:
                         pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
-                data_int = num.zeros(num.shape(data[:, 2]))
+                try:
+                    data_int = num.zeros(num.shape(data[:, 2]))
+                except:
+                    pass
                 for path in sorted(pathlist):
                         path_in_str = str(path)
                         data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
@@ -1066,6 +1069,50 @@ def center_lat_lon(lats, lons):
         lons[i] = lons[i]*torad
     return(lats.mean()*180/num.pi, lons.mean()*180/num.pi)
 
+def plot_cluster_waveforms():
+    from pyrocko import trace
+    radius_plt = False
+    for argv in sys.argv:
+        if argv == "--radius":
+            radius_plt = True
+    step, winlen, step2, winlen2, n_bootstrap, cfg = get_params()
+    event, lat_ev, lon_ev, event_mech, rel = get_event()
+
+    map, ax = make_world_map(event, event_mech)
+    pathlist = Path(rel).glob('*.dat')
+
+    traces = io.load('events/' + str(sys.argv[1]) + '/data/traces_velocity.mseed')
+    i = 0
+    for path in sorted(pathlist):
+        path_in_str = str(path)
+        i = i+1
+    colors = iter(cm.rainbow(np.linspace(0, 1, i)))
+    pathlist = Path(rel).glob('*.dat')
+    for path in sorted(pathlist):
+        path_in_str = str(path)
+        cluster = []
+
+        data = num.genfromtxt(path_in_str, delimiter=' ', dtype="str")
+        try:
+            lons = data[:, 2]
+            lats = data[:, 1]
+            names = str(data[:,1])
+        except:
+            lons = data[2]
+            lats = data[1]
+            names = str(data[:, 1])
+        names = names.split(".")
+
+        for name in names:
+            print(name)
+        nets = names[0::4]
+        stas = names[1::5]
+        for tr in traces:
+            if tr.station == sta:
+                cluster.append(tr)
+
+        trace.snuffle(cluster)
+
 
 def plot_cluster():
     radius_plt = False
@@ -1615,7 +1662,10 @@ def plot_semblance_movie():
         data_all, data_int_all, data_boot, data_int_boot, path_in_str, maxs, datamax = load(filterindex)
         cmaps = ['Blues', 'Greens', 'Reds', 'Purples', 'Greys', 'Wistia', 'bone', 'copper', 'dusk']
         for i in range(0, ntimes-1):
-                data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
+                try:
+                    data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb = load(filterindex, step=i)
+                except:
+                    pass
                 if maxsb > max_all:
                     max_all = maxsb
 
@@ -1639,15 +1689,15 @@ def plot_semblance_movie():
                     ymin = num.min(y[num.nonzero(y)])
                     scale = (xmax/xmin)*(ymax/ymin)*10
                     triang = tri.Triangulation(x, y)
-                    isbad = np.less(data_int, num.min(data_int))
+                    isbad = np.less(data_int, num.max(data_int)*0.05)
                     mask = np.all(np.where(isbad[triang.triangles],
                                            True, False), axis=1)
                     triang.set_mask(mask)
                     if plt_time is False:
                         print(max_all, maxsb, num.max(data_int))
-                        plt.tricontourf(triang, data_int, levels=levels, vmax=max_all, vmin=0,
-                                        cmap=cm.coolwarm)
-                        m = plt.cm.ScalarMappable(cmap=cm.coolwarm)
+                        plt.tricontourf(triang, data_int, vmin=0,
+                                        cmap='cool')
+                        m = plt.cm.ScalarMappable(cmap="cool")
                         m.set_array(data_int)
                         m.set_clim(0., max_all)
                         plt.colorbar(m, orientation="horizontal",
@@ -3223,3 +3273,5 @@ def main():
             distance_time_bootstrap()
         elif sys.argv[2] == 'timeshifts_map':
             plot_timeshift_map()
+        elif sys.argv[2] == 'waveforms':
+            plot_cluster_waveforms()
