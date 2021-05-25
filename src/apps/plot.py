@@ -2,7 +2,17 @@ from affine import Affine
 from pyproj import Proj, transform
 import numpy as num
 import numpy as np
-from mpl_toolkits.basemap import Basemap
+try:
+    from mpl_toolkits.basemap import Basemap
+    use_basemap = True
+except:
+    import cartopy.crs as ccrs
+    import cartopy
+    import cartopy.geodesic as cgeo
+    from cartopy.io import srtm
+    from cartopy.io import PostprocessedRasterSource, LocatedImage
+    from cartopy.io.srtm import SRTM3Source, SRTM1Source
+    use_basemap = False
 import matplotlib.pyplot as plt
 from pathlib import Path
 import sys
@@ -457,6 +467,7 @@ def load(filter, step=None):
 
             return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax
 
+
 def make_map(data, redx=0, redy=0):
         eastings = data[:, 1]
         northings = data[:, 0]
@@ -465,7 +476,6 @@ def make_map(data, redx=0, redy=0):
                       urcrnrlon=num.max(eastings)-redy,
                       urcrnrlat=num.max(northings)-redy,
                       resolution='h', epsg=3395)
-
 
         ratio_lat = num.max(northings)/num.min(northings)
         ratio_lon = num.max(eastings)/num.min(eastings)
@@ -486,6 +496,33 @@ def make_map(data, redx=0, redy=0):
         x, y = map(data[:,1], data[:,0])
         return map, x, y
 
+def make_map_cartopy(data, redx=0, redy=0):
+        eastings = data[:, 1]
+        northings = data[:, 0]
+        map = Basemap(projection='merc', llcrnrlon=num.min(eastings)+redx,
+                      llcrnrlat=num.min(northings)+redy,
+                      urcrnrlon=num.max(eastings)-redy,
+                      urcrnrlat=num.max(northings)-redy,
+                      resolution='h', epsg=3395)
+
+        ratio_lat = num.max(northings)/num.min(northings)
+        ratio_lon = num.max(eastings)/num.min(eastings)
+        if int(ratio_lat) == 0:
+            ratio_lat = 0.25
+            ratio_lon = 0.25
+
+        map.drawmapscale(num.min(eastings)+redx+ratio_lon*0.25,
+                         num.min(northings)+redy+ratio_lat*0.25,
+                         num.mean(eastings)+redx, num.mean(northings)+redy, 50)
+        parallels = np.arange(num.min(northings)+redx,num.max(northings)-redx, ratio_lat)
+        meridians = np.arange(num.min(eastings)+redy,num.max(eastings)-redy, ratio_lon)
+
+        eastings, northings = map(eastings, northings)
+        map.drawparallels(num.round(parallels, 1),labels=[1,0,0,0],fontsize=22)
+        map.drawmeridians(num.round(meridians, 1) ,labels=[1,1,0,1],fontsize=22, rotation=45)
+
+        x, y = map(data[:,1], data[:,0])
+        return map, x, y
 
 def shoot(lon, lat, azimuth, maxdist=None):
     """Shooter Function

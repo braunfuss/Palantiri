@@ -412,7 +412,7 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
 def normalize(v):
     norm = num.linalg.norm(v)
     if norm == 0:
-       return v
+        return v
     return v / norm
 
 
@@ -434,9 +434,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         winlen = cfg.winlen()
         step = cfg.step()
     else:
-        s1 = str('cfg.step_f%s()'% str(switch+1))
+        s1 = str('cfg.step_f%s()' % str(switch+1))
         step = eval(s1)
-        w1 = str('cfg.winlen_f%s()'% str(switch+1))
+        w1 = str('cfg.winlen_f%s()' % str(switch+1))
         winlen = eval(w1)
 
     latv = []
@@ -451,16 +451,17 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     z = 0
 
     for i in xrange(dimX):
-         oLatul = o_lat -((dimX-1)/2) * gridspacing + i*gridspacing
+         oLatul = o_lat - ((dimX-1)/2) * gridspacing + i*gridspacing
 
          if z == 0 and i == 0:
              Latul = oLatul
-         o=0
+         o = 0
 
          for j in xrange(dimY):
-               oLonul = o_lon -((dimY-1)/2) * gridspacing + j * gridspacing
+               oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
 
-               if o==0 and j==0:  Lonul = oLonul
+               if o==0 and j==0:
+                   Lonul = oLonul
 
                latv.append(oLatul)
                lonv.append(oLonul)
@@ -484,8 +485,8 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     idxs = []
     tmp_general = 1
     for azi in azis:
-            val = min(aziblocks, key=lambda x: abs(x-float(azi)))
-            idxs.append(aziblockslist.index(val))
+        val = min(aziblocks, key=lambda x: abs(x-float(azi)))
+        idxs.append(aziblockslist.index(val))
     for idx in idxs:
         aziweights.append(1./idxs.count(idx))
 

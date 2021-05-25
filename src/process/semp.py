@@ -16,6 +16,7 @@ import math
 from scipy.signal import coherence
 from collections import OrderedDict
 from palantiri.process import music
+from pyrocko import io, trace, util
 
 trace_txt  = 'trace.txt'
 travel_txt = 'travel.txt'
@@ -277,7 +278,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         stats_done = 0
         for k in range(0, len(nstats)):
             for stats in range(0, nstats[k]):
-                list(calcStreamMap.keys())[stats].data = list(calcStreamMap.keys())[stats].data/np.max(list(calcStreamMap.keys())[0].data)
+            #    list(calcStreamMap.keys())[stats].data = list(calcStreamMap.keys())[stats].data/np.max(list(calcStreamMap.keys())[0].data)
                 stats_done = stats_done + nstats[k]
 
         k = 0
@@ -291,7 +292,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             datas = trs_orgs[0:s_index].ydata
             if k <= nstats[s_index]:
                 k = k+1
-                tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(datas)))
+        #        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(datas)))
 
             if k == nstats[s_index]:
                 s_index = s_index+1
@@ -364,13 +365,13 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             # advantage of the following is that nothing needs to be known about the
             # mechanism.
 
-            tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
-            tr_org.ydata = abs(tr_org.ydata)
+    #        tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
+    #        tr_org.ydata = abs(tr_org.ydata)
 
-            tr_org.ydata = num.ediff1d(tr_org.ydata)
+    #        tr_org.ydata = num.ediff1d(tr_org.ydata)
             if max(index_steps) % 2 == 1:
                 tr_org.ydata = abs(tr_org.ydata)
-                tr_org.ydata = num.ediff1d(tr_org.ydata)
+    #            tr_org.ydata = num.ediff1d(tr_org.ydata)
     #    if cfg.Bool('shift_by_phase_pws') is True:
     #                cfx = num.fft.fft(tr_org.ydata)
     #                sums_schimmel = sums_schimmel + (cfx/(abs(cfx)) * num.exp(1j*2*num.pi*cfx)))
@@ -421,7 +422,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                             sums = sums
 
                 relstarts -= relstart
-            sums_schimmel = abs(sums_schimmel)**2.
+            sums_schimmel = num.real(sums_schimmel)**2.
+            sums_copy = sums
+        #    data = sums_schimmel
+        #    t1 = trace.Trace(
+        #        station='TEST', channel='Z', deltat=0.5, tmin=0., ydata=data)
 
             if cfg.Bool('shift_by_phase_pws') is True:
                 for k in range(nostat):
@@ -430,6 +435,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                     ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                     iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                     data = tr.ydata[ibeg:iend]
+                    data_copy = data.copy()
                     cfx = num.fft.fft(data) * sums_schimmel
                     data = num.fft.ifft(cfx)
                     try:
@@ -443,6 +449,15 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                             else:
                                 data = tr.ydata[ibeg:iend-1]
                             sums = sums+data
+            data = sums_copy
+            basetime = util.str_to_time("2016-11-25 14:24:30.000")
+            t1 = trace.Trace(
+                station='R46', location="li", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
+            data = num.real(sums)
+            t2 = trace.Trace(
+                station='R46', location="pw", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
+            t3 = trace.Trace(
+                station='R46', location="dat", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data_copy)
 
             sum = abs(num.sum(sums))
             if combine is True:
@@ -454,8 +469,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 sembmax  = semb
                 sembmaxX = latv[j]
                 sembmaxY = lonv[j]
-            #backSemb[i][:] = backSemb[i][:]/num.max(backSemb[i][:])
-
+                #backSemb[i][:] = backSemb[i][:]/num.max(backSemb[i][:])
+                io.save(t1, "traces_grid_0_lin_%s_%s.mseed" % (i,j))
+                io.save(t2, "traces_grid_schimmel_0_%s_%s.mseed" % (i,j))
+                trace.snuffle([t1,t2, t3])
         if output is True:
             Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                         str(sembmaxX) + ',' + str(sembmaxY))
