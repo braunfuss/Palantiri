@@ -47,7 +47,6 @@ d2m = earthradius_equator*math.pi/180.
 m2d = 1./d2m
 
 
-
 def bounding_box(image, area=None):
     from skimage.morphology import rectangle, closing, square
     import weathertop.process.contour as contour
@@ -1097,6 +1096,7 @@ def distance_time_bootstrap():
 
     plt.show()
 
+
 def center_lat_lon(lats, lons):
     '''Calculate a mean geographical centre of the array
     using spherical earth'''
@@ -1105,6 +1105,7 @@ def center_lat_lon(lats, lons):
         lats[i] = lats[i]*torad
         lons[i] = lons[i]*torad
     return(lats.mean()*180/num.pi, lons.mean()*180/num.pi)
+
 
 def plot_cluster_waveforms():
     from pyrocko import trace
@@ -1210,7 +1211,6 @@ def plot_cluster():
                     pass
         except TypeError:
             pass
-
 
         circle1 = plt.Circle((x_c, y_c), y2c-y_c, color=color, fill=False,
                              linestyle='dashed')
