@@ -5,6 +5,7 @@ import shutil
 import logging
 from urllib.request import urlopen
 import dateutil.parser
+from obspy.core.utcdatetime import UTCDateTime
 
 logger = logging.getLogger('ARRAY-MP')
 logger.setLevel(logging.DEBUG)
@@ -168,9 +169,16 @@ def copyConfigSkeleton(evfolder):
     shutil.copy(src, dst)
 
     event = evfolder.split('/')[-1]
+    eventname = event.split('_')[0]
+    time = event.split('_')[-1]
+    time = UTCDateTime(time)
+    time = time.format_iris_web_service()
+    time_p1 = time[0:10]
+    time_p2 = time[11:-1]
+    time_pf = time_p1 + " " + time_p2
 
     logger.info('\033[31mNEXT PROCESSING STEP: \n\n   \
-                 palantiri_down {evdirectory} "time" 10352.323104588522 0.001 10 --radius-min=1110 "name" \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))))
+                 palantiri_down {evdirectory} "%s" 10352.323104588522 0.001 10 --radius-min=1110 %s \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))) %(time_pf, eventname))
 
 
 def main():
