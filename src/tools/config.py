@@ -6,6 +6,7 @@ import glob
 import numpy as np
 import sys
 from pyrocko import model
+from pyrocko.guts import Object, Float, Int, String, Bool, List, Tuple
 
 if sys.version_info.major >= 3:
     from configparser import SafeConfigParser
@@ -13,6 +14,19 @@ else:
     from ConfigParser import SafeConfigParser
 
 logger = logging.getLogger('ARRAY-MP')
+
+
+class PalantiriConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    blacklist = List.T(
+        String.T(), help='List blacklist patterns (may contain wild cards')
+
+    stack_channels = Bool.T(default=False,
+        help='If *True* stack abs. amplitudes of all channels of a station')
+
+    sample_length = Float.T(optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
 
 
 class Station(object):
@@ -107,14 +121,22 @@ class Config(object):
                 files = glob.glob(os.path.join(self.eventpath_emp, '*.'+'origin_emp'))
                 parser = SafeConfigParser()
                 parser.read(files[0])
+            for section_name in parser.sections():
+                for name, value in parser.items(section_name):
+                    cDict[name] = value
+        elif suffix == "yaml" or suffix == "yml":
+            try:
+                cDict = glob.glob(os.path.join(self.eventpath, '*.'+'yaml'))
+            except:
+                cDict = glob.glob(os.path.join(self.eventpath, '*.'+'yml'))
         else:
             files = glob.glob(os.path.join(self.eventpath, '*.'+suffix))
             parser = SafeConfigParser()
             parser.read(files[0])
 
-        for section_name in parser.sections():
-            for name, value in parser.items(section_name):
-                cDict[name] = value
+            for section_name in parser.sections():
+                for name, value in parser.items(section_name):
+                    cDict[name] = value
 
         return cDict
 

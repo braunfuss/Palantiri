@@ -4,6 +4,7 @@ from pyrocko import guts
 import logging
 import shutil
 import time
+import glob
 import multiprocessing
 from optparse import OptionParser
 from palantiri.process import optim
@@ -12,10 +13,12 @@ from palantiri.common.Program import MainObj
 from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 from collections import OrderedDict
 from palantiri.tools import config
-from palantiri.tools.config import Event
+from palantiri.tools.config import Event, PalantiriConfig
 from palantiri.process import ttt, sembCalc, waveform, times, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
-from pyrocko import util, io
+from pyrocko import util, io, guts
+from pyrocko.guts import Object, Float, Int, String, Bool, List, Tuple
+
 import subprocess
 import numpy as num
 if sys.version_info.major >= 3:
@@ -34,6 +37,17 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 evpath = None
+
+
+class Config(Object):
+    '''Defines your setup.'''
+
+    name = String.T(default='unnamed',
+        help='Used to identify the model and runs in summy and checkpoint \
+            directory')
+
+    config = PalantiriConfig.T(help='')
+
 
 def initModule():
 
@@ -56,6 +70,7 @@ def initModule():
     Globals.setEventDir(evpath)
     Globals.setEventDir_emp(evpath_emp)
     return True
+
 
 def check_is_empty(evpath, move=False):
     from pathlib import Path
@@ -81,6 +96,7 @@ def check_is_empty(evpath, move=False):
                     os.system('cp -r %s %s_%s/' % (evpath+'/*.origin*', evpath+'/work/semblance', kiter))
                     os.system('cp -r %s %s_%s/' % (evpath+'/*.syn*', evpath+'/work/semblance', kiter))
 
+
 def processLoop(traces=None, stations=None, cluster=None):
     force = False
     move = False
@@ -100,6 +116,8 @@ def processLoop(traces=None, stations=None, cluster=None):
 
     C = config.Config(evpath, eventpath_emp=evpath_emps)
     Origin = C.parseConfig('origin')
+    C = config.Config(evpath, eventpath_emp=evpath_emps)
+
     flag_rpe = False
 
     try:
@@ -113,9 +131,12 @@ def processLoop(traces=None, stations=None, cluster=None):
     except IndexError:
         Syn_in_emp = C.parseConfig('syn')
         syn_in_emp = SynthCfg(Syn_in)
-    Config = C.parseConfig('config')
-
-    cfg = ConfigObj(dict=Config)
+    try:
+        yaml_file = C.parseConfig('yaml')
+        config_yaml = guts.load(filename=yaml_file[0])
+    except:
+        Config = C.parseConfig('config')
+        cfg = ConfigObj(dict=Config)
     phases = cfg.Str('ttphases')
     phases = phases.split(',')
 

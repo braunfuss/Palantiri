@@ -53,6 +53,7 @@ def load(filter, step=None, path=None):
                 if argv == "--phases:P":
                     phase = "P"
             if step is None:
+                print("step")
                 try:
                     pathlist = Path(rel).glob('*.ASC')
                 except:
@@ -67,14 +68,24 @@ def load(filter, step=None, path=None):
                     pathlist = Path(rel).glob('%s-*00%s_*%s.ASC' % (filter, step, phase))
             maxs = 0.
             count = 0
+
+
+            if step is None:
+                pathlist = Path(rel).glob('*.ASC')
+            else:
+                pathlist = Path(rel).glob('*%s.ASC' % step)
             for path in sorted(pathlist):
                     path_in_str = str(path)
+
                     data = num.loadtxt(path_in_str, delimiter=' ', skiprows=5)
                     maxd = num.max(data[:, 2])
                     count = count + 1
                     if maxs < maxd:
                         maxs = maxd
                         datamax = data[:, 2]
+
+            return data, data_int, data_boot, data_int_boot, "1-10.0_000_P.ASC", maxs, datamax, count
+
             if sys.argv[3] == 'max':
                 if step is None:
                     try:
@@ -163,7 +174,7 @@ def load(filter, step=None, path=None):
                                 data_int_boot += num.nan_to_num(data_boot[:,2])
                 except IndexError:
                     pass
-            return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax, count
+                return data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax, count
 
 
 
@@ -194,10 +205,10 @@ def from_palantiri():
 
     origin = OriginCfg(Origin)
     depth = origin.depth()*1000.
+    depth = 5000.
     ev = event.Event(lat=origin.lat(), lon=origin.lon(), depth=depth, time=util.str_to_time(origin.time()))
     data, data_int, data_boot, data_int_boot, path_in_str, maxs, datamax, n_files = load(0, path=path)
     values_orig = data[:, 2]
-    values_orig = num.append(values_orig, num.array([0., 0.]))
 
     lat_orig = data[:, 1]
     lon_orig = data[:, 0]
@@ -210,16 +221,18 @@ def from_palantiri():
         ntimes = int((forerun+duration)/step)
     else:
         ntimes = n_files
-
+    print(ntimes)
     verts = []
     lon_diff = ((lon_orig)[dimy+1]-(lon_orig)[0])/4.
     lat_diff = ((lat_orig)[1]-(lat_orig)[0])/4.
 
     dist = orthodrome.distance_accurate50m(lat_grid_orig[1], lon_grid_orig[1], lat_grid_orig[0], lon_grid_orig[0])
+#    lon_orig = num.linspace(num.min(lat_orig), num.max(lat_orig), len(lat_orig))
+#    lat_orig = num.linspace(num.min(lon_orig), num.max(lon_orig), len(lon_orig))
 
     for x,y in zip(lon_orig, lat_orig):
 
-            xyz = ([dist/2., dist/2., depth], [-dist/2., dist/2., depth],[-dist/2., -dist/2., depth], [dist/2., -dist/2., depth] )
+            xyz = ([dist/3.6, dist/2.4, depth], [-dist/3.6, dist/2.4, depth],[-dist/3.6, -dist/2.4, depth], [dist/3.6, -dist/2.4, depth] )
             latlon = ([x,y], [x,y], [x,y], [x,y])
             patchverts = num.hstack((latlon, xyz))
             verts.append(patchverts)
@@ -227,7 +240,7 @@ def from_palantiri():
 
     vertices = num.vstack(verts)
 
-    npatches = int(len(vertices)) #*2?
+    npatches = int(len(vertices))*2 #*2?
     faces1 = num.arange(ncorners * npatches, dtype='int64').reshape(
         npatches, ncorners)
     faces2 = num.fliplr(faces1)
@@ -237,9 +250,13 @@ def from_palantiri():
         if len(sys.argv)<4:
             print("missing input arrayname")
         else:
+                print(i)
+                print("ntimes")
                 data, data_int, data_boot, data_int_boot, path_in_str, maxsb, datamaxb, n_files = load(0, step=i, path=path)
-                srf_semblance = data[:,2]
-                srf_semblance = num.append(srf_semblance, num.array([0., 0.]))
+                if i == 0 or i == 6:
+                    srf_semblance = data[:,2]/num.max(data[:,2])
+                else:
+                    srf_semblance = data[:,2]
                 srf_semblance = duplicate_property(srf_semblance)
                 srf_semblance_list.append(srf_semblance)
 

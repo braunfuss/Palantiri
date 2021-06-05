@@ -26,9 +26,11 @@ usage = ''' %prog [options] <command> [args]
 %prog --force
 '''
 
+
 def folderContent(p):
     '''
-    method to lookup necessary config files for event processing in the event folders
+    method to lookup necessary config files for event processing in
+    the event folders
 
     return list of eventname if config and origin file are existing
     '''
@@ -79,6 +81,7 @@ def parseArguments(args):
 
     else:
         logger.info('\033[31m Option not available \033[0m')
+
 
 def main():
     if len(sys.argv) > 1:

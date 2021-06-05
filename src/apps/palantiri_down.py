@@ -575,9 +575,6 @@ def main():
 
     fmax = target_sample_rate
 
-    # target_sample_rate = None
-    # priority_band_code = ['H', 'B', 'M', 'L', 'V', 'E', 'S']
-
     priority_units = ['M/S', 'M', 'M/S**2']
 
     output_units = 'M'
