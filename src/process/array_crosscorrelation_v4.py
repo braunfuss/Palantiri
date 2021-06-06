@@ -11,7 +11,6 @@ from obspy.signal.trigger import recursive_sta_lta as recSTALTA
 from obspy.signal.trigger import plot_trigger as plotTrigger
 from pyrocko import obspy_compat,  cake, io
 import numpy as num
-km = 1000.
 from palantiri.common import Logfile
 from palantiri.common.ObspyFkt import loc2degrees
 from palantiri.common.ConfigFile import ConfigObj, FilterCfg
@@ -19,6 +18,7 @@ from palantiri.tools.config import Trigger
 from palantiri.process.waveform import resampleWaveform_2
 from collections import OrderedDict
 import palantiri
+km = 1000.
 
 logger = logging.getLogger(sys.argv[0])
 
@@ -131,44 +131,33 @@ class Xcorr(object):
         print('sampling_rate = ', Waveform.stats.sampling_rate)
         return resampleWaveform_2(Waveform, end_frequence)
 
-    def filterWaveform(self, Waveform):
+    def filterWaveform(self, Waveform, cfg):
 
         Logfile.red('Filter Waveform: ')
-        cfg = FilterCfg(self.Config)
 
-        new_frequence = (cfg.newFrequency())
+        new_frequence = (cfg.config_filter.newFrequency)
 
         st = Stream()
         for i in Waveform:
                 Logfile.red('Downsampling to %s: from %d' % (new_frequence,
                             i.stats.sampling_rate))
                 j = i.resample(new_frequence)
-                switch = cfg.filterswitch()
+                switch = cfg.config_filter.filterswitch
 
-                if switch == 1:
-                        Logfile.add('bandpass filtered \
-                        stream for station %s ' % (i))
+                Logfile.add('bandpass filtered \
+                stream for station %s ' % (i))
 
-                        j.filter('bandpass',
-                                 freqmin=cfg.flo(),
-                                 freqmax=cfg.fhi(),
-                                 corners=cfg.ns(),
-                                 zerophase=bool(self.Config['zph']))
+                j.filter('bandpass',
+                         freqmin=cfg.config_filter.flo[switch-1],
+                         freqmax=cfg.config_filter.fhi[switch-1],
+                         corners=cfg.config_filter.ns[switch-1],
+                         zerophase=False)
 
-                elif switch == 2:
-                        Logfile.add('bandpass filtered \
-                        stream for station %s ' % (i))
-
-                        j.filter('bandpass',
-                                 freqmin=cfg.flo2(),
-                                 freqmax=cfg.fhi2(),
-                                 corners=cfg.ns2(),
-                                 zerophase=bool(self.Config['zph']))
                 st.append(j)
 
         return st
 
-    def readWaveformsCross(self, station, tw, ttime):
+    def readWaveformsCross(self, station, tw, ttime, cfg_yaml):
 
         t2 = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath, 'data', str(t2.year))
@@ -189,7 +178,7 @@ class Xcorr(object):
             st.merge(method=0, fill_value='interpolate',
                      interpolation_samples=0)
         snr = self.signoise(st[0], ttime, entry)
-        stream = self.filterWaveform(st)
+        stream = self.filterWaveform(st, cfg_yaml)
 
         xname = os.path.join(self.AF, (streamData+'_all.mseed'))
         stream.write(xname, format='MSEED')
@@ -197,7 +186,7 @@ class Xcorr(object):
 
         return stream, snr
 
-    def readWaveformsCross_pyrocko(self, station, tw, ttime, traces):
+    def readWaveformsCross_pyrocko(self, station, tw, ttime, traces, cfg_yaml):
         obspy_compat.plant()
 
         cfg = ConfigObj(dict=self.Config)
@@ -234,7 +223,7 @@ class Xcorr(object):
                                                 + ttime-20.,
                                                 inplace=False)
                 snr = num.var(snr_trace.ydata)
-                stream = self.filterWaveform(st)
+                stream = self.filterWaveform(st, cfg_yaml)
 
                 xname = os.path.join(self.AF, (streamData+'_all.mseed'))
                 stream.write(xname, format='MSEED')
@@ -244,7 +233,7 @@ class Xcorr(object):
         if found is False:
                     print('Waveform missing!', tr_name, str(station))
 
-    def readWaveformsCross_colesseo(self, station, tw, ttime):
+    def readWaveformsCross_colesseo(self, station, tw, ttime, cfg_yaml):
         obspy_compat.plant()
         Config = self.Config
         cfg = ConfigObj(dict=Config)
@@ -281,7 +270,7 @@ class Xcorr(object):
                                                     ttime-20.,
                                                     inplace=False)
                     snr = num.var(snr_trace.ydata)
-                    stream = self.filterWaveform(st)
+                    stream = self.filterWaveform(st, cfg_yaml)
 
                     xname = os.path.join(self.AF, (streamData+'_all.mseed'))
                     stream.write(xname, format='MSEED')
@@ -291,7 +280,7 @@ class Xcorr(object):
             else:
                 pass
 
-    def traveltimes(self, phase, traces):
+    def traveltimes(self, phase, traces, cfg_yaml):
 
         Logfile.red('Enter AUTOMATIC CROSSCORRELATION ')
         Logfile.red('\n\n+++++++++++++++++++++++++++++++++++++++++++++++\n ')
@@ -305,10 +294,10 @@ class Xcorr(object):
             Logfile.red('read in %s ' % (i))
             de = loc2degrees(self.Origin, i)
             Phase = cake.PhaseDef(phase)
-            traveltime_model = cfg.Str('traveltime_model')
+            traveltime_model = cfg_yaml.config.traveltime_model
             path = palantiri.__path__
             model = cake.load_model(path[0]+'/data/'+traveltime_model)
-            if cfg.colesseo_input() is True:
+            if cfg_yaml.config_data.colesseo_input is True:
                 arrivals = model.arrivals([de, de], phases=Phase,
                                           zstart=self.Origin.depth, zstop=0.)
             else:
@@ -332,13 +321,16 @@ class Xcorr(object):
                 raise Exception("ILLEGAL: phase definition")
             else:
                 tw = self.calculateTimeWindows(ptime)
-                if cfg.pyrocko_download() is True:
-                    w, snr, found = self.readWaveformsCross_pyrocko(i, tw, ptime,
-                                                             traces)
-                elif cfg.colesseo_input() is True:
-                    w, snr = self.readWaveformsCross_colesseo(i, tw, ptime)
+                if cfg_yaml.config_data.pyrocko_download is True:
+                    w, snr, found = self.readWaveformsCross_pyrocko(i, tw,
+                                                                    ptime,
+                                                                    traces,
+                                                                    cfg_yaml)
+                elif cfg_yaml.config_data.colesseo_input is True:
+                    w, snr = self.readWaveformsCross_colesseo(i, tw, ptime,
+                                                              cfg_yaml)
                 else:
-                    w, snr = self.readWaveformsCross(i, tw, ptime)
+                    w, snr = self.readWaveformsCross(i, tw, ptime, cfg_yaml)
                 Wdict[i.getName()] = w
                 SNR[i.getName()] = snr
 
@@ -347,7 +339,7 @@ class Xcorr(object):
         Logfile.red('Exit AUTOMATIC FILTER ')
         return Wdict, SNR
 
-    def readWaveformsPicker(self, station, tw, Origin, ttime):
+    def readWaveformsPicker(self, station, tw, Origin, ttime, cfg_yaml):
 
         t2 = UTCDateTime(self.Origin.time)
         sdspath = os.path.join(self.EventPath, 'data', str(t2.year))
@@ -368,14 +360,14 @@ class Xcorr(object):
             st.merge(method=0, fill_value='interpolate',
                      interpolation_samples=0)
 
-        stream = self.filterWaveform(st)
+        stream = self.filterWaveform(st, cfg_yaml)
         return stream
 
-    def readWaveformsPicker_pyrocko(self, station, tw, Origin, ttime):
+    def readWaveformsPicker_pyrocko(self, station, tw, Origin, ttime, cfg_yaml):
 
         obspy_compat.plant()
         cfg = ConfigObj(dict=self.Config)
-        if cfg.quantity() == 'displacement':
+        if cfg_yaml.config_data.quantity == 'displacement':
             try:
                 traces = io.load(self.EventPath+'/data/traces_rotated.mseed')
             except:
@@ -399,7 +391,7 @@ class Xcorr(object):
                 if len(st.get_gaps()) > 0:
                     st.merge(method=0, fill_value='interpolate',
                              interpolation_samples=0)
-                stream = self.filterWaveform(st)
+                stream = self.filterWaveform(st, cfg_yaml)
 
                 stream.trim(tw['xcorrstart'], tw['xcorrend'])
                 return stream
@@ -407,7 +399,7 @@ class Xcorr(object):
         else:
             pass
 
-    def readWaveformsPicker_colos(self, station, tw, Origin, ttime):
+    def readWaveformsPicker_colos(self, station, tw, Origin, ttime, cfg_yaml):
 
         obspy_compat.plant()
         Config = self.Config
@@ -436,7 +428,7 @@ class Xcorr(object):
                 if len(st.get_gaps()) > 0:
                     st.merge(method=0, fill_value='interpolate',
                              interpolation_samples=0)
-                stream = self.filterWaveform(st)
+                stream = self.filterWaveform(st, cfg_yaml)
 
                 stream.trim(tw['xcorrstart'], tw['xcorrend'])
                 return stream
@@ -450,7 +442,7 @@ class Xcorr(object):
             if sname == i.getName()[:-2] or sname == i.getName()[:]:
                 return i
 
-    def refTrigger(self, RefWaveform, phase):
+    def refTrigger(self, RefWaveform, phase, cfg_yaml):
         Config = self.Config
         cfg = ConfigObj(dict=Config)
         name = ('%s.%s.%s.%s') % (RefWaveform[0].stats.network,
@@ -465,7 +457,7 @@ class Xcorr(object):
 
         Phase = cake.PhaseDef(phase)
         model = cake.load_model()
-        if cfg.colesseo_input() is True:
+        if cfg_yaml.config_data.colesseo_input is True:
             arrivals = model.arrivals([de, de], phases=Phase,
                                       zstart=self.Origin.depth, zstop=0.)
         else:
@@ -483,19 +475,21 @@ class Xcorr(object):
 
         tw = self.calculateTimeWindows(ptime)
 
-        if cfg.pyrocko_download() is True:
-            stP = self.readWaveformsPicker_pyrocko(i, tw, self.Origin, ptime)
-        elif cfg.colesseo_input() is True:
-            stP = self.readWaveformsPicker_colos(i, tw, self.Origin, ptime)
+        if cfg_yaml.config_data.pyrocko_download is True:
+            stP = self.readWaveformsPicker_pyrocko(i, tw, self.Origin, ptime,
+                                                   cfg_yaml)
+        elif cfg_yaml.config_data.colesseo_input is True:
+            stP = self.readWaveformsPicker_colos(i, tw, self.Origin, ptime,
+                                                 cfg_yaml)
         else:
-            stP = self.readWaveformsPicker(i, tw, self.Origin, ptime)
+            stP = self.readWaveformsPicker(i, tw, self.Origin, ptime, cfg_yaml)
 
         refuntouchname = os.path.basename(self.AF)+'-refstation-raw.mseed'
         stP.write(os.path.join(self.EventPath, refuntouchname), format='MSEED',
                                                                 byteorder='>')
         stP.filter("bandpass",
-                   freqmin=float(self.Config['refstationfreqmin']),
-                   freqmax=float(self.Config['refstationfreqmax']))
+                   freqmin=float(cfg_yaml.config_xcorr.refstationfreqmin),
+                   freqmax=float(cfg_yaml.config_xcorr.refstationfreqmax))
 
         stP.trim(tw['xcorrstart'], tw['xcorrend'])
         trP = stP[0]
@@ -505,8 +499,8 @@ class Xcorr(object):
         trP.write(os.path.join(self.EventPath, refname), format='MSEED',
                                                          byteorder='>')
 
-        sta = float(self.Config['refsta'])
-        lta = float(self.Config['reflta'])
+        sta = float(cfg_yaml.config_xcorr.refsta)
+        lta = float(cfg_yaml.config_xcorr.reflta)
         cft = recSTALTA(trP.data, int(sta * trP.stats.sampling_rate),
                         int(lta * trP.stats.sampling_rate))
 
@@ -526,7 +520,7 @@ class Xcorr(object):
         refp = UTCDateTime(self.Origin.time)+ptime
         reftriggeronset = refp+onset-self.mintforerun
 
-        if int(self.Config['autoxcorrcorrectur']) == 1:
+        if cfg_yaml.config_xcorr.autoxcorrcorrectur is True:
                 refmarkername = os.path.join(self.EventPath,
                                              ('%s-marker') % (os.path.basename(
                                               self.AF)))
@@ -605,14 +599,14 @@ class Xcorr(object):
     def f6(self, d1):
         return max(d1, key=d1.get)
 
-    def filterCorrDict(self, CorrDict, onset):
+    def filterCorrDict(self, CorrDict, onset, cfg_yaml):
 
         fCD = {}
 
-        dsfactor = float(self.Config['xcorrtreshold'])
-        syn_test = int(self.Config['synthetic_test'])
+        dsfactor = float(cfg_yaml.config_xcorr.xcorrtreshold)
+        syn_test = cfg_yaml.config_syn.synthetic_test
 
-        if syn_test == 1:
+        if syn_test is True:
             for stream in CorrDict.keys():
                 fCD[stream] = CorrDict[stream]
                 fCD[stream].value = fCD[stream].value
@@ -625,8 +619,9 @@ class Xcorr(object):
 
         return fCD
 
-    def doXcorr(self, phase, traces):
-        StreamDict, SNRDict = self.traveltimes(phase, traces)
+
+    def doXcorr(self, phase, traces, cfg_yaml):
+        StreamDict, SNRDict = self.traveltimes(phase, traces, cfg_yaml)
         t = self.f6(SNRDict)
         Logfile.add('doXcorr: REFERENCE: ' + t)
 
@@ -683,21 +678,21 @@ class Xcorr(object):
 
         return corrDict, StreamDict[t], StreamDict
 
-    def runXcorr(self, phase, traces):
+    def runXcorr(self, phase, traces, cfg_yaml):
 
-        CD, ref, WD = self.doXcorr(phase, traces)
+        CD, ref, WD = self.doXcorr(phase, traces, cfg_yaml)
         onset = 0
-        tdiff, triggerobject = self.refTrigger(ref, phase)
+        tdiff, triggerobject = self.refTrigger(ref, phase, cfg_yaml)
 
-        fCD = self.filterCorrDict(CD, onset)
+        fCD = self.filterCorrDict(CD, onset, cfg_yaml)
 
         return fCD, triggerobject
 
-    def runXcorr_dummy(self, phase):
+    def runXcorr_dummy(self, phase, cfg_yaml):
 
         CD, ref, WD = self.doXcorr_dummy(phase)
         onset = 0
 
-        fCD = self.filterCorrDict(CD, onset)
+        fCD = self.filterCorrDict(CD, onset, cfg_yaml)
 
         return fCD

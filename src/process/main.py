@@ -13,7 +13,8 @@ from palantiri.common.Program import MainObj
 from palantiri.common.ConfigFile import ConfigObj, FilterCfg, OriginCfg, SynthCfg
 from collections import OrderedDict
 from palantiri.tools import config
-from palantiri.tools.config import Event, PalantiriConfig
+
+from palantiri.tools.config import Event, Config, ClusterConfig, PalantiriConfig, PalantiriDataConfig, PalantiriXcorrConfig, PalantiriFilterConfig, PalantiriWeightConfig, PalantiriGeometryConfig, PalantiriSyntheticConfig
 from palantiri.process import ttt, sembCalc, waveform, times, deserializer
 from palantiri.process.array_crosscorrelation_v4 import Xcorr, cmpFilterMetavsXCORR
 from pyrocko import util, io, guts
@@ -37,16 +38,6 @@ ch.setLevel(logging.DEBUG)
 ch.setFormatter(formatter)
 logger.addHandler(ch)
 evpath = None
-
-
-class Config(Object):
-    '''Defines your setup.'''
-
-    name = String.T(default='unnamed',
-        help='Used to identify the model and runs in summy and checkpoint \
-            directory')
-
-    config = PalantiriConfig.T(help='')
 
 
 def initModule():
@@ -131,37 +122,34 @@ def processLoop(traces=None, stations=None, cluster=None):
     except IndexError:
         Syn_in_emp = C.parseConfig('syn')
         syn_in_emp = SynthCfg(Syn_in)
-    try:
-        yaml_file = C.parseConfig('yaml')
-        config_yaml = guts.load(filename=yaml_file[0])
-    except:
-        Config = C.parseConfig('config')
-        cfg = ConfigObj(dict=Config)
-    phases = cfg.Str('ttphases')
-    phases = phases.split(',')
 
-    if cfg.pyrocko_download() is True:
+    yaml_file = C.parseConfig('yaml')
+    cfg = guts.load(filename=yaml_file[0])
+    Config_cluster = C.parseConfig('config')
+    cfgn = ConfigObj(dict=Config_cluster)
+    phases = cfg.config.ttphases
+
+    if cfg.config_data.pyrocko_download is True:
         Meta = C.readpyrockostations(phases)
         if len(Meta) == 0:
             Meta = C.readpyrockostations('P')
-    elif cfg.colesseo_input() is True:
-        scenario = guts.load(filename=cfg.colosseo_scenario_yml())
-        scenario_path = cfg.colosseo_scenario_yml()[:-12]
+    elif cfg.config.colesseo_input is True:
+        scenario = guts.load(filename=cfg.config.colosseo_scenario_yml())
+        scenario_path = cfg.config.colosseo_scenario_yml[:-12]
         Meta = C.readcolosseostations(scenario_path)
     else:
         Meta = C.readMetaInfoFile()
     Folder = C.createFolder()
-    C.writeConfig(Config, Origin, Folder)
-
-    filter = FilterCfg(Config)
-    if cfg.UInt('forerun') > 0:
-        ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration')) /
-                     cfg.Float('step'))
+    C.writeConfig(Config_cluster, Origin, Folder)
+    filter = cfg.config_filter
+    if filter.forerun > 0:
+        ntimes = int((filter.forerun + filter.duration) /
+                     filter.step)
     else:
-        ntimes = int((cfg.UInt('duration')) / cfg.Float('step'))
+        ntimes = int((filter.duration) / filter.step)
     origin = OriginCfg(Origin)
 
-    if cfg.colesseo_input() is True:
+    if cfg.config_data.colesseo_input is True:
         events = scenario.get_events()
         ev = events[0]
         origin.strike = str(ev.moment_tensor.strike1)
@@ -197,23 +185,23 @@ def processLoop(traces=None, stations=None, cluster=None):
         ev = Event(origin.lat(), origin.lon(), origin.depth(), origin.time(),
                    strike=strike, dip=dip, rake=rake)
 
-    if cfg.Bool('correct_shifts_empirical') is True:
+    if cfg.config_weight.correct_shifts_empirical is True:
 
         Origin_emp = C.parseConfig('origin_emp')
         origin_emp = OriginCfg(Origin_emp)
         ev_emp = Event(origin_emp.lat(), origin_emp.lon(), origin_emp.depth(),
                        origin_emp.time(), strike=strike, dip=dip, rake=rake)
-    filtername = filter.filterName()
+    filtername = filter.name[0]
     Logfile.add('filtername = ' + filtername)
 
     XDict = OrderedDict()
     RefDict = OrderedDict()
     SL = OrderedDict()
     refshifts_global = []
-    newFreq = str(filter.newFrequency())
-    xcorrnetworks = cfg.String('networks').split(',')
+    newFreq = str(filter.newFrequency)
+    xcorrnetworks = cfgn.String('networks').split(',')
 
-    if cfg.Int('xcorr') is 1:
+    if cfg.config_xcorr.xcorr is True:
 
         fobjreferenceshiftname = newFreq + '_' + filtername + '.refpkl'
         rp = os.path.join(Folder['semb'], fobjreferenceshiftname)
@@ -221,8 +209,8 @@ def processLoop(traces=None, stations=None, cluster=None):
         rpe = os.path.join(Folder['semb'], fobjreferenceshiftnameemp) + '.shift'
         fobjpickleshiftname = newFreq + '_' + filtername + '.xcorrpkl'
         ps = os.path.join(Folder['semb'], fobjpickleshiftname)
-        if cfg.Bool('synthetic_test') is False:
-            if cfg.quantity() == 'displacement':
+        if cfg.config_syn.synthetic_test is False:
+            if cfg.config_data.quantity == 'displacement':
                 try:
                     traces = io.load(evpath+'/data/traces_rotated.mseed')
                 except Exception:
@@ -246,10 +234,10 @@ def processLoop(traces=None, stations=None, cluster=None):
                 x = open(ps)
             XDict = pickle.load(x)
             for i in xcorrnetworks:
-                SL[i] = len(Config[i].split('|'))
+                SL[i] = len(Config_cluster[i].split('|'))
         else:
-            if cfg.Bool('synthetic_test') is False:
-                if cfg.quantity() == 'displacement':
+            if cfg.config_syn.synthetic_test is False:
+                if cfg.config_data.quantity == 'displacement':
                     try:
                         traces = io.load(evpath+'/data/traces_rotated.mseed')
                     except Exception:
@@ -259,18 +247,19 @@ def processLoop(traces=None, stations=None, cluster=None):
             SL = {}
             for i in xcorrnetworks:
                 W = {}
-                network = cfg.String(i).split('|')
-                FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+                network = cfgn.String(i).split('|')
+                FilterMeta = ttt.filterStations(Meta, Config_cluster, Origin,
+                                                network, cfg)
                 arrayfolder = os.path.join(Folder['semb'], i)
                 if os.access(arrayfolder, os.F_OK) is False:
                     os.makedirs(arrayfolder)
-                if cfg.pyrocko_download() is True:
+                if cfg.config_data.pyrocko_download is True:
                     # TODO check seperate xcoor nescessity
-                    A = Xcorr(ev, FilterMeta, evpath, Config, Syn_in,
+                    A = Xcorr(ev, FilterMeta, evpath, Config_cluster, Syn_in,
                               arrayfolder)
                 print("run Xcorr")
                 phase = phases[0]
-                W, triggerobject = A.runXcorr(phase, traces)
+                W, triggerobject = A.runXcorr(phase, traces, cfg)
                 XDict[i] = W
                 RefDict[i] = triggerobject.tdiff
                 SL[i] = len(network)
@@ -289,8 +278,9 @@ def processLoop(traces=None, stations=None, cluster=None):
         SL = {}
         for i in xcorrnetworks:
             W = {}
-            network = cfg.String(i).split('|')
-            FilterMeta = ttt.filterStations(Meta, Config, Origin, network)
+            network = cfgn.config.String(i).split('|')
+            FilterMeta = ttt.filterStations(Meta, Config_cluster,
+                                            Origin, network)
             arrayfolder = os.path.join(Folder['semb'], i)
             if os.access(arrayfolder, os.F_OK) is False:
                 os.makedirs(arrayfolder)
@@ -318,7 +308,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                 continue
 
             Logfile.red('This networks will be used for processing: %s'
-                        % (Config['networks']))
+                        % (Config_cluster['networks']))
             break
 
         elif str(nnl) == 'quit':
@@ -358,7 +348,7 @@ def processLoop(traces=None, stations=None, cluster=None):
 
             Logfile.add('This networks will be used for processing: %s'
                         % (nnl))
-            Config['networks'] = nnl
+            Config_cluster['networks'] = nnl
             break
 
     for j in range(3, 0, -1):
@@ -366,15 +356,15 @@ def processLoop(traces=None, stations=None, cluster=None):
         Logfile.red('Start processing in %d seconds ' % (j))
 
     wd = Origin['depth']
-    start, stop, step = cfg.String('depths').split(',')
+    start, stop, step = cfg.config_geometry.depths
 
     start = int(start)
     stop = int(stop)+1
     step_depth = int(step)
-    filters = cfg.String('filters')
+    filters = cfg.config_filter.filters
     filters = int(filters)
-    Logfile.add('working on ' + Config['networks'])
-    if cfg.Bool('correct_shifts_empirical') is True:
+    Logfile.add('working on ' + Config_cluster['networks'])
+    if cfg.config_weight.correct_shifts_empirical is True:
         emp_loop = True
     else:
         emp_loop = False
@@ -392,12 +382,12 @@ def processLoop(traces=None, stations=None, cluster=None):
             for depthindex in xrange(start, stop, step_depth):
 
                 workdepth = float(wd) + depthindex
-                if cfg.Int('dimz') == 0:
+                if cfg.config_geometry.dimz == 0:
                     Origin['depth'] = workdepth
                 ev = Event(Origin['lat'], Origin['lon'], Origin['depth'],
                            Origin['time'], strike=strike, dip=dip, rake=rake)
                 Logfile.add('WORKDEPTH: ' + str(Origin['depth']))
-                networks = Config['networks'].split(',')
+                networks = Config_cluster['networks'].split(',')
 
                 ASL = []
                 weights = []
@@ -416,22 +406,23 @@ def processLoop(traces=None, stations=None, cluster=None):
                     arrayname = i
                     arrayfolder = os.path.join(Folder['semb'], arrayname)
 
-                    network = Config[i].split('|')
+                    network = Config_cluster[i].split('|')
 
                     Logfile.add('network: ' + str(network))
                     FilterMeta = ttt.filterStations(Meta, Config, Origin,
-                                                    network)
+                                                    network, cfg)
 
                     W = XDict[i]
                     refshift = RefDict[i]
                     for j in range(0, len(FilterMeta)):
-                        if cfg.correct_shifts() is False:
+                        if cfg.config_weight.correct_shifts is False:
                             refshift = refshift*0.
                         refshifts.append(refshift)
 
                     Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
-                                %s \n' % (Config['dimx'], Config['dimy'],
-                                          Config['gridspacing']))
+                                %s \n' % (str(cfg.config_geometry.dimx),
+                                          str(cfg.config_geometry.dimy),
+                                          str(cfg.config_geometry.dimz)))
 
                     Logfile.red('Calculating Traveltime Grid')
                     t1 = time.time()
@@ -440,7 +431,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                     TTTGridMap = []
                     mint = []
                     maxt = []
-                    ttt_model = cfg.Str('traveltime_model')
+                    ttt_model = cfg.config.traveltime_model
                     try:
                         try:
                             px = os.path.abspath(os.path.join(os.getcwd(),
@@ -489,7 +480,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 po.join()
                         else:
                             for i in xrange(len(FilterMeta)):
-                                if cfg.Int('dimz') != 0:
+                                if cfg.config_geometry.dimz != 0:
                                     t1 = time.time()
                                     ttt.calcTTTAdv_cube(Config, FilterMeta[i],
                                                         Origin, i, arrayname,
@@ -500,7 +491,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                 + ' sec.')
                                 else:
                                     t1 = time.time()
-                                    ttt.calcTTTAdv(Config, FilterMeta[i],
+                                    ttt.calcTTTAdv(cfg, FilterMeta[i],
                                                    Origin,
                                                    i, arrayname, W, refshift,
                                                    phase)
@@ -509,7 +500,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                 + str(time.time() - t1)
                                                 + ' sec.')
                         assert len(FilterMeta) > 0
-                        if cfg.Int('dimz') != 0:
+                        if cfg.config_geometry.dimz != 0:
                             TTTGridMap = deserializer.deserializeTTT_cube(len(FilterMeta))
                             mint, maxt = deserializer.deserializeMinTMaxT(len(FilterMeta))
                         else:
@@ -519,8 +510,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                         px = os.path.abspath(os.path.join(os.getcwd(),
                                              os.pardir))
                         pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s.pkl'
-                                 % (phase, ttt_model, ev.time, arrayname,
-                                    workdepth))
+                                  % (phase, ttt_model, ev.time, arrayname,
+                                     workdepth))
                         px_path = px+pdx
                         f = open(px_path, 'wb')
                         pickle.dump([TTTGridMap, mint, maxt], f)
@@ -528,10 +519,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                     t2 = time.time()
                     Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
-                    if cfg.Bool('correct_shifts_empirical') is True:
+                    if cfg.config_weight.correct_shifts_empirical is True:
                         TTTGridMap_emp = []
-                    #    FilterMeta = ttt.filterStations(Meta, Config, Origin,
-                    #                                    network)
                         Logfile.add('BOUNDING BOX DIMX: %s  DIMY: %s  GRIDSPACING:\
                                     %s \n' % (Config['dimx_emp'],
                                               Config['dimy_emp'],
@@ -568,7 +557,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     po.join()
                             else:
                                 for i in xrange(len(FilterMeta)):
-                                    if cfg.Int('dimz') != 0:
+                                    if cfg.config_geometry.dimz != 0:
                                         t1 = time.time()
                                         ttt.calcTTTAdv_cube(Config,
                                                             FilterMeta[i],
@@ -592,7 +581,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                     + str(time.time() - t1)
                                                     + ' sec.')
                             assert len(FilterMeta) > 0
-                            if cfg.Int('dimz') != 0:
+                            if cfg.config_geometry.dimz != 0:
                                 TTTGridMap_emp = deserializer.deserializeTTT_cube(len(FilterMeta), flag_rpe=True)
                                 mint_emp, maxt_emp = deserializer.deserializeMinTMaxT(len(FilterMeta), flag_rpe=True)
                             else:
@@ -602,8 +591,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                             px = os.path.abspath(os.path.join(os.getcwd(),
                                                  os.pardir))
                             pdx = str('/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
-                                     % (phase, ttt_model, ev_emp.time, arrayname,
-                                        workdepth))
+                                      % (phase, ttt_model, ev_emp.time, arrayname,
+                                         workdepth))
                             px_path = px+pdx
                             f = open(px_path, 'wb')
                             pickle.dump([TTTGridMap_emp, mint_emp, maxt_emp], f)
@@ -612,21 +601,21 @@ def processLoop(traces=None, stations=None, cluster=None):
                         Logfile.red('%s took %0.3f s' % ('TTT', (t2-t1)))
 
                     switch = filterindex
-                    tw = times.calculateTimeWindows(mint, maxt, Config,
+                    tw = times.calculateTimeWindows(mint, maxt, cfg,
                                                     ev, switch)
-                    if cfg.Bool('correct_shifts_empirical') is True:
+                    if cfg.config_weight.correct_shifts_empirical is True:
                         tw_emp = times.calculateTimeWindows(mint_emp, maxt_emp,
-                                                            Config, ev_emp,
+                                                            cfg, ev_emp,
                                                             switch)
 
-                        if cfg.pyrocko_download() is True:
+                        if cfg.config_data.pyrocko_download is True:
 
-                            if cfg.Bool('correct_shifts_empirical_synthetic') is True:
+                            if cfg.config_weight.correct_shifts_empirical_synthetic is True:
                                 Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
-                                                                        tw,
-                                                                        evpath,
-                                                                        ev)
-                            elif cfg.quantity() == 'displacement':
+                                                                            tw,
+                                                                            evpath,
+                                                                            ev)
+                            elif cfg.config_data.quantity == 'displacement':
                                 Wd_emp = waveform.readWaveformsPyrocko_restituted(
                                     FilterMeta, tw, evpath, ev_emp, desired)
                             else:
@@ -635,7 +624,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                        evpath_emps,
                                                                        ev_emp,
                                                                        desired)
-                        elif cfg.colesseo_input() is True:
+                        elif cfg.config.colesseo_input() is True:
                             Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
                                                                      tw_emp,
                                                                      evpath_emps,
@@ -643,8 +632,8 @@ def processLoop(traces=None, stations=None, cluster=None):
                         else:
                             Wd_emp = waveform.readWaveforms(FilterMeta, tw_emp,
                                                             evpath_emps, ev_emp)
-                        if cfg.Bool('correct_shifts_empirical_synthetic') is True\
-                           or cfg.Bool('dynamic_filter') is True:
+                        if cfg.config_weight.correct_shifts_empirical_synthetic is True\
+                           or cfg.config_filter.dynamic_filter is True:
                             Wdf_emp = waveform.processdummyWaveforms(Wd_emp, Config,
                                                                  Folder, arrayname,
                                                                  FilterMeta, ev_emp,
@@ -665,7 +654,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                       "fobjpickle_process_emp\
                                                       _%s_%s%s"
                                                       % (arrayname, ff1, ff2))
-                            if cfg.Bool('load_wdf') is True:
+                            if cfg.config.Bool('load_wdf') is True:
                                 try:
                                     f = open(ps_wdf_emp, 'rb')
                                     Wdf_emp = pickle.load(f)
@@ -692,12 +681,12 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                     ev_emp,
                                                                     switch, W)
                             Wdfs_emp.extend(Wdf_emp)
-                    if cfg.pyrocko_download() is True:
+                    if cfg.config_data.pyrocko_download is True:
 
-                        if cfg.quantity() == 'displacement':
+                        if cfg.config_data.quantity  == 'displacement':
                             Wd = waveform.readWaveformsPyrocko_restituted(
                                 FilterMeta, tw, evpath, ev, desired)
-                        elif cfg.Bool('synthetic_test') is True:
+                        elif cfg.config_syn.synthetic_test is True:
                             Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                     tw, evpath,
                                                                     ev)
@@ -705,14 +694,14 @@ def processLoop(traces=None, stations=None, cluster=None):
                             Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
                                                                evpath, ev,
                                                                desired)
-                    elif cfg.colesseo_input() is True:
+                    elif cfg.config.colesseo_input() is True:
                         Wd = waveform.readWaveforms_colesseo(FilterMeta, tw,
                                                              evpath, ev, C)
                     else:
                         Wd = waveform.readWaveforms(FilterMeta, tw, evpath, ev)
 
-                    if cfg.Bool('synthetic_test') is True\
-                       or cfg.Bool('dynamic_filter') is True:
+                    if cfg.config_syn.synthetic_test is True\
+                       or cfg.config_filter.dynamic_filter is True:
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                              Folder, arrayname,
                                                              FilterMeta, ev,
@@ -730,7 +719,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             ff2 = eval(f2)
                             switchs = "h1"
                         ps_wdf = os.path.join(Folder['semb'], "fobjpickle_process_%s_%s%s" % (arrayname, ff1, ff2))
-                        if cfg.Bool('load_wdf') is True:
+                        if cfg.config.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
@@ -763,33 +752,33 @@ def processLoop(traces=None, stations=None, cluster=None):
                     f.close()
 
                     if switch == 0:
-                        step = cfg.step()
+                        step = cfg.config.step()
                     else:
-                        s1 = str('cfg.step_f%s()')% str(filterindex+1)
+                        s1 = str('cfg.config.step_f%s()')% str(filterindex+1)
                         step = eval(s1)
 
-                    if cfg.UInt('forerun') > 0:
-                        ntimes = int((cfg.UInt('forerun') +
-                                      cfg.UInt('duration')) / step)
+                    if cfg.config.UInt('forerun') > 0:
+                        ntimes = int((cfg.config.UInt('forerun') +
+                                      cfg.config.UInt('duration')) / step)
                     else:
-                        ntimes = int((cfg.UInt('duration')) / step)
-                    if cfg.Bool('combine_all') is False:
+                        ntimes = int((cfg.config.UInt('duration')) / step)
+                    if cfg.config.Bool('combine_all') is False:
 
-                        if cfg.optimize() is True:
+                        if cfg.config.optimize() is True:
                             optim.solve(counter, Config, Wdf, FilterMeta,
                                         mint, maxt, TTTGridMap, Folder,
                                         Origin, ntimes, switch, ev,
                                         arrayfolder, syn_in, refshifts, phase,
                                         rpe+str(arrayname)+switchs, flag_rpe)
                         else:
-                            if cfg.Bool('correct_shifts_empirical') is True:
-                                if cfg.Bool('correct_shifts_empirical_run') is True:
-                                    winlen_emp = cfg.winlen_emp()
-                                    step_emp = cfg.step_emp()
-                                    if cfg.UInt('forerun') > 0:
-                                        ntimes_emp = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
+                            if cfg.config_weight.correct_shifts_empirical is True:
+                                if cfg.config.Bool('correct_shifts_empirical_run') is True:
+                                    winlen_emp = cfg.config.winlen_emp()
+                                    step_emp = cfg.config.step_emp()
+                                    if cfg.config.UInt('forerun') > 0:
+                                        ntimes_emp = int((cfg.config.UInt('forerun_emp') + cfg.config.UInt('duration_emp'))/step_emp)
                                     else:
-                                        ntimes_emp = int((cfg.UInt('duration_emp')) / step_emp)
+                                        ntimes_emp = int((cfg.config.UInt('duration_emp')) / step_emp)
                                     f = open(os.path.abspath(os.path.join(os.getcwd(),
                                                              os.pardir))+'/tttgrid/tttgrid%s_%s_%s_%s_%s_emp.pkl'
                                              % (phase, ttt_model, ev_emp.time,
@@ -799,14 +788,14 @@ def processLoop(traces=None, stations=None, cluster=None):
                                              workdepth))
                                     TTTGridMap_emp, mint_emp, maxt_emp = pickle.load(f)
                                     f.close()
-                                    if cfg.pyrocko_download() is True:
+                                    if cfg.config_data.pyrocko_download is True:
 
-                                        if cfg.Bool('correct_shifts_empirical_synthetic') is True:
+                                        if cfg.config_weight.correct_shifts_empirical_synthetic is True:
                                             Wd_emp = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                                     tw,
                                                                                     evpath,
                                                                                     ev)
-                                        elif cfg.quantity() == 'displacement':
+                                        elif cfg.config_data.quantity  == 'displacement':
                                             Wd_emp = waveform.readWaveformsPyrocko_restituted(
                                                 FilterMeta, tw, evpath, ev_emp, desired)
                                         else:
@@ -815,7 +804,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                                                    evpath_emps,
                                                                                    ev_emp,
                                                                                    desired)
-                                    elif cfg.colesseo_input() is True:
+                                    elif cfg.config.colesseo_input() is True:
                                         Wd_emp = waveform.readWaveforms_colesseo(FilterMeta,
                                                                                  tw_emp,
                                                                                  evpath_emps,
@@ -844,7 +833,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                             else:
                                 switchs = "h1"
 
-                            if cfg.Bool('correct_shifts_empirical') is True:
+                            if cfg.config_weight.correct_shifts_empirical is True:
 
                                 if sys.version_info.major >= 3:
                                     f = open(rpe+str(arrayname)+switchs, 'rb')
@@ -854,7 +843,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 refshifts = RefDict_empirical
 
                                 for j in range(0, len(Wd_emp)):
-                                    if cfg.correct_shifts() is False:
+                                    if cfg.config_weight.correct_shifts is False:
                                         refshifts[j] = refshifts[j]*0.
                             flag_rpe = False
                             f = open(os.path.abspath(os.path.join(os.getcwd(),
@@ -871,12 +860,12 @@ def processLoop(traces=None, stations=None, cluster=None):
                             else:
                                 switchs = "h1"
 
-                            if cfg.pyrocko_download() is True:
+                            if cfg.config_data.pyrocko_download is True:
 
-                                if cfg.quantity() == 'displacement':
+                                if cfg.config_data.quantity  == 'displacement':
                                     Wd = waveform.readWaveformsPyrocko_restituted(
                                         FilterMeta, tw, evpath, ev, desired)
-                                elif cfg.Bool('synthetic_test') is True:
+                                elif cfg.config_syn.synthetic_test is True:
                                     Wd = waveform.readWaveformsPyrockodummy(FilterMeta,
                                                                             tw, evpath,
                                                                             ev)
@@ -884,7 +873,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     Wd = waveform.readWaveformsPyrocko(FilterMeta, tw,
                                                                        evpath, ev,
                                                                        desired)
-                            elif cfg.colesseo_input() is True:
+                            elif cfg.config.colesseo_input() is True:
                                 Wd = waveform.readWaveforms_colesseo(FilterMeta, tw,
                                                                      evpath, ev, C)
                             else:
@@ -993,26 +982,26 @@ def processLoop(traces=None, stations=None, cluster=None):
                     FilterMetas[len(FilterMetas):] = FilterMeta
                     TTTGridMap = []
 
-                if cfg.Bool('combine_all') is True:
-                    if cfg.pyrocko_download() is True:
-                        if cfg.Bool('synthetic_test') is True:
+                if cfg.config.Bool('combine_all') is True:
+                    if cfg.config_data.pyrocko_download is True:
+                        if cfg.config_syn.synthetic_test is True:
                             Wd = waveform.readWaveformsPyrockodummy(
                                     FilterMetas, tw, evpath, ev)
                         else:
-                            if cfg.quantity() == 'displacement':
+                            if cfg.config_data.quantity  == 'displacement':
                                 Wd = waveform.readWaveformsPyrocko_restituted(
                                     FilterMetas, tw, evpath, ev, desired)
                             else:
                                 Wd = waveform.readWaveformsPyrocko(FilterMetas,
                                                                    tw, evpath,
                                                                    ev, desired)
-                    elif cfg.colesseo_input() is True:
+                    elif cfg.config.colesseo_input() is True:
                         Wd = waveform.readWaveforms_colesseo(FilterMetas, tw,
                                                              evpath, ev, C)
                     else:
                         Wd = waveform.readWaveforms(FilterMetas, tw, evpath,
                                                     ev)
-                    if cfg.Bool('synthetic_test') is True:
+                    if cfg.config_syn.synthetic_test is True:
                         Wdf = waveform.processdummyWaveforms(Wd, Config,
                                                              Folder, arrayname,
                                                              FilterMetas, ev,
@@ -1031,7 +1020,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                         ps_wdf = os.path.join(Folder['semb'],
                                               "fobjpickle_process_%s_%s%s_\
                                               combined" % (arrayname, ff1, ff2))
-                        if cfg.Bool('load_wdf') is True:
+                        if cfg.config.Bool('load_wdf') is True:
                             try:
                                 f = open(ps_wdf, 'rb')
                                 Wdf = pickle.load(f)
@@ -1066,7 +1055,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                         f2 = str('ff2 = filter.fhi%s()'% str(filterindex+1))
                         ff2 = eval(f2)
                         switchs = "h1"
-                    if cfg.Bool('bootstrap_array_weights') is False:
+                    if cfg.config.Bool('bootstrap_array_weights') is False:
                         arraySemb, weight, array_center = sembCalc.doCalc(
                             counter, Config, Wdf, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
@@ -1081,7 +1070,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                               ntimes, switch,
                                                               phase)
                     else:
-                        nboot = cfg.Int('n_bootstrap')
+                        nboot = cfg.config.Int('n_bootstrap')
                         tmp_general = 1
                         for ibootstrap in range(nboot):
                             f = rstate.uniform(0., 1., size=counter+1)
@@ -1139,7 +1128,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                             phase,
                                                             cboot=None,
                                                             temp_comb=tmp_general)
-                if cfg.optimize_all() is True:
+                if cfg.config.optimize_all() is True:
                     import optim_csemb
                     sembmax, tmp = sembCalc.collectSemb(ASL, Config, Origin,
                                                         Folder, ntimes,
@@ -1157,7 +1146,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                                         ntimes, len(networks),
                                                         switch, array_centers,
                                                         phase)
-                    if cfg.Bool('weight_by_noise') is True:
+                    if cfg.config.Bool('weight_by_noise') is True:
                         sembCalc.collectSembweighted(ASL, Config, Origin,
                                                      Folder, ntimes,
                                                      len(networks), switch,

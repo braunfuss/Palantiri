@@ -18,11 +18,12 @@ from collections import OrderedDict
 from palantiri.process import music
 from pyrocko import io, trace, util
 
-trace_txt  = 'trace.txt'
+trace_txt = 'trace.txt'
 travel_txt = 'travel.txt'
-latv_txt   = 'latv.txt'
-lonv_txt   = 'lonv.txt'
-semb_txt   = 'semb.txt'
+latv_txt = 'latv.txt'
+lonv_txt = 'lonv.txt'
+semb_txt = 'semb.txt'
+
 
 def normalize(lst):
     s = sum(lst)
@@ -173,6 +174,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
 def t2ind_fast(t, tdelta, snap=round):
     return int(int((t/tdelta)*(10**0))/(10.**0))
+
 
 def t2ind(t, tdelta, snap=round):
     return int(snap(t/tdelta))
