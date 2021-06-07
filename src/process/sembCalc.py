@@ -90,11 +90,11 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
     t = time.time()  # start timing
     # bounds given as (min,max)
     max_semb = 0.
-    low = -1*cfg.Int('shift_max')
-    high = cfg.Int('shift_max')
+    low = -1*cfg.config_weight.shift_max
+    high = cfg.config_weight.shift_max
     for i in range(low, high):
         bounds = []
-        if cfg.Bool('correct_shifts_empirical_station_wise') is False:
+        if cfg.config_weight.correct_shifts_empirical_manual_station_wise is False:
             bounds = [(i-1., i+1.)]
         else:
             for ref in refshifts:
@@ -120,6 +120,7 @@ def solve_timeshifts(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
             max_semb = result.fun
             shifts = result.x
     return shifts
+
 
 def make_bayesian_weights(narrays, nbootstrap=100,
                           type='bayesian', rstate=None):
@@ -284,8 +285,8 @@ class FileSembMax(object):
         self.sembmax = sembmax
         self.usedarrays = usedarrays
         self.delta = delta
-        self.azi= azi
-        self.deltakm= deltakm
+        self.azi = azi
+        self.deltakm = deltakm
 
     def get(self):
         return('%d %.2f %.2f %f %d %03f %f %03f\n' % (self.istep, self.sembmaxX,
@@ -328,15 +329,15 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
     '''
     logger.info('start write semblance matrices')
 
-    cfg = ConfigObj(dict=Config)
+    cfg = Config
     origin = OriginCfg(Origin)
 
-    dimX = cfg.dimX()
-    dimY = cfg.dimY()
+    dimX = cfg.config_geometry.dimx
+    dimY = cfg.config_geometry.dimy
 
     if switch == 0:
-        winlen = cfg.winlen()
-        step = cfg.step()
+        winlen = cfg.config_filter.winlen
+        step = cfg.config_filter.step
     else:
         s1 = str('cfg.step_f%s()'% str(switch+1))
         step = eval(s1)
@@ -345,7 +346,7 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
     latv = []
     lonv = []
 
-    gridspacing = cfg.Float('gridspacing')
+    gridspacing = cfg.config_geometry.gridspacing
     migpoints = dimX * dimY
 
     o_lat = origin.lat()
@@ -416,23 +417,22 @@ def normalize(v):
     return v / norm
 
 
-def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
-                array_centers, phase, cboot=None, temp_comb=None):
+def collectSemb(SembList, cfg, origin, Folder, ntimes, arrays, switch,
+                array_centers, phase, cboot=None, temp_comb=None, time=None,
+                Origin=None):
     '''
     method to collect semblance matrizes from all processes and write them
     to file for each timestep.
     '''
     Logfile.add('start collect in collectSemb')
-    cfg = ConfigObj(dict=Config)
-    origin = ConfigObj(dict=Origin)
 
-    dimX = cfg.dimX()
-    dimY = cfg.dimY()
-    dimZ = cfg.Int('dimz')
+    dimX = cfg.config_geometry.dimx
+    dimY = cfg.config_geometry.dimy
+    dimZ = cfg.config_geometry.dimz
 
     if switch == 0:
-        winlen = cfg.winlen()
-        step = cfg.step()
+        winlen = cfg.config_filter.winlen
+        step = cfg.config_filter.step
     else:
         s1 = str('cfg.step_f%s()' % str(switch+1))
         step = eval(s1)
@@ -442,7 +442,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     latv = []
     lonv = []
 
-    gridspacing = cfg.Float('gridspacing')
+    gridspacing = cfg.config_geometry.gridspacing
     migpoints = dimX * dimY
     o_lat = origin.lat()
     o_lon = origin.lon()
@@ -458,15 +458,15 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
          o = 0
 
          for j in xrange(dimY):
-               oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
+            oLonul = o_lon - ((dimY-1)/2) * gridspacing + j * gridspacing
 
-               if o==0 and j==0:
-                   Lonul = oLonul
+            if o==0 and j==0:
+               Lonul = oLonul
 
-               latv.append(oLatul)
-               lonv.append(oLonul)
+            latv.append(oLatul)
+            lonv.append(oLonul)
 
-    origin = DataTypes.dictToLocation(Origin)
+    origin = DataTypes.dictToLocation(origin)
     icount = 0
 
     azis = []
@@ -475,7 +475,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         y = array_centers[icount][1]
         delta = orthodrome.distance_accurate50m_numpy(x, y, origin.lat,
                                                       origin.lon)
-        azis.append(toAzimuth(float(Origin['lat']), float(Origin['lon']),
+        azis.append(toAzimuth(float(origin.lat), float(origin.lon),
                               x, y))
         icount = icount+1
     aziblocks = num.arange(0., 360., 20.)
@@ -491,9 +491,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         aziweights.append(1./idxs.count(idx))
 
     min_coor = num.zeros([icount, 2])
-    if cfg.Bool('bootstrap_array_weights') is True and\
-       cfg.Bool('combine_all') is False:
-        nboot = cfg.Int('n_bootstrap')
+    if cfg.config_weight.bootstrap_array_weights is True and\
+       cfg.config_weight.combine_all is False:
+        nboot = cfg.config_weight.n_bootstrap
         bs_weights = make_bayesian_weights(len(azis), nbootstrap=nboot)
     else:
         nboot = 1
@@ -506,7 +506,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     sembmaxlatv = num.ndarray(ntimes, dtype=float)
     sembmaxlonv = num.ndarray(ntimes, dtype=float)
 
-    rc = UTCDateTime(Origin['time'])
+    rc = UTCDateTime(time)
     rcs = '%s-%s-%s_%02d:%02d:%02d' % (rc.day, rc.month, rc.year, rc.hour,
                                        rc.minute, rc.second)
     d = rc.timestamp
@@ -519,10 +519,10 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         tmp_boot = 1
         for a in SembList:
             if num.max(a) != 0:
-                if cfg.Bool('weight_by_azimuth') is True:
+                if cfg.config_weight.weight_by_azimuth is True:
                     tmp_boot = tmp_boot*a*aziweights[c]
                     tmp = tmp*a*aziweights[c]
-                elif cfg.Bool('bootstrap_array_weights') is True:
+                elif cfg.config_weight.bootstrap_array_weights is True:
                     tmp_boot = tmp_boot*a*bs_weights[boot, c]
                     tmp = tmp*a*bs_weights[boot, c]
                 else:
@@ -557,7 +557,6 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         fobjsembmax = open(os.path.join(folder, 'sembmax_%s_boot%s_%s.txt'
                                         % (switch, boot, phase)), 'w')
 
-
         norm = num.max(num.max(tmp_boot))
         max_p = 0.
         sum_i = 0.
@@ -574,7 +573,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     #                latv[j] = latv[j]#+diff_center_lat
     #                lonv[j] = lonv[j]#+diff_center_lon
 
-        if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+        if cfg.config.futterman_attenuation is True and phase is 'S':
             s_futterman_shifts = []
             sembmax = 0
             for a, i in enumerate(tmp_boot):
@@ -629,14 +628,14 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
                 #plt.figure()
                 #plt.imshow(ist)
                 #plt.show()
-                if cfg.Bool('norm_all') is True:
+                if cfg.config_weight.norm_all is True:
                     i = i / num.sqrt(num.sum(semb_cum_sum**2))
                 else:
                     i = normalize(i)
                 for j in range(num.shape(latv)[0]):
                     x = latv[j]
                     y = lonv[j]
-                    if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+                    if cfg.config.futterman_attenuation is True and phase is 'S':
                         fobj.write('%.2f %.2f %.20f\n' % (x, y, 0))
 
                         x = x+dist_x
@@ -722,9 +721,9 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
 
     count_is = 0
     for a, i in enumerate(tmp_boot):
-            semb_sums = semb_sums + num.sum(i)
-            semb_cum_sum = semb_cum_sum + i
-            count_is = count_is + 1
+        semb_sums = semb_sums + num.sum(i)
+        semb_cum_sum = semb_cum_sum + i
+        count_is = count_is + 1
     semb_sums = semb_sums/count_is
 
     norm = num.max(num.max(tmp, axis=1))
@@ -755,7 +754,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
         sembmaxY = 0
         counter_time = 0
         uncert = num.std(i)
-        if cfg.Bool('norm_all') is True:
+        if cfg.config_weight.norm_all is True:
             i = i / num.sqrt(num.sum(semb_cum_sum**2))
         else:
             i = normalize(i)
@@ -765,7 +764,7 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
             x = latv[j]
             y = lonv[j]
 
-            if cfg.Bool('futterman_attenuation') is True and phase is 'S':
+            if cfg.config.futterman_attenuation is True and phase is 'S':
                 fobj.write('%.2f %.2f %.20f\n' % (x, y, 0))
                 x = x+dist_x
                 y = y+dist_y
@@ -856,30 +855,28 @@ def collectSemb(SembList, Config, Origin, Folder, ntimes, arrays, switch,
     fobj_timemin.close()
 
     trigger.writeSembMaxValue(sembmaxvaluev, sembmaxlatv, sembmaxlonv,
-                              ntimes, Config, Folder)
+                              ntimes, cfg, Folder)
 
-    inspect_semb = cfg.Bool('inspect_semb')
-    if inspect_semb is True and cboot is None:
+    if cfg.config.inspect_semb is True and cboot is None:
         trigger.semblancestalta(sembmaxvaluev, sembmaxlatv, sembmaxlonv)
     return sembmaxvaluev, tmp
 
 
-def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
-                        switch, weights):
+def collectSembweighted(SembList, cfg, Origin, Folder, ntimes, arrays,
+                        switch, weights, time=None):
     '''
     method to collect semblance matrizes from all processes and write them to
     file for each timestep
     '''
     Logfile.add('start collect in collectSemb')
 
-    cfg = ConfigObj(dict=Config)
     origin = ConfigObj(dict=Origin)
 
-    dimX = cfg.dimX()
-    dimY = cfg.dimY()
+    dimX = cfg.config_geometry.dimx
+    dimY = cfg.config_geometry.dimy
     if switch == 0:
-        winlen = cfg.winlen()
-        step = cfg.step()
+        winlen = cfg.config_filter.winlen
+        step = cfg.config_filter.step
     else:
         s1 = str('cfg.step_f%s()'% str(switch+1))
         step = eval(s1)
@@ -889,7 +886,7 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
     latv = []
     lonv = []
 
-    gridspacing = cfg.Float('gridspacing')
+    gridspacing = cfg.config_geometry.gridspacing
     migpoints = dimX * dimY
     o_lat = origin.lat()
     o_lon = origin.lon()
@@ -924,11 +921,10 @@ def collectSembweighted(SembList, Config, Origin, Folder, ntimes, arrays,
     sembmaxlatv = num.ndarray(ntimes, dtype=float)
     sembmaxlonv = num.ndarray(ntimes, dtype=float)
 
-    rc = UTCDateTime(Origin['time'])
+    rc = UTCDateTime(time)
     rcs = '%s-%s-%s_%02d:%02d:%02d'%(rc.day,rc.month,rc.year, rc.hour,rc.minute,rc.second)
     d = rc.timestamp
     usedarrays = arrays
-
 
     folder = Folder['semb']
     fobjsembmax = open(os.path.join(folder,
@@ -1002,7 +998,7 @@ def toMatrix(npVector, nColumns):
     return mat
 
 
-def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
+def doCalc(flag, cfg, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
            syn_in, refshifts, phase, rp, flag_rpe, nstats, bs_weights=None):
     '''
@@ -1010,39 +1006,37 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     '''
     Logfile.add('PROCESS %d %s' % (flag, 'Enters Semblance Calculation'))
     Logfile.add('MINT  : %f  MAXT: %f Traveltime' % (Gmint, Gmaxt))
-    cfg = ConfigObj(dict=Config)
-    cfg_f = FilterCfg(Config)
 
     timeev = util.str_to_time(ev.time)
     if flag_rpe is True:
-        dimX = cfg.dimX_emp()
-        dimY = cfg.dimY_emp()
+        dimX = cfg.config_geometry.dimx_emp
+        dimY = cfg.config_geometry.dimy_emp
     else:
-        dimX = cfg.dimX()
-        dimY = cfg.dimY()
+        dimX = cfg.config_geometry.dimx
+        dimY = cfg.config_geometry.dimy
 
     if switch == 0:
-        winlen = cfg.winlen()
-        step = cfg.step()
+        winlen = cfg.config_filter.winlen
+        step = cfg.config_filter.step
     else:
-        s1 = str('cfg.step_f%s()'% str(switch+1))
+        s1 = str('cfg.step_f%s()' % str(switch+1))
         step = eval(s1)
-        w1 = str('cfg.winlen_f%s()'% str(switch+1))
+        w1 = str('cfg.winlen_f%s()' % str(switch+1))
         winlen = eval(w1)
 
-    new_frequence = cfg.newFrequency()
-    forerun = cfg.Int('forerun')
-    duration = cfg.Int('duration')
+    new_frequence = cfg.config_filter.newFrequency
+    forerun = cfg.config_filter.forerun
+    duration = cfg.config_filter.duration
 
     nostat = len(WaveformDict)
     traveltimes = {}
     recordstarttime = ''
     minSampleCount = 999999999
 
-    if cfg.UInt('forerun') > 0:
-        ntimes = float((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+    if cfg.config_filter.forerun > 0:
+        ntimes = float((cfg.config_filter.forerun + cfg.config_filter.duration)/step)
     else:
-        ntimes = float((cfg.UInt('duration'))/step)
+        ntimes = float((cfg.config_filter.duration)/step)
     nsamp = float(winlen * new_frequence)
     nstep = float(step * new_frequence)
 
@@ -1051,7 +1045,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     py_trs = []
     lats = []
     lons = []
-    if cfg.Bool('synthetic_test') is False:
+    if cfg.config_syn.synthetic_test is False:
         for trace in sorted(calcStreamMap.keys()):
             py_tr = calcStreamMap[trace]
             py_trs.append(py_tr)
@@ -1069,7 +1063,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
 # ==================================synthetic BeamForming======================
 
-    if cfg.Bool('synthetic_test') is True:
+    if cfg.config_syn.synthetic_test is True:
         if phase is 'P':
             desired = 'Z'
         if phase is 'S':
@@ -1278,13 +1272,13 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         trs_orgs = []
         from pyrocko import trace
         calcStreamMapsyn = {}
-        if cfg.Bool('synthetic_test_pertub_arrivals') is True:
+        if cfg.config_syn.synthetic_test_pertub_arrivals is True:
             shift_max = cfg.Float('shift_max')
             for trl in synthetic_traces:
                 shift = num.random.uniform(-shift_max,shift_max)
                 trl.shift(shift)
 
-        if cfg.Bool('synthetic_test_add_noise') is True:
+        if cfg.config_syn.synthetic_test_add_noise is True:
 
             store_id = syn_in.store()
             engine = LocalEngine(store_superdirs=[syn_in.store_superdirs()])
@@ -1294,7 +1288,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                                          store_id, phase_def=phase)
 
         for tracex, trl in zip(sorted(calcStreamMap.keys()), synthetic_traces):
-                    if cfg.Bool('dynamic_filter') is False:
+                    if cfg.config_filter.dynamic_filter is False:
                         if switch == 0:
                             ff1 = cfg_f.flo()
                             ff2 = cfg_f.fhi()
@@ -1304,13 +1298,13 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                             f2 = str('cfg_f.fhi%s()'% str(switch+1))
                             ff2 = eval(f2)
 
-                        trl.bandpass(4,ff1,  ff2)
+                        trl.bandpass(4, ff1, ff2)
 
                     calcStreamMap[tracex] = trl
 
     do_pws=False
-    if cfg.Bool('shift_by_phase_pws') is True and do_pws is True:
-        calcStreamMapshifted= calcStreamMap.copy()
+    if cfg.config_weight.shift_by_phase_pws is True and do_pws is True:
+        calcStreamMapshifted = calcStreamMap.copy()
         from obspy.core import stream
         stream = stream.Stream()
         for trace in calcStreamMapshifted.keys():
@@ -1321,7 +1315,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
                     calcStreamMapshifted[trace] = tr
         calcStreamMap = calcStreamMapshifted
 
-    if cfg.Bool('shift_by_phase_cc') is True:
+    if cfg.config_weight.shift_by_phase_cc is True:
         from stacking import align_traces
         calcStreamMapshifted = calcStreamMap.copy()
         list_tr = []
@@ -1339,7 +1333,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
 # ==================================empirical correction======================
 
-    if cfg.Bool('shift_by_phase_onset') is True:
+    if cfg.config_weight.shift_by_phase_onset is True:
         pjoin = os.path.join
         timeev = util.str_to_time(ev.time)
         trs_orgs = []
@@ -1374,7 +1368,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         calcStreamMap = calcStreamMapshifted
 
     weight = 1.
-    if cfg.Bool('weight_by_noise') is True:
+    if cfg.config_weight.weight_by_noise is True:
         from noise_analyser import analyse
         pjoin = os.path.join
         timeev = util.str_to_time(ev.time)
@@ -1408,7 +1402,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     ################ Futtermann Attenuation for S-wave ########
 
     apply_fut = False
-    if cfg.Bool('futterman_attenuation') is True and phase is 'S' and apply_fut is True:
+    if cfg.config.futterman_attenuation is True and phase is 'S' and apply_fut is True:
         trs_orgs = []
         for ids,trace in enumerate(calcStreamMap.keys()):
                 tr_org = calcStreamMap[trace]
@@ -1461,8 +1455,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     traces = calcStreamMap
 
-    if cfg.Int('dimz') != 0:
-        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.Int('dimz')),
+    if cfg.config_geometry.dimz != 0:
+        traveltime = num.ndarray(shape=(len(calcStreamMap), dimX*dimY*cfg.config_geometry.dimz),
                                  dtype=float)
     else:
 
@@ -1487,12 +1481,12 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             mint = g.mint
             gridElem = g.GridArray
 
-            if cfg.Int('dimz') != 0:
+            if cfg.config_geometry.dimz != 0:
                 orig_depth = float(Origin['depth'])
                 start, stop, step_depth = cfg.String('depths').split(',')
                 start = orig_depth+float(start)
                 stop = orig_depth+float(stop)
-                depths = num.linspace(start, stop, num=cfg.Int('dimz'))
+                depths = num.linspace(start, stop, num=cfg.config_geometry.dimz)
                 for x in range(dimX):
                     for y in range(dimY):
                         depth_counter = 0
@@ -1516,7 +1510,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     ################ Array Response calcualtion and visualization ########
 
-    if cfg.Bool('array_response') is True:
+    if cfg.config.array_response is True:
         # Warning: for this functionality the obspy module is needed
         from obspy.signal import array_analysis
         from obspy.core import stream
@@ -1674,7 +1668,7 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     migpoints = dimX * dimY
 
     dimZ = 0
-    maxp = int(Config['ncore'])
+    maxp = cfg.config.ncores
 
     Logfile.add('PROCESS %d  NTIMES: %d' %(flag,ntimes))
 
@@ -1758,8 +1752,8 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 # ==================================semblance calculation=======
 
     t1 = time.time()
-    if cfg.Int('dimz') != 0:
-        traveltimes = traveltime.reshape(1, nostat*dimX*dimY*cfg.Int('dimz'))
+    if cfg.config_geometry.dimz != 0:
+        traveltimes = traveltime.reshape(1, nostat*dimX*dimY*cfg.config_geometry.dimz)
     else:
         traveltimes = traveltime.reshape(1, nostat*dimX*dimY)
     TTTGrid = True
@@ -1807,16 +1801,16 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
         k = backSemb
         TTTGrid = False
 
-    if cfg.Bool('correct_shifts_empirical_run') is True and flag_rpe is True:
+    if cfg.config_weight.correct_shifts_empirical_run is True and flag_rpe is True:
 
         trs_orgs = []
         calcStreamMapshifted = calcStreamMap.copy()
         for trace in calcStreamMapshifted.keys():
-                tr_org = calcStreamMapshifted[trace]
-                trs_orgs.append(tr_org)
-        winlen_emp = cfg.winlen_emp()
-        step_emp = cfg.step_emp()
-        if cfg.UInt('forerun') > 0:
+            tr_org = calcStreamMapshifted[trace]
+            trs_orgs.append(tr_org)
+        winlen_emp = cfg.config_filter.winlen_emp
+        step_emp = cfg.config_filter.step_emp
+        if cfg.config_filter.forerun > 0:
             ntimes = int((cfg.UInt('forerun_emp') + cfg.UInt('duration_emp'))/step_emp)
         else:
             ntimes = int((cfg.UInt('duration_emp')) / step_emp)
@@ -1859,16 +1853,16 @@ def doCalc(flag, Config, WaveformDict, FilterMetaData, Gmint, Gmaxt,
 
     if TTTGrid:
             start_time = time.time()
-            if cfg.UInt('forerun') > 0:
-                ntimes = int((cfg.UInt('forerun') + cfg.UInt('duration'))/step)
+            if cfg.config_filter.forerun > 0:
+                ntimes = int((cfg.config_filter.forerun + cfg.config_filter.duration)/step)
             else:
-                ntimes = int((cfg.UInt('duration')) / step)
+                ntimes = int((cfg.config_filter.duration) / step)
             nsamp = int(winlen)
             nstep = float(step)
-            Gmint = cfg.Int('forerun')
+            Gmint = cfg.config_filter.forerun
             k = semblance(maxp, nostat, nsamp, ntimes, nstep, dimX, dimY, Gmint,
                           new_frequence, minSampleCount, latv, lonv, traveltimes,
-                          traces, calcStreamMap, timeev, Config, Origin, refshifts,
+                          traces, calcStreamMap, timeev, cfg, Origin, refshifts,
                           nstats,
                           bs_weights=bs_weights, flag_rpe=False)
             print("--- %s seconds ---" % (time.time() - start_time))

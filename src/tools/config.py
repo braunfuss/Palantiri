@@ -16,17 +16,309 @@ else:
 logger = logging.getLogger('ARRAY-MP')
 
 
+class PalantiriDataConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+    quantity = String.T(default="displacement",
+                            help='quantity')
+
+    tttopt = String.T(default="-ph P",
+                            help='quantity')
+
+    cam = Int.T(default=2, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    pyrocko_download = Bool.T(default=True, optional=True,
+     help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    export_unfiltered = Bool.T(default=False, optional=True,
+     help='')
+
+    export_filtered = Bool.T(default=False, optional=True,
+     help='')
+
+    export_resampled = Bool.T(default=False, optional=True,
+     help='')
+
+    colesseo_input = Bool.T(default=False, optional=True,
+     help='')
+
+    colosseo_scenario_yml = String.T(optional=True, help='')
+
+    load_wdf = Bool.T(default=False, optional=True,
+     help='')
+
+
+class PalantiriSyntheticConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    synthetic_test = Bool.T(default=False, optional=True,
+     help='')
+
+    synthetic_test_add_noise = Bool.T(default=False, optional=True,
+     help='')
+
+    synthetic_test_pertub_arrivals = Bool.T(default=False, optional=True,
+     help='')
+
+
+class PalantiriWeightConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    shift_max = Float.T(default=4., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    weight_by_azimuth = Bool.T(default=True, optional=True,
+     help='')
+
+    bootstrap_array_weights = Bool.T(default=True, optional=True,
+     help='')
+
+    n_bootstrap = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    correct_shifts_empirical_run = Bool.T(default=False, optional=True,
+     help='')
+
+    correct_shifts = Bool.T(default=False, optional=True,
+     help='')
+
+    correct_shifts_empirical = Bool.T(default=False, optional=True,
+     help='')
+
+    correct_shifts_empirical_manual = Bool.T(default=False, optional=True,
+     help='')
+
+    correct_shifts_empirical_manual_station_wise = Bool.T(default=False, optional=True,
+     help='')
+
+    combine_all = Bool.T(default=False, optional=True,
+     help='')
+
+    norm_all = Bool.T(default=True, optional=True,
+     help='')
+
+    weight_by_noise = Bool.T(default=False, optional=True,
+     help='')
+
+    shift_by_phase_onset = Bool.T(default=False, optional=True,
+     help='')
+
+    shift_by_phase_pws = Bool.T(default=False, optional=True,
+     help='')
+
+    shift_by_phase_cc = Bool.T(default=False, optional=True,
+     help='')
+
+
+class PalantiriFilterConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    filters = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    dynamic_filter = Bool.T(default=False, optional=True,
+     help='')
+
+    filterswitch = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    flo = List.T(
+        Float.T(), help='List blacklist patterns (may contain wild cards')
+
+    fhi = List.T(
+        Float.T(), help='List blacklist patterns (may contain wild cards')
+
+    name = List.T(
+        String.T(), help='List blacklist patterns (may contain wild cards')
+
+    #zph = List.T(
+    #    String.T(), help='List blacklist patterns (may contain wild cards')
+
+    newFrequency = Float.T(default=0.5, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    ns = List.T(
+        Int.T(), help='List blacklist patterns (may contain wild cards')
+
+    step_emp = Float.T(default=4., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    winlen_emp = Float.T(default=4., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    step = Float.T(default=2., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    winlen = Float.T(default=8., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    forerun = Float.T(default=10., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    duration = Float.T(default=20., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+
+class PalantiriGeometryConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    dimy = Int.T(default=50, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    dimx = Int.T(default=50, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    dimz = Int.T(default=0, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    gridspacing = Float.T(default=0.025, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    dimx_emp = Int.T(default=50, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    dimy_emp = Int.T(default=50, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    depths = List.T(
+        Float.T(), help='List blacklist patterns (may contain wild cards')
+
+
+class PalantiriXcorrConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    xcorr = Bool.T(default=True, optional=True,
+                   help='')
+
+    xcorrtreshold = Float.T(default=0.6, optional=True, help='')
+
+    autoxcorrcorrectur = Bool.T(default=False, optional=True,
+                                help='')
+
+    refstationfreqmin = Float.T(default=0.03, optional=True,
+                                help='Length in seconds. Not needed \
+                                when using TFRecordData')
+
+    refstationfreqmax = Float.T(default=1, optional=True,
+                                help='Length in seconds. Not needed \
+                                when using TFRecordData')
+
+    refstationcorners = Int.T(default=2, optional=True,
+                              help='Length in seconds. Not needed \
+                              when using TFRecordData')
+
+    refstationzph = Bool.T(default=False, optional=True, help='')
+
+    refsta = Float.T(default=0.5, optional=True,
+                     help='Length in seconds. Not needed \
+                     when using TFRecordData')
+
+    reflta = Float.T(default=2, optional=True,
+                     help='Length in seconds. Not needed \
+                     when using TFRecordData')
+
+
 class PalantiriConfig(Object):
     '''Configuration of data IO and data preprocessing'''
 
     blacklist = List.T(
         String.T(), help='List blacklist patterns (may contain wild cards')
 
-    stack_channels = Bool.T(default=False,
-        help='If *True* stack abs. amplitudes of all channels of a station')
+    inspect_semb = Bool.T(default=False, optional=True,
+     help='')
 
-    sample_length = Float.T(optional=True, help='Length in seconds. Not needed \
+    traveltime_model = String.T(optional=True, default="ak135-f-continental.m.nd", help='')
+
+    futterman_attenuation = Bool.T(default=False, optional=True,
+     help='')
+
+    bp_freq = Bool.T(default=False, optional=True,
+     help='')
+
+    bp_coh = Bool.T(default=False, optional=True,
+     help='')
+
+    bp_music = Bool.T(default=False, optional=True,
+     help='')
+
+    optimize = Bool.T(default=False, optional=True,
+     help='')
+
+    optimize_all = Bool.T(default=False, optional=True,
+     help='')
+
+    cs = Bool.T(default=False, optional=True,
+     help='')
+
+    array_response = Bool.T(default=False, optional=True,
+     help='')
+
+    ncores = Int.T(default=2, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
+
+    beam = String.T(default="delaysum", optional=True,
+                            help='quantity')
+
+    ttphases = List.T(
+        String.T(), help='List blacklist patterns (may contain wild cards')
+
+
+class ClusterConfig(Object):
+    '''Configuration of data IO and data preprocessing'''
+
+    cluster = List.T(
+        String.T(), help='List blacklist patterns (may contain wild cards')
+
+    maxcluster = Int.T(default=100, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    minStationAroundInitialcluster = Int.T(default=4, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    cutoff = Int.T(default=10, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    runs = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    centroidminDistance = Float.T(default=2, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    comparedelta = Float.T(default=2, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    stationdistance = Float.T(default=5, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    minclusterStation = Float.T(default=4, optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    minDist = Float.T(default=23., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    initialstationdistance = Float.T(default=5., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+    maxDist = Float.T(default=93., optional=True, help='Length in seconds. Not needed \
+        when using TFRecordData')
+
+
+class Config(Object):
+    '''Defines your setup.'''
+
+    name = String.T(default='unnamed',
+        help='Used to identify the model and runs in summy and checkpoint \
+            directory')
+
+    config = PalantiriConfig.T(help='')
+    config_data = PalantiriDataConfig.T(help='')
+    config_syn = PalantiriSyntheticConfig.T(help='')
+    config_weight = PalantiriWeightConfig.T(help='')
+    config_filter = PalantiriFilterConfig.T(help='')
+    config_geometry = PalantiriGeometryConfig.T(help='')
+    config_xcorr = PalantiriXcorrConfig.T(help='')
+    config_cluster = ClusterConfig.T(help='')
 
 
 class Station(object):
