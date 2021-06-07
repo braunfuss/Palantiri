@@ -68,7 +68,6 @@ class ConfigObj(object):
         s = self.String(key, val)
         return self._checkFloatNumber(key, s)
 
-
     def UFloat(self, key, maxVal=None, default=None):
 
         assert default is None or default >= 0.0
@@ -112,189 +111,6 @@ class ConfigObj(object):
 
         return a, b
 
-    def Distance(self, key, maxVal=40 * 1000):
-        return self.UFloat(key, maxVal)
-
-    def Freq(self, key, maxVal=1000):
-        return self.UFloat(key, maxVal)
-
-    def Duration(self, key='duration'):
-        return self.UInt(key)
-
-    def Time(self, key='time'):
-        return self.String(key)
-
-    def traveltime_model(self):
-        return self.Str('traveltime_model')
-
-    def lat(self):
-        return self.Float('lat')
-
-    def lon(self):
-        return self.Float('lon')
-
-    def depth(self):
-        return self.Float('depth')
-
-    def duration_emp(self):
-        return self.Float('duration_emp')
-
-    def forerun_emp(self):
-        return self.Float('forerun_emp')
-
-    def inspect_semb(self):
-        return self.Bool('inspect_semb')
-
-    def array_response(self):
-        return self.Bool('array_response')
-
-    def dimZ(self):
-        return self.UInt('dimz')
-
-    def dimX(self):
-        return self.UInt('dimx')
-
-    def dimY(self):
-        return self.UInt('dimy')
-
-    def dimX_emp(self):
-        return self.UInt('dimx_emp')
-
-    def dimY_emp(self):
-        return self.UInt('dimy_emp')
-
-    def winlen_emp(self):
-        return self.Float('winlen_emp')
-
-    def step_emp(self):
-        return self.Float('step_emp')
-
-    def winlen(self):
-        return self.Float('winlen')
-
-    def step(self):
-        return self.Float('step')
-
-    def winlen_f2(self):
-        return self.Float('winlen_f2')
-
-    def step_f2(self):
-        return self.Float('step_f2')
-
-    def cs(self):
-        return self.Bool('compressed_sensing')
-
-    def load_wdf(self):
-        return self.Bool('load_wdf')
-
-    def synthetic_test(self):
-        return self.Bool('synthetic_test')
-
-    def shift_by_phase_onset(self):
-        return self.Bool('shift_by_phase_onset')
-
-    def shift_by_phase_pws(self):
-        return self.Bool('shift_by_phase_pws')
-
-    def shift_by_phase_cc(self):
-        return self.Bool('shift_by_phase_cc')
-
-    def newFrequency(self):
-        return self.Float('new_frequence')
-
-    def pyrocko_download(self):
-        return self.Bool('pyrocko_download')
-
-    def synthetic_test_add_noise(self):
-        return self.Bool('synthetic_test_add_noise')
-
-    def synthetic_test_pertub_arrivals(self):
-        return self.Bool('synthetic_test_pertub_arrivals')
-
-    def shift_max(self):
-        return self.Float('shift_max')
-
-    def quantity(self):
-        return self.Str('quantity')
-
-    def ttphases(self):
-        return self.Str('ttphases')
-
-    def colesseo_input(self):
-        return self.Bool('colesseo_input')
-
-    def optimize(self):
-        return self.Bool('optimize')
-
-    def optimize_all(self):
-        return self.Bool('optimize_all')
-
-    def combine_all(self):
-        return self.Bool('combine_all')
-
-    def colosseo_scenario_yml(self):
-        return self.Str('colosseo_scenario_yml')
-
-    def weight_by_noise(self):
-        return self.Bool('weight_by_noise')
-
-    def norm_all(self):
-        return self.Bool('norm_all')
-
-    def futterman_attenuation(self):
-        return self.Bool('futterman_attenuation')
-
-    def dynamic_filter(self):
-        return self.Bool('dynamic_filter')
-
-    def bootstrap_array_weights(self):
-        return self.Bool('bootstrap_array_weights')
-
-    def n_bootstrap(self):
-        return self.UInt('n_bootstrap')
-
-    def weight_by_azimuth(self):
-        return self.Bool('weight_by_azimuth')
-
-    def correct_shifts(self):
-        return self.Bool('correct_shifts')
-
-    def correct_shifts_empirical(self):
-        return self.Bool('correct_shifts_empirical')
-
-    def correct_shifts_empirical(self):
-        return self.Bool('correct_shifts_empirical')
-
-    def correct_shifts_empirical_manual(self):
-        return self.Bool('correct_shifts_empirical_manual')
-
-    def correct_shifts_empirical_run(self):
-        return self.Bool('correct_shifts_empirical_run')
-
-    def correct_shifts_empirical_manual_station_wise(self):
-        return self.Bool('correct_shifts_empirical_manual_station_wise')
-
-    def correct_shifts_empirical_synthetic(self):
-        return self.Bool('correct_shifts_empirical_synthetic')
-
-    def bp_freq(self):
-        try:
-            return self.Bool('bp_freq')
-        except TypeError:
-            return False
-
-    def bp_coh(self):
-        try:
-            return self.Bool('bp_coh')
-        except TypeError:
-            return False
-
-    def bp_music(self):
-        try:
-            return self.Bool('bp_music')
-        except TypeError:
-            return False
-
     def _error0(self, msg):
 
         Logfile.error(msg)
@@ -332,59 +148,6 @@ class FilterCfg(ConfigObj):
 
     def __init__(self, dict):   ConfigObj.__init__(self, None, dict)
 
-    def newFrequency(self):
-        return self.Float('new_frequence')
-
-    def filterswitch(self):
-        return self.UInt('filterswitch', 3)
-
-    def flo(self):
-        return self.Float('flo')
-
-    def fhi(self):
-        return self.Float('fhi')
-
-    def ns(self):
-        return self.Float('ns')
-
-    def flo2(self):
-        return self.Float('flo2')
-
-    def fhi2(self):
-        return self.Float('fhi2')
-
-    def ns2(self):
-        return self.Float('ns2')
-
-    def l_fc(self):
-        return self.Freq('l_fc')
-
-    def l_ns(self):
-        return self.Freq('l_ns')
-
-    def h_fc(self):
-        return self.Freq('h_fc')
-
-    def h_ns(self):
-        return self.Freq('h_ns')
-
-    def filterName(self):
-
-        i = self.filterswitch()
-
-        if i == 0:
-            return None
-        if i == 1:
-            strings = [str(self.flo()),  str(self.fhi()),
-                       str(self.ns()), self.Str('zph')]
-        elif i == 2:
-            strings = [str(self.l_fc()), str(self.l_ns()), self.Str('l_zph')]
-        elif i == 3:
-            strings = [str(self.h_fc()), str(self.h_ns()), self.Str('h_zph')]
-
-        name = '_'.join(strings)
-        return name
-
 
 def filterName(dict):
 
@@ -405,6 +168,15 @@ class OriginCfg(ConfigObj):
 
     def rake(self, def1):
         return self.Float('rake',   def1)
+
+    def lat(self):
+        return self.Float('lat')
+
+    def lon(self):
+        return self.Float('lon')
+
+    def depth(self):
+        return self.Float('depth')
 
     def time(self):
         return self.String('time')

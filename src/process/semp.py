@@ -18,11 +18,12 @@ from collections import OrderedDict
 from palantiri.process import music
 from pyrocko import io, trace, util
 
-trace_txt  = 'trace.txt'
+trace_txt = 'trace.txt'
 travel_txt = 'travel.txt'
-latv_txt   = 'latv.txt'
-lonv_txt   = 'lonv.txt'
-semb_txt   = 'semb.txt'
+latv_txt = 'latv.txt'
+lonv_txt = 'lonv.txt'
+semb_txt = 'semb.txt'
+
 
 def normalize(lst):
     s = sum(lst)
@@ -118,23 +119,23 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
               trace_1, calcStreamMap, time, Config, Origin, refshifts, nstats,
               bs_weights=None, flag_rpe=False):
 
-        cfg = ConfigObj(dict=Config)
+        cfg = Config
         origin = OriginCfg(Origin)
         cfg_f = FilterCfg(Config)
 
-        if cfg.Bool('dynamic_filter') is False:
-            if cfg.Bool('bp_freq') is True:
+        if cfg.config_filter.dynamic_filter is False:
+            if cfg.config.bp_freq is True:
                return semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights)
-            if cfg.Bool('bp_coh') is True:
+            if cfg.config.bp_coh is True:
                return semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights)
 
-            if cfg.Int('dimz') != 0:
+            if cfg.config_geometry.dimz!= 0:
                 return semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep,
                                          dimX, dimY, mint, new_frequence,
                                          minSampleCount, latv_1, lonv_1,
@@ -142,7 +143,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                          time, cfg, refshifts,
                                          bs_weights=bs_weights)
 
-            if cfg.Bool('bp_music') is True:
+            if cfg.config.bp_music is True:
                 return music_wrapper(ncpus, nostat, nsamp, ntimes, nstep, dimX,
                                      dimY, mint, new_frequence, minSampleCount,
                                      latv_1, lonv_1, traveltime_1, trace_1,
@@ -174,6 +175,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 def t2ind_fast(t, tdelta, snap=round):
     return int(int((t/tdelta)*(10**0))/(10.**0))
 
+
 def t2ind(t, tdelta, snap=round):
     return int(snap(t/tdelta))
 
@@ -184,17 +186,17 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
                             origin, FilterCfg):
 
     obspy_compat.plant()
-    trs_orgs  = []
+    trs_orgs = []
     for tr in calcStreamMap:
         tr_org = obspy_compat.to_pyrocko_trace(calcStreamMap[tr])
         tr_org.ydata = tr_org.ydata / np.sqrt(np.mean(np.square(tr_org.ydata)))
         trs_orgs.append(tr_org)
-    trace  = toMatrix(trace_1, minSampleCount)
+    trace = toMatrix(trace_1, minSampleCount)
     traveltime = []
     traveltime = toMatrix(traveltime_1, dimX * dimY)
 
-    latv   = latv_1.tolist()
-    lonv   = lonv_1.tolist()
+    latv = latv_1.tolist()
+    lonv = lonv_1.tolist()
 
     '''
     Basic.writeMatrix(trace_txt,  trace, nostat, minSampleCount, '%e')
@@ -206,10 +208,14 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
     backSemb = np.ndarray(shape=(ntimes, dimX*dimY), dtype=float)
     for i in range(ntimes):
         #  loop over grid points
-        sembmax = 0; sembmaxX = 0; sembmaxY = 0
+        sembmax = 0
+        sembmaxX = 0
+        sembmaxY = 0
 
         for j in range(dimX * dimY):
-            semb = 0; nomin = 0; denom = 0
+            semb = 0
+            nomin = 0
+            denom = 0
             sums_cc = 0
             sums = 0
             shifted = []
@@ -244,7 +250,7 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
             semb = sum
 
             backSemb[i][j] = sum
-            if semb > sembmax :
+            if semb > sembmax:
 
                sembmax  = semb
                sembmaxX = latv[j]
@@ -264,11 +270,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
     trs_orgs = []
     snap = (round, round)
-    if cfg.Bool('combine_all') is True:
+    if cfg.config_weight.combine_all is True:
         combine = True
     else:
         combine = False
-    if cfg.Bool('bootstrap_array_weights') is True:
+    if cfg.config_weight.bootstrap_array_weights is True:
         do_bs_weights = True
     else:
         do_bs_weights = False
@@ -372,7 +378,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
             if max(index_steps) % 2 == 1:
                 tr_org.ydata = abs(tr_org.ydata)
     #            tr_org.ydata = num.ediff1d(tr_org.ydata)
-    #    if cfg.Bool('shift_by_phase_pws') is True:
+    #    if cfg.config_weight.shift_by_phase_pws is True:
     #                cfx = num.fft.fft(tr_org.ydata)
     #                sums_schimmel = sums_schimmel + (cfx/(abs(cfx)) * num.exp(1j*2*num.pi*cfx)))
     #                print('calculate pws')
@@ -403,7 +409,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 data = tr.ydata[ibeg:iend]
                 # normalize:
                 #data = data / np.sqrt(np.mean(np.square(data)))
-                if cfg.Bool('shift_by_phase_pws') is True:
+                if cfg.config_weight.shift_by_phase_pws is True:
                     cfx = num.fft.fft(data)
                     sums_schimmel = sums_schimmel + (cfx/(abs(cfx)) * num.exp(1j*2*num.pi*cfx))
                 try:
@@ -428,7 +434,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         #    t1 = trace.Trace(
         #        station='TEST', channel='Z', deltat=0.5, tmin=0., ydata=data)
 
-            if cfg.Bool('shift_by_phase_pws') is True:
+            if cfg.config_weight.shift_by_phase_pws is True:
                 for k in range(nostat):
                     relstart = traveltime[k][j]
                     tr = trs_orgs[k]
@@ -451,13 +457,13 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                             sums = sums+data
             data = sums_copy
             basetime = util.str_to_time("2016-11-25 14:24:30.000")
-            t1 = trace.Trace(
-                station='R46', location="li", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
+#            t1 = trace.Trace(
+#                station='R46', location="li", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
             data = num.real(sums)
-            t2 = trace.Trace(
-                station='R46', location="pw", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
-            t3 = trace.Trace(
-                station='R46', location="dat", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data_copy)
+#            t2 = trace.Trace(
+#                station='R46', location="pw", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
+#            t3 = trace.Trace(
+#                station='R46', location="dat", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data_copy)
 
             sum = abs(num.sum(sums))
             if combine is True:
@@ -466,13 +472,10 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
 
             backSemb[i][j] = sum
             if semb > sembmax:
-                sembmax  = semb
+                sembmax = semb
                 sembmaxX = latv[j]
                 sembmaxY = lonv[j]
                 #backSemb[i][:] = backSemb[i][:]/num.max(backSemb[i][:])
-                io.save(t1, "traces_grid_0_lin_%s_%s.mseed" % (i,j))
-                io.save(t2, "traces_grid_schimmel_0_%s_%s.mseed" % (i,j))
-                trace.snuffle([t1,t2, t3])
         if output is True:
             Logfile.add('max semblance: ' + str(sembmax) + ' at lat/lon: ' +
                         str(sembmaxX) + ',' + str(sembmaxY))
@@ -489,11 +492,11 @@ def music_wrapper(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
-    if cfg.Bool('combine_all') is True:
+    if cfg.config_weight.combine_all is True:
         combine = True
     else:
         combine = False
-    if cfg.Bool('bootstrap_array_weights') is True:
+    if cfg.config_weight.bootstrap_array_weights is True:
         do_bs_weights = True
     else:
         do_bs_weights = False
@@ -650,11 +653,11 @@ def semblance_py_coherence(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
-    if cfg.Bool('combine_all') is True:
+    if cfg.config_weight.combine_all is True:
         combine = True
     else:
         combine = False
-    if cfg.Bool('bootstrap_array_weights') is True:
+    if cfg.config_weight.bootstrap_array_weights is True:
         do_bs_weights = True
     else:
         do_bs_weights = False
@@ -818,11 +821,11 @@ def semblance_py_freq(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
-    if cfg.Bool('combine_all') is True:
+    if cfg.config_weight.combine_all is True:
         combine = True
     else:
         combine = False
-    if cfg.Bool('bootstrap_array_weights') is True:
+    if cfg.config_weight.bootstrap_array_weights is True:
         do_bs_weights = True
     else:
         do_bs_weights = False
@@ -939,11 +942,11 @@ def semblance_py_cube(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
     obspy_compat.plant()
     trs_orgs = []
     snap = (round, round)
-    if cfg.Bool('combine_all') is True:
+    if cfg.config_weight.combine_all is True:
         combine = True
     else:
         combine = False
-    if cfg.Bool('bootstrap_array_weights') is True:
+    if cfg.config_weight.bootstrap_array_weights is True:
         do_bs_weights = True
     else:
         do_bs_weights = False
@@ -1040,11 +1043,11 @@ def semblance_py_fixed(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  bs_weights=None, flag_rpe=True):
     trs_orgs = []
     snap = (round, round)
-    if cfg.Bool('combine_all') is True:
+    if cfg.config_weight.combine_all is True:
         combine = True
     else:
         combine = False
-    if cfg.Bool('bootstrap_array_weights') is True:
+    if cfg.config_weight.bootstrap_array_weights is True:
         do_bs_weights = True
     else:
         do_bs_weights = False

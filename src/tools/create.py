@@ -64,8 +64,8 @@ def createWorkingDirectory(args):
     absfolder = os.path.join(os.getcwd(), 'events', foldername)
 
     if os.access(absfolder, os.F_OK) is False:
-            os.makedirs(absfolder)
-            logger.info('\033[31m WORKING FOLDER CREATED \033[0m \n')
+        os.makedirs(absfolder)
+        logger.info('\033[31m WORKING FOLDER CREATED \033[0m \n')
 
     logger.info('\033[31m Folder: %s  EventID: %s \033[0m \n' % (absfolder,
                 foldername))
@@ -177,8 +177,8 @@ def copyConfigSkeleton(evfolder):
     time_p2 = time[11:-1]
     time_pf = time_p1 + " " + time_p2
 
-    logger.info('\033[31mNEXT PROCESSING STEP: \n\n   \
-                 palantiri_down {evdirectory} "%s" 10352.323104588522 0.001 10 --radius-min=1110 %s \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))) %(time_pf, eventname))
+    logger.info('\033[31mNEXT PROCESSING STEP (e.g.): \n\n   \
+                 palantiri_down {evdirectory} "%s" 10352.323104588522 0.1 10 --radius-min=1110 %s \n\n\033[0m'.format(evdirectory=str(event.strip('[]'))) %(time_pf, eventname))
 
 
 def main():

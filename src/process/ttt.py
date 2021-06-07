@@ -1,16 +1,10 @@
 import os
 import sys
-if sys.version_info.major >= 3:
-    import _pickle as pickle
-    xrange = range
-else:
-    import cPickle as pickle
 from palantiri.tools.config import Station
-
 import fnmatch
 import logging
 import math
-from  math  import sin, cos, atan2
+from math import sin, cos, atan2
 import time
 import subprocess
 from palantiri.common import Basic
@@ -21,6 +15,11 @@ from palantiri.common.ObspyFkt import loc2degrees, obs_TravelTimes
 from pyrocko import cake
 import numpy as np
 import palantiri
+if sys.version_info.major >= 3:
+    import _pickle as pickle
+    xrange = range
+else:
+    import cPickle as pickle
 
 km = 1000.
 
@@ -57,12 +56,13 @@ class MinTMaxT(object):
         self.maxt = maxt
 
 
-def filterStations(StationList, Config, Origin, network):
+def filterStations(StationList, Config, Origin, network, cfg_yaml):
 
     F = []
 
     cfg = ConfigObj(dict=Config)
-    minDist, maxDist = cfg.FloatRange('mindist', 'maxdist')
+    minDist = cfg_yaml.config_cluster.minDist
+    maxDist = cfg_yaml.config_cluster.maxDist
     origin = Location(Origin['lat'], Origin['lon'])
     Logfile.red('Filter stations with configured parameters...')
     for j in network:
@@ -127,18 +127,17 @@ def backazi(Station, Event):
         return angle
 
 
-def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
+def calcTTTAdv(cfg, station, Origin, flag, arrayname, Xcorrshift, Refshift,
                phase, flag_rpe=False):
 
-    cfg = ConfigObj(dict=Config)
     if flag_rpe is True:
-        dimX = cfg.Int('dimx_emp')
-        dimY = cfg.Int('dimy_emp')
+        dimX = cfg.config_geometry.dimx_emp
+        dimY = cfg.config_geometry.dimy_emp
     else:
-        dimX = cfg.Int('dimx')
-        dimY = cfg.Int('dimy')
+        dimX = cfg.config_geometry.dimx
+        dimY = cfg.config_geometry.dimy
 
-    gridspacing = cfg.Float('gridspacing')
+    gridspacing = cfg.config_geometry.gridspacing
     o_lat = float(Origin['lat'])
     o_lon = float(Origin['lon'])
     o_depth = float(Origin['depth'])
@@ -157,7 +156,7 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
     sdelta = loc2degrees(Location(o_lat, o_lon), locStation)
     Phase = cake.PhaseDef(phase)
     path = palantiri.__path__
-    traveltime_model = cfg.Str('traveltime_model')
+    traveltime_model = cfg.config.traveltime_model
     model = cake.load_model(path[0]+'/data/'+traveltime_model)
     z = 0
     if plane is True:
@@ -239,17 +238,17 @@ def calcTTTAdv(Config, station, Origin, flag, arrayname, Xcorrshift, Refshift,
     k = MinTMaxT(mint, maxt)
 
     if flag_rpe is True:
-        Basic.dumpToFile(str(flag)  + '-ttt_emp.pkl', TTTGridMap)
-        Basic.dumpToFile('minmax-emp'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile(str(flag) + '-ttt_emp.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-emp' + str(flag) + '.pkl', k)
         Basic.dumpToFile('station-emp' + str(flag) + '.pkl', station)
     else:
-        Basic.dumpToFile(str(flag)  + '-ttt.pkl', TTTGridMap)
-        Basic.dumpToFile('minmax-'  + str(flag) + '.pkl', k)
+        Basic.dumpToFile(str(flag) + '-ttt.pkl', TTTGridMap)
+        Basic.dumpToFile('minmax-' + str(flag) + '.pkl', k)
         Basic.dumpToFile('station-' + str(flag) + '.pkl', station)
 
 
 def calcTTTAdv_cube(Config, station, Origin, flag, arrayname, Xcorrshift,
-                      Refshift, phase, flag_rpe=False):
+                    Refshift, phase, flag_rpe=False):
 
     cfg = ConfigObj(dict=Config)
     if flag_rpe is True:
@@ -268,8 +267,8 @@ def calcTTTAdv_cube(Config, station, Origin, flag, arrayname, Xcorrshift,
     stop = orig_depth+float(stop)
     depths = np.linspace(start, stop, num=dimZ)
 
-    gridspacing = cfg.Float('gridspacing')
-    traveltime_model = cfg.Str('traveltime_model')
+    gridspacing = cfg.config_geometry.gridspacing
+    traveltime_model = cfg_yaml.config.traveltime_model
 
     o_lat = float(Origin['lat'])
     o_lon = float(Origin['lon'])
@@ -354,7 +353,7 @@ def calcTTTAdvTauP(Config, station, Origin, flag, Xcorrshift=None,
     else:
         dimX = cfg.Int('dimx_emp')
         dimY = cfg.Int('dimy_emp')
-    gridspacing = cfg.Float('gridspacing')
+    gridspacing = cfg.config_geometry.gridspacing
     print('done this')
     o_lat = float(Origin['lat'])
     o_lon = float(Origin['lon'])

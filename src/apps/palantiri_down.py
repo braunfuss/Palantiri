@@ -323,7 +323,7 @@ def main():
         '--sites',
         dest='sites',
         metavar='SITE1,SITE2,...',
-        default='geofon,iris',
+        default='iris',
         help='sites to query (available: %s, default: "%%default"'
         % ', '.join(g_sites_available))
 
@@ -338,7 +338,7 @@ def main():
         '--instrument-codes',
         dest='priority_instrument_code',
         metavar='H,L,G,...',
-        default='H,L',
+        default='H',
         help='select and prioritize instrument codes (default: %default)')
 
     parser.add_option(
@@ -352,9 +352,11 @@ def main():
     parser.add_option(
         '--nstations-wanted',
         dest='nstations_wanted',
+        default=600,
         metavar='N',
         type=int,
-        help='number of stations to select initially')
+        help='number of stations to select initially, default is set to\
+              600 to minimize downloading time.')
 
     parser.add_option(
         '--magmin',
@@ -377,7 +379,6 @@ def main():
         dest='selection_file',
         action='append',
         help='add local stations file')
-
 
     (options, args) = parser.parse_args(sys.argv[1:])
     magmin = options.magmin
@@ -574,9 +575,6 @@ def main():
     target_sample_rate = sample_rate
 
     fmax = target_sample_rate
-
-    # target_sample_rate = None
-    # priority_band_code = ['H', 'B', 'M', 'L', 'V', 'E', 'S']
 
     priority_units = ['M/S', 'M', 'M/S**2']
 

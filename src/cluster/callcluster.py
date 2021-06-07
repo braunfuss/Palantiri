@@ -2,7 +2,8 @@ import os
 import sys
 from optparse import OptionParser
 from palantiri.tools import config
-
+from palantiri.tools.config import Event, Config, PalantiriConfig, PalantiriDataConfig, PalantiriXcorrConfig, PalantiriFilterConfig, PalantiriWeightConfig, PalantiriGeometryConfig, PalantiriSyntheticConfig
+from pyrocko import guts
 parser = OptionParser(usage="%prog -f eventpath ")
 parser.add_option("-f", "--evpath", type="string", dest="evpath", help="evpath")
 (options, args) = parser.parse_args()
@@ -14,8 +15,10 @@ def init():
     C = config.Config(options.evpath)
     print(options.evpath)
     Config = C.parseConfig('config')
+    yaml_file = C.parseConfig('yaml')
+    cfg = guts.load(filename=yaml_file[0])
+    tests = int(cfg.config_cluster.runs)
 
-    tests = int(Config['runs'])
     import palantiri
     path = palantiri.__path__
     at = os.path.join(path[0], 'cluster/cluster2.py')

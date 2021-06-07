@@ -28,7 +28,7 @@ class Result(object):
 
 class BestSolution(object):
 
-    def __init__(self,station,cluster,lat,lon):
+    def __init__(self, station, cluster, lat, lon):
 
         self.station = station
         self.cluster = cluster
@@ -37,20 +37,22 @@ class BestSolution(object):
 
 
 def getStatistics(clusterresults):
-    p= os.path.join(options.evpath,'stat.dat')
-    fobjstat = open(p,'w')
+    p = os.path.join(options.evpath, 'stat.dat')
+    fobjstat = open(p, 'w')
     resDict = {}
     for root, dirs, files in os.walk(clusterresults):
         for i in files:
             if i == 'event.statistic':
-                fname = os.path.join(root,i)
+                fname = os.path.join(root, i)
                 bspath = os.path.join('/',*fname.split('/')[:-1])
-                fobj = open(fname,'r')
+                fobj = open(fname, 'r')
 
                 for line in fobj:
                     line = line.split()
-                    resDict[fname] = Result(line[0],line[1],line[2],line[3],bspath)
-                    fobjstat.write(('%s:  %s  %s  %s  %s\n')%(fname,line[0],line[1],line[2],line[3]))
+                    resDict[fname] = Result(line[0], line[1], line[2],
+                                            line[3], bspath)
+                    fobjstat.write(('%s:  %s  %s  %s  %s\n') % (fname, line[0],
+                                    line[1], line[2], line[3]))
                 fobj.close()
 
     fobjstat.close()
@@ -77,10 +79,10 @@ def getBestSolution(resultDictionary):
 def copycluster2EventConfig(clusterDict, evpath):
 
     epath = os.path.join(*evpath.split('/')[:-1])
-    t= epath.split(os.path.sep)[-1]
+    t = epath.split(os.path.sep)[-1]
     fname = t+'.config'
-    fullfname = os.path.join(epath,fname)
-    L= []
+    fullfname = os.path.join(epath, fname)
+    L = []
     fobj  = open(fullfname,'r')
 
     for index,line in enumerate(fobj):
