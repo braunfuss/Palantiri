@@ -19,7 +19,7 @@ logger = logging.getLogger('ARRAY-MP')
 class PalantiriDataConfig(Object):
     '''Configuration of data IO and data preprocessing'''
     quantity = String.T(default="displacement",
-                            help='quantity')
+                            help='velocity and displacement')
 
     tttopt = String.T(default="-ph P",
                             help='quantity')
@@ -28,60 +28,58 @@ class PalantiriDataConfig(Object):
         when using TFRecordData')
 
     pyrocko_download = Bool.T(default=True, optional=True,
-     help='Length in seconds. Not needed \
-        when using TFRecordData')
+     help='if download of was not done with palantiridown command, set to 0')
 
     export_unfiltered = Bool.T(default=False, optional=True,
-     help='')
+     help='Save unfiltered waveforms.')
 
     export_filtered = Bool.T(default=False, optional=True,
-     help='')
+     help='Save filtered waveforms.')
 
     export_resampled = Bool.T(default=False, optional=True,
-     help='')
+     help='Save resmpled mseed.')
 
-    colesseo_input = Bool.T(default=False, optional=True,
-     help='')
+    colesseo_input = Bool.T(default=False, optional=True,  help='if colosseo\
+                                     synthetics should be used, set to 1')
 
-    colosseo_scenario_yml = String.T(optional=True, help='')
+    colosseo_scenario_yml = String.T(optional=True, help='give the colosseo\
+                                    scenario.yml file')
 
-    load_wdf = Bool.T(default=False, optional=True,
-     help='')
+    load_wdf = Bool.T(default=True, optional=True,
+     help='Save and load xcorr files as pickle ')
 
 
 class PalantiriSyntheticConfig(Object):
     '''Configuration of data IO and data preprocessing'''
 
     synthetic_test = Bool.T(default=False, optional=True,
-     help='')
+     help='Do synthetic test.')
 
     synthetic_test_add_noise = Bool.T(default=False, optional=True,
-     help='')
+     help='Add white noise to the synthetics.')
 
     synthetic_test_pertub_arrivals = Bool.T(default=False, optional=True,
-     help='')
+     help='Perubate the arrivals of the synthetics')
 
 
 class PalantiriWeightConfig(Object):
     '''Configuration of data IO and data preprocessing'''
 
-    shift_max = Float.T(default=4., optional=True, help='Length in seconds. Not needed \
-        when using TFRecordData')
+    shift_max = Float.T(default=4., optional=True, help='Shift in s to consider for corrections')
 
     weight_by_azimuth = Bool.T(default=True, optional=True,
-     help='')
+     help='Weight in 12 azimuthal blocks.')
 
     bootstrap_array_weights = Bool.T(default=True, optional=True,
-     help='')
+     help='If true bootstraps the array weights.')
 
-    n_bootstrap = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
-        when using TFRecordData')
+    n_bootstrap = Int.T(default=1, optional=True, help='Number of bootstraps.')
 
     correct_shifts_empirical_run = Bool.T(default=False, optional=True,
      help='')
 
     correct_shifts = Bool.T(default=False, optional=True,
-     help='')
+     help='If true shifts waveforms to expected traveltimes using the center and velocity model ')
 
     correct_shifts_empirical = Bool.T(default=False, optional=True,
      help='')
@@ -92,54 +90,53 @@ class PalantiriWeightConfig(Object):
     correct_shifts_empirical_manual_station_wise = Bool.T(default=False, optional=True,
      help='')
 
-    combine_all = Bool.T(default=False, optional=True,
-     help='')
+    combine_all = Bool.T(default=True, optional=True,
+     help='if True combines the semblance of all arrays by multiplication.')
 
     norm_all = Bool.T(default=True, optional=True,
-     help='')
+     help='if True all semblances are normalized between 0 and 1.')
 
     weight_by_noise = Bool.T(default=False, optional=True,
-     help='')
+     help='If true the array weight is determined by preevent noise')
 
     shift_by_phase_onset = Bool.T(default=False, optional=True,
-     help='')
+     help='If true the waveforms will be shifted to expected arrivals. Use only for tests.')
 
     shift_by_phase_pws = Bool.T(default=False, optional=True,
-     help='')
+     help='If true use the phase weighted stacking.')
 
     shift_by_phase_cc = Bool.T(default=False, optional=True,
-     help='')
+     help='If true use corelation based stacking.')
 
 
 class PalantiriFilterConfig(Object):
     '''Configuration of data IO and data preprocessing'''
 
-    filters = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
-        when using TFRecordData')
+    filters = Int.T(default=1, optional=True, help='Number of filters')
 
     dynamic_filter = Bool.T(default=False, optional=True,
-     help='')
+     help='dynamic_filter option, if true, changes cf over frequency.')
 
-    filterswitch = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
-        when using TFRecordData')
+    filterswitch = Int.T(default=1, optional=True, help='Determines the reference filter.')
 
     flo = List.T(
-        Float.T(), help='List blacklist patterns (may contain wild cards')
+        Float.T(), help='List of low corner frequencies of BP filters.')
 
     fhi = List.T(
-        Float.T(), help='List blacklist patterns (may contain wild cards')
+        Float.T(), help='List of high corner frequencies of BP filters.')
 
     name = List.T(
-        String.T(), help='List blacklist patterns (may contain wild cards')
+        String.T(), help='List of names for filterss')
 
     #zph = List.T(
     #    String.T(), help='List blacklist patterns (may contain wild cards')
 
-    newFrequency = Float.T(default=0.5, help='Length in seconds. Not needed \
-        when using TFRecordData')
+    newFrequency = Float.T(default=0.5, help='resampling data to frequency in\
+                                              Hz or s, should match your gf \
+                                              store if using synthetics')
 
     ns = List.T(
-        Int.T(), help='List blacklist patterns (may contain wild cards')
+        Int.T(), help='')
 
     step_emp = Float.T(default=4., optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
@@ -156,8 +153,7 @@ class PalantiriFilterConfig(Object):
     forerun = Float.T(default=10., optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    duration = Float.T(default=20., optional=True, help='Length in seconds. Not needed \
-        when using TFRecordData')
+    duration = Float.T(default=20., optional=True, help='Duration of the window')
 
 
 class PalantiriGeometryConfig(Object):
@@ -261,7 +257,8 @@ class PalantiriConfig(Object):
                             help='quantity')
 
     ttphases = List.T(
-        String.T(), help='List blacklist patterns (may contain wild cards')
+        String.T(), help='List of phases to consider [right now only P and S \
+                          possible!]')
 
 
 class ClusterConfig(Object):
