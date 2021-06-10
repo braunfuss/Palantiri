@@ -1000,7 +1000,8 @@ def toMatrix(npVector, nColumns):
 
 def doCalc(flag, cfg, WaveformDict, FilterMetaData, Gmint, Gmaxt,
            TTTGridMap, Folder, Origin, ntimes, switch, ev, arrayfolder,
-           syn_in, refshifts, phase, rp, flag_rpe, nstats, bs_weights=None):
+           syn_in, refshifts, phase, rp, flag_rpe, nstats, bs_weights=None,
+           boot_shifts=None):
     '''
     method for calculating semblance of one station array
     '''

@@ -117,7 +117,7 @@ def toMatrix(npVector, nColumns):
 def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
               new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
               trace_1, calcStreamMap, time, Config, Origin, refshifts, nstats,
-              bs_weights=None, flag_rpe=False):
+              bs_weights=None, flag_rpe=False, boot_shifts=None):
 
         cfg = Config
         origin = OriginCfg(Origin)
@@ -163,7 +163,7 @@ def semblance(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                                    mint, new_frequence, minSampleCount, latv_1,
                                    lonv_1, traveltime_1, trace_1, calcStreamMap,
                                    time, cfg, refshifts, nstats, bs_weights=bs_weights,
-                                   flag_rpe=flag_rpe)
+                                   flag_rpe=flag_rpe, boot_shifts=boot_shifts)
         else:
            return semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep,
                                           dimX, dimY, mint, new_frequence,
@@ -266,7 +266,8 @@ def semblance_py_dynamic_cf(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY,
 def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                  new_frequence, minSampleCount, latv_1, lonv_1, traveltime_1,
                  trace_1, calcStreamMap, time, cfg, refshifts, nstats,
-                 bs_weights=None, flag_rpe=False, output=False):
+                 bs_weights=None, flag_rpe=False, output=False,
+                 boot_shifts=None):
 
     trs_orgs = []
     snap = (round, round)
@@ -320,7 +321,11 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
         markers = []
 
         for k in range(nostat):
-            relstart = traveltime[k][j]
+            if cfg.config_weight.bootstrap_array_weights is True:
+                relstart = traveltime[k][j] + boot_shifts[k] + num.random.uniform(-1*cfg.config_weight.shift_max/10.,
+                                 cfg.config_weight.shift_max/10.)
+            else:
+                relstart = traveltime[k][j]
             tr = trs_orgs[k]
             try:
                 tmin = time+relstart-mint+refshifts[k]
@@ -407,8 +412,6 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                 ibeg = index_begins[str(j)+str(k)][0]+i*index_steps[j+k]
                 iend = index_begins[str(j)+str(k)][0]+index_window[j+k]+i*index_steps[j+k]
                 data = tr.ydata[ibeg:iend]
-                # normalize:
-                #data = data / np.sqrt(np.mean(np.square(data)))
                 if cfg.config_weight.shift_by_phase_pws is True:
                     cfx = num.fft.fft(data)
                     sums_schimmel = sums_schimmel + (cfx/(abs(cfx)) * num.exp(1j*2*num.pi*cfx))
@@ -457,14 +460,7 @@ def semblance_py(ncpus, nostat, nsamp, ntimes, nstep, dimX, dimY, mint,
                             sums = sums+data
             data = sums_copy
             basetime = util.str_to_time("2016-11-25 14:24:30.000")
-#            t1 = trace.Trace(
-#                station='R46', location="li", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
             data = num.real(sums)
-#            t2 = trace.Trace(
-#                station='R46', location="pw", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data)
-#            t3 = trace.Trace(
-#                station='R46', location="dat", channel='Z', deltat=0.2, tmin=basetime+relstart, ydata=data_copy)
-
             sum = abs(num.sum(sums))
             if combine is True:
                 sum = (1./nostat)* ((abs(num.sum((sums)))**2) /num.sum(sums))

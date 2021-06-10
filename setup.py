@@ -57,6 +57,7 @@ setup(
         'palantiri': [
             'data/*nd',
             'skeleton/global.conf',
+            'skeleton/example.yaml',
             'skeleton/example.config']},
     data_files=[],
 
