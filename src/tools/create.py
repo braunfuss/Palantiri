@@ -160,13 +160,17 @@ def copyConfigSkeleton(evfolder):
     logger.info('\033[31m Copy example.config to %s \033[0m \n' % (evfolder))
 
     dstfile = os.path.split(evfolder)[1]+'.config'
+    dstfile = os.path.split(evfolder)[1]+'.yaml'
     import palantiri
     path = palantiri.__path__
     src = os.path.join(path[0], 'skeleton', 'example.config')
+    src_yaml = os.path.join(path[0], 'skeleton', 'example.yaml')
     dst = os.path.join(evfolder, dstfile)
+    dst_yaml = os.path.join(evfolder, dstfile_yaml)
     logger.info('\033[31m Created event directory \
                 %s \033[0m \n' % (evfolder.split('/')[-1]))
     shutil.copy(src, dst)
+    shutil.copy(src_yaml, dst_yaml)
 
     event = evfolder.split('/')[-1]
     eventname = event.split('_')[0]

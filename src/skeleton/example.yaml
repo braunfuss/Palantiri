@@ -1,0 +1,24 @@
+--- !palantiri.tools.config.Config
+name: backprojection_config
+config: !palantiri.tools.config.PalantiriConfig
+  blacklist: []
+  ttphases: ["P"]
+
+config_data: !palantiri.tools.config.PalantiriDataConfig
+  quantity: "velocity"
+config_syn: !palantiri.tools.config.PalantiriSyntheticConfig
+  synthetic_test: False
+config_weight: !palantiri.tools.config.PalantiriWeightConfig
+  weight_by_azimuth: False
+config_filter: !palantiri.tools.config.PalantiriFilterConfig
+  flo: [0.03, 1]
+  fhi: [1., 1.5]
+  ns: [4, 4]
+  name: ["1", "2"]
+config_geometry: !palantiri.tools.config.PalantiriGeometryConfig
+  dimx: 25
+  depths: [12,12,1]
+config_xcorr: !palantiri.tools.config.PalantiriXcorrConfig
+  xcorr: True
+config_cluster: !palantiri.tools.config.ClusterConfig
+  cluster: []

@@ -1084,12 +1084,21 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     ws.append(g[k])
                                 k =+ 1
                             ws = num.asarray(ws)
+                            array_index = 0
+                            boot_shifts = num.zeros(num.shape(SL))
+                            for i in xcorrnetworks:
+                                len_network = SL[i]
+                                array_shift = rstate.uniform(-1*cfg.config_weight.shift_max,
+                                                 cfg.config_weight.shift_max)
+                                boot_shifts[array_index:array_index+len_network] = array_shift
+                                array_index = array_index+len_network
+
                             arraySemb, weight, array_center = sembCalc.doCalc(
                                 counter, Config, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
                                 phase, rpe+str(arrayname)+switchs, flag_rpe, nstats,
-                                bs_weights=ws)
+                                bs_weights=ws, boot_shifts=boot_shifts)
 
                             ASL.append(arraySemb)
                             weights.append(weight)
