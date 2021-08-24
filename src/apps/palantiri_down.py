@@ -377,7 +377,7 @@ def main():
         '--minlen',
         dest='minlen',
         metavar='VALUE',
-        default=2100.0,
+        default=100.0,
         type=float,
         help='minimum length of traces')
 
@@ -510,6 +510,8 @@ def main():
             low_velocity, tpad=options.padding_factor/fmin)
 
         tmin, tmax = timewindow(time, radius, depth)
+        tmin = tmin - options.padding_factor
+        tmax = tmax + options.padding_factor
 
     elif options.window == 'p':
         if event is None:
@@ -1137,7 +1139,7 @@ def main():
     cluster_stations_one = []
     prep_stations_cluster = prep_stations.copy()
     for st in prep_stations:
-        for channel in ['BHE', 'BHN', 'BHZ', 'BH1', 'BH2']:
+        for channel in ['BHE', 'BHN', 'BHZ', 'BH1', 'BH2', 'HHE', 'HHN', 'HHZ' ]:
             try:
                 st.remove_channel_by_name(channel)
             except:
@@ -1223,17 +1225,10 @@ def main():
                     prep_stations_ones.remove(st)
                 except Exception:
                     pass
-
     fn_stations_cluster = op.join(output_dir, 'stations_cluster.txt')
-    for st in stations:
-        for channel in ['R', 'T', 'Z']:
-            try:
-                st.remove_channel_by_name(channel)
-            except:
-                pass
     model.dump_stations(prep_stations_cluster, fn_stations_prep)
-    model.dump_stations(stations, fn_stations_cluster)
+    model.dump_stations(prep_stations_cluster, fn_stations_cluster)
 
 
-    logger.info('prepared waveforms from %i stations' % len(stations))
+    logger.info('prepared waveforms from %i stations' % len(prep_stations_cluster))
 
