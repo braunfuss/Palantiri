@@ -235,6 +235,13 @@ def main():
         help='print debugging information to stderr')
 
     parser.add_option(
+        '--raw_only',
+        dest='raw_only',
+        action='store_true',
+        default=False,
+        help='Skip restitution of data')
+
+    parser.add_option(
         '--dry-run',
         dest='dry_run',
         action='store_true',
@@ -296,7 +303,7 @@ def main():
     parser.add_option(
         '--padding-factor',
         type=float,
-        default=6.0,
+        default=15.0,
         dest='padding_factor',
         help='extend time window on either side, in multiples of 1/<fmin_hz> '
              '(default: 5)')
@@ -323,7 +330,7 @@ def main():
         '--sites',
         dest='sites',
         metavar='SITE1,SITE2,...',
-        default='iris',
+        default='iris,geofon',
         help='sites to query (available: %s, default: "%%default"'
         % ', '.join(g_sites_available))
 
@@ -1150,14 +1157,14 @@ def main():
     from subprocess import call
     script = "cat"+" "+ output_dir+"/rest/*.mseed" +"> "+ output_dir+"/traces.mseed"
     call(script, shell=True)
-    script = "cat"+" "+ output_dir+"/prepared/*..*" +"> "+ output_dir+"/traces_rotated.mseed"
-    call(script, shell=True)
+#    script = "cat"+" "+ output_dir+"/prepared/*..*" +"> "+ output_dir+"/traces_rotated.mseed"
+#    call(script, shell=True)
 
 
-    traces = io.load(output_dir+"/traces_rotated.mseed")
+    traces = io.load(output_dir+"/traces.mseed")
 
     for tr in traces:
-        tr.ydata = num.diff(tr.ydata)
+        tr.set_ydata(num.diff(tr.ydata) / tr.deltat)
     io.save(traces, output_dir+"/traces_velocity.mseed")
     cluster_stations_ones = []
     for st in cluster_stations_one:
@@ -1218,9 +1225,15 @@ def main():
                     pass
 
     fn_stations_cluster = op.join(output_dir, 'stations_cluster.txt')
-
-    model.dump_stations(prep_stations_ones, fn_stations_prep)
-    model.dump_stations(cluster_stations_ones, fn_stations_cluster)
+    for st in stations:
+        for channel in ['R', 'T', 'Z']:
+            try:
+                st.remove_channel_by_name(channel)
+            except:
+                pass
+    model.dump_stations(prep_stations_cluster, fn_stations_prep)
+    model.dump_stations(stations, fn_stations_cluster)
 
 
     logger.info('prepared waveforms from %i stations' % len(stations))
+
