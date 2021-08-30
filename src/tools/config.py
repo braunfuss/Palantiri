@@ -45,7 +45,7 @@ class PalantiriDataConfig(Object):
     colosseo_scenario_yml = String.T(optional=True, help='give the colosseo\
                                     scenario.yml file')
 
-    load_wdf = Bool.T(default=True, optional=True,
+    load_wdf = Bool.T(default=False, optional=True,
      help='Save and load xcorr files as pickle ')
 
 
@@ -159,10 +159,10 @@ class PalantiriFilterConfig(Object):
 class PalantiriGeometryConfig(Object):
     '''Configuration of data IO and data preprocessing'''
 
-    dimy = Int.T(default=50, optional=True, help='Length in seconds. Not needed \
+    dimy = Int.T(default=70, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    dimx = Int.T(default=50, optional=True, help='Length in seconds. Not needed \
+    dimx = Int.T(default=70, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
     dimz = Int.T(default=0, optional=True, help='Length in seconds. Not needed \
@@ -184,10 +184,10 @@ class PalantiriGeometryConfig(Object):
 class PalantiriXcorrConfig(Object):
     '''Configuration of data IO and data preprocessing'''
 
-    xcorr = Bool.T(default=True, optional=True,
+    xcorr = Bool.T(default=False, optional=True,
                    help='')
 
-    xcorrtreshold = Float.T(default=0.6, optional=True, help='')
+    xcorrtreshold = Float.T(default=0.0, optional=True, help='')
 
     autoxcorrcorrectur = Bool.T(default=False, optional=True,
                                 help='')
@@ -267,37 +267,37 @@ class ClusterConfig(Object):
     cluster = List.T(
         String.T(), help='List blacklist patterns (may contain wild cards')
 
-    maxcluster = Int.T(default=100, optional=True, help='Length in seconds. Not needed \
+    maxcluster = Int.T(default=1500, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    minStationAroundInitialcluster = Int.T(default=4, optional=True, help='Length in seconds. Not needed \
+    minStationAroundInitialcluster = Int.T(default=6, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    cutoff = Int.T(default=10, optional=True, help='Length in seconds. Not needed \
+    cutoff = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
     runs = Int.T(default=1, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    centroidminDistance = Float.T(default=2, optional=True, help='Length in seconds. Not needed \
+    centroidminDistance = Float.T(default=0.5, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    comparedelta = Float.T(default=2, optional=True, help='Length in seconds. Not needed \
+    comparedelta = Float.T(default=1, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
     stationdistance = Float.T(default=5, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    minclusterStation = Float.T(default=4, optional=True, help='Length in seconds. Not needed \
+    minclusterStation = Float.T(default=5, optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    minDist = Float.T(default=23., optional=True, help='Length in seconds. Not needed \
+    minDist = Float.T(default=1., optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    initialstationdistance = Float.T(default=5., optional=True, help='Length in seconds. Not needed \
+    initialstationdistance = Float.T(default=15., optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
-    maxDist = Float.T(default=93., optional=True, help='Length in seconds. Not needed \
+    maxDist = Float.T(default=99., optional=True, help='Length in seconds. Not needed \
         when using TFRecordData')
 
 

@@ -197,7 +197,7 @@ class Xcorr(object):
 
         for tr in traces:
             tr_name = str(tr.network+'.'+tr.station+'.'+tr.location +
-                          '.'+tr.channel[:3])
+                          '.'+tr.channel[-1])
             if tr_name == str(station)[:-2] or tr_name == str(station)[:]:
                 traces_station = tr
                 es = obspy_compat.to_obspy_trace(traces_station)
