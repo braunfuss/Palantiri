@@ -331,7 +331,6 @@ def writeSembMatricesSingleArray(SembList, Config, Origin, arrayfolder, ntimes,
 
     cfg = Config
     origin = OriginCfg(Origin)
-
     dimX = cfg.config_geometry.dimx
     dimY = cfg.config_geometry.dimy
 
@@ -1046,10 +1045,12 @@ def doCalc(flag, cfg, WaveformDict, FilterMetaData, Gmint, Gmaxt,
     py_trs = []
     lats = []
     lons = []
+    print(calcStreamMap)
     if cfg.config_syn.synthetic_test is False:
         for trace in sorted(calcStreamMap.keys()):
             py_tr = calcStreamMap[trace]
             py_trs.append(py_tr)
+            print(py_tr)
             for il in FilterMetaData:
                 if str(il) == str(trace):
                         szo = model.Station(lat=float(il.lat), lon=float(il.lon),
@@ -1482,29 +1483,23 @@ def doCalc(flag, cfg, WaveformDict, FilterMetaData, Gmint, Gmaxt,
             mint = g.mint
             gridElem = g.GridArray
 
-            if cfg.config_geometry.dimz != 0:
-                orig_depth = float(Origin['depth'])
-                start, stop, step_depth = cfg.String('depths').split(',')
-                start = orig_depth+float(start)
-                stop = orig_depth+float(stop)
-                depths = num.linspace(start, stop, num=cfg.config_geometry.dimz)
-                for x in range(dimX):
-                    for y in range(dimY):
-                        depth_counter = 0
-                        for z in depths:
-                            elem = gridElem[x, y, z]
-                            #z here false index, must be integer
-                            traveltime[c][x * dimY + y + depth_counter] = elem.tt
-                            latv[x * dimY + y] = elem.lat
-                            lonv[x * dimY + y] = elem.lon
-                            depth_counter =+ 1
-            else:
-                for x in range(dimX):
-                    for y in range(dimY):
-                        elem = gridElem[x, y]
-                        traveltime[c][x * dimY + y] = elem.tt
+
+            orig_depth = float(Origin['depth'])
+            #start, stop, step_depth = cfg.String('depths').split(',')
+            start = orig_depth
+            stop = orig_depth
+            depths = num.linspace(start, stop, num=cfg.config_geometry.dimz)
+            for x in range(dimX):
+                for y in range(dimY):
+                    depth_counter = 0
+                    for z in depths:
+                        elem = gridElem[x, y, z]
+                        #z here false index, must be integer
+                        traveltime[c][x * dimY + y + depth_counter] = elem.tt
                         latv[x * dimY + y] = elem.lat
                         lonv[x * dimY + y] = elem.lon
+                        depth_counter =+ 1
+
             c += 1
             streamCounter += 1
 

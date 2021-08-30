@@ -67,10 +67,10 @@ class PalantiriWeightConfig(Object):
 
     shift_max = Float.T(default=4., optional=True, help='Shift in s to consider for corrections')
 
-    weight_by_azimuth = Bool.T(default=True, optional=True,
+    weight_by_azimuth = Bool.T(default=False, optional=True,
      help='Weight in 12 azimuthal blocks.')
 
-    bootstrap_array_weights = Bool.T(default=True, optional=True,
+    bootstrap_array_weights = Bool.T(default=False, optional=True,
      help='If true bootstraps the array weights.')
 
     n_bootstrap = Int.T(default=1, optional=True, help='Number of bootstraps.')
@@ -90,7 +90,7 @@ class PalantiriWeightConfig(Object):
     correct_shifts_empirical_manual_station_wise = Bool.T(default=False, optional=True,
      help='')
 
-    combine_all = Bool.T(default=True, optional=True,
+    combine_all = Bool.T(default=False, optional=True,
      help='if True combines the semblance of all arrays by multiplication.')
 
     norm_all = Bool.T(default=True, optional=True,

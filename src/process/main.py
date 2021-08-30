@@ -886,7 +886,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 TTTGridMap, mint, maxt = pickle.load(f)
                                 f.close()
                                 arraySemb, weight, array_center = sembCalc.doCalc(
-                                    counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                    counter, cfg, Wd, FilterMeta, mintt, maxtt,
                                     TTTGridMap, Folder, Origin, ntimes, switch,
                                     ev, arrayfolder, syn_in, refshifts, phase,
                                     rpe+str(arrayname)+switchs, flag_rpe,
@@ -900,7 +900,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                     TTTGridMap, mint, maxt = pickle.load(f)
                                     f.close()
                                     arraySemb, weight, array_center = sembCalc.doCalc(
-                                        counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                        counter, cfg, Wd, FilterMeta, mintt, maxtt,
                                         TTTGridMap, Folder, Origin, ntimes, switch,
                                         ev, arrayfolder, syn_in, refshifts, phase,
                                         rpe+str(arrayname)+switchs, flag_rpe,
@@ -913,7 +913,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                         TTTGridMap, mint, maxt = pickle.load(f)
                                         f.close()
                                         arraySemb, weight, array_center = sembCalc.doCalc(
-                                            counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                            counter, cfg, Wd, FilterMeta, mintt, maxtt,
                                             TTTGridMap, Folder, Origin, ntimes, switch,
                                             ev, arrayfolder, syn_in, refshifts, phase,
                                             rpe+str(arrayname)+switchs, flag_rpe,
@@ -931,7 +931,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                             TTTGridMap, mintt, maxtt = pickle.load(f)
                                             f.close()
                                             arraySemb, weight, array_center = sembCalc.doCalc(
-                                                counter, Config, Wd, FilterMeta, mintt, maxtt,
+                                                counter, cfg, Wd, FilterMeta, mintt, maxtt,
                                                 TTTGridMap, Folder, Origin, ntimes, switch,
                                                 ev, arrayfolder, syn_in, refshifts, phase,
                                                 rpe+str(arrayname)+switchs, flag_rpe,
@@ -995,6 +995,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 Wd = waveform.readWaveformsPyrocko(FilterMetas,
                                                                    tw, evpath,
                                                                    ev, desired)
+                                print(Wd, "Wd")
                     elif cfg.config_data.colesseo_input is True:
                         Wd = waveform.readWaveforms_colesseo(FilterMetas, tw,
                                                              evpath, ev, C)
@@ -1055,9 +1056,12 @@ def processLoop(traces=None, stations=None, cluster=None):
                         f2 = str('ff2 = filter.fhi%s()'% str(filterindex+1))
                         ff2 = eval(f2)
                         switchs = "h1"
+
                     if cfg.config_weight.bootstrap_array_weights is False:
+                        print(Wd, "Wd2")
+
                         arraySemb, weight, array_center = sembCalc.doCalc(
-                            counter, Config, Wdf, FilterMetas, mint, maxt,
+                            counter, cfg, Wd, FilterMetas, mint, maxt,
                             TTTgrids, Folder, Origin, ntimes, switch,
                             ev, arrayfolder, syn_in, refshifts_global, phase,
                             rpe+str(arrayname)+switchs, flag_rpe, nstats)
@@ -1094,7 +1098,7 @@ def processLoop(traces=None, stations=None, cluster=None):
                                 array_index = array_index+len_network
 
                             arraySemb, weight, array_center = sembCalc.doCalc(
-                                counter, Config, Wdf, FilterMetas, mint, maxt,
+                                counter, cfg, Wdf, FilterMetas, mint, maxt,
                                 TTTgrids, Folder, Origin, ntimes, switch,
                                 ev, arrayfolder, syn_in, refshifts_global,
                                 phase, rpe+str(arrayname)+switchs, flag_rpe, nstats,
