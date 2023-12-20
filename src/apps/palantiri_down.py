@@ -390,10 +390,6 @@ def main():
     (options, args) = parser.parse_args(sys.argv[1:])
     magmin = options.magmin
     minlen = options.minlen
-    if len(args) not in (9, 6, 5):
-        parser.print_help()
-        sys.exit(1)
-
     if options.debug:
         util.setup_logging(program_name, 'debug')
     else:
@@ -423,7 +419,6 @@ def main():
         logger.critical('--local-responses-resp can only be used '
                         'when --stations is also given.')
         sys.exit(1)
-
     try:
         ename = ''
         magnitude = None
@@ -440,17 +435,16 @@ def main():
                 sname_or_date = None
                 lat = float(args[1])
                 lon = float(args[2])
-                event = None
+                event = model.event.Event(lat=lat, lon=lon)
                 time = None
             else:
                 sname_or_date = args[1] + ' ' + args[2]
 
-            iarg = 2
+            iarg = 3
 
         elif len(args) == 6:
             sname_or_date = args[1]
             iarg = 2
-
         if len(args) in (7, 6) and sname_or_date is not None:
             events = get_events_by_name_or_date([sname_or_date],
                                                 catalog=geofon, magmin=magmin)
@@ -460,7 +454,6 @@ def main():
             elif len(events) > 1:
                 logger.critical('more than one event found')
                 sys.exit(1)
-
             event = events[0]
             time = event.time
             lat = event.lat
@@ -580,7 +573,7 @@ def main():
         minradius=options.radius_min*km*cake.m2d,
         maxradius=radius*cake.m2d,
         channel=','.join('?%s?' % s for s in priority_band_code))
-
+    print(lat, lon, options.radius_min, radius)
     target_sample_rate = sample_rate
 
     fmax = target_sample_rate
@@ -1231,4 +1224,3 @@ def main():
 
 
     logger.info('prepared waveforms from %i stations' % len(prep_stations_cluster))
-
